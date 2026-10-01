@@ -1,0 +1,59 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 検討事項 D-1
+        description: 'タイトルに `スキーマ` を含み、タグ `データ` と属性 `担当: 自分` を持つ検討事項'
+      - name: 検討事項 D-2
+        description: タイトルに `スキーマ` を含まず、D-1 に依存する検討事項
+        notes: '`depends_on: [D-1]`・属性 `担当: 自分`'
+      - name: タスク T-1
+        description: 'D-1 を進め、属性 `期限: 10 月` を持つタスク'
+        notes: '`for: [D-1]`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 「スキーマ」を含む項目を探す
+        SCR->>WS: 全ての YAML を読む
+        SCR-->>CC: 合う項目の一覧
+        CC->>SCR: D-1 の中身を出す
+        SCR-->>CC: D-1 の中身と、D-1 を参照している項目
+        CC->>SCR: 使っている属性名を出す
+        SCR-->>CC: 属性名と使っている件数
+      ```
+    expected:
+      - 探した結果に D-1 があり、D-2・T-1 が無い
+      - D-1 の中身に、タイトル・状態・タグ・属性がある
+      - D-1 を参照している項目に D-2 と T-1 がある
+      - 属性名の一覧に `担当`（2 件）と `期限`（1 件）がある
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+    test: test_normal
+  - name: 異常シナリオ（存在しない ID を出す）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませ、検討事項を 1 件足したワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 存在しない ID の中身を出す
+        SCR->>WS: ID を探して見つからない
+        SCR-->>CC: ID が無いエラー
+      ```
+    expected:
+      - 0 以外の終了コードで終わる
+      - 標準エラーに、渡した ID がある
+    test: test_error_when_id_not_found

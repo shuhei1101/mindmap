@@ -1,0 +1,68 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ（再開時の状況）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 要見直しの検討事項
+        description: 状態が `要見直し` の検討事項 D-1
+      - name: 進行中のタスク
+        description: 状態が `進行中` のタスク T-1
+      - name: 再開可能な検討事項
+        description: 状態が `保留` で、依存先の D-3 が決定済みの検討事項 D-2
+        notes: '`depends_on: [D-3]`'
+      - name: 決定待ちの検討事項
+        description: 状態が `保留` で、依存先の D-5 が未決定の検討事項 D-4
+        notes: '`depends_on: [D-5]`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 再開時の状況を出す
+        SCR->>WS: 全ての YAML を読む
+        SCR-->>CC: 要見直し・進行中・再開可能・決定待ち・次の候補
+      ```
+    expected:
+      - 要見直しに D-1 がある
+      - 進行中に T-1 がある
+      - 再開可能に D-2 がある
+      - 保留の D-4 が、待っている D-5 の ID とともに決定待ちとして出る
+      - 次の候補の欄に D-5 がある
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+    test: test_normal_when_resume
+  - name: 正常シナリオ（次に検討する項目）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+        notes: フェーズの並び `目的` → `要件` → `構成`
+      - name: 前提が揃った未決定
+        description: 依存先を持たない未決定の検討事項 D-1〜D-4
+        notes: 'D-1: `要件`・影響度 `小`／D-2: `目的`・影響度 `小`／D-3: `要件`・影響度 `大`／D-4: `要件`・影響度 `大`'
+      - name: 前提が揃っていない未決定
+        description: 未決定の検討事項に依存する未決定の検討事項 D-5〜D-7
+        notes: 'D-5: `目的`・`depends_on: [D-1]`／D-6: `depends_on: [D-4]`／D-7: `depends_on: [D-6]`（D-1 の後続 1 件、D-3 の後続 0 件、D-4 の後続 2 件）'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 次に検討する項目を出す
+        SCR->>WS: 全ての YAML を読む
+        SCR->>SCR: 前提が揃った未決定を選び、フェーズ → 影響度 → 後続の件数の順に並べる
+        SCR-->>CC: 候補の一覧
+      ```
+    expected:
+      - 候補が D-2・D-4・D-3・D-1 の順に並ぶ
+      - 候補に D-5・D-6・D-7 が無い
+      - 各候補に、フェーズ・影響度・後続の件数がある（D-4 は後続 2 件）
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+    test: test_normal_when_next

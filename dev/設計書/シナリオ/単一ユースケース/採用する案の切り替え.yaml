@@ -1,0 +1,66 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 検討事項 D-1
+        description: 案 A（採用）と案 B を持つ決定済みの検討事項
+      - name: 検討事項 D-2
+        description: D-1 に依存する決定済みの検討事項
+        notes: '`depends_on: [D-1]`'
+      - name: 検討事項 D-3
+        description: D-2 に依存する未決定の検討事項
+        notes: '`depends_on: [D-2]`'
+      - name: タスク T-1
+        description: D-3 を進める未着手のタスク
+        notes: '`for: [D-3]`'
+      - name: 検討事項 D-4
+        description: D-1 と関係しない検討事項
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: D-1 の採用する案を B に切り替える
+        SCR->>SCR: 案 A を外し案 B を採用にして、スキーマと突き合わせる
+        SCR->>WS: decisions.yaml に書く
+        SCR-->>CC: 切り替えた案
+        CC->>SCR: D-1 の影響を洗い出す
+        SCR->>WS: 依存をたどる
+        SCR-->>CC: 影響を受ける項目の一覧
+      ```
+    expected:
+      - D-1 の案 B が採用、案 A が採用でない
+      - D-1 の採用する案が 1 つだけである
+      - 影響の一覧に D-2・D-3・T-1 があり、D-4 が無い
+      - 影響の一覧の各項目に、D-1 からたどった経路（直接か、どの項目を経たか）がある
+    test: test_normal
+  - name: 異常シナリオ（存在しない案を指す）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 検討事項 D-1
+        description: 案 A（採用）と案 B を持つ検討事項
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: D-1 の採用する案を Z に切り替える
+        SCR->>WS: 案 Z を探して見つからない
+        SCR-->>CC: 案が無いエラー
+      ```
+    expected:
+      - 切り替えが 0 以外の終了コードで終わる
+      - 標準エラーに、渡した案のキー `Z` と、D-1 が持つ案のキー `A`・`B` がある
+      - ワークスペースの全てのファイルの中身が、切り替えを呼ぶ前と同じである
+    test: test_error_when_option_not_found
