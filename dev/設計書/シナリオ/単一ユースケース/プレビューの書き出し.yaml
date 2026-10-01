@@ -1,4 +1,4 @@
-title: ""
+title: "プレビューの書き出し"
 scenarios:
   - name: 正常シナリオ
     setup:
@@ -53,3 +53,16 @@ scenarios:
       - 標準エラーに、合わないファイル `decisions.yaml` とキー `status` がある
       - '`preview.html` の中身が、書き出しを呼ぶ前と同じである'
     test: test_error_when_schema_mismatch
+lead: スキルが、ワークスペースの記録をブラウザで開ける 1 枚の HTML（プレビュー）に書き出す単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: サーバーを立てずに、ファイルを開くだけで最新の記録を読める
+trigger: スキルが記録を書き終える、または利用者がプレビューを見たいと言う
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: ワークスペースの `preview.html` に、全ての YAML と本文の Markdown を JSON にしたデータが埋め込まれている。
+minimal_guarantee: YAML がスキーマに合わないときは、前に書き出した `preview.html` を書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_preview_build.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'

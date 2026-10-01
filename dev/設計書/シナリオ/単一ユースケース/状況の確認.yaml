@@ -1,4 +1,4 @@
-title: ""
+title: "状況の確認"
 scenarios:
   - name: 正常シナリオ（再開時の状況）
     setup:
@@ -66,3 +66,15 @@ scenarios:
       - 各候補に、フェーズ・影響度・後続の件数がある（D-4 は後続 2 件）
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
     test: test_normal_when_next
+lead: スキルが、話し合いを再開するときの状況と、次に検討する項目の候補を読む単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 前回の続きから迷わず再開できる。前提が揃っていない問いを先に聞かれない
+trigger: スキルがセットアップのステップで既存のワークスペースを開く、またはヒアリングのステップで次に聞く問いを選ぶ
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: 要見直し・進行中・再開可能・次の候補が、決めた並びで出る。どのファイルも書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_status.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'

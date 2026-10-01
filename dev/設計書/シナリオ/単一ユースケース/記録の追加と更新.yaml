@@ -1,4 +1,4 @@
-title: ""
+title: "記録の追加と更新"
 scenarios:
   - name: 正常シナリオ
     setup:
@@ -79,3 +79,16 @@ scenarios:
       - 標準エラーに、渡した ID がある
       - ワークスペースの全てのファイルの中身が、更新を呼ぶ前と同じである
     test: test_error_when_id_not_found
+lead: スキルが、会話で出た検討事項・タスク・調査・資料・用語・メモ・会話ログをワークスペースに足し、後から直す単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 会話で決めたことが漏れなく残る。形の崩れた記録で、ワークスペースが読めなくならない
+trigger: スキルが取り込みのステップで、発言を記録する項目に振り分け終える
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: 足した項目に種類の頭の文字の ID と作成日・更新日が付き、直した項目の更新日が変わり、ワークスペースの全ての YAML がスキーマに合う。
+minimal_guarantee: スキーマに合わない書き込み・存在しない ID への書き込みでは、どのファイルも書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_record_add_update.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'

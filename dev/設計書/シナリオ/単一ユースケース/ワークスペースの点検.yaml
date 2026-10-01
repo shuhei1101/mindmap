@@ -1,4 +1,4 @@
-title: ""
+title: "ワークスペースの点検"
 scenarios:
   - name: 正常シナリオ（問題が無い）
     setup:
@@ -55,3 +55,15 @@ scenarios:
       - 出力に、どの項目からも指されていない `docs/` の Markdown のファイル名がある
       - ワークスペースの全てのファイルの中身が、点検を呼ぶ前と同じである
     test: test_normal_when_problems_found
+lead: スキルが、ワークスペースの参照切れと、YAML と本文の Markdown のずれを洗い出す単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 消した項目を指したままの記録や、どの項目にも結び付かない本文が残らない
+trigger: スキルが記録を書き終えた、または利用者がワークスペースを手で直した
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: 参照切れとずれが全て、どの項目のどのキーかとともに出る。どのファイルも書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_workspace_check.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'

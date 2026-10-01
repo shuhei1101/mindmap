@@ -1,4 +1,4 @@
-title: ""
+title: "記録の検索"
 scenarios:
   - name: 正常シナリオ
     setup:
@@ -9,10 +9,10 @@ scenarios:
       - name: 検討事項 D-1
         description: 'タイトルに `スキーマ` を含み、タグ `データ` と属性 `担当: 自分` を持つ検討事項'
       - name: 検討事項 D-2
-        description: タイトルに `スキーマ` を含まず、D-1 に依存する検討事項
+        description: どの文字の欄にも `スキーマ` を含まず、D-1 に依存する検討事項
         notes: '`depends_on: [D-1]`・属性 `担当: 自分`'
       - name: タスク T-1
-        description: 'D-1 を進め、属性 `期限: 10 月` を持つタスク'
+        description: 'どの文字の欄にも `スキーマ` を含まず、D-1 を進め、属性 `期限: 10 月` を持つタスク'
         notes: '`for: [D-1]`'
     flow: |-
       ```mermaid
@@ -57,3 +57,15 @@ scenarios:
       - 0 以外の終了コードで終わる
       - 標準エラーに、渡した ID がある
     test: test_error_when_id_not_found
+lead: スキルが、ワークスペースの項目を条件で探し、1 件の中身とそれを参照している項目、使っている属性名を読む単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 前に決めたことを会話の中ですぐ引ける。同じ意味の属性が別の名前で増えない
+trigger: 会話で前の記録に触れる、または属性を付ける前に使っている名前を確かめる
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: 条件に合う項目・1 件の中身と参照元・属性名の一覧が出る。どのファイルも書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_record_search.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'

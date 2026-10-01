@@ -1,4 +1,4 @@
-title: ""
+title: "採用する案の切り替え"
 scenarios:
   - name: 正常シナリオ
     setup:
@@ -64,3 +64,16 @@ scenarios:
       - 標準エラーに、渡した案のキー `Z` と、D-1 が持つ案のキー `A`・`B` がある
       - ワークスペースの全てのファイルの中身が、切り替えを呼ぶ前と同じである
     test: test_error_when_option_not_found
+lead: スキルが、方針転換で検討事項の採用する案を切り替え、依存をたどって影響を受ける項目を洗い出す単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 方針を変えたときに、見直しが要る検討事項とタスクを漏れなく知る
+trigger: 利用者が、決めた検討事項の別の案を採ると言う
+preconditions:
+  - ワークスペースに、案を 2 つ以上持つ検討事項がある
+success_guarantee: 採用する案がちょうど 1 つになり、その検討事項に直接・間接に依存する項目と、それを進めるタスクが洗い出される。
+minimal_guarantee: 存在しない案を指したときは、どのファイルも書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_option_adopt.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'

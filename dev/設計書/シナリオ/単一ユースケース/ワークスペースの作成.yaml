@@ -1,4 +1,4 @@
-title: ""
+title: "ワークスペースの作成"
 scenarios:
   - name: 正常シナリオ
     setup:
@@ -75,3 +75,16 @@ scenarios:
       - 標準エラーに、既にワークスペースがある旨とフォルダのパスがある
       - ワークスペースの全てのファイルの中身が、作成を呼ぶ前と同じである
     test: test_error_when_workspace_exists
+lead: スキルが、スクリプトの依存が揃っているかを確かめ、1 つの話し合いのフォルダ（ワークスペース）を新しく作る単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 話し合いの記録を始められる。既にある話し合いの記録を上書きされない
+trigger: 利用者が新しい話し合いを始め、スキルがセットアップのステップで分野・最上位の軸の呼び名・フェーズ・対象・カテゴリー・ゴールを決め終える
+preconditions:
+  - プラグイン mindmap がインストールされている
+success_guarantee: 指定したフォルダに、決めた設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` があり、全ての YAML がスキーマに合う。
+minimal_guarantee: 依存が足りないとき・既にワークスペースがあるときは、フォルダの中身を書き換えない。
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_workspace_create.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
