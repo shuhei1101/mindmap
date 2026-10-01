@@ -1,0 +1,4 @@
+summary: 単一ユースケースのシナリオ
+items:
+  - page: プラグインのインストール.yaml
+    summary: マーケットプレイスを登録してプラグイン mindmap をインストールする

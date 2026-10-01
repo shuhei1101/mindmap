@@ -1,0 +1,53 @@
+title: "非機能要件"
+requirements:
+  - name: Claude Code の版
+    english_name: claude_code_version
+    category: 動作環境
+    external_constraint: スキルを持つプラグインは 2.0.20 から読み込める。シェルの `claude plugin` のサブコマンドが入った版は CHANGELOG から引けない
+    source_kind: 実行基盤の制限
+    value: 2.1.287 以上
+    rationale: 動かして確かめた版。設計どおりのマニフェストで `claude plugin validate`・`marketplace add`・`install`・`list`・`uninstall`・`marketplace remove` が通ることを確かめた（https://github.com/shuhei1101/mindmap/pull/9#discussion_r4160895275）。これより古い版は確かめていない
+    source: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md#2020
+  - name: OS
+    english_name: os
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 実行基盤の制限
+    value: 未確定
+    rationale: Claude Code が動く OS のうち、スクリプトを動かすものをスクリプトの設計（#3）で決める
+  - name: Python の版
+    english_name: python_version
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 外部ライブラリの制限
+    value: 未確定
+    rationale: PyYAML・jsonschema が対応する版と合わせて、スクリプトの設計（#3）で決める
+  - name: ブラウザ
+    english_name: browser
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: プレビューの画面の設計（#5）で、使う描画のライブラリが対応するブラウザと合わせて決める
+  - name: 画面サイズ
+    english_name: screen_size
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: プレビューの画面の設計（#5）で決める
+  - name: 入力方式
+    english_name: input_method
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: プレビューの画面の設計（#5）で決める
+  - name: 通信
+    english_name: network
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: '#3 の設計で決める'
+lead: mindmap が外部の制約から逆算して決める値。
