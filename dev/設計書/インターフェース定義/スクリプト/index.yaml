@@ -1,0 +1,42 @@
+summary: "スキルが呼ぶスクリプトのコマンド（引数・標準入力・標準出力・終了コード）"
+docs_index: true
+items:
+  - page: 依存の確認.yaml
+    summary: 'check-env: Python と PyYAML・jsonschema の版を確かめる'
+    group: 作る
+  - page: ワークスペースの作成.yaml
+    summary: 'init: 設定を受け取って空のワークスペースを作る'
+    group: 作る
+  - page: 項目の追加.yaml
+    summary: 'add: 1 項目を足す'
+    group: 書く
+  - page: 項目の更新.yaml
+    summary: 'update: 1 項目のキーを置き換える'
+    group: 書く
+  - page: 採用する案の切り替え.yaml
+    summary: 'adopt: 検討事項の採用する案を 1 つに切り替える'
+    group: 書く
+  - page: 再開時の状況.yaml
+    summary: 'status: 要見直し・進行中・再開可能・決定待ち・次の候補をまとめて返す'
+    group: 読む
+  - page: 次の候補.yaml
+    summary: 'next: 前提が揃った未決定をフェーズ → 影響度 → 後続の件数の順に返す'
+    group: 読む
+  - page: 影響の洗い出し.yaml
+    summary: 'impact: 参照を逆向きにたどって影響を受ける項目を返す'
+    group: 読む
+  - page: 項目の検索.yaml
+    summary: 'find: 条件に合う項目を返す'
+    group: 読む
+  - page: 項目の表示.yaml
+    summary: 'show: 1 項目の中身・本文・参照元を返す'
+    group: 読む
+  - page: 属性名の一覧.yaml
+    summary: 'attrs: 使っている属性名と件数を返す'
+    group: 読む
+  - page: ワークスペースの点検.yaml
+    summary: 'check: スキーマ違反・参照切れ・本文のずれを洗い出す'
+    group: 点検と書き出し
+  - page: プレビューの書き出し.yaml
+    summary: 'build: 記録を埋め込んだ preview.html を書き出す'
+    group: 点検と書き出し

@@ -1,0 +1,364 @@
+title: "ER 図: ワークスペース"
+lead: 1 つの話し合いのフォルダ（ワークスペース）が持つ YAML の形。正本は `skills/mindmap/schemas/` の JSON Schema で、書き込む前に突き合わせる。
+er:
+  entities:
+    - name: 設定
+    - name: 検討事項
+    - name: タスク
+    - name: 調査
+    - name: 資料
+    - name: 用語集
+    - name: メモ
+    - name: 会話ログ
+    - name: 本文
+  relations:
+    - from: 設定
+      to: 検討事項
+      cardinality: '||--o{'
+      label: 対象・カテゴリー・フェーズで振り分ける
+    - from: 検討事項
+      to: 検討事項
+      cardinality: '}o--o{'
+      label: depends_on・parent
+    - from: 検討事項
+      to: タスク
+      cardinality: '||--o{'
+      label: for で進められる
+    - from: 会話ログ
+      to: 検討事項
+      cardinality: '}o--o{'
+      label: sources
+    - from: 検討事項
+      to: 本文
+      cardinality: '||--o|'
+      label: body
+    - from: 調査
+      to: 本文
+      cardinality: '||--o|'
+      label: body
+    - from: 資料
+      to: 本文
+      cardinality: '||--o|'
+      label: body
+    - from: 会話ログ
+      to: 本文
+      cardinality: '||--o|'
+      label: body
+tables:
+  - name: mindmap.yaml
+    title: 設定
+    datastore: YAML
+    summary: 分野・最上位の軸の呼び名・フェーズ・対象とカテゴリー・ゴール・関連する場所
+    scale: 1 件
+    access: 全件
+    columns:
+      - name: field
+        title: 分野
+        type: string
+        not_null: true
+        description: 進め方ガイドの分野
+        example: システム開発
+      - name: target_label
+        title: 最上位の軸の呼び名
+        type: string
+        not_null: true
+        description: 対象を画面で何と呼ぶか
+        example: システム
+      - name: phases
+        title: フェーズ
+        type: array
+        not_null: true
+        description: フェーズの名前を浅い順に並べる。`next` の並べ替えはこの順を使う
+        example: '[目的, 要件, 構成]'
+      - name: targets
+        title: 対象
+        type: array
+        not_null: true
+        description: 要素は `name`・`summary`
+      - name: categories
+        title: カテゴリー
+        type: array
+        not_null: true
+        description: 要素は `name`・`target`（`targets[].name` のどれか）・`summary`
+      - name: goal
+        title: ゴール
+        type: object
+        not_null: true
+        description: '`phase`（どのフェーズまでやるか）・`summary`・`deliverables[]`（`title` と、できた資料の `doc`（`A-` の ID。任意））'
+      - name: links
+        title: 関連する場所
+        type: array
+        description: 要素は `title`・`url`
+  - name: skills/mindmap/schemas/common.schema.json
+    title: 共通のキー
+    datastore: JSON
+    summary: 種類ごとの YAML の項目が共通で持つキー（各種類のスキーマが `$ref` で指す）
+    description: 種類ごとの YAML はどれも `items:` の配列を持ち、1 要素 = 1 項目。この表のキーは全ての種類の項目が持つ。
+    columns:
+      - name: id
+        title: ID
+        type: string
+        not_null: true
+        primary_key: true
+        auto: 採番
+        description: 種類の頭の文字 + `-` + 連番。頭の文字で種類が決まる（D 検討事項 / T タスク / R 調査 / A 資料 / G 用語集 / N メモ / L 会話ログ）。連番はその種類の最大 + 1 で、消した番号を使い回さない
+        example: D-12
+      - name: title
+        title: タイトル
+        type: string
+        not_null: true
+        description: 題
+      - name: target
+        title: 対象
+        type: string
+        description: 設定の `targets[].name` のどれか
+      - name: category
+        title: カテゴリー
+        type: string
+        description: 設定の `categories[].name` のどれか
+      - name: phase
+        title: フェーズ
+        type: string
+        description: 設定の `phases` のどれか
+      - name: tags
+        title: タグ
+        type: array
+        description: 自由な文字列
+      - name: attrs
+        title: 属性
+        type: object
+        description: 自由なキーと値（値は文字列・数値・真偽値）。使っているキーの名前は `attrs` のコマンドで引く
+      - name: related
+        title: 関連
+        type: array
+        description: 関連する項目の ID。向きを持たず、`impact` はたどらない
+      - name: links
+        title: リンク
+        type: array
+        description: 要素は `title`・`url`
+      - name: created
+        title: 作成日時
+        type: string
+        not_null: true
+        auto: 作成日時
+        description: UTC のタイムゾーン付き ISO 8601
+        example: '2026-10-02T08:00:00+00:00'
+      - name: updated
+        title: 更新日時
+        type: string
+        not_null: true
+        auto: 更新日時
+        description: UTC のタイムゾーン付き ISO 8601
+  - name: decisions.yaml
+    title: 検討事項
+    datastore: YAML
+    summary: 問いと答えの単位（未決定のものも入る）
+    primary_key: id
+    scale: ~1000
+    access: 全件
+    deletion: 消さず、状態を `取り下げ` か `対象外` にする
+    columns:
+      - name: status
+        title: 状態
+        type: string
+        not_null: true
+        enum_values: 未決定 / 決定済み / 要見直し / 保留 / 未整理 / 対象外 / 取り下げ
+        description: 検討事項の状態
+      - name: lead
+        title: 問いの説明
+        type: string
+        description: 何を決める問いか
+      - name: answer
+        title: 答え
+        type: string
+        description: 決まった答え
+      - name: options
+        title: 案
+        type: array
+        description: 要素は `key`（記号）・`content`・`pros`・`cons`・`note`・`adopted`（真偽値）・`reason`。`adopted` が真の案は 0 か 1 つ
+      - name: weight
+        title: 影響度
+        type: string
+        enum_values: 大 / 中 / 小
+        description: 派生の多さ
+      - name: parent
+        title: 派生元
+        type: string
+        description: この検討事項が派生した検討事項の ID（`D-`）
+      - name: depends_on
+        title: 前提
+        type: array
+        description: 先に決まっている必要がある検討事項の ID（`D-`）。保留の待ち先もここで持つ
+      - name: reason
+        title: 理由
+        type: string
+        description: 決めた理由・保留や取り下げの理由
+      - name: body
+        title: 本文
+        type: string
+        description: '`docs/` の本文の Markdown のファイル名（`{ID}.md`）'
+        example: D-12.md
+      - name: sources
+        title: 経緯
+        type: array
+        description: 決めた会話ログの ID（`L-`）
+  - name: tasks.yaml
+    title: タスク
+    datastore: YAML
+    summary: 検討事項を決めるための作業と「後でやっといて」
+    primary_key: id
+    scale: ~1000
+    access: 全件
+    deletion: 消さず、状態を `中止` にする
+    columns:
+      - name: kind
+        title: 種類
+        type: string
+        not_null: true
+        enum_values: 作業 / 調査 / 検証
+        description: タスクの種類
+      - name: status
+        title: 状態
+        type: string
+        not_null: true
+        enum_values: 未着手 / 進行中 / 保留 / 完了 / 中止
+        description: タスクの状態
+      - name: for
+        title: 進める検討事項
+        type: array
+        description: このタスクが進める検討事項の ID（`D-`）
+      - name: depends_on
+        title: 前提
+        type: array
+        description: 先に終わっている必要があるタスクの ID（`T-`）
+      - name: reason
+        title: 理由
+        type: string
+        description: 積んだ理由・保留や中止の理由
+      - name: result
+        title: 結果
+        type: string
+        description: 終えたときの結果
+  - name: research.yaml
+    title: 調査
+    datastore: YAML
+    summary: 調べた結果
+    primary_key: id
+    scale: ~100
+    access: 全件
+    columns:
+      - name: question
+        title: 問い
+        type: string
+        not_null: true
+        description: 何を調べたか
+      - name: conclusion
+        title: 結論
+        type: string
+        description: 調べた結論
+      - name: confidence
+        title: 確度
+        type: string
+        enum_values: 高 / 中 / 低
+        description: 結論の確からしさ
+      - name: angles
+        title: 調査の観点
+        type: array
+        description: 調べた観点
+      - name: body
+        title: 本文
+        type: string
+        description: '`docs/` の本文の Markdown のファイル名（`{ID}.md`）'
+  - name: docs.yaml
+    title: 資料
+    datastore: YAML
+    summary: 会話の中で作った図・文書。成果物もこの中で印を付ける
+    primary_key: id
+    scale: ~100
+    access: 全件
+    columns:
+      - name: kind
+        title: 種類
+        type: string
+        not_null: true
+        description: 図 / 文書 など（自由な文字列）
+      - name: deliverable
+        title: 成果物か
+        type: boolean
+        not_null: true
+        default: 'false'
+        description: ゴールで引き渡す成果物か
+      - name: done
+        title: できたか
+        type: boolean
+        not_null: true
+        default: 'false'
+        description: 成果物ができたか
+      - name: body
+        title: 本文
+        type: string
+        not_null: true
+        description: '`docs/` の本文の Markdown のファイル名（`{ID}.md`）'
+  - name: terms.yaml
+    title: 用語集
+    datastore: YAML
+    summary: 話し合いの中で決めた言い方
+    primary_key: id
+    scale: ~100
+    access: 全件
+    columns:
+      - name: meaning
+        title: 意味
+        type: string
+        not_null: true
+        description: 用語の意味（`title` が用語）
+      - name: aliases
+        title: 別名
+        type: array
+        description: 同じものを指す別の言い方
+      - name: avoid
+        title: 使わない表記
+        type: array
+        description: やめた言い方
+  - name: notes.yaml
+    title: メモ
+    datastore: YAML
+    summary: 検討事項にしない覚え書き（脱線で調べたことはタグ `脱線`）
+    primary_key: id
+    scale: ~100
+    access: 全件
+    columns:
+      - name: content
+        title: 内容
+        type: string
+        not_null: true
+        description: メモの中身
+  - name: logs.yaml
+    title: 会話ログ
+    datastore: YAML
+    summary: 会話の要約と残しておきたい言葉。後から書き換えない
+    primary_key: id
+    scale: ~1000
+    growth: 会話ごとに足す
+    access: 全件
+    deletion: 消さない
+    columns:
+      - name: date
+        title: 日付
+        type: string
+        not_null: true
+        description: 会話の日（`YYYY-MM-DD`）
+      - name: body
+        title: 本文
+        type: string
+        description: '`docs/` の本文の Markdown のファイル名（`{ID}.md`）。`related` はこの会話で更新した項目'
+  - name: docs/{ID}.md
+    title: 本文
+    datastore: Markdown
+    summary: 項目の本文。メタデータは持たず、YAML の `body` から指される
+    access: ファイル名で引く
+    columns:
+      - name: (本文)
+        title: 本文
+        type: string
+        description: Markdown の本文。front matter を持たない。書き込みは `add` / `update` が行い、ファイル名は項目の ID に揃える

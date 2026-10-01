@@ -1,0 +1,96 @@
+title: "依存の確認"
+entry:
+  kind: operation
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py check-env`（コマンドの引数・標準出力・終了コード）'
+flows:
+  - name: 正常系
+    summary: 依存が揃っていて、入れるコマンドは無い
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: Python の環境
+        description: PyYAML・jsonschema が下限以上で入っている
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check-env
+
+        クライアント->>IF: check-env
+        IF->>IF: Python の版とライブラリの版を確かめる
+        IF-->>クライアント: JSON（全て ok）
+      ```
+    expected:
+      - 終了コードが 0
+      - '`python_ok` と全ての `packages[].ok` が真'
+      - '`install` が `null`'
+    test: test_normal
+  - name: 異常系（依存が足りない・DependencyMissingError）
+    summary: ライブラリを入れていない Python で、足りないものと入れるコマンドを返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: Python の環境
+        description: PyYAML・jsonschema を入れていない仮想環境
+        notes: テストごとの一時フォルダに `python -m venv` で作る
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check-env
+
+        クライアント->>IF: check-env
+        IF->>IF: ライブラリが見つからない
+        IF-->>クライアント: JSON（足りないものと install）、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '`packages` の PyYAML・jsonschema が `installed: null`・`ok: false`'
+      - '`install` に `PyYAML>=5.1` と `jsonschema>=4.18.0` を含むコマンドがある'
+    test: test_error_when_dependency_missing
+lead: スクリプトを動かす Python の版と、PyYAML・jsonschema が入っているかを確かめ、足りないものと入れるコマンドを返す。
+idempotent: true
+side_effects: なし（何も書き込まない）
+response:
+  - name: python
+    type: str
+    description: 動いている Python の版
+    example: 3.12.3
+  - name: python_ok
+    type: bool
+    description: Python の版が下限（非機能要件の「Python の版」）以上か
+  - name: packages[].name
+    type: '"PyYAML" | "jsonschema"'
+    description: 確かめたライブラリ
+  - name: packages[].required
+    type: str
+    description: 版の下限
+    example: 4.18.0
+  - name: packages[].installed
+    type: str | None
+    description: 入っている版。入っていなければ `null`
+  - name: packages[].ok
+    type: bool
+    description: 下限以上が入っているか
+  - name: install
+    type: str | None
+    description: 足りないライブラリを入れるコマンド。全て揃っていれば `null`
+    example: python3 -m pip install 'PyYAML>=5.1' 'jsonschema>=4.18.0'
+exceptions:
+  - name: なし（正常終了）
+    condition: Python の版と両方のライブラリが下限以上
+    notes: 終了コード 0
+  - name: DependencyMissingError
+    condition: Python の版か、どちらかのライブラリが無いか下限より古い
+    notes: 終了コード 1。標準出力には正常終了と同じ形の JSON を出す
+constraints:
+  - item: 読み込みの順
+    constraint: 入口は PyYAML・jsonschema を import する前に `check-env` を処理する。他のコマンドのモジュールは `check-env` のときに読まない
+  - item: 出力の形
+    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
+  - item: 終了コード
+    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 通信
+    constraint: しない（入れるコマンドを返すだけで、自分では入れない）
+notes:
+  対応テストファイル: '`tests/integration/scripts/test_check_env.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
