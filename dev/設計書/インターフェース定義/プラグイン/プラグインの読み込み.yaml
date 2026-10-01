@@ -66,3 +66,4 @@ constraints:
   - item: Claude Code の版
     constraint: 2.1.287 以上
     notes: 非機能要件の「Claude Code の版」
+test_file: tests/integration/plugin/test_plugin_loading.py
