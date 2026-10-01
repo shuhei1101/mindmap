@@ -125,7 +125,7 @@ constraints:
   - item: 雛形
     constraint: '`skills/mindmap/preview/template.html`。`<script type="application/json" id="mindmap-data"></script>` をちょうど 1 つ持つ。画面の中身は #5 が持ち、この PR はデータの件数を出すだけの雛形を置く'
   - item: 埋め込みの安全
-    constraint: 埋め込む JSON の `<`・`>`・`&` を、JSON の文字列のエスケープ `<`・`>`・`&`（バックスラッシュ + `u` + 16 進 4 桁）に置き換える。`JSON.parse` で元の文字に戻り、本文に `</script>` があっても要素を閉じさせない（Python の `json.dumps` はこれらをエスケープしないので、書き出しの側で置き換える）
+    constraint: 埋め込む JSON の `<`・`>`・`&` を、それぞれ JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える。`JSON.parse` で元の文字に戻り、本文に `</script>` があっても要素を閉じさせない。Python の `json.dumps` はこれらをエスケープしないので、書き出しの側で置き換える
   - item: 読み込むファイル
     constraint: '`preview.html` はワークスペースの他のローカルのファイルを指さない。描画のライブラリは CDN から読む（雛形が持つ）'
   - item: 通信
