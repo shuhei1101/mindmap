@@ -40,3 +40,4 @@ preconditions:
   - Claude Code が入っている
   - プラグイン mindmap をまだインストールしていない
 success_guarantee: プラグイン mindmap が有効な状態で入り、スキルのフォルダ `skills/mindmap/` を持つ。
+test_file: tests/e2e/単一ユースケース/test_plugin_install.py
