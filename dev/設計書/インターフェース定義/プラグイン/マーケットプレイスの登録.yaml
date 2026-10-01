@@ -22,7 +22,7 @@ flows:
         C->>C: マーケットプレイス mindmap を登録する
       ```
     expected:
-      - '`claude plugin validate` をリポジトリの直下で流すと、誤りも警告も出ずに終わる'
+      - '`claude plugin validate` をリポジトリの直下で流すと、終了コード 0 で誤りが無く、警告は `plugin.json` の `version` の 1 件だけである'
       - '`claude plugin marketplace add` にリポジトリの直下を渡すと、登録済みのマーケットプレイスの一覧に `mindmap` が出る'
       - マーケットプレイス mindmap から入れられるプラグインが `mindmap` の 1 件だけである
     test: test_normal
@@ -54,11 +54,17 @@ request:
     description: プラグインの説明。インストールの画面に出る
     example: 話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル
     notes: リポジトリの説明と同じ文言
+  - name: description
+    type: string
+    required: true
+    description: マーケットプレイスの説明
+    notes: リポジトリの説明と同じ文言
 request_example: |-
   ```json
   {
     "name": "mindmap",
     "owner": { "name": "shuhei1101" },
+    "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
     "plugins": [
       {
         "name": "mindmap",
@@ -72,5 +78,5 @@ constraints:
   - item: 載せるプラグインの数
     constraint: 1 件（mindmap だけ）
   - item: Claude Code の版
-    constraint: 2.0.12 以上
+    constraint: 2.1.287 以上
     notes: 非機能要件の「Claude Code の版」
