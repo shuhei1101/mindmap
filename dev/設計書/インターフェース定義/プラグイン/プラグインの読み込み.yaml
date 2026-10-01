@@ -64,5 +64,5 @@ constraints:
     constraint: '`version` は持たない'
     notes: 版の正はタグと `version.ini`（規約『バージョニング』）。マニフェストに写すと揃える作業がリリースごとに増える
   - item: Claude Code の版
-    constraint: 2.0.12 以上
+    constraint: 2.1.287 以上
     notes: 非機能要件の「Claude Code の版」
