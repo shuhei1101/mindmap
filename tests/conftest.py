@@ -1,4 +1,4 @@
-"""プラグインの結合テストの共通 fixture。"""
+"""結合テストと E2E テストの共通 fixture。"""
 
 from __future__ import annotations
 
@@ -14,13 +14,13 @@ type RunClaude = Callable[..., subprocess.CompletedProcess[str]]
 # claude の 1 コマンドを待つ上限秒数（マーケットプレイスの取り込みを含む）
 CLAUDE_COMMAND_TIMEOUT_SEC = 180
 
-# このファイルから見たリポジトリの直下（tests/integration/plugin/conftest.py の 3 つ上）
-REPO_ROOT_PARENT_DEPTH = 3
+# このファイルから見たリポジトリの直下（tests/conftest.py の 1 つ上）
+REPO_ROOT_PARENT_DEPTH = 1
 
 
 @pytest.fixture
 def repo_root() -> Path:
-    """マーケットプレイスとして登録するリポジトリの直下を返す。"""
+    """マーケットプレイスとして登録するリポジトリの作業ツリーの直下を返す。"""
     return Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 
 
