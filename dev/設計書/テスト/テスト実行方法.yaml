@@ -23,6 +23,20 @@ layers:
   - name: 結合テスト（フロント）
     run_all: 未確定
   - name: E2E テスト
-    run_all: 未確定
+    run_all: |-
+      ```bash
+      pytest tests/e2e
+      ```
+    description: pytest で、実際の Claude Code の CLI（`claude plugin ...`）を使い、シナリオ設計書の利用者の操作を通しで確かめる。Mock は使わない。
+    prerequisites:
+      - Python 3.12 以上と pytest
+      - Claude Code 2.1.287 以上（`claude` が PATH にある）
+      - 実行はリポジトリの直下で行う。マーケットプレイスにはこの作業ツリーの直下を渡す。設定のフォルダは conftest が `CLAUDE_CONFIG_DIR` にテストごとの空の一時フォルダを渡して差し替えるため、利用者の環境を汚さない
+    run_one:
+      label: シナリオ
+      command: |-
+        ```bash
+        pytest {シナリオのテストファイルパス}
+        ```
   - name: 外部疎通テスト
     run_all: 未確定
