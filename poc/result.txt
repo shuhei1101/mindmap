@@ -1,0 +1,14 @@
+Python 3.12.3 / PyYAML 6.0.3 / jsonschema 4.26.0 / referencing 0.37.0
+[検証（正しい値）] エラー 0 件
+[書き戻した YAML]
+items:
+- title: 何のためのスキルか
+  id: D-1
+  status: 要見直し
+  weight: 大
+
+[日本語] エスケープされずに残る: True
+[キーの並び] ['title', 'id', 'status', 'weight'] 読んだときと同じ: True
+[コメント] 行のコメントが残る: False / 行末のコメントが残る: False
+[ファイルをまたぐ参照・検証エラーの場所] decisions.yaml: ['items', 0, 'status'] '完了' is not one of ['未決定', '決定済み', '要見直し']
+[書き込みの原子性] 元のファイルが変わらない: True / 一時ファイルの残り: []
