@@ -23,7 +23,7 @@ YAML の形は JSON Schema で決め、書き込む前にスキーマと突き�
 - [x] ~~初期構築~~（[#9](https://github.com/shuhei1101/mindmap/pull/9) で済んでいる）
 - [x] ~~リバースエンジニアリング~~（スクリプトの既存の実装が無い）
 - [x] ~~方針決め~~（方針決めを依頼する Issue ではない）
-- [ ] PoC 検証
+- [x] PoC 検証
 - [x] ~~複合ユースケース設計~~（コマンドを連ねる手順はスキルのステップが持つ。[#4](https://github.com/shuhei1101/mindmap/issues/4)）
 - [x] ~~デザインスタイル選定~~（画面の見た目を変えない。プレビューの画面は [#5](https://github.com/shuhei1101/mindmap/issues/5)）
 - [x] ~~画面一覧・画面遷移~~（画面の見た目を変えない。プレビューの画面は [#5](https://github.com/shuhei1101/mindmap/issues/5)）
