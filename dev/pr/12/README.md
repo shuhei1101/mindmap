@@ -1,0 +1,1 @@
+# PoC: PyYAML の書き戻しと jsonschema のファイルをまたぐ参照
