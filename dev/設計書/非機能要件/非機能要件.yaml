@@ -45,9 +45,8 @@ requirements:
   - name: 通信
     english_name: network
     category: 動作環境
-    external_constraint: 制限なし
-    source_kind: ユーザー要望
-    source: https://github.com/shuhei1101/mindmap/issues/3
-    value: プレビューを開く端末から CDN へ HTTPS で到達できる
-    rationale: 描画のライブラリを CDN から読み、埋め込む選択肢を作らない（Claude Code を使える時点でネットがある）
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: '#3 の設計で決める'
 lead: mindmap が外部の制約から逆算して決める値。
