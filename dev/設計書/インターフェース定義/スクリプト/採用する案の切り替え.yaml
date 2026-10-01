@@ -18,7 +18,7 @@ flows:
         participant WS as ワークスペース
 
         クライアント->>IF: adopt D-1 B --workspace
-        IF-->>WS: decisions.yaml を読む
+        IF-->>WS: 全ての YAML を読む
         IF->>IF: 案 B だけを採用にしてスキーマと突き合わせる
         IF->>WS: decisions.yaml を書く
         IF-->>クライアント: JSON（adopted: B、previous: A）
@@ -97,6 +97,30 @@ flows:
       - 標準エラーに `Z`、`A`、`B` がある
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
     test: test_error_when_option_not_found
+  - name: 異常系（スキーマに合わない・SchemaMismatchError）
+    summary: 手で崩した YAML が残っていると切り替えず、合わない箇所を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 案 A（採用）と案 B を持つ D-1 と、`status` を `完了` に直接書き換えた D-2 を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py adopt
+        participant WS as ワークスペース
+
+        クライアント->>IF: adopt D-1 B --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: スキーマと突き合わせて合わない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーに `decisions.yaml: items[1].status:` で始まる行がある'
+      - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
+    test: test_error_when_schema_mismatch
 lead: 検討事項の案のうち、指定した記号の案だけを採用にし、ほかの案の採用を外す。
 idempotent: true
 side_effects: '`decisions.yaml` のその検討事項の `options[].adopted` と `updated` を書き換える。状態・答えは変えない'
@@ -143,7 +167,10 @@ exceptions:
   - name: OptionNotFoundError
     condition: 検討事項が渡した記号の案を持たない
     notes: 終了コード 1。標準エラーに渡した記号と、その検討事項が持つ案の記号の一覧。何も書き込まない
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+  - name: SchemaMismatchError
+    condition: 切り替えた後のワークスペースのどれかの YAML がスキーマに合わない（YAML として読めないときも含む）
+    notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
 constraints:
   - item: 出力の形
     constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）

@@ -48,6 +48,29 @@ flows:
       - '`packages` の PyYAML・jsonschema が `installed: null`・`ok: false`'
       - '`install` に `PyYAML>=5.1` と `jsonschema>=4.18.0` を含むコマンドがある'
     test: test_error_when_dependency_missing
+  - name: 異常系（Python が古い・PythonVersionError）
+    summary: '下限より古い Python でも構文エラーで落ちず、python_ok: false を返す'
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: Python の環境
+        description: 下限より古い Python（3.8〜3.11）
+        notes: 手元に古い Python が無ければ、入口と `check-env` のモジュールを `ast.parse(..., feature_version=(3, 8))` で読めるか確かめ、下限の判定は `sys.version_info` を差し替えた単体テストで確かめる
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check-env
+
+        クライアント->>IF: check-env（古い Python で起動）
+        IF->>IF: Python の版が下限より古い
+        IF-->>クライアント: JSON（python_ok: false）、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `SyntaxError` が無い
+      - '`python_ok` が偽で、`python` に動いている版がある'
+    test: test_error_when_python_too_old
 lead: スクリプトを動かす Python の版と、PyYAML・jsonschema が入っているかを確かめ、足りないものと入れるコマンドを返す。
 idempotent: true
 side_effects: なし（何も書き込まない）
@@ -81,11 +104,14 @@ exceptions:
     condition: Python の版と両方のライブラリが下限以上
     notes: 終了コード 0
   - name: DependencyMissingError
-    condition: Python の版か、どちらかのライブラリが無いか下限より古い
+    condition: Python の版は下限以上で、どちらかのライブラリが無いか下限より古い
     notes: 終了コード 1。標準出力には正常終了と同じ形の JSON を出す
+  - name: PythonVersionError
+    condition: Python の版が下限より古い
+    notes: '終了コード 1。標準出力には `python_ok: false` の同じ形の JSON を出す（ライブラリも確かめて載せる）'
 constraints:
-  - item: 読み込みの順
-    constraint: 入口は PyYAML・jsonschema を import する前に `check-env` を処理する。他のコマンドのモジュールは `check-env` のときに読まない
+  - item: 読み込みの順と書き方
+    constraint: 入口は PyYAML・jsonschema を import する前に `check-env` を処理し、他のコマンドのモジュールは `check-env` のときに読まない。入口と `check-env` のモジュールは Python 3.8 でも読める構文だけで書き（`type` 文・`match` 文・`X | Y` の型注釈を実行時に評価する書き方を使わない）、3.12 の書き方は他のコマンドのモジュールに閉じる
   - item: 出力の形
     constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
   - item: 終了コード

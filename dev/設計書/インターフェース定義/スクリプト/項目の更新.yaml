@@ -104,7 +104,7 @@ flows:
     test: test_error_when_schema_mismatch
 lead: ID で指した 1 項目のキーを、標準入力で渡した値に置き換えて更新日時を変える。
 idempotent: false
-side_effects: その項目の種類の YAML を書き換える。`body_markdown` を渡したときは `docs/{ID}.md` を書き換え、`body` を `{ID}.md` にする。本文 → YAML の順に、一時ファイルから `os.replace` で置き換える
+side_effects: その項目の種類の YAML を書き換える。`body_markdown` を渡したときは `docs/{ID}.md` を書き換え、`body` を `{ID}.md` にする。本文と YAML の一時ファイルを両方書き終えてから、本文 → YAML の順に `os.replace` で置き換える
 request:
   - name: --workspace
     type: str
@@ -130,6 +130,7 @@ request:
     default: なし（本文を変えない）
     location: body
     description: 本文の Markdown。`docs/{ID}.md` をこの内容で置き換える
+    constraints: 調査・資料・検討事項・会話ログだけが持てる（ほかの種類に渡すと SchemaMismatchError）
 response:
   - name: id
     type: str
@@ -165,6 +166,8 @@ constraints:
     constraint: 制限なし（「後から書き換えない」はスキルの手順が守る）
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
+  - item: 部分成功
+    constraint: 起こさない。本文を置き換える前に前の本文を控え、YAML の置き換えに失敗したら本文を控えに戻して（前に本文が無ければ消して）からエラーで終わる（終了コード 1。残った一時ファイルも消す）
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
 notes:
   対応テストファイル: '`tests/integration/scripts/test_update.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'

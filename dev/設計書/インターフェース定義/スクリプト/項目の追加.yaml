@@ -83,7 +83,7 @@ flows:
     test: test_error_when_schema_mismatch
 lead: 標準入力で渡した中身に ID・作成日時・更新日時を付けて、種類の YAML に 1 項目足す。本文を渡したときは `docs/{ID}.md` に書く。
 idempotent: false
-side_effects: 種類の YAML に 1 項目を足す。`body_markdown` を渡したときは `docs/{ID}.md` を書き、項目の `body` を `{ID}.md` にする。本文 → YAML の順に書き、どちらも一時ファイルから `os.replace` で置き換える
+side_effects: 種類の YAML に 1 項目を足す。`body_markdown` を渡したときは `docs/{ID}.md` を書き、項目の `body` を `{ID}.md` にする。本文と YAML の一時ファイルを両方書き終えてから、本文 → YAML の順に `os.replace` で置き換える
 request:
   - name: --workspace
     type: str
@@ -108,7 +108,7 @@ request:
     default: なし（本文を書かない）
     location: body
     description: 本文の Markdown。YAML には残らず、`docs/{ID}.md` に書かれる
-    constraints: 調査・資料・検討事項・会話ログだけが持てる。資料は必須
+    constraints: 調査・資料・検討事項・会話ログだけが持てる（ほかの種類に渡すと SchemaMismatchError）。資料は必須
 request_example: |-
   ```json
   {
@@ -160,6 +160,8 @@ constraints:
     constraint: '`created`・`updated` は UTC のタイムゾーン付き ISO 8601（秒まで）'
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
+  - item: 部分成功
+    constraint: 起こさない。YAML の置き換えに失敗したら、置き換えた本文を消してからエラーで終わる（終了コード 1。残った一時ファイルも消す）
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
 notes:
   対応テストファイル: '`tests/integration/scripts/test_add.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
