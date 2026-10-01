@@ -15,13 +15,13 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code
-        participant MP as マーケットプレイス（このリポジトリ）
+        participant PLG as プラグイン
 
         U->>CC: マーケットプレイスを登録する
-        CC->>MP: .claude-plugin/marketplace.json を読む
+        CC->>PLG: .claude-plugin/marketplace.json を読む
         CC-->>U: マーケットプレイス mindmap を登録した
         U->>CC: プラグイン mindmap@mindmap をインストールする
-        CC->>MP: .claude-plugin/plugin.json と skills/ を取り込む
+        CC->>PLG: .claude-plugin/plugin.json と skills/ を取り込む
         CC-->>U: プラグイン mindmap をインストールした
         U->>CC: インストール済みのプラグインの一覧を見る
         CC-->>U: mindmap@mindmap（有効）
