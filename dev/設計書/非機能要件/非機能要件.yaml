@@ -3,10 +3,11 @@ requirements:
   - name: Claude Code の版
     english_name: claude_code_version
     category: 動作環境
-    external_constraint: 未確定
+    external_constraint: プラグインとマーケットプレイスの仕組みは 2.0.12 で入った
     source_kind: 実行基盤の制限
-    value: 未確定
-    rationale: マーケットプレイスとプラグインのマニフェストの形を決めるインターフェース定義設計で、使う項目が入った版を Claude Code の公式の資料から引いて決める
+    value: 2.0.12 以上
+    rationale: マニフェストで使うのは `marketplace.json` の `name`・`owner`・`plugins` と `plugin.json` の `name`・`description`・`author` だけで、プラグインの仕組みが入った版から使える
+    source: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md#2012
   - name: OS
     english_name: os
     category: 動作環境

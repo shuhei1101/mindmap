@@ -1,0 +1,6 @@
+summary: Claude Code が読むマーケットプレイスとプラグインのマニフェスト
+items:
+  - page: マーケットプレイスの登録.yaml
+    summary: Claude Code がマーケットプレイスとして登録するときに読む marketplace.json の形
+  - page: プラグインの読み込み.yaml
+    summary: Claude Code がインストールして読み込む plugin.json とフォルダの形

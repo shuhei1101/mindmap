@@ -114,6 +114,7 @@ external_systems:
     protocol: プラグインのマニフェスト（JSON）/ スキル（Markdown）/ コマンドの標準入出力
     notes:
       事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
+    detail: dev/設計書/外部ライブラリ/claude-code#
   - name: CDN（銘柄未定）
     purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得
     direction: 受信のみ

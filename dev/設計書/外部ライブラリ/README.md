@@ -6,3 +6,4 @@
 
 | ページ | 概要 |
 | --- | --- |
+| [claude-code](./claude-code.yaml) | プラグインを読み込み、スキルを動かす CLI |

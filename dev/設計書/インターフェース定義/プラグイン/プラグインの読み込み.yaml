@@ -1,0 +1,68 @@
+title: "プラグインの読み込み"
+entry:
+  kind: operation
+  value: '`.claude-plugin/plugin.json` と `skills/`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
+flows:
+  - name: 正常系
+    summary: プラグイン mindmap がスキルのフォルダを持ち、hooks を持たずに読み込まれる
+    setup:
+      - name: Mock
+        description: なし（実際の Claude Code の CLI で実行する）
+      - name: 設定のフォルダ
+        description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにする
+        notes: 環境変数 `CLAUDE_CONFIG_DIR`
+      - name: マーケットプレイスの登録
+        description: リポジトリの直下をマーケットプレイス mindmap として登録しておく
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant C as Claude Code
+        participant IF as .claude-plugin/plugin.json と skills/
+
+        C-->>IF: マニフェストとフォルダを取り込む
+        C->>C: プラグイン mindmap を有効にする
+      ```
+    expected:
+      - '`claude plugin list` で `mindmap@mindmap` が有効である'
+      - 取り込まれたプラグインのフォルダに `skills/mindmap/schemas/` と `skills/mindmap/scripts/` がある
+      - '`claude plugin details` で hooks が 0 件である'
+    test: test_normal
+lead: Claude Code がプラグイン mindmap をインストールして読み込むときの、プラグインのマニフェストとフォルダの形。
+callers:
+  - dev/設計書/外部ライブラリ/claude-code#
+request:
+  - name: name
+    type: '"mindmap"'
+    required: true
+    description: プラグイン名。マーケットプレイスの `plugins[].name` と同じ値
+  - name: description
+    type: string
+    required: true
+    description: プラグインの説明
+    notes: マーケットプレイスの `plugins[].description` と同じ文言
+  - name: author.name
+    type: '"shuhei1101"'
+    required: true
+    description: プラグインの作者
+  - name: skills/mindmap/
+    type: フォルダ
+    required: true
+    description: 同梱するスキル mindmap のフォルダ。配下に `schemas/`・`scripts/` を持つ
+    notes: '中身を入れるまでは、両フォルダに `.gitkeep` を置く'
+request_example: |-
+  ```json
+  {
+    "name": "mindmap",
+    "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
+    "author": { "name": "shuhei1101" }
+  }
+  ```
+constraints:
+  - item: 持つ部品
+    constraint: スキルだけ。hooks・MCP サーバー・コマンド・エージェントは持たない
+  - item: 版
+    constraint: '`version` は持たない'
+    notes: 版の正はタグと `version.ini`（規約『バージョニング』）。マニフェストに写すと揃える作業がリリースごとに増える
+  - item: Claude Code の版
+    constraint: 2.0.12 以上
+    notes: 非機能要件の「Claude Code の版」
