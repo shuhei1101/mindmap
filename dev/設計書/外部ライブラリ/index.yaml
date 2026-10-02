@@ -14,3 +14,5 @@ items:
     summary: プレビューの検討事項のマップの配置を計算する
   - page: mermaid.yaml
     summary: プレビューで本文の図を SVG に描く
+  - page: storybook.yaml
+    summary: プレビューの部品を状態ごとのストーリーで見る（開発用）

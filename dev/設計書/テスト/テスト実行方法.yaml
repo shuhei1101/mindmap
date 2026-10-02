@@ -58,3 +58,12 @@ layers:
         ```
   - name: 外部疎通テスト
     run_all: 未確定
+notes:
+  部品のストーリー（Storybook）: |-
+    前提: Node 20.19 以上（22 系なら 22.12 以上。vite 8.3.2 の `engines`）。リポジトリの直下で `npm ci` を済ませておく。
+
+    ```bash
+    npx storybook dev -p 6006
+    ```
+
+    静的なファイルに書き出すときは `npx storybook build -o storybook-static`。
