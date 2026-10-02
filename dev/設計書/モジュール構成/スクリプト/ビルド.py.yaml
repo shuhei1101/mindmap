@@ -1,0 +1,191 @@
+title: "スクリプト / ビルド"
+lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。読み書きと検証だけに依存する。
+directory: |-
+  ```
+  skills/mindmap/
+    preview/
+      template.html   プレビューの雛形（この PR は項目の件数を出すだけ。画面は #5）
+    scripts/
+      builder.py      データの収集・埋め込み・書き出し
+  ```
+constants:
+  - name: TEMPLATE_PATH
+    title: 雛形のパス
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: このファイルから見た `skills/mindmap/preview/template.html`
+    value: Path(__file__).resolve().parent.parent / "preview" / "template.html"
+  - name: DATA_ELEMENT
+    title: 埋め込み先の要素
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: 雛形がちょうど 1 つ持つ、中身が空の要素
+    value: "'<script type=\"application/json\" id=\"mindmap-data\"></script>'"
+  - name: PREVIEW_FILE
+    title: プレビューのファイル名
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: ワークスペースに書き出すファイル名
+    value: '"preview.html"'
+functions:
+  - name: build_preview
+    title: プレビューの書き出し
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: 検証してからデータを雛形に埋め込み、`preview.html` を置き換える
+    side_effects: ワークスペースの `preview.html` を置き換える
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: built_at
+        type: str
+        required: true
+        passing: keyword
+        description: 書き出した日時（`now_utc` の文字列）
+      - name: template_path
+        type: Path
+        required: false
+        default: TEMPLATE_PATH
+        passing: keyword
+        description: 雛形のパス
+    returns:
+      type: Path
+      description: 書き出した `preview.html` の絶対パス
+    process: |-
+      1. ワークスペースを検証する（ワークスペースの検証。`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（書かない）
+      2. データを集めて雛形に埋め込む（`collect_preview_data`、`embed_data`）
+      3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える
+         - `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る（前の `preview.html` は残る）
+    exceptions:
+      - name: SchemaMismatchError
+        condition: ワークスペースに問題がある
+      - name: WriteFailedError
+        condition: '`preview.html` の書き込み・置き換えで `OSError` が起きた（一時ファイルを消した後）'
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_build_preview
+        case: 正常
+        summary: データを埋め込んだ preview.html を書く
+        condition: D-1 と資料 A-1（`docs/A-1.md` あり）を持つワークスペースと、`DATA_ELEMENT` だけを持つ雛形
+        mock: なし
+        expected: 戻り値が `preview.html`。中の `mindmap-data` を JSON として読むと `decisions` に D-1、`bodies` に `A-1.md`、`built_at` が渡した日時
+      - name: test_build_preview_when_schema_mismatch
+        case: 異常
+        summary: 問題があれば前の preview.html を残す
+        condition: 前の `preview.html` を置き、D-1 の `status` を `完了` にする
+        mock: なし
+        expected: '`SchemaMismatchError`。`preview.html` が呼ぶ前と同じ'
+        exception: ワークスペースに問題がある
+      - name: test_build_preview_when_replace_fails
+        case: 異常
+        summary: 置き換えに失敗したら前の preview.html を残す
+        condition: 前の `preview.html` を置き、`os.replace` を `OSError` を送る関数に差し替える
+        mock: '`os.replace`（`builder` モジュールの参照を monkeypatch）'
+        expected: '`WriteFailedError`。`preview.html` が呼ぶ前と同じで、`.tmp` のファイルが無い'
+        exception: 置き換えで OSError
+  - name: collect_preview_data
+    title: プレビューのデータの収集
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: 設定・7 種類・本文・書き出した日時を 1 つの辞書にまとめる
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: built_at
+        type: str
+        required: true
+        passing: keyword
+        description: 書き出した日時
+    returns:
+      type: dict[str, Any]
+      description: '`settings`・`decisions` など種類ごと（ファイル名から `.yaml` を落としたキー）・`bodies`・`built_at`'
+    process: |-
+      1. 種類ごとの `items` をファイル名から `.yaml` を落としたキーで入れる
+      2. 項目の `body` が指す本文を読んで `bodies` に入れる（本文の読み込み。`read_body`。読めないものは入れない）
+    unit_tests:
+      - name: test_collect_preview_data
+        case: 正常
+        summary: 種類ごとのキーと、指された本文だけを集める
+        condition: 'A-1（`body: A-1.md`、ファイルあり）・R-1（`body: R-1.md`、ファイル無し）・`docs/X-1.md`（指されない）'
+        mock: なし
+        expected: キーが `settings`・`decisions`・`tasks`・`research`・`docs`・`terms`・`notes`・`logs`・`bodies`・`built_at`。`bodies` のキーが `A-1.md` だけ
+  - name: escape_for_script
+    title: 埋め込みのエスケープ
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: JSON の文字列の `<`・`>`・`&` を、JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える
+    args:
+      - name: json_text
+        type: str
+        required: true
+        passing: positional
+        description: '`json.dumps(..., ensure_ascii=False)` の結果'
+    returns:
+      type: str
+      description: '`<script>` の中に置いても要素を閉じない JSON の文字列'
+    process: 1. `&` → `<` → `>` の順に、それぞれの Unicode エスケープへ置き換えて返す
+    unit_tests:
+      - name: test_escape_for_script
+        case: 正常
+        summary: 置き換えた文字列は `</script>` を含まず、JSON として読むと元に戻る
+        condition: '`json.dumps({"a": "</script>&<b>"}, ensure_ascii=False)`'
+        mock: なし
+        expected: '戻り値に `<`・`>`・`&` が無く、`json.loads` すると `{"a": "</script>&<b>"}`'
+  - name: embed_data
+    title: 雛形への埋め込み
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: 雛形の `DATA_ELEMENT` の中身にデータの JSON を入れた HTML を返す
+    args:
+      - name: template
+        type: str
+        required: true
+        passing: positional
+        description: 雛形の HTML
+      - name: data
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: 埋め込むデータ
+    returns:
+      type: str
+      description: 埋め込んだ HTML
+    process: |-
+      1. 雛形に `DATA_ELEMENT` がちょうど 1 つあるか確かめる
+         - 1 つでない場合、`ValueError` を送る（同梱の雛形の誤り）
+      2. データを `json.dumps(ensure_ascii=False)` し、エスケープして（`escape_for_script`）要素の中身に入れる
+    exceptions:
+      - name: ValueError
+        condition: 雛形の `DATA_ELEMENT` が 0 個か 2 個以上
+        message: 雛形に埋め込み先が 1 つだけありません（{個数} 個）
+    unit_tests:
+      - name: test_embed_data
+        case: 正常
+        summary: 要素の中身に JSON を入れる
+        condition: '`<p></p>` と `DATA_ELEMENT` を持つ雛形と `{"a": "</script>"}`'
+        mock: なし
+        expected: '`</script>` が雛形の 1 個だけで、要素の中身を `json.loads` すると元のデータ'
+      - name: test_embed_data_when_element_count_wrong
+        case: 異常
+        summary: 埋め込み先が 1 つでない雛形
+        condition: '`parametrize`: 要素 0 個 / 2 個'
+        mock: なし
+        expected: '`ValueError`（`match` に `0 個`・`2 個`）'
+        exception: 雛形の要素が 0 個か 2 個以上
+test_files:
+  - tests/unit/scripts/test_builder.py

@@ -1,0 +1,160 @@
+title: "ワークスペースの作成"
+entry:
+  kind: operation
+  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py init`（コマンドの引数・標準入力・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+flows:
+  - name: 正常系
+    summary: 設定を渡して空のワークスペースを作る
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: ワークスペースの場所
+        description: テストごとの一時フォルダの下の、まだ無いフォルダ
+      - name: 設定
+        description: リクエスト例の設定
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py init
+        participant WS as ワークスペース
+
+        クライアント->>IF: init --workspace（標準入力に設定）
+        IF->>IF: 設定をスキーマと突き合わせる
+        IF->>WS: mindmap.yaml・種類ごとの YAML・docs/・handoff/ を作る
+        IF-->>クライアント: JSON（workspace・files）
+      ```
+    expected:
+      - 終了コードが 0
+      - '`mindmap.yaml` を読むと、渡した設定と同じ中身である'
+      - '`decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` が `items: []` である'
+      - '`docs/` と `handoff/` がある'
+      - '`files` に作った 8 つの YAML と 2 つのフォルダがある'
+    test: test_normal
+  - name: 異常系（既にワークスペースがある・WorkspaceExistsError）
+    summary: mindmap.yaml があるフォルダには作らず、何も書き換えない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 既存のワークスペース
+        description: 作成を 1 回済ませたフォルダ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py init
+        participant WS as ワークスペース
+
+        クライアント->>IF: init --workspace
+        IF-->>WS: mindmap.yaml がある
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーにフォルダのパスがある
+      - フォルダの全てのファイルの中身が呼ぶ前と同じ
+    test: test_error_when_workspace_exists
+  - name: 異常系（設定がスキーマに合わない・SchemaMismatchError）
+    summary: フェーズが無い設定では作らず、フォルダも作らない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 設定
+        description: リクエスト例から `phases` を抜いた設定
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py init
+
+        クライアント->>IF: init --workspace（phases が無い設定）
+        IF->>IF: スキーマと突き合わせて合わない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `mindmap.yaml` と `phases` がある
+      - '`--workspace` のフォルダが作られていない'
+    test: test_error_when_settings_mismatch
+  - name: 異常系（書き込めない・WriteFailedError）
+    summary: 書き込めない場所には作らず、エラーの行を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 書き込めないフォルダ
+        description: 書き込みの権限を外した一時フォルダの下の、まだ無いフォルダを `--workspace` に渡す
+        notes: root で動かすときは権限が効かないので skip する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py init
+        participant WS as フォルダ
+
+        クライアント->>IF: init --workspace（標準入力に設定）
+        IF->>WS: フォルダを作れない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
+      - '`--workspace` のフォルダが無い'
+    test: test_error_when_write_fails
+lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` を作る。
+idempotent: false
+side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`handoff/` を作る'
+request:
+  - name: --workspace
+    type: str
+    required: true
+    location: argument
+    description: 作るワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` がまだ無いフォルダ。フォルダが無ければ作る'
+  - name: 標準入力
+    type: JSON のオブジェクト
+    required: true
+    location: body
+    description: 設定の中身（`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`）。キーと型は ER 図『ワークスペース』の `mindmap.yaml`
+    constraints: 設定のスキーマに合うこと
+request_example: |-
+  ```json
+  {
+    "field": "システム開発",
+    "target_label": "システム",
+    "phases": ["目的", "要件", "構成"],
+    "targets": [{"name": "mindmap", "summary": "話し合いを記録するスキル"}],
+    "categories": [{"name": "データ構造", "target": "mindmap", "summary": "YAML の種類とキー"}],
+    "goal": {"phase": "構成", "summary": "作り始められる", "deliverables": [{"title": "YAML のスキーマ"}]},
+    "links": []
+  }
+  ```
+response:
+  - name: workspace
+    type: str
+    description: 作ったワークスペースの絶対パス
+  - name: files
+    type: list[str]
+    description: 作ったファイルとフォルダ（ワークスペースからの相対パス）
+exceptions:
+  - name: なし（正常終了）
+    condition: 作成できた
+    notes: 終了コード 0
+  - name: WorkspaceExistsError
+    condition: '`--workspace` のフォルダに `mindmap.yaml` が既にある'
+    notes: 終了コード 1。標準エラーにフォルダのパス。何も書き込まない
+  - name: SchemaMismatchError
+    condition: 標準入力の設定が設定のスキーマに合わない（JSON として読めないときも含む）
+    notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+  - name: WriteFailedError
+    condition: フォルダ・ファイルを作る途中で書き込めなかった（権限が無い・ほかのプロセスが開いている など）
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。作ったものを消し、`mindmap.yaml` は残さない
+error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける（キーのパスは `items[0].status` の形）。'
+constraints:
+  - item: 出力の形
+    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
+  - item: 終了コード
+    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: YAML の書き方
+    constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
+exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
+test_file: tests/integration/scripts/test_init.py

@@ -1,0 +1,67 @@
+title: "プレビューの書き出し"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 検討事項・タスク・調査・資料・用語・メモ・会話ログを 1 件ずつと、資料の本文の Markdown
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: プレビューを書き出す
+        SCR->>WS: 全ての YAML と docs/ を読む
+        SCR->>SCR: スキーマと突き合わせ、1 つの JSON にまとめる
+        SCR->>WS: JSON を埋め込んだ preview.html を書く
+        SCR-->>CC: preview.html のパス
+      ```
+    expected:
+      - 書き出しが終了コード 0 で終わり、出力に `preview.html` のパスがある
+      - '`preview.html` から取り出した埋め込みのデータに、設定と 7 種類の全ての項目がある'
+      - 埋め込みのデータに、資料の本文の Markdown がある
+      - '`preview.html` が読み込むスクリプトとスタイルが、ローカルの他のファイルを指さない'
+    test: test_normal
+  - name: 異常シナリオ（YAML がスキーマに合わない）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませ、一度書き出したワークスペース
+      - name: 手で崩した YAML
+        description: '`decisions.yaml` の検討事項の状態を、決めた状態の名前に無い値へ直接書き換える'
+        notes: 状態 `完了`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: プレビューを書き出す
+        SCR->>WS: 全ての YAML を読む
+        SCR->>SCR: スキーマと突き合わせて合わない
+        SCR-->>CC: 合わないファイルと箇所を示すエラー
+      ```
+    expected:
+      - 書き出しが 0 以外の終了コードで終わる
+      - 標準エラーに、合わないファイル `decisions.yaml` とキー `status` がある
+      - '`preview.html` の中身が、書き出しを呼ぶ前と同じである'
+    test: test_error_when_schema_mismatch
+lead: スキルが、ワークスペースの記録をブラウザで開ける 1 枚の HTML（プレビュー）に書き出す単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: サーバーを立てずに、ファイルを開くだけで最新の記録を読める
+trigger: スキルが記録を書き終える、または利用者がプレビューを見たいと言う
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: ワークスペースの `preview.html` に、全ての YAML と本文の Markdown を JSON にしたデータが埋め込まれている。
+minimal_guarantee: YAML がスキーマに合わないときは、前に書き出した `preview.html` を書き換えない。
+test_file: tests/e2e/単一ユースケース/test_preview_build.py

@@ -1,0 +1,63 @@
+$ pytest tests/integration -v -rs
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-scripts-workspace-schema-and-commands
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 50 items
+
+tests/integration/plugin/test_marketplace_registration.py::test_normal PASSED [  2%]
+tests/integration/plugin/test_plugin_loading.py::test_normal PASSED      [  4%]
+tests/integration/scripts/test_add.py::test_normal PASSED                [  6%]
+tests/integration/scripts/test_add.py::test_error_when_workspace_not_found PASSED [  8%]
+tests/integration/scripts/test_add.py::test_error_when_schema_mismatch PASSED [ 10%]
+tests/integration/scripts/test_add.py::test_error_when_write_fails PASSED [ 12%]
+tests/integration/scripts/test_add.py::test_error_when_file_shape_broken PASSED [ 14%]
+tests/integration/scripts/test_adopt.py::test_normal PASSED              [ 16%]
+tests/integration/scripts/test_adopt.py::test_error_when_workspace_not_found PASSED [ 18%]
+tests/integration/scripts/test_adopt.py::test_error_when_id_not_found PASSED [ 20%]
+tests/integration/scripts/test_adopt.py::test_error_when_option_not_found PASSED [ 22%]
+tests/integration/scripts/test_adopt.py::test_error_when_schema_mismatch PASSED [ 24%]
+tests/integration/scripts/test_adopt.py::test_error_when_write_fails PASSED [ 26%]
+tests/integration/scripts/test_attrs.py::test_normal PASSED              [ 28%]
+tests/integration/scripts/test_attrs.py::test_error_when_workspace_not_found PASSED [ 30%]
+tests/integration/scripts/test_build.py::test_normal PASSED              [ 32%]
+tests/integration/scripts/test_build.py::test_error_when_workspace_not_found PASSED [ 34%]
+tests/integration/scripts/test_build.py::test_error_when_schema_mismatch PASSED [ 36%]
+tests/integration/scripts/test_build.py::test_error_when_write_fails PASSED [ 38%]
+tests/integration/scripts/test_check.py::test_normal_when_clean PASSED   [ 40%]
+tests/integration/scripts/test_check.py::test_normal_when_problems_found PASSED [ 42%]
+tests/integration/scripts/test_check.py::test_error_when_workspace_not_found PASSED [ 44%]
+tests/integration/scripts/test_check_env.py::test_normal PASSED          [ 46%]
+tests/integration/scripts/test_check_env.py::test_error_when_venv_missing PASSED [ 48%]
+tests/integration/scripts/test_check_env.py::test_error_when_python_too_old SKIPPED [ 50%]
+tests/integration/scripts/test_check_env.py::test_error_when_dependency_missing PASSED [ 52%]
+tests/integration/scripts/test_check_env.py::test_error_when_base_python_too_old SKIPPED [ 54%]
+tests/integration/scripts/test_find.py::test_normal PASSED               [ 56%]
+tests/integration/scripts/test_find.py::test_normal_when_nested_text PASSED [ 58%]
+tests/integration/scripts/test_find.py::test_error_when_workspace_not_found PASSED [ 60%]
+tests/integration/scripts/test_impact.py::test_normal PASSED             [ 62%]
+tests/integration/scripts/test_impact.py::test_error_when_workspace_not_found PASSED [ 64%]
+tests/integration/scripts/test_impact.py::test_error_when_id_not_found PASSED [ 66%]
+tests/integration/scripts/test_init.py::test_normal PASSED               [ 68%]
+tests/integration/scripts/test_init.py::test_error_when_workspace_exists PASSED [ 70%]
+tests/integration/scripts/test_init.py::test_error_when_settings_mismatch PASSED [ 72%]
+tests/integration/scripts/test_init.py::test_error_when_write_fails PASSED [ 74%]
+tests/integration/scripts/test_next.py::test_normal PASSED               [ 76%]
+tests/integration/scripts/test_next.py::test_normal_when_limited PASSED  [ 78%]
+tests/integration/scripts/test_next.py::test_error_when_workspace_not_found PASSED [ 80%]
+tests/integration/scripts/test_show.py::test_normal PASSED               [ 82%]
+tests/integration/scripts/test_show.py::test_error_when_workspace_not_found PASSED [ 84%]
+tests/integration/scripts/test_show.py::test_error_when_id_not_found PASSED [ 86%]
+tests/integration/scripts/test_status.py::test_normal PASSED             [ 88%]
+tests/integration/scripts/test_status.py::test_error_when_workspace_not_found PASSED [ 90%]
+tests/integration/scripts/test_update.py::test_normal PASSED             [ 92%]
+tests/integration/scripts/test_update.py::test_error_when_workspace_not_found PASSED [ 94%]
+tests/integration/scripts/test_update.py::test_error_when_id_not_found PASSED [ 96%]
+tests/integration/scripts/test_update.py::test_error_when_schema_mismatch PASSED [ 98%]
+tests/integration/scripts/test_update.py::test_error_when_write_fails PASSED [100%]
+
+=========================== short test summary info ============================
+SKIPPED [2] tests/integration/scripts/conftest.py:53: 手元に 3.8〜3.11 の Python が無い
+======================== 48 passed, 2 skipped in 51.13s ========================

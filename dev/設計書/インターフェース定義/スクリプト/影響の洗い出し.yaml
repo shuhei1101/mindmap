@@ -1,0 +1,132 @@
+title: "影響の洗い出し"
+entry:
+  kind: operation
+  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py impact`（コマンドの引数・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+flows:
+  - name: 正常系
+    summary: 検討事項から依存とタスクをたどり、関係しない項目は出さない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: D-1、D-1 に依存する D-2、D-2 を派生元にする D-3、D-3 を進める T-1、D-1 を `related` だけで指す D-4 を持つワークスペース
+        notes: 'D-2 `depends_on: [D-1]`／D-3 `parent: D-2`／T-1 `for: [D-3]`／D-4 `related: [D-1]`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py impact
+        participant WS as ワークスペース
+
+        クライアント->>IF: impact D-1 --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: 参照を逆向きにたどる
+        IF-->>クライアント: JSON（affected）
+      ```
+    expected:
+      - 終了コードが 0
+      - '`affected` の ID が D-2・D-3・T-1 の順で、D-4 が無い'
+      - 'D-2 は `via: []`・`key: depends_on`、D-3 は `via: [D-2]`・`key: parent`、T-1 は `via: [D-2, D-3]`・`key: for`'
+    test: test_normal
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py impact
+        participant WS as フォルダ
+
+        クライアント->>IF: impact D-1 --workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーにフォルダのパスがある
+    test: test_error_when_workspace_not_found
+  - name: 異常系（ID が無い・ItemNotFoundError）
+    summary: 存在しない ID を起点にするとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 検討事項 D-1 だけを持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py impact
+        participant WS as ワークスペース
+
+        クライアント->>IF: impact D-9 --workspace
+        IF-->>WS: D-9 が無い
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `D-9` がある
+    test: test_error_when_id_not_found
+lead: 指定した項目から、`depends_on`・`parent`・`for` を逆向きにたどって影響を受ける項目を洗い出す。
+idempotent: true
+side_effects: なし（読むだけ）
+request:
+  - name: --workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+  - name: id
+    type: str
+    required: true
+    location: argument
+    description: 起点の項目の ID（位置引数）
+    example: D-1
+response:
+  - name: id
+    type: str
+    description: 起点の項目の ID
+  - name: affected[].id
+    type: str
+    description: 影響を受ける項目の ID。起点に近い順、同じ距離は ID の順
+  - name: affected[].title
+    type: str
+    description: タイトル
+  - name: affected[].status
+    type: str
+    description: 状態
+  - name: affected[].via
+    type: list[str]
+    description: 起点からたどった経路（起点とこの項目の間にある項目の ID。直接なら空）。最短の 1 本
+  - name: affected[].key
+    type: '"depends_on" | "parent" | "for"'
+    description: 直前の項目とこの項目をつなぐキー
+exceptions:
+  - name: なし（正常終了）
+    condition: 洗い出せた（影響を受ける項目が 0 件のときも含む）
+    notes: 終了コード 0
+  - name: WorkspaceNotFoundError
+    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: 終了コード 1
+  - name: ItemNotFoundError
+    condition: 渡した ID の項目が無い
+    notes: 終了コード 1。標準エラーに渡した ID
+error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 出力の形
+    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
+  - item: 終了コード
+    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: たどる参照
+    constraint: 項目 X に対し、`depends_on` か `parent` に X を持つ項目と、`for` に X を持つタスクを影響を受ける項目にし、得た項目から同じようにたどる。`related`・`sources` はたどらない
+  - item: 循環
+    constraint: 一度出た項目はもうたどらない（起点も含めて結果に 2 度出ない）
+  - item: 状態による絞り込み
+    constraint: しない（決定済み・完了も含めて出す）
+test_file: tests/integration/scripts/test_impact.py

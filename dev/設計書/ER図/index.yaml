@@ -1,2 +1,4 @@
 summary: データストアの定義
-items: []
+items:
+  - page: ワークスペース.yaml
+    summary: 1 つの話し合いのフォルダが持つ設定と種類ごとの YAML の形

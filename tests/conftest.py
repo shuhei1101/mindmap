@@ -9,6 +9,16 @@ from pathlib import Path
 
 import pytest
 
+# 単体・結合・E2E が共有する fixture（pytest は conftest の名前空間にある fixture を登録する）
+from workspace_fixtures import (  # noqa: F401
+    make_item,
+    make_venv,
+    make_workspace,
+    run_mindmap,
+    snapshot_tree,
+    valid_settings,
+)
+
 type RunClaude = Callable[..., subprocess.CompletedProcess[str]]
 
 # claude の 1 コマンドを待つ上限秒数（マーケットプレイスの取り込みを含む）

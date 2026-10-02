@@ -1,2 +1,6 @@
 summary: コマンド・ワークスペースの書式
-items: []
+items:
+  - page: コマンド.md
+    summary: スクリプトのコマンドの引数・標準入力・出力・終了コード
+  - page: ワークスペースの書式.md
+    summary: ワークスペースのファイル構成と各 YAML のキー

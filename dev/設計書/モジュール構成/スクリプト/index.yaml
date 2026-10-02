@@ -1,0 +1,15 @@
+summary: "ワークスペースを読み書きするスクリプトのモジュール"
+docs_index: true
+items:
+  - page: 入口.py.yaml
+    summary: 引数の解釈・依存の確認・コマンドごとの処理
+  - page: 読み書きと検証.py.yaml
+    summary: 種類の定義・例外・ワークスペースの読み書きと検証
+  - page: 検索.py.yaml
+    summary: 検索・1 件の表示と参照元・属性名の一覧
+  - page: 依存と影響.py.yaml
+    summary: 影響・後続の件数・次の候補・再開時の状況
+  - page: 点検.py.yaml
+    summary: スキーマ違反・ID の重複・参照切れ・本文のずれ
+  - page: ビルド.py.yaml
+    summary: プレビューのデータの収集・埋め込み・書き出し

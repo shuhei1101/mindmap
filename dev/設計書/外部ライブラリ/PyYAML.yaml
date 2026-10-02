@@ -1,0 +1,39 @@
+title: "PyYAML"
+kind: "ライブラリ"
+version:
+  current: 5.1 以上（確かめたのは 6.0.3）
+  latest: 6.0.3
+  checked_on: '2026-10-02'
+  pinning: 下限だけを決める。`sort_keys` を受け取るのが 5.1 からのため。`check-env` が下限を確かめる
+catalogs:
+  - name: API
+    version: 6.0.3
+    entries:
+      - name: yaml.safe_load
+        kind: 関数
+        purpose: ワークスペースの YAML を読む（コードを動かす形を読まない）
+      - name: yaml.safe_dump
+        kind: 関数
+        purpose: ワークスペースの YAML を書き戻す（`allow_unicode=True`・`sort_keys=False`）
+lead: Python の YAML の読み書きのライブラリ。
+purl: pkg:pypi/PyYAML
+dependency_scope: 必須
+adoption: 採用
+upstream: yaml/pyyaml
+verification:
+  state: 済
+  date: '2026-10-02'
+  detail: PoC（https://github.com/shuhei1101/mindmap/pull/12）で 6.0.3 を動かした。`safe_dump(allow_unicode=True, sort_keys=False)` で日本語がそのまま残り、キーの並びも読んだときのままだった。行のコメント・行末のコメントは書き戻しで消える
+license: MIT（商用利用可）
+official_url: https://pyyaml.org/
+install: |-
+  ```bash
+  ~/.mindmap/venv/bin/python -m pip install 'PyYAML>=5.1'
+  ```
+
+  スキル専用の仮想環境へ入れる。コマンドは `check-env` の `install` が返す
+limitations:
+  - item: コメント
+    content: '`safe_load` はコメントを捨てるため、書き戻すと行のコメント・行末のコメントは消える'
+  - item: 字下げ
+    content: '`safe_dump` は配列の要素を親のキーと同じ字下げで書くため、手で書いた字下げは書き戻しで揃い直る'
