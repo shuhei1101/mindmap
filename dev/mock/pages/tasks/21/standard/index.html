@@ -56,19 +56,20 @@
       <button class="icon-btn panel-back" type="button" data-act="close" aria-label="一覧へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
       <span class="panel-kind"></span>
       <span class="spacer"></span>
+      <button class="icon-btn" type="button" data-act="pback" aria-label="前に見た項目へ戻る" title="前に見た項目へ戻る" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" data-act="pfwd" aria-label="次に見た項目へ進む" title="次に見た項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       <button class="icon-btn panel-full" type="button" data-act="full" aria-label="全画面で表示" title="全画面で表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
       <button class="icon-btn panel-close-x" type="button" data-act="close" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="panel-body"></div>
   </aside>
 
-  <!-- 詳細の全画面: 周りに余白を空けたモーダル。Esc で閉じる（図を拡大しているときは本文へ戻る） -->
+  <!-- 詳細の全画面: 周りに余白を空けたモーダル。外側の押下と Esc で元の大きさに戻す（図を拡大しているときは Esc で本文へ戻る） -->
   <dialog class="full" id="full" aria-label="詳細の全画面">
     <div class="panel-head">
       <span class="panel-kind"></span>
       <span class="spacer"></span>
+      <button class="icon-btn" type="button" data-act="pback" aria-label="前に見た項目へ戻る" title="前に見た項目へ戻る" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" data-act="pfwd" aria-label="次に見た項目へ進む" title="次に見た項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
       <button class="icon-btn" type="button" data-act="full" aria-label="元の大きさに戻す" title="元の大きさに戻す"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
-      <button class="icon-btn" type="button" data-act="fclose" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="panel-body"></div>
   </dialog>

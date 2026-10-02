@@ -369,7 +369,7 @@
         </section>
         <section class="tile t-small" aria-labelledby="h-hold">
           <div class="t-head"><h2 id="h-hold">${icon("pause")}保留</h2>${holds.length ? all(pageUrl("decisions", { view: "table", "f.status": "保留" }), holds.length) : ""}</div><p class="num">${holds.length}</p>
-          ${mini(holds, "なし", (x) => { const w = (x.depends_on || []).filter((id) => !isResolved(id)); return `<span class="wait">${w.length ? `決定待ち ${idlinks(w)}` : "再開可能"}</span>`; })}
+          ${mini(holds, "なし")}
         </section>
         <section class="tile t-small" aria-labelledby="h-run">
           <div class="t-head"><h2 id="h-run">${icon("play")}進行中のタスク</h2>${running.length ? all(pageUrl("tasks", { view: "table", "f.status": "進行中" }), running.length) : ""}</div><p class="num">${running.length}</p>
@@ -970,6 +970,9 @@
     panel.classList.toggle("open", !state.full);
     if (state.full && !fullDlg.open) fullDlg.showModal();
     if (!state.full && fullDlg.open) fullDlg.close();
+    const nav = trailOf();
+    for (const b of document.querySelectorAll("[data-act=pback]")) b.disabled = nav.pos <= 0;
+    for (const b of document.querySelectorAll("[data-act=pfwd]")) b.disabled = nav.pos >= nav.trail.length - 1;
     host.querySelector(".panel-kind").innerHTML = `${KINDS.find((k) => k.key === kind).label} <span class="mono">${esc(state.panel)}</span>`;
     host.querySelector(".full-viewer")?.remove();
     const body = host.querySelector(".panel-body");
@@ -1055,8 +1058,10 @@
 
   fullDlg.addEventListener("cancel", (e) => {
     if (fullDlg.querySelector(".full-viewer")) { e.preventDefault(); closeFullViewer(); return; }
-    e.preventDefault(); state.full = false; state.panel = null; render();
+    e.preventDefault(); state.full = false; render();
   });
+  // 全画面の外側（幕）を押したら、閉じずに元の大きさ（詳細パネル）に戻す
+  fullDlg.addEventListener("click", (e) => { if (e.target === fullDlg) { state.full = false; render(); } });
 
   // ===== 描画の入口: 同じ画面の描き直しでは、スクロールの位置を保つ =====
   let lastScreen = "";
@@ -1070,7 +1075,7 @@
     const k = state.tab;
     if (same && k === "graph" && G && document.getElementById("fg3")) {
       renderPanel(); graphSelect(); lastScreen = screen;
-      if (location.hash !== hashOf()) history.replaceState(null, "", hashOf());
+      if (location.hash !== hashOf()) history.replaceState(history.state, "", hashOf());
       return;
     }
     main.classList.toggle("map-view", k === "decisions" && state.view === "map");
@@ -1093,17 +1098,26 @@
       scrollTo(0, keep.y);
     } else scrollTo(0, 0);
     lastScreen = screen;
-    if (location.hash !== hashOf()) history.replaceState(null, "", hashOf());
+    if (location.hash !== hashOf()) history.replaceState(history.state, "", hashOf());
   };
   const renderMockbar = () => {
     const bar = document.getElementById("mock-states");
     bar.innerHTML = [["", "通常"], ["nolib", "描画のライブラリが読めない"]].map(([v, l]) => `<button type="button" data-act="sim" data-sim="${v}" aria-pressed="${state.sim === v}">${l}</button>`).join("");
   };
-  const openPanel = (id) => {
+  // 見てきた項目の並び（trail）と今の位置（pos）を履歴の状態に持つ
+  const trailOf = () => (history.state && history.state.trail ? history.state : { trail: state.panel ? [state.panel] : [], pos: 0 });
+  const openPanel = (id, inPanel = false) => {
     const narrow = matchMedia("(max-width: 900px)").matches;
+    const nav = trailOf();
     state.panel = id;
-    // 狭い幅では詳細を別画面として履歴に積み、端末の戻る操作で一覧へ戻す
-    if (narrow) history.pushState(null, "", hashOf());
+    if (inPanel) {
+      // パネル・全画面の中で項目を移ったら履歴に積み、戻る・進むで見てきた項目を行き来する
+      const trail = nav.trail.slice(0, nav.pos + 1).concat(id);
+      // 今いる履歴にも先の項目を持たせ、戻った後に「→」で進めるようにする
+      history.replaceState({ trail, pos: nav.pos }, "", location.hash);
+      history.pushState({ trail, pos: trail.length - 1 }, "", hashOf());
+    } else if (narrow) history.pushState({ trail: [id], pos: 0 }, "", hashOf());  // 狭い幅では詳細を別画面として積む
+    else history.replaceState({ trail: [id], pos: 0 }, "", hashOf());
     render();
     document.querySelector(`tr[data-id="${id}"]`)?.scrollIntoView({ block: "nearest" });
   };
@@ -1180,7 +1194,9 @@
     const t = state.tables[kind];
     switch (a) {
       case "view": state.view = el.dataset.view; render(); break;
-      case "open": openPanel(el.dataset.id); break;
+      case "open": openPanel(el.dataset.id, !!el.closest("#panel, #full")); break;
+      case "pback": history.back(); break;
+      case "pfwd": history.forward(); break;
       case "close": closePanel(); break;
       case "sort": { const k = el.dataset.key, s = t.sort; t.sort = !s || s.key !== k ? { key: k, dir: "asc" } : s.dir === "asc" ? { key: k, dir: "desc" } : null; render(); break; }
       case "pin": { const i = Number(el.dataset.idx), p = colPrefs(kind); p.pin = p.pin === i + 1 ? 0 : i + 1; savePrefs(); render(); break; }
@@ -1199,7 +1215,6 @@
       }
       case "deps": state.deps = !state.deps; render(); break;
       case "full": state.full = !state.full; render(); break;
-      case "fclose": state.full = false; state.panel = null; render(); break;
       case "vclose": closeFullViewer(); break;
       case "sim": state.sim = el.dataset.sim; layoutCache.clear(); lastScreen = ""; history.replaceState(null, "", hashOf()); render(); break;
       case "dgraw": { const f = el.closest(".diagram"), on = el.getAttribute("aria-pressed") !== "true"; el.setAttribute("aria-pressed", on); f.querySelector(".mermaid").hidden = on; f.querySelector(".dg-raw").hidden = !on; break; }
@@ -1282,6 +1297,7 @@
   });
   document.addEventListener("pointerup", () => { drag?.wrap.classList.remove("dragging"); drag = null; });
   addEventListener("hashchange", () => { readHash(false); render(); });
+  addEventListener("popstate", () => { readHash(false); render(); });
 
   readHash(true);
   applyTheme();

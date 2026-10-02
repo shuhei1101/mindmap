@@ -545,10 +545,10 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 .no-match { padding: 28px 16px; text-align: center; color: var(--text-2); }
 
 /* ===== 詳細の全画面: 周りに余白を空けたモーダル ===== */
-dialog.full { width: calc(100vw - 64px); max-width: 1280px; height: calc(100dvh - 64px); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow-pop); }
+dialog.full { width: calc(100vw - 128px); max-width: 1200px; height: calc(100dvh - 112px); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow-pop); }
 /* 全画面を開いているとき */
 dialog.full[open] { display: flex; flex-direction: column; }
-dialog.full::backdrop { background: var(--scrim); }
+dialog.full::backdrop { background: var(--scrim-soft); }
 /* 全画面の中身 */
 dialog.full .panel-body { flex: 1; max-width: 920px; width: 100%; margin: 0 auto; }
 /* 全画面の中の図の拡大 */
@@ -586,3 +586,6 @@ table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--
 .d-title .deliv-badge { margin-left: 12px; vertical-align: 4px; }
 /* 次に検討する項目: 横に並べる幅では、枠の高さを隣のゴールまでのタイルに合わせ、収まらない項目を隠す */
 @media (min-width: 1101px) { .t-next { contain: size; overflow: hidden; } }
+
+/* 詳細の見出しの「← →」: 見てきた項目を行き来する。行き来できないときは押せない見た目 */
+.icon-btn:disabled { color: var(--text-3); opacity: .45; cursor: default; background: none; }
