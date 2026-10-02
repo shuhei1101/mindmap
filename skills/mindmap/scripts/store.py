@@ -244,11 +244,11 @@ def save_change(workspace: Workspace, change: Change) -> None:
     temps: list[Path] = []
     body_temp: Path | None = None
     try:
-        yaml_temp = _write_temp(yaml_path, dump_yaml({"items": change.items}))
+        yaml_temp = write_temp(yaml_path, dump_yaml({"items": change.items}))
         temps.append(yaml_temp)
         if change.body and body_path:
             body_path.parent.mkdir(exist_ok=True)
-            body_temp = _write_temp(body_path, change.body.text)
+            body_temp = write_temp(body_path, change.body.text)
             temps.append(body_temp)
     except OSError as error:
         _remove_files(temps)
@@ -381,6 +381,11 @@ def _format_path(path: Iterable[str | int]) -> str:
         else:
             text += f".{part}" if text else part
     return text or WHOLE_PATH
+
+
+def write_temp(target: Path, text: str) -> Path:
+    """置き換え先と同じフォルダに一時ファイルを書き、そのパスを返す（置き換えは呼ぶ側が行う）。"""
+    return _write_temp(target, text)
 
 
 def _write_temp(target: Path, text: str) -> Path:

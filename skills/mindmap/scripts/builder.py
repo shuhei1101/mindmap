@@ -40,7 +40,7 @@ def build_preview(
     path = workspace.root / PREVIEW_FILE
     temp: Path | None = None
     try:
-        temp = store._write_temp(path, html)
+        temp = store.write_temp(path, html)
         os.replace(temp, path)
     except OSError as error:
         # 置き換えに失敗した: 残った一時ファイルを消す

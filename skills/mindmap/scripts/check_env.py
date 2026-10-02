@@ -150,6 +150,8 @@ def run_check_env(
     base_version: tuple[Any, ...] = tuple(sys.version_info),
 ) -> dict[str, Any]:
     """仮想環境の Python の版とライブラリの版を確かめ、足りなければ結果を持った例外を送る。"""
+    # 出力と、そろえるコマンドに使うパスは絶対パスにする
+    venv_dir = venv_dir.resolve()
     base_numbers = tuple(base_version)[:3]
     # 仮想環境を作る Python が下限以上か（古ければ作る・作り直すコマンドを返せない）
     base_python_ok = base_numbers >= MIN_PYTHON
@@ -158,7 +160,7 @@ def run_check_env(
         "base_python": base_python,
         "base_python_version": ".".join(str(number) for number in base_numbers),
         "base_python_ok": base_python_ok,
-        "venv_dir": str(venv_dir),
+        "venv": str(venv_dir),
         "python_path": str(python_path),
     }
 
