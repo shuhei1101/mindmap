@@ -108,6 +108,32 @@ flows:
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
     test: test_error_when_write_fails
+  - name: 異常系（種類のファイルの形が崩れている・SchemaMismatchError）
+    summary: 書き戻すと既存の項目を失うファイルには足さず、そのファイルの問題を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '検討事項 D-1・D-2 を持ち、`decisions.yaml` の一番上を配列（`- id: D-1 ...`）に書き換えたワークスペース'
+      - name: 標準入力
+        description: リクエスト例の検討事項
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py add
+        participant WS as ワークスペース
+
+        クライアント->>IF: add decision --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: decisions.yaml が書き戻すと中身を失う形
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーに `decisions.yaml: ` で始まる行がある'
+      - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
+    test: test_error_when_file_shape_broken
 lead: 標準入力で渡した中身に ID・作成日時・更新日時を付けて、種類の YAML に 1 項目足す。本文を渡したときは `docs/{ID}.md` に書く。
 idempotent: false
 side_effects: 種類の YAML に 1 項目を足す。`body_markdown` を渡したときは `docs/{ID}.md` を書き、項目の `body` を `{ID}.md` にする。本文と YAML の一時ファイルを両方書き終えてから、本文 → YAML の順に `os.replace` で置き換える
