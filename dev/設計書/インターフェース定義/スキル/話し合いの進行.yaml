@@ -61,6 +61,7 @@ constraints:
     constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
   - item: スクリプトの起動
     constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く
+    notes: 項目の JSON は `--json '{JSON}'` の引数で渡し、値の中の `'` は `'\''` と書く。ヒアドキュメント（標準入力）で渡すと `{"` が `allowed-tools` の規則に当たらず確認が出る。JSON の `'` はモデルが書き換えて引数が壊れるため使わない。改行・バッククオート・`$(...)` を含む長い `body_markdown` も、この形で確認 0 件のまま書かれたまま渡る（2.1.287 で実測）
   - item: 編集の後
     constraint: ワークスペースを編集したステップは、最後に `build` を流す（hooks は使わない）
   - item: リサーチの確認

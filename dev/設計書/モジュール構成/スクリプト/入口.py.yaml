@@ -134,7 +134,7 @@ functions:
       2. 引数を解釈する（`build_parser`）
       3. コマンドで分ける
          - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
-         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（標準入力を使うコマンドは `sys.stdin.read()` を渡す。`goal` は `run_goal`）
+         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`）
       4. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
       5. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
     unit_tests:
@@ -175,6 +175,7 @@ functions:
     process: |-
       1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
       2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal` は `--workspace` だけ
+      3. `init`・`add`・`update` に `--json`（中身の JSON の文字列。省略時 `None`）を持たせる
     unit_tests:
       - name: test_build_parser
         case: 正常
