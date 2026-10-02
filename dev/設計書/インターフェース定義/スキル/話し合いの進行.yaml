@@ -28,6 +28,7 @@ flows:
       - SKILL.md と `steps/` の本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
       - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
       - '`skills/mindmap/` に SKILL.md が無く、`references/`・`playbooks/` がある'
+      - '`playbooks/` に システム開発・調査・資料作り・壁打ち の 4 つのガイドがあり、どれも制約の 6 つの節をその並びで持ち、`## ゴールの候補` に `（既定）` の行が 1 つだけある'
       - スキルの全ての Markdown に特定の開発基盤の名前が無い
       - '`claude plugin validate` が終了コード 0'
     test: test_normal
@@ -50,7 +51,7 @@ constraints:
   - item: ファイルの形
     constraint: '`skills/session/SKILL.md` と `skills/session/steps/`（`取り込み.md`・`ヒアリング.md`・`リサーチ.md`・`方針転換.md`・`プレビュー.md`・`ゴール判定.md`）。SKILL.md は入力・ステップの表・コマンドと引数の一覧だけを持ち、各ステップは `steps/` を指す'
   - item: 共通の置き場所
-    constraint: '`skills/mindmap/`（SKILL.md を持たない）に `references/`（質問の書式・文章の書き方・リサーチの調べ方）・`playbooks/`（システム開発・調査）・`scripts/`・`schemas/`・`preview/`・`README.md` を置き、setup と session の両方が読む'
+    constraint: '`skills/mindmap/`（SKILL.md を持たない）に `references/`（質問の書式・文章の書き方・リサーチの調べ方）・`playbooks/`（システム開発・調査・資料作り・壁打ち）・`scripts/`・`schemas/`・`preview/`・`README.md` を置き、setup と session の両方が読む'
   - item: front matter の name
     constraint: '`session`'
   - item: front matter の description
@@ -69,8 +70,17 @@ constraints:
     constraint: サブエージェントの起動前に「何を・どの観点で・何体で」を示して確認を取る。利用者が自分から頼んだときだけ省く
   - item: スキルの中の名前
     constraint: 特定の開発基盤の名前を出さない（アーキテクチャ図の制約）
+  - item: 進め方ガイド
+    constraint: '`playbooks/{分野}.md` は、`## 最上位の軸の呼び名`・`## カテゴリーの分け方`・`## フェーズと観点`・`## 必ず調べるもの`・`## ゴールの候補`・`## 引き渡しの形` の節をこの並びで持つ。`## ゴールの候補` は `（既定）` を付けた行を 1 つだけ持つ'
+    notes: |-
+      資料作り・壁打ちの値は補足の `進め方ガイドの分野`
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:
   確かめないもの: スキルをモデルが読んで動かす振る舞いは、費用が掛かり結果が揺れるためテストしない。サブエージェントの起動と許可が及ぶことは PoC（#22）で確かめた
+  進め方ガイドの分野: |-
+    | 分野 | 最上位の軸の呼び名 | フェーズ | ゴールの候補 |
+    | --- | --- | --- | --- |
+    | 資料作り | 資料 | 目的 → 読み手 → 構成 → コンテンツ → 仕上げ | 構成まで / コンテンツまで（既定）/ 仕上げまで |
+    | 壁打ち | テーマ | 問い → 発散 → 整理 → 絞り込み → 結論 | 整理まで / 結論まで（既定） |
 test_file: tests/integration/skill/test_session.py
