@@ -174,8 +174,6 @@ constraints:
     constraint: '資料の `done` を消し、`status` を足す。`done: true` は `status: 完成`、`done: false` は `status: 下書き`。`status` を既に持つ項目は触らない。`updated` は変えない'
   - item: 移す前の読み込み
     constraint: YAML をスキーマと突き合わせずに読み、書き換えた後の全ての YAML をスキーマと突き合わせてから書く
-  - item: 他のコマンドからの案内
-    constraint: 他のコマンドが資料の `done` でスキーマに合わないときは、合わない箇所の行に続けて `migrate` で移せることを 1 行出す
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
 refs:
