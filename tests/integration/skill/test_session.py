@@ -6,9 +6,13 @@ from typing import TYPE_CHECKING
 
 from .skill_files import (
     BASH_RULE,
+    PLAYBOOK_NAMES,
     SKILLS_DIR,
     launches_not_in_form,
     missing_plugin_paths,
+    playbook_names,
+    playbooks_with_wrong_sections,
+    playbooks_without_single_default,
     read_skill,
     skill_markdown_texts,
     step_files_in,
@@ -54,6 +58,12 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert not (SKILLS_DIR / "mindmap" / "SKILL.md").exists()
     assert (SKILLS_DIR / "mindmap" / "references").is_dir()
     assert (SKILLS_DIR / "mindmap" / "playbooks").is_dir()
+    # playbooks/ に システム開発・調査・資料作り・壁打ち の 4 つのガイドがある
+    assert playbook_names() == PLAYBOOK_NAMES
+    # どのガイドも 6 つの節をその並びで持つ
+    assert playbooks_with_wrong_sections() == []
+    # どのガイドも `## ゴールの候補` に（既定）の行を 1 つだけ持つ
+    assert playbooks_without_single_default() == []
     # スキルの全ての Markdown に特定の開発基盤の名前が無い
     assert texts_with_forbidden_name() == []
     # claude plugin validate が終了コード 0（失敗すれば run_claude が例外にする）
