@@ -103,13 +103,13 @@ flows:
       - '`docs.yaml` の中身が呼ぶ前と同じ'
     test: test_error_when_schema_mismatch
   - name: 異常系（書き込めない・WriteFailedError）
-    summary: 書き込めないワークスペースでは前の docs.yaml を残して終わる
+    summary: 書き込めないワークスペースでは前の mindmap.yaml・docs.yaml を残して終わる
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: make_workspace
-        description: '資料 A-1（`done: true`）を持ち、フォルダの書き込みの権限を外したワークスペース'
-        notes: root で動かすときは skip する
+        description: '`summary` を持たない `mindmap.yaml` と資料 A-1（`done: true`）を持ち、フォルダの書き込みの権限を外したワークスペース'
+        notes: 引数は `--summary 題名`。root で動かすときは skip する
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -125,7 +125,7 @@ flows:
     expected:
       - 終了コードが 1
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
-      - '`docs.yaml` の中身が呼ぶ前と同じ'
+      - '`mindmap.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
     test: test_error_when_write_fails
   - name: 異常系（題名が無い・SummaryRequiredError）
     summary: 題名を持たないワークスペースで --summary を渡さないと何も書かずに終わる
@@ -151,7 +151,7 @@ flows:
       - '`mindmap.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
 lead: 前の版の形式で書かれたワークスペースの YAML を、今のスキーマに合う形へ一度だけ書き換える。
 idempotent: true
-side_effects: 移すものがあるときだけ `mindmap.yaml`・`docs.yaml` を一時ファイルから `os.replace` で置き換える。移すものが無いときは何も書かない
+side_effects: 移すものがあるときだけ、`mindmap.yaml`・`docs.yaml` のうち書き換えるものの一時ファイルを全て書き終えてから、`docs.yaml` → `mindmap.yaml` の順に `os.replace` で置き換える。移すものが無いときは何も書かない
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
 request:
   - name: --workspace
@@ -194,7 +194,7 @@ exceptions:
     notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
   - name: WriteFailedError
     condition: 一時ファイルの書き込みか置き換えに失敗した
-    notes: 終了コード 1。標準エラーに書けなかったパスと理由。前の `docs.yaml` を残す
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。`mindmap.yaml`・`docs.yaml` とも前の中身を残す（部分成功を起こさない）
   - name: SummaryRequiredError
     condition: '`mindmap.yaml` が `summary` を持たず、`--summary` も渡されない'
     notes: 終了コード 2（引数の誤り）。標準エラーに `--summary` で題名を渡すよう書く。何も書き込まない
@@ -210,5 +210,7 @@ constraints:
     constraint: YAML をスキーマと突き合わせずに読み、書き換えた後の全ての YAML をスキーマと突き合わせてから書く
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
+  - item: 部分成功
+    constraint: 起こさない。`docs.yaml` を置き換える前に前の中身を控え、`mindmap.yaml` の置き換えに失敗したら `docs.yaml` を控えに戻してからエラーで終わる（終了コード 1。残った一時ファイルも消す）
 refs:
   - dev/設計書/ER図/ワークスペース#tables[docs.yaml]
