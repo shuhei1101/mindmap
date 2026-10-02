@@ -85,12 +85,12 @@ functions:
         default: default_venv_dir()
         passing: keyword
         description: 起動し直す先の仮想環境
-      - name: executable
+      - name: prefix
         type: str
         required: false
-        default: sys.executable
+        default: sys.prefix
         passing: keyword
-        description: 起動した Python
+        description: 起動した Python の `sys.prefix`（仮想環境の Python なら仮想環境のフォルダ）
       - name: run
         type: Callable[..., subprocess.CompletedProcess]
         required: false
@@ -103,7 +103,7 @@ functions:
     process: |-
       1. `argv` が空か、先頭が `check-env` か、`ready()` が真なら `None` を返す（空のときは引数の誤りを argparse に返させる）
       2. `check(venv_dir)` で仮想環境を確かめる（`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` はそのまま伝える）
-      3. `executable` と結果の `python_path` が同じファイルなら、起動し直しを繰り返さないよう `DependencyMissingError(report)` を送る
+      3. `Path(prefix).resolve()` が `venv_dir.resolve()` と同じ（仮想環境の Python で起動されている）なら、起動し直しを繰り返さないよう `DependencyMissingError(report)` を送る（実行ファイルでは判定しない。仮想環境の `bin/python` は元の Python へのシンボリックリンクで、同じ実体を指す）
       4. `[python_path, str(script), *argv]` を配列のまま渡して起動し（シェルを通さない）、その終了コードを返す
     exceptions:
       - name: VenvNotFoundError
@@ -125,6 +125,12 @@ functions:
         condition: '`ready` が偽、`check` が `python_path: /v/bin/python` を返す、`run` が終了コード 3 を返す、`argv` `[status, --workspace, w]`'
         mock: '`ready`・`check`・`run`'
         expected: 3 を返し、`run` が `[/v/bin/python, {script}, status, --workspace, w]` で 1 回呼ばれる
+      - name: test_relaunch_if_needed_when_same_interpreter
+        case: 正常
+        summary: システムの Python と仮想環境の Python が同じ実体を指していても起動し直す
+        condition: '`ready` が偽、`venv_dir` が `tmp_path/venv`、`prefix` が `tmp_path/sys`、`check` が `python_path` に `tmp_path/sys/bin/python3` へのシンボリックリンク `tmp_path/venv/bin/python` を返す、`run` が終了コード 0 を返す'
+        mock: '`ready`・`check`・`run`'
+        expected: 0 を返し、`run` が `tmp_path/venv/bin/python` で 1 回呼ばれる
       - name: test_relaunch_if_needed_when_venv_missing
         case: 異常
         summary: 仮想環境の確認の例外をそのまま伝える
@@ -135,7 +141,7 @@ functions:
       - name: test_relaunch_if_needed_when_already_venv
         case: 異常
         summary: 仮想環境の Python で起動されていれば繰り返さない
-        condition: '`ready` が偽、`check` が `python_path` に `executable` と同じパスを返す'
+        condition: '`ready` が偽、`prefix` に `venv_dir` と同じフォルダを渡す'
         mock: '`ready`・`check`・`run`（呼ばれないことを確かめる）'
         expected: '`DependencyMissingError`'
         exception: DependencyMissingError
