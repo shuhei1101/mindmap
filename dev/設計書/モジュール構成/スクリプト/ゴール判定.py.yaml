@@ -1,0 +1,106 @@
+title: "スクリプト / ゴール判定"
+lead: ゴールのフェーズまでの検討事項とゴールの成果物から、ゴールに届いたかを判定する `goal` の処理。判定は依存と影響（`graph.py`）、出力の形はコマンドの処理（`commands.py`）に置く。
+directory: |-
+  ```
+  skills/mindmap/scripts/
+    graph.py      ゴールの判定（judge_goal・GoalReport）を足す
+    commands.py   goal の処理（run_goal）を足す
+  ```
+data_models:
+  - name: GoalReport
+    title: ゴール判定の結果
+    container: skills/mindmap/scripts/graph.py
+    usecase: ゴール判定
+    role: DTO
+    summary: ゴールに届いたかと、残りの検討事項・成果物
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。インターフェース定義『ゴール判定』のレスポンスの形。'
+    properties:
+      - name: reached
+        type: bool
+        description: 届いたか（残りがどちらも空のときだけ真）
+      - name: goal_phase
+        type: str
+        description: '`goal.phase`'
+      - name: phases
+        type: list[str]
+        description: 判定に入れたフェーズ
+      - name: remaining_decisions
+        type: list[dict[str, str]]
+        description: 決着していない検討事項（`id`・`title`・`phase`・`status`）
+      - name: remaining_deliverables
+        type: list[dict[str, str | None]]
+        description: 揃っていない成果物（`title`・`doc`）
+functions:
+  - name: judge_goal
+    title: ゴールの判定
+    kind: 関数
+    container: skills/mindmap/scripts/graph.py
+    usecase: ゴール判定
+    scope: public
+    summary: ゴールのフェーズまでの検討事項が決着し、ゴールの成果物が揃ったかを判定する
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+    returns:
+      type: GoalReport
+      description: 判定の結果
+    process: |-
+      1. 設定の `phases` と `goal.phase` から、判定に入れるフェーズを決める
+         - `goal.phase` が `phases` にある場合、先頭から `goal.phase` まで
+         - 無い場合、`phases` の全て（厳しい側に倒す）
+      2. 検討事項のうち `phase` が判定に入るフェーズにあり、決着していないものを、フェーズの順 → 連番の小さい順に集める（`is_settled`）
+      3. `goal.deliverables` を並びのまま見て、`doc` が無いか、`doc` の資料が無いか `done` が真でないものを集める
+      4. 残りがどちらも空なら `reached` を真にする
+    unit_tests:
+      - name: test_judge_goal
+        case: 正常
+        summary: ゴールより後ろのフェーズを入れずに届いたと判定する
+        condition: '`phases` 目的・要件・構成、`goal.phase` 要件、D-1 `目的`・`決定済み`／D-2 `要件`・`対象外`／D-3 `要件`・`取り下げ`／D-4 `構成`・`未決定`、`deliverables` が A-1（`done: true`）'
+        mock: なし
+        expected: '`reached` 真、`phases` が `[目的, 要件]`、残りがどちらも空'
+      - name: test_judge_goal_when_remaining
+        case: 正常
+        summary: 決着していない検討事項と揃っていない成果物を集める
+        condition: 'D-2 `要件`・`要見直し`／D-1 `目的`・`未決定`、`deliverables` が「要件定義書」（`doc: A-1`、`done: false`）・「用語集」（`doc` なし）・「図」（`doc: A-9`、資料が無い）'
+        mock: なし
+        expected: '`reached` 偽、`remaining_decisions` が D-1・D-2 の順（`phase`・`status` つき）、`remaining_deliverables` が 3 件とも並びのまま'
+      - name: test_judge_goal_when_goal_phase_unknown
+        case: 正常
+        summary: ゴールのフェーズが phases に無ければ全てのフェーズを判定に入れる
+        condition: '`phases` 目的・要件、`goal.phase` `実装`、D-1 `要件`・`未決定`'
+        mock: なし
+        expected: '`phases` が `[目的, 要件]`、`remaining_decisions` に D-1'
+  - name: run_goal
+    title: goal の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: ゴール判定
+    scope: public
+    summary: ゴールの判定を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`GoalReport` を `asdict` した辞書と 0（届いたかどうかによらず 0）'
+    process: |-
+      1. ワークスペースを読み、判定する（`load_workspace`、`judge_goal`）
+      2. `asdict` して返す
+    exceptions:
+      - name: WorkspaceNotFoundError
+        condition: '`mindmap.yaml` が無い（`load_workspace` から伝わる）'
+    unit_tests:
+      - name: test_run_goal
+        case: 正常
+        summary: 判定を出力の形にする
+        condition: 未決定の D-1 だけを持つワークスペース
+        mock: なし
+        expected: 0 を返し、`reached` が偽で、`goal_phase`・`phases`・`remaining_decisions`・`remaining_deliverables` のキーがある
+notes:
+  対応テストファイル: '`judge_goal` は `tests/unit/scripts/test_graph.py`、`run_goal` は `tests/unit/scripts/test_commands.py` に置く（単体テスト作成で置き、`test_files` に書く）'

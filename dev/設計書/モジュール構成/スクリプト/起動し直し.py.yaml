@@ -1,0 +1,171 @@
+title: "スクリプト / 起動し直し"
+lead: 起動した Python に依存が揃っていなければ、スキル専用の仮想環境の Python で `mindmap.py` を起動し直す。入口が引数を解釈する前に呼ぶ。
+directory: |-
+  ```
+  skills/mindmap/scripts/
+    launcher.py   起動した Python の依存の判定と、仮想環境の Python での起動し直し（Python 3.8 で読める構文）
+  ```
+functions:
+  - name: current_python_ready
+    title: 起動した Python の依存の判定
+    kind: 関数
+    container: skills/mindmap/scripts/launcher.py
+    usecase: 共通
+    scope: public
+    summary: 起動した Python が依存の確認と同じ判定で揃っているか
+    description: ファイルの先頭に `from __future__ import annotations` を置き、Python 3.8 で読める構文だけで書く。PyYAML・jsonschema を import せず、配布の版だけを読む。
+    args:
+      - name: version_info
+        type: tuple[int, ...]
+        required: false
+        default: sys.version_info
+        passing: keyword
+        description: 起動した Python の版
+      - name: find_version
+        type: Callable[[str], str]
+        required: false
+        default: importlib.metadata.version
+        passing: injected
+        description: 配布名から入っている版を引く関数（無ければ `PackageNotFoundError`）
+    returns:
+      type: bool
+      description: 版が `MIN_PYTHON` 以上で、`REQUIREMENTS` の全ての配布が下限以上なら真
+    process: |-
+      1. `version_info` が `MIN_PYTHON` より古ければ偽を返す
+      2. `REQUIREMENTS` の配布名ごとに `find_version` で版を引き、下限と比べる（`parse_version`。下限と定数は `check_env` のものを使う）
+         - 無い（`PackageNotFoundError`）か、下限より古ければ偽を返す
+      3. 真を返す
+    unit_tests:
+      - name: test_current_python_ready
+        case: 正常
+        summary: 版と依存が揃っていれば真
+        condition: '`version_info` `(3, 12, 3)`、`find_version` が PyYAML `6.0.3`・jsonschema `4.26.0` を返す'
+        mock: '`find_version`'
+        expected: 真
+      - name: test_current_python_ready_when_not_ready
+        case: 正常
+        summary: 古い Python・無い配布・古い配布は偽
+        condition: '`parametrize`: `version_info` `(3, 11, 9)` / `find_version` が jsonschema で `PackageNotFoundError` / jsonschema `4.0.0`'
+        mock: '`find_version`'
+        expected: 偽
+  - name: relaunch_if_needed
+    title: 必要なら起動し直す
+    kind: 関数
+    container: skills/mindmap/scripts/launcher.py
+    usecase: 共通
+    scope: public
+    summary: 起動した Python で動ければ None、動けなければ仮想環境の Python で起動し直して終了コードを返す
+    side_effects: 起動し直すときは子プロセスを 1 つ起こす（標準入力・標準出力・標準エラーは受け取らずにそのまま引き継ぐ）
+    args:
+      - name: argv
+        type: list[str]
+        required: true
+        passing: positional
+        description: 解釈する前の引数（先頭がコマンド名）
+      - name: script
+        type: Path
+        required: true
+        passing: keyword
+        description: 起動し直す `mindmap.py`
+      - name: ready
+        type: Callable[[], bool]
+        required: false
+        default: current_python_ready
+        passing: injected
+        description: 起動した Python の依存の判定
+      - name: check
+        type: Callable[[Path], dict]
+        required: false
+        default: run_check_env
+        passing: injected
+        description: 仮想環境を確かめる関数（依存の確認）
+      - name: venv_dir
+        type: Path
+        required: false
+        default: default_venv_dir()
+        passing: keyword
+        description: 起動し直す先の仮想環境
+      - name: executable
+        type: str
+        required: false
+        default: sys.executable
+        passing: keyword
+        description: 起動した Python
+      - name: run
+        type: Callable[..., subprocess.CompletedProcess]
+        required: false
+        default: subprocess.run
+        passing: injected
+        description: 子プロセスを起動する関数
+    returns:
+      type: int | None
+      description: 起動し直した子プロセスの終了コード。起動した Python でそのまま動くときは `None`
+    process: |-
+      1. `argv` が空か、先頭が `check-env` か、`ready()` が真なら `None` を返す（空のときは引数の誤りを argparse に返させる）
+      2. `check(venv_dir)` で仮想環境を確かめる（`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` はそのまま伝える）
+      3. `executable` と結果の `python_path` が同じファイルなら、起動し直しを繰り返さないよう `DependencyMissingError(report)` を送る
+      4. `[python_path, str(script), *argv]` を配列のまま渡して起動し（シェルを通さない）、その終了コードを返す
+    exceptions:
+      - name: VenvNotFoundError
+        condition: 仮想環境の Python が無い（`check` から伝わる）
+      - name: PythonVersionError
+        condition: 仮想環境の Python が古い（`check` から伝わる）
+      - name: DependencyMissingError
+        condition: 仮想環境の依存が足りない（`check` から伝わる）か、起動した Python が仮想環境の Python なのに依存が揃っていない
+    unit_tests:
+      - name: test_relaunch_if_needed_when_ready
+        case: 正常
+        summary: 起動した Python で動ければ起動し直さない
+        condition: '`parametrize`: `ready` が真で `attrs` / `ready` が偽で `check-env` / `argv` が空'
+        mock: '`ready`・`check`・`run`（`check`・`run` が呼ばれないことを確かめる）'
+        expected: '`None`'
+      - name: test_relaunch_if_needed
+        case: 正常
+        summary: 仮想環境の Python で同じ引数を渡して起動し直す
+        condition: '`ready` が偽、`check` が `python_path: /v/bin/python` を返す、`run` が終了コード 3 を返す、`argv` `[status, --workspace, w]`'
+        mock: '`ready`・`check`・`run`'
+        expected: 3 を返し、`run` が `[/v/bin/python, {script}, status, --workspace, w]` で 1 回呼ばれる
+      - name: test_relaunch_if_needed_when_venv_missing
+        case: 異常
+        summary: 仮想環境の確認の例外をそのまま伝える
+        condition: '`ready` が偽、`check` が `VenvNotFoundError(report)` を送る'
+        mock: '`ready`・`check`・`run`（呼ばれないことを確かめる）'
+        expected: '`VenvNotFoundError`'
+        exception: VenvNotFoundError
+      - name: test_relaunch_if_needed_when_already_venv
+        case: 異常
+        summary: 仮想環境の Python で起動されていれば繰り返さない
+        condition: '`ready` が偽、`check` が `python_path` に `executable` と同じパスを返す'
+        mock: '`ready`・`check`・`run`（呼ばれないことを確かめる）'
+        expected: '`DependencyMissingError`'
+        exception: DependencyMissingError
+  - name: format_relaunch_error
+    title: 起動し直せないときのエラーの行
+    kind: 関数
+    container: skills/mindmap/scripts/launcher.py
+    usecase: 共通
+    scope: public
+    summary: 仮想環境の確認の例外から、標準エラーに出す行を作る
+    args:
+      - name: error
+        type: VenvNotFoundError | PythonVersionError | DependencyMissingError
+        required: true
+        passing: positional
+        description: 仮想環境の確認の例外（`report` を持つ）
+    returns:
+      type: list[str]
+      description: '1 行目が `エラー: スキル専用の仮想環境が使えません: {仮想環境のフォルダ}`、続けて足りないもの（仮想環境が無い・Python の版・足りない配布名）の行と、`check-env` を実行するよう促す行'
+    process: |-
+      1. `report` の `venv` を 1 行目に入れる
+      2. 例外の種類で足りないものを書く（`VenvNotFoundError` は仮想環境が無い、`PythonVersionError` は `python` の版、`DependencyMissingError` は `packages` の `ok` が偽の配布名）
+      3. `check-env` を実行し、出力の `install` のコマンドで揃えるよう促す行を足す
+    unit_tests:
+      - name: test_format_relaunch_error
+        case: 正常
+        summary: 例外の種類ごとに足りないものと check-env を書く
+        condition: '`parametrize`: `VenvNotFoundError` / `PythonVersionError`（`python: 3.11.9`）/ `DependencyMissingError`（jsonschema の `ok: false`）'
+        mock: なし
+        expected: '1 行目が `エラー: ` で始まり仮想環境のフォルダを含む。それぞれ「仮想環境がありません」・`3.11.9`・`jsonschema` を含む行と、`check-env` を含む行がある'
+notes:
+  対応テストファイル: '`tests/unit/scripts/test_launcher.py`（単体テスト作成で置き、`test_files` に書く）'
+  構文: '`launcher.py` は `check-env` より前、依存が揃っていない Python でも読まれるので、`mindmap.py`・`check_env.py` と同じく Python 3.8 で読める構文だけで書く'
