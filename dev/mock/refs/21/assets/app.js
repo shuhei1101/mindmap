@@ -944,7 +944,12 @@
         fig.querySelector(".dg-raw").textContent = c.textContent;
         c.closest("pre").replaceWith(fig);
       });
-      mm.initialize({ startOnLoad: false, securityLevel: "strict", theme: prefs.theme === "dark" ? "dark" : "neutral", fontFamily: "Noto Sans JP, sans-serif" });
+      // 図の色はデザイン方針のトークンに揃える（辺のラベルの地は面、文字は本文の色）
+      mm.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", fontFamily: "Noto Sans JP, sans-serif", themeVariables: {
+        darkMode: prefs.theme === "dark", background: css("--surface"), primaryColor: css("--surface-2"), primaryTextColor: css("--text"), primaryBorderColor: css("--border"),
+        secondaryColor: css("--surface-2"), tertiaryColor: css("--surface"), lineColor: css("--text-2"), textColor: css("--text"), edgeLabelBackground: css("--surface"),
+        clusterBkg: css("--surface-2"), clusterBorder: css("--border"), nodeTextColor: css("--text"),
+      } });
       mm.run({ nodes: body.querySelectorAll(".mermaid") }).then(() => {
         body.querySelectorAll(".diagram .mermaid").forEach((m) => m.setAttribute("data-act", "dgzoom"));
         // 図の拡大を開いた状態のモックでは、最初の図を拡大して見せる
@@ -1065,13 +1070,19 @@
 
   // ===== ポップオーバー =====
   const pop = document.getElementById("pop");
+  const POP_GAP = 6, POP_MARGIN = 8;
   const openPop = (anchor, html) => {
     pop.innerHTML = html;
     if (!pop.matches(":popover-open")) pop.showPopover();
     const r = anchor.getBoundingClientRect();
+    pop.style.maxHeight = "";
     const w = pop.offsetWidth, h = pop.offsetHeight;
     pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + "px";
-    pop.style.top = (r.bottom + 6 + h > innerHeight ? Math.max(8, r.top - h - 6) : r.bottom + 6) + "px";
+    // 下に収まれば下、上に収まれば上に開く。どちらにも収まらないときは広い側に開き、高さをそこまでにして中を送る（開いた元のボタンは覆わない）
+    const below = innerHeight - r.bottom - POP_GAP - POP_MARGIN, above = r.top - POP_GAP - POP_MARGIN;
+    const side = h <= below ? "below" : h <= above ? "above" : below >= above ? "below" : "above";
+    if (h > (side === "below" ? below : above)) pop.style.maxHeight = (side === "below" ? below : above) + "px";
+    pop.style.top = (side === "below" ? r.bottom + POP_GAP : r.top - POP_GAP - pop.offsetHeight) + "px";
   };
   const filterPop = (kind, key) => {
     const col = COLUMNS[kind].find((c) => c.key === key);
