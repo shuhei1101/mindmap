@@ -1,0 +1,33 @@
+summary: "build が書き出す preview.html の画面"
+docs_index: true
+items:
+  - page: 概要.yaml
+    summary: 既定で開く画面。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・進み具合のタイル
+    group: タブ
+  - page: 検討事項.yaml
+    summary: 検討事項のマップ・ボード・表
+    group: タブ
+  - page: タスク.yaml
+    summary: タスクのボード・表
+    group: タブ
+  - page: 資料.yaml
+    summary: 資料のカード・表（成果物を先頭に）
+    group: タブ
+  - page: 記録の表.yaml
+    summary: 調査・用語集・メモ・会話ログの表
+    group: タブ
+  - page: つながり.yaml
+    summary: 全種類の項目を関連でつないで 3D で描く
+    group: タブ
+  - page: 詳細パネル.yaml
+    summary: 項目 1 件の中身を本文の右に出す
+    group: 重ねる画面
+  - page: 詳細の全画面.yaml
+    summary: 詳細パネルの中身を中央のモーダルで大きく出す
+    group: 重ねる画面
+  - page: 全体の検索.yaml
+    summary: 全種類の項目を ID・タイトル・本文で探す
+    group: 重ねる画面
+  - page: 図の拡大.yaml
+    summary: 本文の図を大きく見る
+    group: 重ねる画面

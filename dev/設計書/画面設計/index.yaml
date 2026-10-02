@@ -1,0 +1,5 @@
+summary: "1 画面ごとの要素の仕様（結合テストの元）"
+docs_index: true
+items:
+  - page: プレビュー/
+    summary: build が書き出す preview.html の画面

@@ -1,0 +1,78 @@
+title: "概要"
+elements:
+  - name: トップバー
+    kind: nav
+    component: dev/設計書/部品設計/プレビュー/トップバー.js#
+    args:
+      - name: title
+        value: プレビューを開く.mindmap-data.name
+      - name: tabs
+        value: 概要・検討事項・タスク・調査・資料・用語集・メモ・会話ログ（件数はプレビューを開く.mindmap-data.{種類} の件数）
+      - name: current
+        value: overview
+      - name: theme
+        value: 端末の保存領域の値（無ければ OS の設定）
+    description: 全ての画面で共通の帯
+    visible_when: 常時
+  - name: 次に検討する項目
+    id: tile-next
+    kind: list
+    description: 状態が未決定で、前提（`depends_on`）が全て決定済みの検討事項。フェーズの浅い順 → 影響度 → 後続の件数の順に、タイルの枠に収まるだけ並べる（縦に積む幅では上位 3 件）。押すと詳細パネルを開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.decisions
+    visible_when: 常時（0 件のときは「次に検討する項目はありません」）
+  - name: 次に検討する項目のすべて表示
+    kind: link
+    description: 検討事項の表を状態 = 未決定 × 着手できる = はいで絞って開く（`#tab=decisions&view=table&f.status=未決定&f.ready=はい`）
+    label: すべて表示（{件数} 件）
+    visible_when: 次に検討する項目が 1 件以上
+  - name: ゴールまで
+    id: tile-goal
+    kind: section
+    description: ゴールのフェーズまでの決定済みの数と、フェーズごとの棒（決定済み / 全体）
+    io: 表示
+    source: プレビューを開く.mindmap-data.settings.goal・プレビューを開く.mindmap-data.decisions
+    visible_when: 常時
+  - name: 成果物のチェックリスト
+    kind: list
+    position: ゴールまで
+    description: ゴールの成果物。`doc` の資料の状態が完成ならチェック済み。押すとその資料の詳細パネルを開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.settings.goal.deliverables・プレビューを開く.mindmap-data.docs[].status
+    visible_when: 成果物が 5 件以下のとき全て、5 件を超えたら先頭 5 件
+  - name: 成果物のすべて表示
+    kind: link
+    position: ゴールまで
+    description: 資料を成果物で絞ってカードで開く（`#tab=docs&f.deliverable=成果物`）
+    label: すべて表示（{件数} 件）
+    visible_when: 成果物が 5 件を超える
+  - name: 要見直し
+    id: tile-review
+    kind: list
+    description: 状態が要見直しの検討事項の件数と名前。押すと詳細パネルを開く。「すべて表示」で検討事項の表を状態 = 要見直しで絞って開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.decisions
+    visible_when: 常時
+  - name: 保留
+    id: tile-hold
+    kind: list
+    description: 状態が保留の検討事項の件数と名前だけ。待っている前提などの補足の行とタスクは出さない。「すべて表示」で検討事項の表を状態 = 保留で絞って開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.decisions
+    visible_when: 常時
+  - name: 進行中のタスク
+    id: tile-running
+    kind: list
+    description: 状態が進行中のタスクの件数と名前。「すべて表示」でタスクの表を状態 = 進行中で絞って開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.tasks
+    visible_when: 常時
+  - name: カテゴリー別の進み具合
+    id: tile-progress
+    kind: table
+    description: カテゴリーを行、フェーズを列にした表。セルは決定済み / 全体と棒。セルを押すと検討事項の表をそのカテゴリーとフェーズで絞って開く。行の見出しを押すとカテゴリーだけで絞る
+    io: 表示
+    source: プレビューを開く.mindmap-data.settings.categories・プレビューを開く.mindmap-data.settings.phases・プレビューを開く.mindmap-data.decisions
+    visible_when: 常時（そのカテゴリーとフェーズに項目が無いセルは「—」で押せない）
+lead: プレビューを開いたときの既定の画面。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・カテゴリー別の進み具合のタイルを並べる。
+mock: dev/mock/pages/overview/21/standard/index.html

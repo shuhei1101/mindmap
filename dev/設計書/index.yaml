@@ -24,3 +24,5 @@ items:
     summary: mindmap の画面全体に通すデザインの方向性
   - page: 部品設計/
     summary: 画面の要素が使う部品の引数・イベント・状態（Storybook のストーリー）
+  - page: 画面設計/
+    summary: 1 画面ごとの要素の仕様（結合テストの元）

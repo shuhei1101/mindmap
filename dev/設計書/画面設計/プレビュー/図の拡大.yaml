@@ -1,0 +1,12 @@
+title: "図の拡大"
+elements:
+  - name: 図
+    kind: svg
+    description: mermaid で描いた図。ホイールで拡大・縮小し、背景のドラッグで動かす。図の文字は選んでコピーできる（文字の上のドラッグは動かさずに選ぶ）
+    io: 表示
+    source: 詳細パネルの本文の図
+  - name: 閉じる
+    kind: button
+    description: 図の拡大を閉じ、開いた元（詳細パネルか詳細の全画面の本文）に戻る。Esc でも閉じる
+lead: 本文の図を大きく見る。詳細パネルからはモーダルで開き、詳細の全画面からは全画面の中身を切り替える。
+mock: dev/mock/pages/diagram-viewer/21/standard/index.html

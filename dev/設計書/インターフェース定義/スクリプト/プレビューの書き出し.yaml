@@ -128,6 +128,9 @@ response:
   - name: 埋め込みのデータ.built_at
     type: str
     description: 書き出した日時（UTC のタイムゾーン付き ISO 8601）
+  - name: 埋め込みのデータ.name
+    type: str
+    description: ワークスペースのフォルダの名前。プレビューのトップバーの題名に出す
 response_notes: |-
   > [!NOTE]
   > 埋め込みのデータは、雛形の `<script type="application/json" id="mindmap-data"></script>` の中身として入る。画面はこの要素の中身を `JSON.parse` して読む。

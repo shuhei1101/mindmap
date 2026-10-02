@@ -1,0 +1,47 @@
+title: "タスク"
+elements:
+  - name: トップバー
+    kind: nav
+    component: dev/設計書/部品設計/プレビュー/トップバー.js#
+    args:
+      - name: title
+        value: プレビューを開く.mindmap-data.name
+      - name: tabs
+        value: 概要と同じ
+      - name: current
+        value: tasks
+      - name: theme
+        value: 概要と同じ
+    description: 全ての画面で共通の帯
+    visible_when: 常時
+  - name: 表示形式の切り替え
+    kind: segment
+    component: dev/設計書/部品設計/プレビュー/表示形式の切り替え.js#
+    args:
+      - name: views
+        value: ボード・表
+      - name: current
+        value: プレビューを開く.view（既定 board）
+    position: ツールバーの左端
+    description: 表示形式を切り替える
+    visible_when: 常時
+  - name: ボード
+    kind: board
+    description: 状態（未着手・進行中・保留・完了・中止）ごとの列にカードを並べる。完了・中止の列も出す。横に送り、背景のドラッグで動かす。カードに進める検討事項（`for`）を出し、押すと詳細を開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.tasks
+    visible_when: 表示形式がボード
+  - name: 表
+    kind: table
+    component: dev/設計書/部品設計/プレビュー/表.js#
+    args:
+      - name: kind
+        value: tasks
+      - name: columns
+        value: ID・タイトル（外せない）・状態・種類・進める検討事項・対象・カテゴリー・フェーズ・タグ
+      - name: rows
+        value: プレビューを開く.mindmap-data.tasks
+    description: タスクの表
+    visible_when: 表示形式が表
+lead: タスクをボード（既定）・表で見る画面。
+mock: dev/mock/pages/tasks/21/standard/index.html

@@ -1,0 +1,80 @@
+title: "検討事項"
+elements:
+  - name: トップバー
+    kind: nav
+    component: dev/設計書/部品設計/プレビュー/トップバー.js#
+    args:
+      - name: title
+        value: プレビューを開く.mindmap-data.name
+      - name: tabs
+        value: 概要と同じ
+      - name: current
+        value: decisions
+      - name: theme
+        value: 概要と同じ
+    description: 全ての画面で共通の帯
+    visible_when: 常時
+  - name: 表示形式の切り替え
+    kind: segment
+    component: dev/設計書/部品設計/プレビュー/表示形式の切り替え.js#
+    args:
+      - name: views
+        value: マップ・ボード・表
+      - name: current
+        value: プレビューを開く.view（既定 map）
+    position: ツールバーの左端
+    description: 表示形式を切り替える
+    visible_when: 常時
+  - name: 状態の印
+    kind: button
+    position: マップ > ツールバー
+    description: 状態ごとの印（色と形）。押すとその状態の項目を表示 / 非表示にする（`aria-pressed`）。キーワードに当たった項目を含む印に件数のバッジ（非表示の状態の項目も数える）
+    initial_value: 要見直し・未決定・未整理・保留を表示、決定済み・対象外・取り下げを非表示
+    visible_when: 表示形式がマップ
+  - name: キーワード
+    kind: input
+    position: マップ > ツールバー
+    description: 名前に含む項目を黄色で強調する
+    io: 入力
+    type: 文字列
+    placeholder: キーワード
+    initial_value: 空
+    visible_when: 表示形式がマップ
+  - name: マップ
+    id: decision-map
+    kind: canvas
+    description: 対象 → カテゴリー → フェーズ → 検討事項の木を ELK で配置した直角の枝で描く（SVG）。項目を押すと根までの枝と前提・後続の依存の線を強調し、ほかを薄くし、依存の線に小さな玉を流して詳細パネルを開く。背景のドラッグで動かす
+    io: 表示
+    source: プレビューを開く.mindmap-data.decisions・プレビューを開く.mindmap-data.settings
+    visible_when: 表示形式がマップで幅 901px 以上。elkjs が読めないときは読めなかったライブラリの知らせ
+  - name: 拡大・縮小・全体を表示
+    kind: button
+    position: マップの枠の外
+    description: マップの倍率を変える・全体が収まる倍率にする。枠の外に固定する
+    visible_when: 表示形式がマップで幅 901px 以上
+  - name: 字下げの一覧
+    kind: list
+    description: 狭い幅のマップ。木を字下げした縦の一覧で出し、押すと詳細を開く
+    io: 表示
+    source: マップと同じ
+    visible_when: 表示形式がマップで幅 900px 以下
+  - name: ボード
+    kind: board
+    description: 状態ごとの列にカードを並べる。横に送り、背景のドラッグで動かす。カードを押すと詳細を開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.decisions
+    visible_when: 表示形式がボード
+  - name: 表
+    kind: table
+    component: dev/設計書/部品設計/プレビュー/表.js#
+    args:
+      - name: kind
+        value: decisions
+      - name: columns
+        value: ID・タイトル（外せない）・状態・対象・カテゴリー・フェーズ・影響度・着手できる・前提・タグ
+      - name: rows
+        value: プレビューを開く.mindmap-data.decisions
+    description: 検討事項の表。「着手できる」は前提が全て決定済みか（はい / いいえ）を画面で求める
+    visible_when: 表示形式が表
+lead: 検討事項をマップ（既定）・ボード・表で見る画面。
+mock: dev/mock/pages/decisions/21/standard/index.html
