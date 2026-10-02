@@ -1,0 +1,3 @@
+# 共通のファイルの目印
+
+SHARED-REFERENCE-MARKER-9157
