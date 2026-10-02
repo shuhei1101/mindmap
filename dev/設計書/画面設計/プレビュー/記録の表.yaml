@@ -21,9 +21,11 @@ elements:
       - name: kind
         value: プレビューを開く.tab
       - name: columns
-        value: '調査: ID・タイトル・問い・結論・確度・タグ / 用語集: ID・用語・意味・別名・使わない表記・タグ / メモ: ID・タイトル・内容・タグ・関連 / 会話ログ: ID・日付・タイトル・更新した項目'
+        value: '調査: ID・タイトル・問い・結論・確度（絞れる）・タグ（絞れる） / 用語集: ID・用語・意味・別名・使わない表記・タグ（絞れる） / メモ: ID・タイトル・内容・タグ（絞れる）・関連 / 会話ログ: ID・日付・タイトル・更新した項目'
       - name: rows
         value: プレビューを開く.mindmap-data.{research・terms・notes・logs}
+      - name: filters
+        value: プレビューを開く.f.{列}（開いたときだけ）
     description: その種類の表。表示形式の切り替えは出さない
     visible_when: 常時
 lead: 調査・用語集・メモ・会話ログを表だけで見る画面。種類ごとに同じ画面を使い回す。

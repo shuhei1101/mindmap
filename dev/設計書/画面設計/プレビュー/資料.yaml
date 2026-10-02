@@ -44,9 +44,11 @@ elements:
       - name: kind
         value: docs
       - name: columns
-        value: ID・タイトル（外せない）・成果物・状態・種類・対象・カテゴリー・フェーズ・タグ
+        value: ID・タイトル（外せない）・成果物（deliverable、絞れる）・状態（絞れる）・種類（絞れる）・対象（絞れる）・カテゴリー（絞れる）・フェーズ（絞れる）・タグ（絞れる）
       - name: rows
         value: プレビューを開く.mindmap-data.docs
+      - name: filters
+        value: プレビューを開く.f.{列}（開いたときだけ。カードの絞り込みも同じ条件で開く）
     description: 資料の表
     visible_when: 表示形式が表
 lead: 資料をカード（既定）・表で見る画面。成果物を先頭に印付きで並べる。

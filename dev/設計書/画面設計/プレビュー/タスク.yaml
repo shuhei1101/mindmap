@@ -38,9 +38,11 @@ elements:
       - name: kind
         value: tasks
       - name: columns
-        value: ID・タイトル（外せない）・状態・種類・進める検討事項・対象・カテゴリー・フェーズ・タグ
+        value: ID・タイトル（外せない）・状態（status、絞れる）・種類（絞れる）・進める検討事項・対象（絞れる）・カテゴリー（絞れる）・フェーズ（絞れる）・タグ（絞れる）
       - name: rows
         value: プレビューを開く.mindmap-data.tasks
+      - name: filters
+        value: プレビューを開く.f.{列}（開いたときだけ）
     description: タスクの表
     visible_when: 表示形式が表
 lead: タスクをボード（既定）・表で見る画面。
