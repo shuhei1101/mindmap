@@ -1,0 +1,59 @@
+title: 表示形式の切り替え
+lead: 1 つの画面の表示形式（マップ・ボード・カード・表）を切り替えるセグメント。形式ごとに同じ幅のボタンを並べ、選んでいる形式を押された見た目にする。
+implementation: skills/mindmap/preview/components/view-switch.js#MindmapPreview.viewSwitch
+story: Preview/ViewSwitch
+args:
+  - name: views
+    type: オブジェクトの配列
+    required: true
+    description: 並べる表示形式。並びがボタンの並び
+  - name: views[].key
+    type: 列挙
+    required: true
+    choices: map・board・cards・table
+    description: 表示形式の識別子。URL のハッシュの `view` と同じ値
+  - name: views[].label
+    type: 文字列
+    required: true
+    description: ボタンの文字（マップ・ボード・カード・表）
+  - name: current
+    type: 列挙
+    required: true
+    choices: '`views[].key` のどれか'
+    description: 選んでいる表示形式
+events:
+  - name: 切り替え
+    when: 選んでいない形式のボタンを押したとき（クリック・Enter・Space）
+    value: key（`data-view`）
+    description: 使う側がその形式で描き直し、URL のハッシュの `view` を置き換える（履歴に積まない）
+css_properties:
+  - name: --view-switch-item-width
+    syntax: <length>
+    default: 96px
+    description: ボタン 1 つの幅。どのタブでも同じ幅にして、切り替えで周りの枠を動かさない
+states:
+  - name: Decisions
+    description: 検討事項（マップ・ボード・表）でマップを選んでいる
+    args:
+      - name: views
+        value: '[{"key": "map", "label": "マップ"}, {"key": "board", "label": "ボード"}, {"key": "table", "label": "表"}]'
+      - name: current
+        value: map
+  - name: Tasks
+    description: タスク（ボード・表）で表を選んでいる。形式の数が違っても 1 つの幅と左端の位置が同じ
+    args:
+      - name: views
+        value: '[{"key": "board", "label": "ボード"}, {"key": "table", "label": "表"}]'
+      - name: current
+        value: table
+  - name: Docs
+    description: 資料（カード・表）でカードを選んでいる
+    args:
+      - name: views
+        value: '[{"key": "cards", "label": "カード"}, {"key": "table", "label": "表"}]'
+      - name: current
+        value: cards
+accessibility:
+  - ボタンは `button` 要素にし、選んでいる形式を `aria-pressed="true"` で伝える
+  - 全体を `role="group"` にし、`aria-label` に「表示形式」を付ける
+  - ホバーは面の色、キーボードのフォーカスは印の色の輪で見分ける

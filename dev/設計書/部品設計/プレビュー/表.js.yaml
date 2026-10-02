@@ -1,0 +1,127 @@
+title: 表
+lead: 項目の一覧の表。列の見出しで並べ替え・絞り込み・ピン留めでき、表の上に絞り込みの条件のチップを並べる。表示する列の選択と初期設定に戻すのポップオーバーを持つ。
+implementation: skills/mindmap/preview/components/table.js#MindmapPreview.table
+story: Preview/Table
+args:
+  - name: kind
+    type: 列挙
+    required: true
+    choices: decisions・tasks・research・docs・terms・notes・logs
+    description: 項目の種類。該当なしの文言と、端末の保存領域のキーに使う
+  - name: columns
+    type: オブジェクトの配列
+    required: true
+    description: 列の定義。並びが列の並び
+  - name: columns[].key
+    type: 文字列
+    required: true
+    description: 列の識別子。並べ替え・絞り込み・ピン留めの対象を指す
+  - name: columns[].label
+    type: 文字列
+    required: true
+    description: 見出しの文字
+  - name: columns[].filterable
+    type: 真偽値
+    required: false
+    default: 'false'
+    description: 値で絞り込めるか。絞り込みのボタンを出す
+  - name: columns[].fixed
+    type: 真偽値
+    required: false
+    default: 'false'
+    description: 表示する列から外せないか（タイトルの列）
+  - name: columns[].hidden
+    type: 真偽値
+    required: false
+    default: 'false'
+    description: 初期設定で隠すか
+  - name: rows
+    type: オブジェクトの配列
+    required: true
+    description: 行にする項目（埋め込みのデータの項目そのもの）
+  - name: sort
+    type: オブジェクト
+    required: false
+    default: なし（並べ替えない）
+    description: 並べ替えている列と向き（`key`・`dir` は asc・desc）
+  - name: filters
+    type: オブジェクト
+    required: false
+    default: なし（絞り込まない）
+    description: 列の `key` → 選んだ値の配列
+  - name: pinTo
+    type: 文字列
+    required: false
+    default: なし（固定しない）
+    description: 左端からこの列までを横スクロールでも固定する列の `key`
+  - name: hiddenColumns
+    type: 配列
+    required: false
+    default: '`columns[].hidden` が真の列'
+    description: 隠している列の `key`
+events:
+  - name: 並べ替え
+    when: 見出しの文字を押したとき
+    value: key（`data-sort`）
+    description: 使う側が 昇順 → 降順 → 解除 と巡る
+  - name: 絞り込み
+    when: 絞り込みのポップオーバーで値を選んだ・外したとき、チップの × かすべて外すを押したとき
+    value: key と値の配列
+    description: 使う側が `filters` を変えて描き直す。保存しない
+  - name: ピン留め
+    when: 見出しのピンのボタンを押したとき
+    value: key（`data-pin`）
+    description: 使う側が押した列までを固定する。固定中の列をもう一度押すと外す
+  - name: 表示する列
+    when: 表示する列のポップオーバーで列を付け外ししたとき
+    value: hiddenColumns
+    description: 使う側が端末の保存領域に残す
+  - name: 初期設定に戻す
+    when: 表示する列のポップオーバーで初期設定に戻すを押したとき
+    description: 使う側が列・並べ替え・固定を戻す
+  - name: 詳細を開く
+    when: 行のタイトルを押したとき
+    value: id（`data-id`）
+    description: 使う側が詳細パネルを開く
+states:
+  - name: Default
+    description: 通常。並べ替えの印は見出しにホバーかフォーカスしたときだけ出す
+  - name: SortedAsc
+    description: タイトルで昇順。向きの矢印を出し、`aria-sort="ascending"`
+    args:
+      - name: sort
+        value: '{"key": "title", "dir": "asc"}'
+  - name: SortedDesc
+    description: タイトルで降順。`aria-sort="descending"`
+    args:
+      - name: sort
+        value: '{"key": "title", "dir": "desc"}'
+  - name: Filtered
+    description: 確度 = 高で絞り込み中。絞り込み中の列の道具は押された見た目で、表の上にチップとすべて外すを並べる
+    args:
+      - name: filters
+        value: '{"conf": ["高"]}'
+  - name: Pinned
+    description: ID の列までピン留め。押した列のボタンだけが押された見た目で、固定した列の境に影
+    args:
+      - name: pinTo
+        value: id
+  - name: LongTitle
+    description: 長いタイトル。タイトルの列は折り返し、ほかの列は崩れない
+  - name: NoMatch
+    description: 該当なし（ピン留め中）。表の場所に該当なしと次の操作を書き、横に送っても文言は表の枠の左に留める
+    args:
+      - name: filters
+        value: '{"conf": ["中"]}'
+      - name: pinTo
+        value: id
+  - name: ColumnsPopover
+    description: 表示する列のポップオーバーを開いている。タイトルの列は外せない
+    notes:
+      見せ方: "`play` で表示する列のボタンを押して開く"
+accessibility:
+  - 並べ替え中の列の見出しに `aria-sort`（ascending・descending）を付け、ほかは `none`
+  - 絞り込み・ピン留めのボタンは `aria-pressed` で押した状態を伝え、`{列} で絞り込み`・`{列}まで固定` の読み上げ名を付ける
+  - "チップの × に `{列}: {値} の条件を外す` の読み上げ名を付ける"
+  - 行のタイトルは `button` 要素にし、キーボードで詳細を開ける
+  - 操作してもスクロールの位置を保つ

@@ -1,0 +1,9 @@
+summary: "プレビューの画面が共通で使う部品"
+docs_index: true
+items:
+  - page: トップバー.js.yaml
+    summary: 題名・検索の入口・ライト / ダークと、画面を移るタブの帯
+  - page: 表示形式の切り替え.js.yaml
+    summary: マップ・ボード・カード・表を切り替えるセグメント
+  - page: 表.js.yaml
+    summary: 並べ替え・絞り込み・ピン留め・表示する列を持つ項目の一覧
