@@ -851,3 +851,6 @@ functions:
       type: Path
       description: 一時ファイルのパス
     process: 1. `tempfile.mkstemp(dir=target.parent, suffix=TEMP_SUFFIX)` で作り、UTF-8 で書いてパスを返す
+test_files:
+  - tests/unit/scripts/test_kinds.py
+  - tests/unit/scripts/test_store.py

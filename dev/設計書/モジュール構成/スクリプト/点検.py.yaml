@@ -151,3 +151,5 @@ functions:
         condition: 'R-1 `body: R-1.md`（ファイル無し）・D-1 `body: D-1.md`（ファイルあり）・`docs/X-1.md`'
         mock: なし
         expected: '`missing_body`（R-1）と `orphan_body`（`docs/X-1.md`）の 2 件'
+test_files:
+  - tests/unit/scripts/test_checker.py

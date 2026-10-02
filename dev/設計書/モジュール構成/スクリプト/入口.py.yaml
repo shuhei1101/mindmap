@@ -1023,3 +1023,7 @@ functions:
 notes:
   モジュールの読み込み: スクリプトはパッケージとして入れず、`check-env` はシステムの `python3`、それ以外は仮想環境の Python（`check-env` が返す `python_path`）で `{スキルのフォルダ}/scripts/mindmap.py` を起動する。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
   入口の構文: '`mindmap.py` と `check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、`check-env` を通った後にだけ読むので 3.12 の書き方を使ってよい。'
+test_files:
+  - tests/unit/scripts/test_mindmap.py
+  - tests/unit/scripts/test_check_env.py
+  - tests/unit/scripts/test_commands.py

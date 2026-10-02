@@ -335,3 +335,5 @@ functions:
         condition: 'D-1 `要見直し`／T-1 `進行中`／D-2 `保留`・`depends_on: [D-3]`／D-3 `決定済み`／D-4 `保留`・`depends_on: [D-5]`／D-5 `未決定`／D-6 `保留`・`reason: 予算が決まったら`／T-2 `保留`・`depends_on: [T-1]`'
         mock: なし
         expected: '`needs_review` D-1、`in_progress` T-1、`resumable` D-2、`waiting` D-4（`[D-5]`）と T-2（`[T-1]`）、`on_hold` D-6（reason つき）、`next` D-5'
+test_files:
+  - tests/unit/scripts/test_graph.py

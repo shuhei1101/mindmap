@@ -265,3 +265,5 @@ functions:
         condition: '`attrs` を持たない D-1 だけ'
         mock: なし
         expected: 空の並び
+test_files:
+  - tests/unit/scripts/test_query.py

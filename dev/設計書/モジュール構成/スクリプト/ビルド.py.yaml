@@ -187,3 +187,5 @@ functions:
         mock: なし
         expected: '`ValueError`（`match` に `0 個`・`2 個`）'
         exception: 雛形の要素が 0 個か 2 個以上
+test_files:
+  - tests/unit/scripts/test_builder.py
