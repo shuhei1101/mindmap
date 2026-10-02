@@ -1,0 +1,37 @@
+title: "DOMPurify"
+kind: "CDN の JS"
+version:
+  current: 3.4.16
+  latest: 3.4.16
+  checked_on: '2026-10-02'
+  source: https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js
+  pinning: 版を固定し、script 要素に integrity（`sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL`）と `crossorigin="anonymous"` を付ける。上げるときは integrity も書き換える
+catalogs:
+  - name: API
+    version: 3.4.16
+    entries:
+      - name: DOMPurify.sanitize
+        kind: 関数
+        purpose: marked で描いた本文の HTML を無害化してから画面に差し込む
+lead: HTML の文字列から、スクリプトなど危ない要素と属性を取り除く JavaScript のライブラリ。
+purl: pkg:npm/dompurify
+dependency_scope: 必須
+adoption: 採用
+upstream: cure53/DOMPurify
+used_in:
+  - skills/mindmap/preview/template.html
+verification:
+  state: 済
+  date: '2026-10-02'
+  detail: file:// で開いた HTML から jsDelivr の `dist/purify.min.js` を下の integrity と `crossorigin="anonymous"` 付きで読み、Chromium で `DOMPurify.sanitize` が `<script>` と `onerror` を取り除き、表を残すことを確かめた
+license: Apache-2.0 OR MPL-2.0（商用利用可）
+official_url: https://github.com/cure53/DOMPurify
+selection:
+  candidates: '配信元として jsDelivr・unpkg・raw.esm.sh・cdnjs を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4165328069)）。ライブラリそのものは Issue #5 で決まっている'
+  decision: jsDelivr から読む（marked と同じ理由）
+install: |-
+  ```html
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js" integrity="sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL" crossorigin="anonymous"></script>
+  ```
+
+  プレビューの雛形が読む。グローバルの `DOMPurify` に入る

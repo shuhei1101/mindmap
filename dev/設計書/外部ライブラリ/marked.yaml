@@ -1,0 +1,40 @@
+title: "marked"
+kind: "CDN の JS"
+version:
+  current: 18.0.14
+  latest: 18.0.14
+  checked_on: '2026-10-02'
+  source: https://cdn.jsdelivr.net/npm/marked@18.0.14/lib/marked.umd.js
+  pinning: 版を固定し、script 要素に integrity（`sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo`）と `crossorigin="anonymous"` を付ける。上げるときは integrity も書き換える
+catalogs:
+  - name: API
+    version: 18.0.14
+    entries:
+      - name: marked.parse
+        kind: 関数
+        purpose: 本文の Markdown を HTML の文字列にする（結果は DOMPurify で無害化してから差し込む）
+lead: Markdown を HTML に描く JavaScript のライブラリ。
+purl: pkg:npm/marked
+dependency_scope: 必須
+adoption: 採用
+upstream: markedjs/marked
+used_in:
+  - skills/mindmap/preview/template.html
+verification:
+  state: 済
+  date: '2026-10-02'
+  detail: file:// で開いた HTML から jsDelivr の `lib/marked.umd.js` を下の integrity と `crossorigin="anonymous"` 付きで読み、Chromium で `marked.parse` が見出しと表を描くことを確かめた
+license: MIT（商用利用可）
+official_url: https://marked.js.org/
+selection:
+  candidates: '配信元として jsDelivr・unpkg・raw.esm.sh・cdnjs を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4165328069)）。ライブラリそのものは Issue #5 で決まっている'
+  decision: jsDelivr から読む。4 つの描画のライブラリが揃い、npm の原本と同じバイトで、利用規約とプライバシーが明記されている
+install: |-
+  ```html
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.0.14/lib/marked.umd.js" integrity="sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo" crossorigin="anonymous"></script>
+  ```
+
+  プレビューの雛形が読む。グローバルの `marked` に入る
+limitations:
+  - item: 無害化
+    content: '`marked.parse` は本文中の HTML をそのまま通すため、描いた結果を DOMPurify に通さずに差し込まない'

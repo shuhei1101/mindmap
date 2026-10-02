@@ -32,7 +32,7 @@ overview:
       label: ブラウザ
       kind: external
     - id: CDN
-      label: CDN（銘柄未定）
+      label: jsDelivr
       kind: external
   edges:
     - from: U
@@ -115,12 +115,17 @@ external_systems:
     notes:
       事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
     detail: dev/設計書/外部ライブラリ/claude-code#
-  - name: CDN（銘柄未定）
+  - name: jsDelivr
     purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得
     direction: 受信のみ
     protocol: HTTPS
     notes:
       事前確認: 要。プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。
+    refs:
+      - dev/設計書/外部ライブラリ/marked#
+      - dev/設計書/外部ライブラリ/DOMPurify#
+      - dev/設計書/外部ライブラリ/elkjs#
+      - dev/設計書/外部ライブラリ/mermaid#
 lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
 constraints: |-
   - hooks・MCP サーバーを持たない
