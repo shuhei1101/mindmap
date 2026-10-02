@@ -15,6 +15,28 @@ REPO_ROOT = Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 # スキルのフォルダの置き場所
 SKILLS_DIR = REPO_ROOT / "skills"
 
+# 進め方ガイドの置き場所
+PLAYBOOKS_DIR = SKILLS_DIR / "mindmap" / "playbooks"
+
+# 進め方ガイドの `## ` の見出し
+SECTION_PATTERN = re.compile(r"^## (.+)$", re.MULTILINE)
+
+# 進め方ガイドの全てが持つ節の並び
+PLAYBOOK_SECTIONS = [
+    "最上位の軸の呼び名",
+    "カテゴリーの分け方",
+    "フェーズと観点",
+    "必ず調べるもの",
+    "ゴールの候補",
+    "引き渡しの形",
+]
+
+# 進め方ガイドの分野ごとのファイルの名前（並べ替えた順）
+PLAYBOOK_NAMES = ["システム開発.md", "壁打ち.md", "調査.md", "資料作り.md"]
+
+# ゴールの候補の既定の行に付く印
+DEFAULT_MARK = "（既定）"
+
 # スクリプトの起動の形（この形のまま起動したときだけ allowed-tools に当たる）
 LAUNCH_PREFIX = "python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py"
 
@@ -70,6 +92,36 @@ def launches_not_in_form(texts: list[str]) -> list[str]:
     """mindmap.py を指す箇所が、決まった起動の形の数と合わない本文の書き出しを返す。"""
     return [
         text[:LEAD_CHARS] for text in texts if text.count("mindmap.py") != text.count(LAUNCH_PREFIX)
+    ]
+
+
+def playbook_names() -> list[str]:
+    """進め方ガイド（skills/mindmap/playbooks/）のファイルの名前を並びのまま返す。"""
+    return sorted(path.name for path in PLAYBOOKS_DIR.glob("*.md"))
+
+
+def playbooks_with_wrong_sections() -> list[str]:
+    """進め方ガイドのうち、`## ` の見出しが決まった 6 つの節の並びと合わないものの名前を返す。"""
+    return [
+        path.name
+        for path in sorted(PLAYBOOKS_DIR.glob("*.md"))
+        if SECTION_PATTERN.findall(path.read_text(encoding="utf-8")) != PLAYBOOK_SECTIONS
+    ]
+
+
+def _default_goal_rows(text: str) -> list[str]:
+    """ガイドの `## ゴールの候補` の節のうち、既定の印を含む表の行を返す。"""
+    # `## ゴールの候補` の見出しの次の行から、次の `## ` の見出しの手前までを取る
+    section = text.split("## ゴールの候補\n", 1)[1].split("\n## ", 1)[0]
+    return [line for line in section.splitlines() if line.startswith("|") and DEFAULT_MARK in line]
+
+
+def playbooks_without_single_default() -> list[str]:
+    """進め方ガイドのうち、ゴールの候補の既定の行が 1 つだけでないものの名前を返す。"""
+    return [
+        path.name
+        for path in sorted(PLAYBOOKS_DIR.glob("*.md"))
+        if len(_default_goal_rows(path.read_text(encoding="utf-8"))) != 1
     ]
 
 

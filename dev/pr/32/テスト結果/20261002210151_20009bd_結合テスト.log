@@ -1,0 +1,17 @@
+# 実行したコマンド
+pytest tests/integration/skill -v
+# コミット: 20009bddafc477081b944f6c37e19cb114425d96
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/docs-skill-playbooks-document-sparring
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 2 items
+
+tests/integration/skill/test_session.py::test_normal PASSED              [ 50%]
+tests/integration/skill/test_setup.py::test_normal PASSED                [100%]
+
+============================== 2 passed in 1.92s ===============================
