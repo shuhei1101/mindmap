@@ -1,7 +1,7 @@
 title: "再開時の状況"
 entry:
   kind: operation
-  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py status`（コマンドの引数・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py status`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系
     summary: 要見直し・進行中・再開可能・決定待ち・そのほかの保留・次の候補を分けて返す

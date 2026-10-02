@@ -1,0 +1,176 @@
+title: "コマンドの起動"
+entry:
+  kind: operation
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py {コマンド} [引数]`（`check-env` 以外の全てのコマンドに共通の起動の仕方。標準入力・標準出力・標準エラー・終了コード）'
+flows:
+  - name: 正常系（起動した Python で動く）
+    summary: 起動した Python に依存があれば、起動し直さずにコマンドを実行する
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 起動する Python
+        description: テストを動かす Python（PyYAML・jsonschema が入っている）
+      - name: ホーム
+        description: 仮想環境を持たない一時フォルダを `HOME` にする
+        notes: 起動し直していないことを、仮想環境が無くても通ることで確かめる
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py（起動した Python）
+
+        クライアント->>IF: attrs --workspace
+        IF->>IF: 依存を読み込める
+        IF-->>クライアント: JSON、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - 標準出力が `attrs` の JSON
+  - name: 正常系（仮想環境の Python で起動し直す）
+    summary: 起動した Python に依存が無ければ、仮想環境の Python で起動し直し、出力と終了コードをそのまま返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 起動する Python
+        description: ライブラリを見せない仮想環境（`--without-pip`、`--system-site-packages` なし）の Python
+      - name: ホーム
+        description: 一時フォルダを `HOME` にし、その `.mindmap/venv` にライブラリを見せた仮想環境を作る
+        notes: make_venv で作る
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py（起動した Python）
+        participant V as mindmap.py（仮想環境の Python）
+
+        クライアント->>IF: attrs --workspace
+        IF->>IF: 依存を読み込めない
+        IF->>V: 同じ引数で起動し直す
+        V-->>IF: JSON、終了コード 0
+        IF-->>クライアント: JSON、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - 標準出力が、仮想環境の Python で直接 `attrs` を起動したときと同じ
+  - name: 正常系（起動し直した先のエラーを引き継ぐ）
+    summary: 起動し直したコマンドがエラーで終われば、その標準エラーと終了コードをそのまま返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 起動する Python
+        description: ライブラリを見せない仮想環境の Python
+      - name: ホーム
+        description: 一時フォルダを `HOME` にし、その `.mindmap/venv` にライブラリを見せた仮想環境を作る
+      - name: 空のフォルダ
+        description: '`mindmap.yaml` が無い一時フォルダを `--workspace` に渡す'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py（起動した Python）
+        participant V as mindmap.py（仮想環境の Python）
+
+        クライアント->>IF: status --workspace
+        IF->>V: 同じ引数で起動し直す
+        V-->>IF: エラー、終了コード 1
+        IF-->>クライアント: 同じ標準エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーにフォルダのパスがあり、標準出力が空
+  - name: 異常系（仮想環境が無い・VenvNotFoundError）
+    summary: 起動した Python に依存が無く、仮想環境も無ければ、check-env を促してエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 起動する Python
+        description: ライブラリを見せない仮想環境の Python
+      - name: ホーム
+        description: 仮想環境を持たない一時フォルダを `HOME` にする
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py（起動した Python）
+
+        クライアント->>IF: attrs --workspace
+        IF->>IF: 依存を読み込めず、仮想環境の Python も無い
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに仮想環境のフォルダと `check-env` があり、標準出力が空
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じ
+  - name: 異常系（仮想環境の依存が足りない・DependencyMissingError）
+    summary: 起動し直した先の仮想環境にも依存が無ければ、もう一度は起動し直さずエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 起動する Python
+        description: ライブラリを見せない仮想環境の Python
+      - name: ホーム
+        description: 一時フォルダを `HOME` にし、その `.mindmap/venv` にライブラリを見せない仮想環境を作る
+        notes: make_venv を `with_libraries=False` で呼ぶ
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py（起動した Python）
+        participant V as mindmap.py（仮想環境の Python）
+
+        クライアント->>IF: attrs --workspace
+        IF->>V: 同じ引数で起動し直す
+        V->>V: 依存を読み込めず、起動し直さない
+        V-->>IF: エラー、終了コード 1
+        IF-->>クライアント: 同じ標準エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに足りないライブラリの名前と `check-env` がある
+      - 子プロセスの起動が 1 回で終わる（起動し直しが繰り返されない）
+lead: スキルがシステムの `python3` で起動したコマンドを、依存が無ければスキル専用の仮想環境の Python で起動し直す。スキルの `allowed-tools` を `python3` の 1 行の規則にするための入口。
+side_effects: 起動し直したときは子プロセスを 1 つ起こす。ファイルへの書き込みは各コマンドのものだけ
+request:
+  - name: '{コマンド}'
+    type: '"init" | "add" | "update" | "adopt" | "status" | "next" | "impact" | "find" | "show" | "attrs" | "check" | "build" | "goal"'
+    required: true
+    location: argument
+    description: 実行するコマンド。`check-env` は起動し直さず、起動した Python でそのまま動く（『依存の確認』）
+  - name: '[引数]'
+    type: list[str]
+    required: false
+    default: なし（コマンドごとの引数をそのまま渡す）
+    location: argument
+    description: 各コマンドの引数。起動し直すときも書き換えずに渡す
+exceptions:
+  - name: なし（正常終了）
+    condition: 起動した Python か仮想環境の Python でコマンドを実行できた
+    notes: 終了コードはコマンドのものをそのまま返す
+  - name: VenvNotFoundError
+    condition: 起動した Python に依存が無く、仮想環境の Python も無い
+    notes: 終了コード 1。標準出力には何も出さない
+  - name: DependencyMissingError
+    condition: 仮想環境の Python で起動されているのに依存が無い（起動し直した先でも足りない）
+    notes: 終了コード 1。もう一度は起動し直さない
+error_format: '標準エラーに `エラー: {内容}` の行を出す。仮想環境が無い・依存が足りないときは、続けて `check-env` を実行するよう促す行を出す。'
+constraints:
+  - item: そのまま動く条件
+    constraint: 起動した Python が 3.12 以上で、PyYAML と jsonschema を読み込める。このときは起動し直さない
+  - item: 起動し直す先
+    constraint: 『依存の確認』の `--venv` の既定（`~/.mindmap/venv`）の Python。`~` は利用者のホーム（環境変数 `HOME`、Windows は `USERPROFILE`）
+  - item: 引き継ぐもの
+    constraint: 引数・標準入力・標準出力・標準エラー・終了コード・作業フォルダをそのまま引き継ぐ
+  - item: 起動し直す回数
+    constraint: 1 回まで。仮想環境の Python で起動されたときは起動し直さない
+  - item: 起動した Python の版
+    constraint: 3.8 以上（『依存の確認』と同じく、入口は 3.8 で読める構文で書く）
+notes:
+  対応テストファイル: '`tests/integration/scripts/test_launch.py`（結合テスト作成で置き、`test_file` に書く）'

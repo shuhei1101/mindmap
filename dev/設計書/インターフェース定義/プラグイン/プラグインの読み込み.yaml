@@ -24,7 +24,7 @@ flows:
       ```
     expected:
       - '`claude plugin list` で `mindmap@mindmap` が有効である'
-      - 取り込まれたプラグインのフォルダに `skills/mindmap/schemas/` と `skills/mindmap/scripts/` がある
+      - 取り込まれたプラグインのフォルダに `skills/setup/SKILL.md`・`skills/session/SKILL.md` と、`skills/mindmap/` の `references/`・`playbooks/`・`schemas/`・`scripts/` がある
       - '`claude plugin details` で hooks が 0 件である'
     test: test_normal
 lead: Claude Code がプラグイン mindmap をインストールして読み込むときの、プラグインのマニフェストとフォルダの形。
@@ -47,8 +47,16 @@ request:
   - name: skills/mindmap/
     type: フォルダ
     required: true
-    description: 同梱するスキル mindmap のフォルダ。配下に `schemas/`・`scripts/` を持つ
-    notes: '中身を入れるまでは、両フォルダに `.gitkeep` を置く'
+    description: 2 つのスキルが共通で読む置き場所。`references/`・`playbooks/`・`schemas/`・`scripts/`・`preview/`・`README.md` を持ち、SKILL.md は持たない
+    notes: 'SKILL.md を持たないのでスキルとしては読み込まれない（PoC #22 で確かめた）'
+  - name: skills/setup/
+    type: フォルダ
+    required: true
+    description: スキル setup（`/mindmap:setup`）。形はインターフェース定義『セットアップ』
+  - name: skills/session/
+    type: フォルダ
+    required: true
+    description: スキル session（`/mindmap:session`）。形はインターフェース定義『話し合いの進行』
 request_example: |-
   ```json
   {

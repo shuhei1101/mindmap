@@ -1,0 +1,74 @@
+title: "話し合いの進行"
+entry:
+  kind: operation
+  value: '`/mindmap:session [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `skills/session/SKILL.md`）'
+flows:
+  - name: 正常系
+    summary: スキル session と共通の置き場所のファイルが制約どおりの形で、プラグインの検証を通る
+    setup:
+      - name: Mock
+        description: なし（リポジトリのファイルを読み、実際の Claude Code の `claude plugin validate` を起動する。モデルは呼ばない）
+      - name: 設定のフォルダ
+        description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにする
+        notes: 環境変数 `CLAUDE_CONFIG_DIR`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as skills/session/SKILL.md
+        participant C as Claude Code（claude plugin validate）
+
+        クライアント->>IF: front matter と本文のパスを読む
+        クライアント->>C: リポジトリの直下を検証する
+        C-->>クライアント: 終了コード 0
+      ```
+    expected:
+      - front matter の `name` が `session`、`allowed-tools` が制約の値と一致する
+      - '`steps/` に 6 つのステップのファイルがあり、SKILL.md のステップの表がその全てを指す'
+      - SKILL.md と `steps/` の本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
+      - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
+      - '`skills/mindmap/` に SKILL.md が無く、`references/`・`playbooks/` がある'
+      - スキルの全ての Markdown に特定の開発基盤の名前が無い
+      - '`claude plugin validate` が終了コード 0'
+lead: 作成済みのワークスペースで、取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定のステップを回すスキルの入口と、そのファイルの形。
+callers:
+  - dev/設計書/シナリオ/複合ユースケース/話し合いをゴールまで進める#
+side_effects: スクリプトの書き込むコマンドでワークスペースの YAML を書き換える。資料の本文（`docs/`）と引き渡しの資料（`handoff/`）はスキルが Markdown を書く。リサーチではサブエージェントが Web を調べる
+request:
+  - name: $ARGUMENTS
+    type: str
+    required: false
+    default: なし（同じ会話で `setup` が渡したフォルダを使う。無ければ `/mindmap:setup` を案内する）
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ。無ければ書き込まず `/mindmap:setup` を案内する'
+exceptions:
+  - name: なし（正常終了）
+    condition: ファイルの形が制約どおりで、Claude Code がスキルとして読み込める
+constraints:
+  - item: ファイルの形
+    constraint: '`skills/session/SKILL.md` と `skills/session/steps/`（`取り込み.md`・`ヒアリング.md`・`リサーチ.md`・`方針転換.md`・`プレビュー.md`・`ゴール判定.md`）。SKILL.md は入力・ステップの表・コマンドと引数の一覧だけを持ち、各ステップは `steps/` を指す'
+  - item: 共通の置き場所
+    constraint: '`skills/mindmap/`（SKILL.md を持たない）に `references/`（質問の書式・文章の書き方・リサーチの調べ方）・`playbooks/`（システム開発・調査）・`scripts/`・`schemas/`・`preview/`・`README.md` を置き、setup と session の両方が読む'
+  - item: front matter の name
+    constraint: '`session`'
+  - item: front matter の description
+    constraint: いつ使うか（セットアップの後に話し合いを進めるとき）が分かる 1 文
+  - item: front matter の allowed-tools
+    constraint: '`Read, Write, Edit, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。これ以外の Bash は許していない'
+    notes: Write・Edit は `docs/`・`handoff/` の Markdown、Agent・WebSearch・WebFetch はリサーチのサブエージェントに使う。許可がサブエージェントに及ぶことは PoC で確かめた
+  - item: 共通のファイルの参照
+    constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
+  - item: スクリプトの起動
+    constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く
+  - item: 編集の後
+    constraint: ワークスペースを編集したステップは、最後に `build` を流す（hooks は使わない）
+  - item: リサーチの確認
+    constraint: サブエージェントの起動前に「何を・どの観点で・何体で」を示して確認を取る。利用者が自分から頼んだときだけ省く
+  - item: スキルの中の名前
+    constraint: 特定の開発基盤の名前を出さない（アーキテクチャ図の制約）
+refs:
+  - dev/設計書/外部ライブラリ/claude-code#
+notes:
+  対応テストファイル: '`tests/integration/skill/test_session.py`（結合テスト作成で置き、`test_file` に書く）'
+  確かめないもの: スキルをモデルが読んで動かす振る舞いは、費用が掛かり結果が揺れるためテストしない。サブエージェントの起動と許可が及ぶことは PoC（#22）で確かめた

@@ -27,6 +27,9 @@ catalogs:
       - name: claude plugin validate
         kind: コマンド
         purpose: マーケットプレイスとプラグインのマニフェストを検証する
+      - name: claude -p
+        kind: コマンド
+        purpose: 非対話でスキルを動かし、`--output-format stream-json` で読み込みと許可を確かめる（PoC だけで使う。テストはモデルを呼ばない）
   - name: ファイル
     version: 2.1.287
     entries:
@@ -39,6 +42,33 @@ catalogs:
       - name: skills/{スキル名}/
         kind: フォルダ
         purpose: プラグインが同梱するスキルを置く
+  - name: スキル
+    version: 2.1.287
+    entries:
+      - name: SKILL.md
+        kind: ファイル
+        purpose: '`skills/{スキル名}/SKILL.md` を持つフォルダだけがスキルになる。プラグインのスキルは `/{プラグイン名}:{スキル名}` で呼ぶ'
+      - name: name
+        kind: front matter
+        purpose: スキル名。スラッシュコマンドの `:` の後ろになる
+      - name: description
+        kind: front matter
+        purpose: いつ使うかの説明。Claude Code がスキルを選ぶ手掛かり
+      - name: allowed-tools
+        kind: front matter
+        purpose: 'スキルの実行中に確認なしで使えるツール。許可はスキルが起動したサブエージェントにも及ぶ。Bash の規則の中の `${CLAUDE_PLUGIN_ROOT}` と `~` は展開され、書いた形のまま起動したコマンドにだけ当たる（PoC #22）'
+      - name: ${CLAUDE_PLUGIN_ROOT}
+        kind: 置換
+        purpose: SKILL.md の本文で、取り込まれたプラグインのフォルダの絶対パスに展開される
+      - name: ${CLAUDE_SKILL_DIR}
+        kind: 置換
+        purpose: SKILL.md の本文で、そのスキルのフォルダの絶対パスに展開される
+      - name: $ARGUMENTS
+        kind: 置換
+        purpose: スラッシュコマンドに渡した引数。ワークスペースのフォルダを受け取る
+      - name: Agent
+        kind: ツール
+        purpose: スキルの手順からサブエージェント（general-purpose）を起動し、リサーチを任せる
 lead: Anthropic のコーディングエージェントの CLI。プラグインとマーケットプレイスの仕組みを持ち、プラグインが同梱するスキルを読み込む。
 purl: pkg:npm/%40anthropic-ai/claude-code
 supplier: Anthropic
@@ -46,6 +76,8 @@ dependency_scope: 必須
 adoption: 採用
 upstream: anthropics/claude-code
 verification:
-  state: 未確認
+  state: 済
+  date: '2026-10-02'
+  detail: PoC（https://github.com/shuhei1101/mindmap/pull/22）で、2.1.287 の `claude -p --plugin-dir` を既定の許可モードで動かし、プラグインの 2 つのスキルの呼び名・`${CLAUDE_PLUGIN_ROOT}` の展開・`allowed-tools` の許可とサブエージェントへの及び方を確かめた（作業ツリーとインストールした形の両方）
 license: 独自の利用規約（npm のライセンス欄は `SEE LICENSE IN README.md`）。このプラグインは同梱せず、利用者が入れたものを使う
 docs_url: https://code.claude.com/docs/en/plugins/marketplace-reference

@@ -1,0 +1,68 @@
+title: "セットアップ"
+entry:
+  kind: operation
+  value: '`/mindmap:setup [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `skills/setup/SKILL.md`）'
+flows:
+  - name: 正常系
+    summary: スキル setup のファイルが制約どおりの形で、プラグインの検証を通る
+    setup:
+      - name: Mock
+        description: なし（リポジトリのファイルを読み、実際の Claude Code の `claude plugin validate` を起動する。モデルは呼ばない）
+      - name: 設定のフォルダ
+        description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにする
+        notes: 環境変数 `CLAUDE_CONFIG_DIR`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as skills/setup/SKILL.md
+        participant C as Claude Code（claude plugin validate）
+
+        クライアント->>IF: front matter と本文のパスを読む
+        クライアント->>C: リポジトリの直下を検証する
+        C-->>クライアント: 終了コード 0
+      ```
+    expected:
+      - front matter の `name` が `setup`、`allowed-tools` が制約の値と一致する
+      - 本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
+      - 本文が指す `steps/` のファイルが全てある
+      - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
+      - '`claude plugin validate` が終了コード 0'
+lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindmap:session` へ渡すスキルの入口と、そのファイルの形。
+callers:
+  - dev/設計書/シナリオ/単一ユースケース/話し合いのセットアップ#
+side_effects: スクリプトの `init`・`build` でワークスペースを作る（新しいワークスペースのときだけ）。スキルが自分でファイルを書くことはない
+request:
+  - name: $ARGUMENTS
+    type: str
+    required: false
+    default: なし（ワークスペースのフォルダの指定を求める）
+    location: argument
+    description: ワークスペースのフォルダのパス。`mindmap.yaml` があれば既存、無ければ新しいワークスペースとして扱う
+    example: ~/discussions/家計簿アプリ
+exceptions:
+  - name: なし（正常終了）
+    condition: ファイルの形が制約どおりで、Claude Code がスキルとして読み込める
+constraints:
+  - item: ファイルの形
+    constraint: '`skills/setup/SKILL.md` と `skills/setup/steps/`（`新しいワークスペース.md`・`既存のワークスペース.md`）。進め方ガイド・質問の書式は `skills/mindmap/` の共通のものを読む'
+  - item: front matter の name
+    constraint: '`setup`'
+  - item: front matter の description
+    constraint: いつ使うか（話し合いを始める・再開するとき）が分かる 1 文
+  - item: front matter の allowed-tools
+    constraint: '`Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。これ以外の Bash は許していない'
+    notes: PoC で、この規則で利用者の既定のモードでも確認が 0 件になることを確かめた
+  - item: 共通のファイルの参照
+    constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
+  - item: スクリプトの起動
+    constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く（この形のまま起動したときだけ `allowed-tools` に当たる）
+  - item: 編集の後
+    constraint: ワークスペースを作ったら最後に `build` を流す（hooks は使わない）
+  - item: 引き渡し
+    constraint: 最後に `/mindmap:session {ワークスペースのフォルダ}` で続けるよう案内する
+refs:
+  - dev/設計書/外部ライブラリ/claude-code#
+notes:
+  対応テストファイル: '`tests/integration/skill/test_setup.py`（結合テスト作成で置き、`test_file` に書く）'
+  確かめないもの: スキルをモデルが読んで動かす振る舞い（たたき台・案内）は、費用が掛かり結果が揺れるためテストしない。読み込まれてスラッシュコマンドになることと許可の規則が当たることは PoC（#22）で確かめた
