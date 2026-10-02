@@ -6,7 +6,7 @@ args:
   - name: title
     type: 文字列
     required: true
-    description: 話し合いの題名（`settings` の題名）。1 行で末尾を省略し、全文を `title` 属性に持たせる
+    description: 話し合いの題名（埋め込みのデータから画面設計が渡す）。1 行で末尾を省略し、全文を `title` 属性に持たせる
   - name: tabs
     type: オブジェクトの配列
     required: true
