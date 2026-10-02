@@ -83,11 +83,14 @@ def build_parser() -> argparse.ArgumentParser:
         )
         return subparser
 
-    add_command("init", "設定を受け取って空のワークスペースを作る")
+    init_parser = add_command("init", "設定を受け取って空のワークスペースを作る")
+    _add_json_argument(init_parser, "設定の JSON")
     add_parser = add_command("add", "1 項目を足す")
     add_parser.add_argument("kind", choices=KIND_NAMES, help="足す項目の種類")
+    _add_json_argument(add_parser, "項目の中身の JSON")
     update_parser = add_command("update", "1 項目のキーを置き換える")
     update_parser.add_argument("id", help="直す項目の ID")
+    _add_json_argument(update_parser, "置き換えるキーの JSON")
     adopt_parser = add_command("adopt", "検討事項の採用する案を切り替える")
     adopt_parser.add_argument("id", help="検討事項の ID")
     adopt_parser.add_argument("key", help="採用する案の記号")
@@ -114,6 +117,16 @@ def build_parser() -> argparse.ArgumentParser:
     add_command("build", "記録を埋め込んだ preview.html を書き出す")
     add_command("goal", "ゴールに届いたかと残りを返す")
     return parser
+
+
+def _add_json_argument(parser: argparse.ArgumentParser, what: str) -> None:
+    """中身の JSON を標準入力の代わりに引数で渡す `--json` を足す。"""
+    parser.add_argument("--json", help=f"{what}（渡したときは標準入力を読まない）")
+
+
+def _read_json_input(args: argparse.Namespace) -> str:
+    """`--json` があればその値を、無ければ標準入力を読んで返す。"""
+    return args.json if args.json is not None else sys.stdin.read()
 
 
 def _positive_int(text: str) -> int:
@@ -146,9 +159,9 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
 
     root = args.workspace
     handlers = {
-        "init": lambda: commands.run_init(root, sys.stdin.read()),
-        "add": lambda: commands.run_add(root, args.kind, sys.stdin.read()),
-        "update": lambda: commands.run_update(root, args.id, sys.stdin.read()),
+        "init": lambda: commands.run_init(root, _read_json_input(args)),
+        "add": lambda: commands.run_add(root, args.kind, _read_json_input(args)),
+        "update": lambda: commands.run_update(root, args.id, _read_json_input(args)),
         "adopt": lambda: commands.run_adopt(root, args.id, args.key),
         "status": lambda: commands.run_status(root),
         "next": lambda: commands.run_next(root, args.limit),

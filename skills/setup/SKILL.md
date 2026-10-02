@@ -27,12 +27,12 @@ allowed-tools: Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/m
 ## コマンド
 
 どれも `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` の後ろに続けて呼ぶ。
-標準入力を渡すコマンドは、`<<'EOF'` の次の行から JSON を書く。
+中身の JSON は `--json '{JSON}'` の引数で渡す。値の中に `'` が要るときは `'\''` と書く。`'` は書き換わって引数が壊れることがあるので、JSON には `'` を入れない言い方にする。
 
 | コマンド | 呼び方 | 使う引数 |
 | --- | --- | --- |
 | `check-env` | `check-env` | なし |
-| `init` | `init --workspace {フォルダ} <<'EOF'` | 標準入力に設定の JSON（`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`） |
+| `init` | `init --workspace {フォルダ} --json '{JSON}'` | `--json` に設定の JSON（`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`） |
 | `status` | `status --workspace {フォルダ}` | `--workspace` |
 | `find` | `find --workspace {フォルダ} --text {文字}` | `--text` |
 | `build` | `build --workspace {フォルダ}` | `--workspace` |

@@ -33,12 +33,12 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 ## コマンド
 
 どれも `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` の後ろに続けて呼ぶ。
-標準入力を渡すコマンドは、`<<'EOF'` の次の行から JSON を書く。
+中身の JSON は `--json '{JSON}'` の引数で渡す。値の中に `'` が要るときは `'\''` と書く。`'` は書き換わって引数が壊れることがあるので、JSON には `'` を入れない言い方にする。
 
 | コマンド | 呼び方 | 使う引数 |
 | --- | --- | --- |
-| `add` | `add {種類} --workspace {フォルダ} <<'EOF'` | `種類`（`decision`・`task`・`research`・`doc`・`term`・`note`・`log`）。標準入力に項目の JSON（`id`・`created`・`updated`・`body` は渡さない。本文は `body_markdown`） |
-| `update` | `update {ID} --workspace {フォルダ} <<'EOF'` | `ID`。標準入力に置き換えるキーの JSON（消すキーは `null`） |
+| `add` | `add {種類} --workspace {フォルダ} --json '{JSON}'` | `種類`（`decision`・`task`・`research`・`doc`・`term`・`note`・`log`）。`--json` に項目の JSON（`id`・`created`・`updated`・`body` は渡さない。本文は `body_markdown`） |
+| `update` | `update {ID} --workspace {フォルダ} --json '{JSON}'` | `ID`。`--json` に置き換えるキーの JSON（消すキーは `null`） |
 | `adopt` | `adopt {ID} {記号} --workspace {フォルダ}` | `ID`（検討事項）・`記号`（採用する案） |
 | `next` | `next --workspace {フォルダ} [--limit {件数}]` | `--limit` |
 | `impact` | `impact {ID} --workspace {フォルダ}` | `ID` |
