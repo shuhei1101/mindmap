@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport: スマホ幅でも等倍で開く（拡大は禁止しない） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- color-scheme: 既定は端末の明暗。切り替えたときは app.js が書き換える -->
+  <meta name="color-scheme" content="light dark">
+  <title>開発者ツール × スイス（カード・Web フォント） | mindmap デザインスタイル</title>
+  <!-- 明暗: 端末に保存した切り替えを、描く前に当てる -->
+  <script>
+    {
+      const theme = localStorage.getItem("mindmap-theme");
+      if (theme) {
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="color-scheme"]').content = theme;
+      }
+    }
+  </script>
+  <!-- 文字: 英数字は Inter、日本語は Noto Sans JP、ID は JetBrains Mono を Google Fonts から読む（端末で字形を変えない） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <!-- モック専用の操作列: 候補のスタイルを切り替える -->
+  <nav class="mockbar" aria-label="デザインスタイルの候補">
+    <span>候補</span>
+    <a href="../dev-swiss-cards/index.html" aria-current="page">dev-swiss-cards</a>
+    <a href="../dev-swiss-compact/index.html">dev-swiss-compact</a>
+    <a href="../dev-swiss-rules/index.html">dev-swiss-rules</a>
+  </nav>
+
+  <!-- トップバー -->
+  <header class="topbar">
+    <a class="brand" href="../../index.md">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M12 16h5M17 16V7h5M17 16v9h5"/><circle cx="25" cy="7" r="2.6"/><circle cx="25" cy="25" r="2.6"/></svg>
+      mindmap
+    </a>
+    <span class="brand-sub">要件出しのスキル mindmap を設計する</span>
+    <span class="spacer"></span>
+    <button class="search-trigger" type="button" aria-label="すべての項目を検索"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="label">すべての項目を検索</span><kbd>/</kbd></button>
+    <button class="top-btn" id="theme-btn" type="button" aria-label="ダークにする"><svg class="icon i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg><svg class="icon i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+  </header>
+
+  <!-- タブ: 件数つき。つながりは帯の右端に分けて置く -->
+  <nav class="tabbar" aria-label="項目の種類">
+    <a class="tab" href="#" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/></svg>概要</a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m9 12 2 2 4-4"/></svg>検討事項<span class="count">36</span></a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>タスク<span class="count">8</span></a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/><path d="M8 10.5h5"/></svg>調査<span class="count">4</span></a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6Z"/><path d="M14 3v4h4"/></svg>資料<span class="count">3</span></a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h11a3 3 0 0 1 3 3v12H7a3 3 0 0 1-3-3Z"/><path d="M4 17a3 3 0 0 1 3-3h11"/></svg>用語集<span class="count">6</span></a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v12l-4 4H5Z"/><path d="M15 20v-4h4"/></svg>メモ<span class="count">3</span></a>
+    <a class="tab" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v10H9l-5 4Z"/></svg>会話ログ<span class="count">7</span></a>
+    <a class="tab tab-graph" href="#graph-block"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 11 7.6-4M8.2 13l7.6 4"/></svg>つながり</a>
+  </nav>
+
+  <main class="content" id="main">
+    <!-- パンくず -->
+    <nav class="crumbs" aria-label="パンくず"><a href="../../index.md">mock</a> / <a href="../index.md">styles</a> / dev-swiss-cards</nav>
+
+    <!-- 概要: 題名 -->
+    <header class="ov-hero">
+      <p class="ov-meta">システム開発 · ゴールはインターフェースの段階まで</p>
+      <h1>要件出しのスキル mindmap を設計する</h1>
+    </header>
+
+    <!-- 概要: タイル -->
+    <div class="ov-grid">
+      <section class="tile" aria-labelledby="t-next">
+        <h2 id="t-next"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m11 9 3 3-3 3"/></svg>次に検討する項目<a class="more" href="#">すべて表示（6 件）</a></h2>
+        <ol class="next-list">
+          <li><button type="button"><span class="rank">1</span><span class="ttl">最上位の軸の呼び名</span><span class="sub"><span>分け方 · 要件</span><span class="impact" role="img" aria-label="影響度 3"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="mono">後続 0</span></span><span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li>
+          <li><button type="button"><span class="rank">2</span><span class="ttl">デザインスタイル</span><span class="sub"><span>デザイン · 構成</span><span class="impact" role="img" aria-label="影響度 3"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="mono">後続 2</span></span><span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li>
+          <li><button type="button"><span class="rank">3</span><span class="ttl">スクリプトのコマンドと引数</span><span class="sub"><span>データ構造 · インターフェース</span><span class="impact" role="img" aria-label="影響度 2"><i class="on"></i><i class="on"></i><i class=""></i></span><span class="mono">後続 0</span></span><span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li>
+        </ol>
+      </section>
+      <section class="tile" aria-labelledby="t-goal">
+        <h2 id="t-goal"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>ゴールまで</h2>
+        <div class="big">22<small> / 28</small></div>
+        <p class="big-sub">決定済み</p>
+        <div class="bars">
+          <span>目的</span><i><b style="width: 75%"></b></i><span class="frac">3/4</span>
+          <span>要件</span><i><b style="width: 83%"></b></i><span class="frac">5/6</span>
+          <span>構成</span><i><b style="width: 77%"></b></i><span class="frac">10/13</span>
+          <span>インターフェース</span><i><b style="width: 80%"></b></i><span class="frac">4/5</span>
+          <span>コンテンツ</span><i><b style="width: 0%"></b></i><span class="frac">0/6</span>
+        </div>
+        <a class="deliv" href="#"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>成果物 5</a>
+      </section>
+      <div class="ov-row">
+        <section class="tile" aria-labelledby="t-review">
+          <h2 id="t-review"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 2.5 20h19Z"/><path d="M12 10v4M12 17v.5"/></svg>要見直し<span class="n mono">1</span><a class="more" href="#">すべて表示</a></h2>
+          <ul class="mini"><li><button type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .3 9.7 5 5 9.7.3 5Z" fill="var(--st-review)"/></svg>システム開発の段階の切り方<span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li></ul>
+        </section>
+        <section class="tile" aria-labelledby="t-hold">
+          <h2 id="t-hold"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>保留<span class="n mono">1</span><a class="more" href="#">すべて表示</a></h2>
+          <ul class="mini"><li><button type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.2" y="1" width="2.6" height="8" fill="var(--st-hold)"/><rect x="6.2" y="1" width="2.6" height="8" fill="var(--st-hold)"/></svg>aituber/tmp を移す<span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li></ul>
+        </section>
+        <section class="tile" aria-labelledby="t-doing">
+          <h2 id="t-doing"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7Z"/></svg>進行中のタスク<span class="n mono">2</span><a class="more" href="#">すべて表示</a></h2>
+          <ul class="mini">
+            <li><button type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/><path d="M5 1.2a3.8 3.8 0 0 1 0 7.6Z" fill="var(--st-open)"/></svg>デザインスタイルの見本を 3 案作る<span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li>
+            <li><button type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/><path d="M5 1.2a3.8 3.8 0 0 1 0 7.6Z" fill="var(--st-open)"/></svg>プレビューのモックを作る<span class="go"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span></button></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+
+    <!-- 部品と状態: ボタン・表示形式の切り替え・ホバー / フォーカス / 選択中の見分け -->
+    <section class="block" aria-labelledby="b-parts">
+      <h2 id="b-parts">部品と状態</h2>
+      <div class="parts">
+        <button class="btn primary" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="15" y="4" width="6" height="4" rx="1"/><rect x="15" y="16" width="6" height="4" rx="1"/><path d="M9 6h3v12h3M12 6h3"/></svg>マップで開く</button>
+        <button class="btn" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16M15 4v16"/></svg>表示する列</button>
+        <button class="btn ghost" type="button">初期設定に戻す</button>
+        <button class="icon-btn" type="button" aria-label="全画面で表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+        <div class="segment" role="group" aria-label="表示形式">
+          <button type="button" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="15" y="4" width="6" height="4" rx="1"/><rect x="15" y="16" width="6" height="4" rx="1"/><path d="M9 6h3v12h3M12 6h3"/></svg>マップ</button>
+          <button type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/></svg>カード</button>
+          <button type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>表</button>
+        </div>
+      </div>
+      <div class="states">
+        <figure><button class="demo" type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>最上位の軸の呼び名</button><figcaption>通常</figcaption></figure>
+        <figure><button class="demo is-hover" type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>最上位の軸の呼び名</button><figcaption>ホバー</figcaption></figure>
+        <figure><button class="demo is-focus" type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>最上位の軸の呼び名</button><figcaption>キーボードのフォーカス</figcaption></figure>
+        <figure><button class="demo is-selected" type="button"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>最上位の軸の呼び名</button><figcaption>選択中</figcaption></figure>
+        <figure><span class="demo-static"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>最上位の軸の呼び名</span><figcaption>押せない文字</figcaption></figure>
+      </div>
+      <ul class="marks" aria-label="状態の印">
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4.5" fill="var(--st-done)"/></svg>決定済み</span></li>
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>未決定</span></li>
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/><path d="M5 1.2a3.8 3.8 0 0 1 0 7.6Z" fill="var(--st-open)"/></svg>進行中</span></li>
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .3 9.7 5 5 9.7.3 5Z" fill="var(--st-review)"/></svg>要見直し</span></li>
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.2" y="1" width="2.6" height="8" fill="var(--st-hold)"/><rect x="6.2" y="1" width="2.6" height="8" fill="var(--st-hold)"/></svg>保留</span></li>
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-loose)" stroke-width="1.6" stroke-dasharray="2 1.6"/></svg>未整理</span></li>
+        <li><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><path d="m1.5 1.5 7 7M8.5 1.5l-7 7" stroke="var(--st-off)" stroke-width="1.6"/></svg>取り下げ</span></li>
+      </ul>
+    </section>
+
+    <!-- 表と詳細パネル -->
+    <section class="block" aria-labelledby="b-table">
+      <h2 id="b-table">検討事項の表と詳細</h2>
+      <div class="split">
+        <div>
+          <div class="toolbar">
+            <label class="field"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4Z"/></svg><span class="sr-only">表の中を絞り込む</span><input type="text" placeholder="ID・タイトルで絞り込む"></label>
+            <span class="spacer"></span>
+            <div class="segment" role="group" aria-label="表示形式">
+              <button type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="6" height="4" rx="1"/><rect x="15" y="4" width="6" height="4" rx="1"/><rect x="15" y="16" width="6" height="4" rx="1"/><path d="M9 6h3v12h3M12 6h3"/></svg>マップ</button>
+              <button type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="8" height="7" rx="1"/><rect x="13" y="4" width="8" height="7" rx="1"/><rect x="3" y="13" width="8" height="7" rx="1"/><rect x="13" y="13" width="8" height="7" rx="1"/></svg>カード</button>
+              <button type="button" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M3 14h18M9 4v16"/></svg>表</button>
+            </div>
+            <button class="btn" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M9 4v16M15 4v16"/></svg>表示する列</button>
+          </div>
+          <div class="chips">
+            <span class="chip">状態: 未決定<button type="button" aria-label="状態の条件を外す"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <span class="chip">フェーズ: 構成<button type="button" aria-label="フェーズの条件を外す"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></span>
+            <button class="clear" type="button">すべて外す</button>
+          </div>
+          <div class="table-wrap">
+            <table class="grid">
+              <caption class="sr-only">検討事項</caption>
+              <thead>
+                <tr>
+                  <th class="pinned pin-edge" scope="col"><span class="th-in">ID<button class="th-tool" type="button" data-toggle aria-pressed="true" aria-label="ID の列までピン留め"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4h6l-1 6 3 3H7l3-3Z"/><path d="M12 13v7"/></svg></button></span></th>
+                  <th scope="col" aria-sort="ascending"><span class="th-in"><button class="th-sort" type="button">タイトル<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9 4-4 4 4"/><path d="M12 5v14"/></svg></button></span></th>
+                  <th scope="col"><span class="th-in">状態<button class="th-tool" type="button" data-toggle aria-pressed="true" aria-label="状態で絞り込む"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4Z"/></svg></button></span></th>
+                  <th scope="col"><span class="th-in">カテゴリー<button class="th-tool" type="button" data-toggle aria-pressed="false" aria-label="カテゴリーで絞り込む"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4Z"/></svg></button></span></th>
+                  <th scope="col"><span class="th-in">フェーズ<button class="th-tool" type="button" data-toggle aria-pressed="true" aria-label="フェーズで絞り込む"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4Z"/></svg></button></span></th>
+                  <th scope="col">影響度</th>
+                  <th class="num" scope="col">後続</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="pinned pin-edge"><span class="mono">D-003</span></td>
+                  <td><button class="row-open" type="button">最上位の軸の呼び名</button></td>
+                  <td><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>未決定</span></td>
+                  <td>分け方</td>
+                  <td>要件</td>
+                  <td><span class="impact" role="img" aria-label="影響度 3"><i class="on"></i><i class="on"></i><i class="on"></i></span></td>
+                  <td class="num mono">0</td>
+                </tr>
+                <tr class="selected">
+                  <td class="pinned pin-edge"><span class="mono">D-012</span></td>
+                  <td><button class="row-open" type="button">デザインスタイル</button></td>
+                  <td><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>未決定</span></td>
+                  <td>デザイン</td>
+                  <td>構成</td>
+                  <td><span class="impact" role="img" aria-label="影響度 3"><i class="on"></i><i class="on"></i><i class="on"></i></span></td>
+                  <td class="num mono">2</td>
+                </tr>
+                <tr>
+                  <td class="pinned pin-edge"><span class="mono">D-017</span></td>
+                  <td><button class="row-open" type="button">スクリプトのコマンドと引数</button></td>
+                  <td><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>未決定</span></td>
+                  <td>データ構造</td>
+                  <td>インターフェース</td>
+                  <td><span class="impact" role="img" aria-label="影響度 2"><i class="on"></i><i class="on"></i><i class=""></i></span></td>
+                  <td class="num mono">0</td>
+                </tr>
+                <tr>
+                  <td class="pinned pin-edge"><span class="mono">D-021</span></td>
+                  <td><button class="row-open" type="button">システム開発の段階の切り方</button></td>
+                  <td><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 .3 9.7 5 5 9.7.3 5Z" fill="var(--st-review)"/></svg>要見直し</span></td>
+                  <td>進め方</td>
+                  <td>要件</td>
+                  <td><span class="impact" role="img" aria-label="影響度 3"><i class="on"></i><i class="on"></i><i class="on"></i></span></td>
+                  <td class="num mono">4</td>
+                </tr>
+                <tr>
+                  <td class="pinned pin-edge"><span class="mono">D-026</span></td>
+                  <td><button class="row-open" type="button">会話ログの本文の置き方</button></td>
+                  <td><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4.5" fill="var(--st-done)"/></svg>決定済み</span></td>
+                  <td>データ構造</td>
+                  <td>構成</td>
+                  <td><span class="impact" role="img" aria-label="影響度 2"><i class="on"></i><i class="on"></i><i class=""></i></span></td>
+                  <td class="num mono">1</td>
+                </tr>
+                <tr>
+                  <td class="pinned pin-edge"><span class="mono">D-031</span></td>
+                  <td><button class="row-open" type="button">aituber/tmp を移す</button></td>
+                  <td><span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><rect x="1.2" y="1" width="2.6" height="8" fill="var(--st-hold)"/><rect x="6.2" y="1" width="2.6" height="8" fill="var(--st-hold)"/></svg>保留</span></td>
+                  <td>配布</td>
+                  <td>目的</td>
+                  <td><span class="impact" role="img" aria-label="影響度 1"><i class="on"></i><i class=""></i><i class=""></i></span></td>
+                  <td class="num mono">0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 詳細パネル: 実画面では本文に重ねて右から出す。見本は表の横に置く -->
+        <aside class="panel" aria-label="詳細">
+          <div class="panel-head">
+            <button class="icon-btn" type="button" aria-label="一覧へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+            <span class="panel-kind">検討事項 · <span class="mono">D-012</span></span>
+            <span class="spacer"></span>
+            <button class="icon-btn" type="button" aria-label="全画面で表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+            <button class="icon-btn" type="button" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+          </div>
+          <div class="panel-body">
+            <span class="st"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>未決定</span>
+            <h3>デザインスタイル</h3>
+            <div class="p-meta"><span>デザイン · 構成</span><span class="impact" role="img" aria-label="影響度 3"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="mono">2026-10-02</span></div>
+            <h4>案</h4>
+            <div class="opt adopted"><div class="opt-head">開発者ツール × スイス<span class="badge ok">採用</span></div><p>無彩色の骨格に印の 1 色。表と数値を読む時間が長い。</p></div>
+            <div class="opt"><div class="opt-head">カード中心<span class="badge">不採用</span></div><p>箱が並ぶだけになり、見出しの大小で読ませにくい。</p></div>
+            <h4>前提</h4>
+            <a class="idlink" href="#"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="4.5" fill="var(--st-done)"/></svg>D-003</a><a class="idlink" href="#"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>D-008</a>
+            <h4>後続</h4>
+            <a class="idlink" href="#"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>D-019</a><a class="idlink" href="#"><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg>D-024</a>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- つながり: 地の色と種類ごとの色。見本は止まった 1 枚 -->
+    <section class="block" id="graph-block" aria-labelledby="b-graph">
+      <h2 id="b-graph">つながり</h2>
+      <div class="legend" role="group" aria-label="表示する種類">
+        <button type="button" data-toggle data-kind="dec" aria-pressed="true"><i style="background: var(--k-dec)"></i>検討事項<span class="mono">34</span></button>
+        <button type="button" data-toggle data-kind="task" aria-pressed="true"><i style="background: var(--k-task)"></i>タスク<span class="mono">7</span></button>
+        <button type="button" data-toggle data-kind="res" aria-pressed="true"><i style="background: var(--k-res)"></i>調査<span class="mono">4</span></button>
+        <button type="button" data-toggle data-kind="doc" aria-pressed="true"><i style="background: var(--k-doc)"></i>資料<span class="mono">3</span></button>
+        <button type="button" data-toggle data-kind="term" aria-pressed="true"><i style="background: var(--k-term)"></i>用語集<span class="mono">6</span></button>
+        <button type="button" data-toggle data-kind="note" aria-pressed="true"><i style="background: var(--k-note)"></i>メモ<span class="mono">3</span></button>
+        <button type="button" data-toggle data-kind="log" aria-pressed="false"><i style="background: var(--k-log)"></i>会話ログ<span class="mono">7</span></button>
+      </div>
+      <div class="graph-wrap"><canvas id="graph" role="img" aria-label="項目のつながりの見本"></canvas></div>
+    </section>
+  </main>
+
+  <!-- 全体の検索: 入口か / キーで開く。Esc と外側の押下で閉じる -->
+  <dialog class="search" id="search" closedby="any" aria-label="すべての項目を検索">
+    <div class="search-head">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <label class="sr-only" for="search-q">検索キーワード</label>
+      <input id="search-q" type="text" placeholder="ID・タイトル・本文で検索" autocomplete="off" value="デザイン">
+      <form method="dialog"><button class="icon-btn" aria-label="検索を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form>
+    </div>
+    <ul class="search-results">
+      <li><button type="button"><span class="mono">D-012</span><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/></svg><span><mark>デザイン</mark>スタイル</span></button></li>
+      <li><button type="button"><span class="mono">T-004</span><svg class="mark" viewBox="0 0 10 10" aria-hidden="true"><circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/><path d="M5 1.2a3.8 3.8 0 0 1 0 7.6Z" fill="var(--st-open)"/></svg><span><mark>デザイン</mark>スタイルの見本を 3 案作る</span></button></li>
+    </ul>
+  </dialog>
+</body>
+</html>
