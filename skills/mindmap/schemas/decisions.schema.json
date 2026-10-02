@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "検討事項",
+  "description": "`decisions.yaml` の形。問いと答えの単位（未決定のものも入る）。消さず、状態を `取り下げ` か `対象外` にする。",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "項目の並び（1 要素 = 1 項目）",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "created",
+        "updated",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/item/properties/id",
+          "pattern": "^D-[0-9]+$"
+        },
+        "title": {
+          "$ref": "common.schema.json#/$defs/item/properties/title"
+        },
+        "target": {
+          "$ref": "common.schema.json#/$defs/item/properties/target"
+        },
+        "category": {
+          "$ref": "common.schema.json#/$defs/item/properties/category"
+        },
+        "phase": {
+          "$ref": "common.schema.json#/$defs/item/properties/phase"
+        },
+        "tags": {
+          "$ref": "common.schema.json#/$defs/item/properties/tags"
+        },
+        "attrs": {
+          "$ref": "common.schema.json#/$defs/item/properties/attrs"
+        },
+        "related": {
+          "$ref": "common.schema.json#/$defs/item/properties/related"
+        },
+        "links": {
+          "$ref": "common.schema.json#/$defs/item/properties/links"
+        },
+        "created": {
+          "$ref": "common.schema.json#/$defs/item/properties/created"
+        },
+        "updated": {
+          "$ref": "common.schema.json#/$defs/item/properties/updated"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "未決定",
+            "決定済み",
+            "要見直し",
+            "保留",
+            "未整理",
+            "対象外",
+            "取り下げ"
+          ],
+          "description": "状態"
+        },
+        "lead": {
+          "type": "string",
+          "description": "何を決める問いか"
+        },
+        "answer": {
+          "type": "string",
+          "description": "決まった答え"
+        },
+        "options": {
+          "type": "array",
+          "description": "案。採用する案（`adopted` が真）は 0 か 1 つ",
+          "items": {
+            "type": "object",
+            "description": "検討事項の案 1 つ",
+            "required": [
+              "key",
+              "content"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "案の記号（A・B など）",
+                "minLength": 1
+              },
+              "content": {
+                "type": "string",
+                "description": "案の内容"
+              },
+              "pros": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "description": "メリット"
+              },
+              "cons": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "description": "デメリット"
+              },
+              "note": {
+                "type": "string",
+                "description": "備考"
+              },
+              "adopted": {
+                "type": "boolean",
+                "description": "採用する案か。真の案は 0 か 1 つ"
+              },
+              "reason": {
+                "type": "string",
+                "description": "採用した・しなかった理由"
+              }
+            }
+          },
+          "contains": {
+            "type": "object",
+            "required": [
+              "adopted"
+            ],
+            "properties": {
+              "adopted": {
+                "const": true
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        "weight": {
+          "type": "string",
+          "enum": [
+            "大",
+            "中",
+            "小"
+          ],
+          "description": "影響度（派生の多さ）"
+        },
+        "parent": {
+          "type": "string",
+          "description": "この検討事項が派生した検討事項の ID（`D-`）",
+          "pattern": "^D-[0-9]+$"
+        },
+        "depends_on": {
+          "type": "array",
+          "description": "先に決まっている必要がある検討事項の ID（`D-`）。保留の待ち先もここで持つ",
+          "items": {
+            "type": "string",
+            "pattern": "^D-[0-9]+$"
+          }
+        },
+        "reason": {
+          "type": "string",
+          "description": "決めた理由・保留や取り下げの理由"
+        },
+        "body": {
+          "type": "string",
+          "description": "`docs/` の本文の Markdown のファイル名（`{ID}.md`）",
+          "pattern": "^[^/\\\\]+\\.md$"
+        },
+        "sources": {
+          "type": "array",
+          "description": "決めた会話ログの ID（`L-`）",
+          "items": {
+            "type": "string",
+            "pattern": "^L-[0-9]+$"
+          }
+        }
+      }
+    }
+  }
+}

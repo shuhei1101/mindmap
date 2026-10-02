@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "会話ログ",
+  "description": "`logs.yaml` の形。会話の要約と残しておきたい言葉。後から書き換えず、消さない。`related` はこの会話で更新した項目を指す。",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "項目の並び（1 要素 = 1 項目）",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "created",
+        "updated",
+        "date"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/item/properties/id",
+          "pattern": "^L-[0-9]+$"
+        },
+        "title": {
+          "$ref": "common.schema.json#/$defs/item/properties/title"
+        },
+        "target": {
+          "$ref": "common.schema.json#/$defs/item/properties/target"
+        },
+        "category": {
+          "$ref": "common.schema.json#/$defs/item/properties/category"
+        },
+        "phase": {
+          "$ref": "common.schema.json#/$defs/item/properties/phase"
+        },
+        "tags": {
+          "$ref": "common.schema.json#/$defs/item/properties/tags"
+        },
+        "attrs": {
+          "$ref": "common.schema.json#/$defs/item/properties/attrs"
+        },
+        "related": {
+          "$ref": "common.schema.json#/$defs/item/properties/related"
+        },
+        "links": {
+          "$ref": "common.schema.json#/$defs/item/properties/links"
+        },
+        "created": {
+          "$ref": "common.schema.json#/$defs/item/properties/created"
+        },
+        "updated": {
+          "$ref": "common.schema.json#/$defs/item/properties/updated"
+        },
+        "date": {
+          "type": "string",
+          "description": "会話の日（`YYYY-MM-DD`）",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        },
+        "body": {
+          "type": "string",
+          "description": "`docs/` の本文の Markdown のファイル名（`{ID}.md`）",
+          "pattern": "^[^/\\\\]+\\.md$"
+        }
+      }
+    }
+  }
+}

@@ -100,7 +100,7 @@ subsystems:
     role: ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検と、プレビューの HTML の書き出し
     runtime: Python 3
     runs_on: 利用者の端末（Claude Code から起動するコマンド）
-    status: planned
+    status: implemented
   - name: プレビュー
     scope: preview
     role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面

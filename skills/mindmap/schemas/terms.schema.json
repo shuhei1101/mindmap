@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "用語集",
+  "description": "`terms.yaml` の形。話し合いの中で決めた言い方。`title` が用語になる。",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "項目の並び（1 要素 = 1 項目）",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "created",
+        "updated",
+        "meaning"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/item/properties/id",
+          "pattern": "^G-[0-9]+$"
+        },
+        "title": {
+          "$ref": "common.schema.json#/$defs/item/properties/title"
+        },
+        "target": {
+          "$ref": "common.schema.json#/$defs/item/properties/target"
+        },
+        "category": {
+          "$ref": "common.schema.json#/$defs/item/properties/category"
+        },
+        "phase": {
+          "$ref": "common.schema.json#/$defs/item/properties/phase"
+        },
+        "tags": {
+          "$ref": "common.schema.json#/$defs/item/properties/tags"
+        },
+        "attrs": {
+          "$ref": "common.schema.json#/$defs/item/properties/attrs"
+        },
+        "related": {
+          "$ref": "common.schema.json#/$defs/item/properties/related"
+        },
+        "links": {
+          "$ref": "common.schema.json#/$defs/item/properties/links"
+        },
+        "created": {
+          "$ref": "common.schema.json#/$defs/item/properties/created"
+        },
+        "updated": {
+          "$ref": "common.schema.json#/$defs/item/properties/updated"
+        },
+        "meaning": {
+          "type": "string",
+          "description": "用語の意味"
+        },
+        "aliases": {
+          "type": "array",
+          "description": "同じものを指す別の言い方",
+          "items": {
+            "type": "string"
+          }
+        },
+        "avoid": {
+          "type": "array",
+          "description": "やめた言い方",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
