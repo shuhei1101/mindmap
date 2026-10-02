@@ -46,6 +46,9 @@ SETTINGS_SCHEMA = "settings.schema.json"
 # 置き換える前に書く一時ファイルの拡張子（置き換えるファイルと同じフォルダに作る）
 TEMP_SUFFIX = ".tmp"
 
+# 置き換え先が無いときの一時ファイルの権限（umask で削る前の値）
+DEFAULT_FILE_MODE = 0o666
+
 # 一番上など、キーのパスが空のときの表記
 WHOLE_PATH = "(全体)"
 
@@ -229,6 +232,10 @@ def build_mismatch_error(problems: list[Problem]) -> SchemaMismatchError:
 def save_change(workspace: Workspace, change: Change) -> None:
     """1 種類の項目の並びと本文を、検証してから両方とも書き換えるか、どちらも書き換えない。"""
     spec = KINDS[change.kind]
+    # 書き戻すと中身を失う形のファイルには書かない（変更を当てる前の、そのファイルの問題を返す）
+    if _loses_content_on_rewrite(workspace, change.kind):
+        current = [p for p in validate_workspace(workspace) if p.file == spec.file]
+        raise build_mismatch_error(current)
     # 変更を当てた後のワークスペース全体を検証する
     changed_raw = {**workspace.raw, spec.file: {"items": change.items}}
     problems = validate_workspace(replace(workspace, raw=changed_raw))
@@ -389,17 +396,45 @@ def write_temp(target: Path, text: str) -> Path:
 
 
 def _write_temp(target: Path, text: str) -> Path:
-    """置き換え先と同じフォルダに一時ファイルを書き、そのパスを返す。"""
+    """置き換え先と同じフォルダに一時ファイルを書き、置き換え先の権限に揃えてそのパスを返す。"""
     fd, name = tempfile.mkstemp(dir=target.parent, suffix=TEMP_SUFFIX)
     temp = Path(name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as stream:
             stream.write(text)
+        # mkstemp は 0600 で作るので、置き換えた後に権限が変わらないよう揃える
+        if target.exists():
+            # 置き換え先がある: その権限を写す
+            shutil.copymode(target, temp)
+        else:
+            # 置き換え先が無い: 通常のファイルと同じ権限（0o666 から umask を引いたもの）にする
+            temp.chmod(DEFAULT_FILE_MODE & ~_current_umask())
     except OSError:
         # 書けなかった一時ファイルは残さない
         _remove_files([temp])
         raise
     return temp
+
+
+def _loses_content_on_rewrite(workspace: Workspace, kind: Kind) -> bool:
+    """その種類のファイルが、項目の並びで書き戻すと中身を失う形か。
+
+    読めない・一番上が辞書でない・`items` の横にキーがある・辞書でない要素がある、など
+    `items` に取り出せない中身があるときに真になる。項目の中の値だけが合わない形は、変更で直せるので偽。
+    """
+    file_name = KINDS[kind].file
+    # YAML として読めないファイル
+    if any(problem.file == file_name for problem in workspace.load_problems):
+        return True
+    # 読んだ値が、取り出した項目の並びだけの形と違う
+    return workspace.raw.get(file_name) != {"items": workspace.items[kind]}
+
+
+def _current_umask() -> int:
+    """今の umask を返す（読むには一度設定するしかないので、設定し直して戻す）。"""
+    mask = os.umask(0)
+    os.umask(mask)
+    return mask
 
 
 def _remove_files(paths: list[Path]) -> None:
