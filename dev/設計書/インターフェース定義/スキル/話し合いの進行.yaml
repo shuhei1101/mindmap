@@ -33,7 +33,7 @@ flows:
 lead: 作成済みのワークスペースで、取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定のステップを回すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/複合ユースケース/話し合いをゴールまで進める#
-side_effects: スクリプトの書き込むコマンドでワークスペースの YAML を書き換える。資料の本文（`docs/`）と引き渡しの資料（`handoff/`）はスキルが Markdown を書く。リサーチではサブエージェントが Web を調べる
+side_effects: スクリプトの書き込むコマンドでワークスペースの YAML を書き換える。資料の本文（`docs/`）と引き渡しの資料（`handoff/`）はスキルが Markdown を書き、そのとき利用者に書き込みの確認が出る。リサーチではサブエージェントが Web を調べる
 request:
   - name: $ARGUMENTS
     type: str
@@ -55,8 +55,8 @@ constraints:
   - item: front matter の description
     constraint: いつ使うか（セットアップの後に話し合いを進めるとき）が分かる 1 文
   - item: front matter の allowed-tools
-    constraint: '`Read, Write, Edit, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。これ以外の Bash は許していない'
-    notes: Write・Edit は `docs/`・`handoff/` の Markdown、Agent・WebSearch・WebFetch はリサーチのサブエージェントに使う。許可がサブエージェントに及ぶことは PoC で確かめた
+    constraint: '`Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。Write・Edit と、これ以外の Bash は許していない'
+    notes: Agent・WebSearch・WebFetch はリサーチのサブエージェントに使う。許可がサブエージェントの WebSearch・WebFetch に及ぶことは PoC で確かめた。`docs/`・`handoff/` の Markdown の書き出しは、数が少ないため利用者の確認に回す（パスで絞れない Write・Edit を話し合いの間ずっと許さない）
   - item: 共通のファイルの参照
     constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
   - item: スクリプトの起動

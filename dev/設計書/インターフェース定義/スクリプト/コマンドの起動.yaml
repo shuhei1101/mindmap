@@ -82,6 +82,34 @@ flows:
     expected:
       - 終了コードが 1
       - 標準エラーにフォルダのパスがあり、標準出力が空
+  - name: 正常系（起動した Python の依存が古い）
+    summary: 起動した Python の依存が下限より古ければ、読み込めても仮想環境の Python で起動し直す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 起動する Python
+        description: ライブラリを見せない仮想環境の Python に、jsonschema 4.0.0 を名乗る仮の配布（`jsonschema-4.0.0.dist-info` と空の `jsonschema` パッケージ）を置く
+        notes: 版は `importlib.metadata` で読まれるので、通信せずに古い版を作れる
+      - name: ホーム
+        description: 一時フォルダを `HOME` にし、その `.mindmap/venv` にライブラリを見せた仮想環境を作る
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py（起動した Python）
+        participant V as mindmap.py（仮想環境の Python）
+
+        クライアント->>IF: attrs --workspace
+        IF->>IF: jsonschema の版が下限より古い
+        IF->>V: 同じ引数で起動し直す
+        V-->>IF: JSON、終了コード 0
+        IF-->>クライアント: JSON、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - 標準出力が、仮想環境の Python で直接 `attrs` を起動したときと同じ
   - name: 異常系（仮想環境が無い・VenvNotFoundError）
     summary: 起動した Python に依存が無く、仮想環境も無ければ、check-env を促してエラーで終わる
     setup:
@@ -163,7 +191,8 @@ exceptions:
 error_format: '標準エラーに `エラー: {内容}` の行を出す。仮想環境が無い・依存が足りないときは、続けて `check-env` を実行するよう促す行を出す。'
 constraints:
   - item: そのまま動く条件
-    constraint: 起動した Python が 3.12 以上で、PyYAML と jsonschema を読み込める。このときは起動し直さない
+    constraint: 起動した Python が『依存の確認』と同じ判定で揃っている（3.12 以上で、PyYAML・jsonschema の版が『依存の確認』の下限以上）。このときは起動し直さない
+    notes: 下限は `check_env` の定数を読んで 1 か所で持つ。読み込めても版が古ければ起動し直す
   - item: 起動し直す先
     constraint: 『依存の確認』の `--venv` の既定（`~/.mindmap/venv`）の Python。`~` は利用者のホーム（環境変数 `HOME`、Windows は `USERPROFILE`）
   - item: 引き継ぐもの
