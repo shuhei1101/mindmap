@@ -6,6 +6,7 @@ import json
 import math
 import os
 import statistics
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -18,6 +19,9 @@ PAGE = Path(__file__).resolve().parent / "index.html"
 CDP_URL = os.environ.get("CDP_URL")
 # ブラウザから見たページの URL（Windows 側のブラウザでは、WSL のファイルの代わりに HTTP で配る）
 PAGE_URL = os.environ.get("PAGE_URL", PAGE.as_uri())
+# 計測用のブラウザのプロセスを見分ける --user-data-dir の一部（Windows のブラウザでメモリを測るとき）
+MEM_PROFILE = os.environ.get("MEM_PROFILE")
+MB = 1024 * 1024
 # 画面のリフレッシュレートに合わせた落ちたコマ: 間隔の中央値のこの倍を超えたコマ
 REL_DROP_FACTOR = 1.5
 
@@ -149,6 +153,28 @@ def measure_op(page: Page, op: str) -> dict[str, Any]:
     return summarize(raw)
 
 
+def js_heap_mb(page: Page) -> float:
+    """ページの JavaScript のヒープの使用量（MB）を CDP の Performance.getMetrics で返す。"""
+    cdp = page.context.new_cdp_session(page)
+    cdp.send("Performance.enable")
+    metrics = {m["name"]: m["value"] for m in cdp.send("Performance.getMetrics")["metrics"]}
+    cdp.detach()
+    return round(metrics["JSHeapUsedSize"] / MB, 1)
+
+
+def browser_memory_mb() -> float | None:
+    """計測に使うブラウザの全てのプロセスの私用メモリ（MB）の合計を返す。Windows のブラウザでないときは None。"""
+    # MEM_PROFILE: 計測用のブラウザだけを拾うための、--user-data-dir に含まれる文字列
+    if not MEM_PROFILE:
+        return None
+    script = (
+        "(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*" + MEM_PROFILE + "*' } "
+        "| Measure-Object -Property PrivatePageCount -Sum).Sum"
+    )
+    out = subprocess.run(["powershell.exe", "-NoProfile", "-Command", script], capture_output=True, text=True, check=True)
+    return round(float(out.stdout.strip()) / MB, 1)
+
+
 def main() -> None:
     """全ての段と条件を測り、1 行 1 件の JSON を書き出す。引数: 書き出し先・描き方（opt,opt-settle,mock）・件数（任意）。"""
     out = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("results.jsonl")
@@ -160,6 +186,7 @@ def main() -> None:
             for n in counts:
                 for width, height in VIEWPORTS:
                     for scale in SCALES:
+                        base_mem = browser_memory_mb()
                         ctx = browser.new_context(viewport={"width": width, "height": height}, device_scale_factor=scale)
                         page = ctx.new_page()
                         # 描き方の名前: {v}[-{rs}][-nolabel|-bitmap]（例 opt-settle・opt-each-bitmap）
@@ -170,6 +197,12 @@ def main() -> None:
                         time.sleep(SETTLE_SECONDS)
                         for op in OPS:
                             row = {"variant": variant, "n": n, "viewport": f"{width}x{height}", "scale": scale, "op": op, **measure_op(page, op)}
+                            # 操作の直後: ページの JavaScript のヒープと、ブラウザ全体の使用メモリの増え分
+                            row["js_heap_mb"] = js_heap_mb(page)
+                            if base_mem is not None:
+                                now_mem = browser_memory_mb()
+                                row["browser_mem_mb"] = now_mem
+                                row["browser_mem_delta_mb"] = round(now_mem - base_mem, 1)
                             line = json.dumps(row, ensure_ascii=False)
                             print(line, flush=True)
                             f.write(line + "\n")
