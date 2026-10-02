@@ -554,13 +554,6 @@ dialog.full .panel-body { flex: 1; max-width: 920px; width: 100%; margin: 0 auto
 /* 全画面の中の図の拡大 */
 dialog.full .full-viewer { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
-/* ===== つながりの線の種類: 項目の種類の右端のドロップダウン ===== */
-/* 項目の種類と線の種類のドロップダウンを 1 行に並べる */
-.map-tools .spacer { flex: 1; }
-/* 線の種類の見本（実線・点線・破線・一点鎖線） */
-.pop svg.ls { width: 28px; height: 6px; flex: none; color: var(--text-2); }
-/* 線の種類の説明 */
-.pop .ls-sub { display: block; color: var(--text-3); font-size: var(--fs-xs); }
 
 /* パンくずの帯: 本文と同じ幅に置く */
 .crumbs-bar { max-width: var(--content-max); margin: 0 auto; padding: 16px var(--page-pad) 0; }
@@ -588,3 +581,8 @@ body:has(> .mockbar) { --mock-h: 32px; }
 /* 表の該当なし: 行のセルの中で、表の枠の幅だけを左に留める（ピン留めや横に送っても見える） */
 table.grid td.no-match-cell { padding: 0; }
 table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--wrap-w, 100%); }
+
+/* 詳細パネルの成果物の印: タイトルの右に余白を空けて置く */
+.d-title .deliv-badge { margin-left: 12px; vertical-align: 4px; }
+/* 次に検討する項目: 横に並べる幅では、枠の高さを隣のゴールまでのタイルに合わせ、収まらない項目を隠す */
+@media (min-width: 1101px) { .t-next { contain: size; overflow: hidden; } }

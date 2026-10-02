@@ -230,7 +230,7 @@
   };
 
   // ===== 画面の状態 =====
-  const state = { zoom: 1, tab: "overview", view: "table", panel: null, full: false, sim: "", mapQ: "", tables: {}, mapShow: new Set(["要見直し", "未決定", "未整理", "保留"]), deps: true, linkTypes: new Set(["dep", "rel", "src", "for"]) };
+  const state = { zoom: 1, tab: "overview", view: "table", panel: null, full: false, sim: "", mapQ: "", tables: {}, mapShow: new Set(["要見直し", "未決定", "未整理", "保留"]), deps: true };
   for (const k of Object.keys(COLUMNS)) state.tables[k] = { q: "", filters: {}, sort: null, showClosed: k !== "decisions" };
   const colPrefs = (kind) => (prefs.cols[kind] ??= { hidden: COLUMNS[kind].filter((c) => c.hidden).map((c) => c.key), pin: 0 });
 
@@ -311,13 +311,12 @@
     const next = ds.filter((d) => d.status === "未決定" && isReady(d))
       .sort((a, b) => oi(STAGES, a.stage) - oi(STAGES, b.stage) || oi(IMPACT, a.weight) - oi(IMPACT, b.weight) || followers(b.id) - followers(a.id));
     const review = ds.filter((d) => d.status === "要見直し");
-    const holdDs = ds.filter((x) => x.status === "保留"), holdTs = M.tasks.filter((x) => x.status === "保留");
-    const holds = [...holdDs, ...holdTs];
+    const holds = ds.filter((x) => x.status === "保留");
     const all = (href, n, label = "すべて表示") => `<a class="t-link" href="${href}">${label}（${n} 件）</a>`;
     const running = M.tasks.filter((t) => t.status === "進行中");
 
     const nextHtml = next.length
-      ? `<ol class="next-list">${next.slice(0, 3).map((d) => `<li><button data-act="open" data-id="${d.id}"><span class="nl-ttl">${esc(d.title)}</span><span class="nl-meta"><span>${esc(d.category)} · ${esc(d.stage)}</span>${impact(d.weight)}<span class="fol" title="後続の件数">${icon("follow")}${followers(d.id)}</span></span><span class="go" aria-hidden="true">${icon("chev")}</span></button></li>`).join("")}</ol>`
+      ? `<ol class="next-list">${next.map((d) => `<li><button data-act="open" data-id="${d.id}"><span class="nl-ttl">${esc(d.title)}</span><span class="nl-meta"><span>${esc(d.category)} · ${esc(d.stage)}</span>${impact(d.weight)}<span class="fol" title="後続の件数">${icon("follow")}${followers(d.id)}</span></span><span class="go" aria-hidden="true">${icon("chev")}</span></button></li>`).join("")}</ol>`
       : `<p class="empty">すぐに検討できる項目はありません。</p>`;
     const stageRows = STAGES.map((sg, i) => {
       const all = ds.filter((d) => live(d) && d.stage === sg);
@@ -354,7 +353,7 @@
       </header>
       <div class="bento">
         <section class="tile t-next" aria-labelledby="h-next">
-          <div class="t-head"><h2 id="h-next">${icon("next")}次に検討する項目</h2>${next.length > 3 ? all(pageUrl("decisions", { view: "table", "f.status": "未決定", "f.ready": "はい" }), next.length) : ""}</div>
+          <div class="t-head"><h2 id="h-next">${icon("next")}次に検討する項目</h2>${next.length ? all(pageUrl("decisions", { view: "table", "f.status": "未決定", "f.ready": "はい" }), next.length) : ""}</div>
           ${nextHtml}
         </section>
         <section class="tile t-goal" aria-labelledby="h-goal">
@@ -369,7 +368,7 @@
           ${mini(review, "なし")}
         </section>
         <section class="tile t-small" aria-labelledby="h-hold">
-          <div class="t-head"><h2 id="h-hold">${icon("pause")}保留</h2><span class="t-links">${holdDs.length ? all(pageUrl("decisions", { view: "table", "f.status": "保留" }), holdDs.length, "検討事項") : ""}${holdTs.length ? all(pageUrl("tasks", { view: "table", "f.status": "保留" }), holdTs.length, "タスク") : ""}</span></div><p class="num">${holds.length}</p>
+          <div class="t-head"><h2 id="h-hold">${icon("pause")}保留</h2>${holds.length ? all(pageUrl("decisions", { view: "table", "f.status": "保留" }), holds.length) : ""}</div><p class="num">${holds.length}</p>
           ${mini(holds, "なし", (x) => { const w = (x.depends_on || []).filter((id) => !isResolved(id)); return `<span class="wait">${w.length ? `決定待ち ${idlinks(w)}` : "再開可能"}</span>`; })}
         </section>
         <section class="tile t-small" aria-labelledby="h-run">
@@ -381,6 +380,22 @@
           <div class="cat-wrap"><table class="cat-table"><thead><tr><th scope="col">カテゴリー</th>${STAGES.map((x) => `<th scope="col">${esc(x)}</th>`).join("")}<th scope="col" class="tot">決定済み</th></tr></thead>${catTable}</table></div>
         </section>
       </div>`;
+  };
+
+  // 次に検討する項目: 枠に収まるだけ並べ、収まらない分があるときだけ「すべて表示」を出す
+  // 横に並べる幅では枠の高さは隣のゴールまでのタイルで決まる。縦に積む幅では上位 NEXT_STACKED 件
+  const NEXT_STACKED = 3;
+  const fitNext = () => {
+    const tile = document.querySelector(".t-next"), list = tile?.querySelector(".next-list");
+    if (!list) return;
+    const items = [...list.children];
+    items.forEach((li) => { li.hidden = false; });
+    if (matchMedia("(min-width: 1101px)").matches) {
+      const limit = tile.getBoundingClientRect().bottom - parseFloat(getComputedStyle(tile).paddingBottom);
+      items.forEach((li) => { if (li.getBoundingClientRect().bottom > limit) li.hidden = true; });
+    } else items.forEach((li, i) => { li.hidden = i >= NEXT_STACKED; });
+    const link = tile.querySelector(".t-link");
+    if (link) link.hidden = !items.some((li) => li.hidden);
   };
 
   // ===== 表のタブ =====
@@ -621,10 +636,7 @@
 
   // ===== つながり: すべての項目と関連を、軽い自前の 3D（キャンバスへの透視投影）で見る =====
   // 線の種類: 見た目（実線・点線・破線・一点鎖線）で見分ける
-  const LINK_TYPES = [["dep", "依存", "前提 → 後続"], ["rel", "関連", "関連として挙げた項目"], ["src", "根拠", "会話ログ・調査から"], ["for", "進めるタスク", "タスク → 進める検討事項"]];
   const LINK_DASH = { dep: [], rel: [1.5, 3], src: [6, 4], for: [10, 3, 2, 3] };
-  const linkSample = (k) => `<svg class="ls" viewBox="0 0 28 6" aria-hidden="true"><path d="M1 3h26" stroke="currentColor" stroke-width="1.8" stroke-dasharray="${LINK_DASH[k].join(" ")}" fill="none"/></svg>`;
-  const linkTypesPop = () => `<h3>表示する線の種類</h3>${LINK_TYPES.map(([k, l, d]) => `<label><input type="checkbox" data-act="ltype" value="${k}" ${state.linkTypes.has(k) ? "checked" : ""}>${linkSample(k)}<span>${l}<span class="ls-sub">${d}</span></span></label>`).join("")}`;
   const KIND_VAR = { decisions: "--k-dec", tasks: "--k-task", research: "--k-res", docs: "--k-doc", terms: "--k-term", notes: "--k-note", logs: "--k-log" };
   state.graphKinds ??= new Set(["decisions", "tasks", "research", "docs", "logs"]);
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -657,7 +669,7 @@
         return { id: it.id, kind, it, x: 120 * Math.sin(phi) * Math.cos(th), y: 120 * Math.cos(phi), z: 120 * Math.sin(phi) * Math.sin(th), vx: 0, vy: 0, vz: 0, deg: 0 };
       });
     const idx = new Map(nodes.map((n, i) => [n.id, i]));
-    const links = allLinks().filter((l) => state.linkTypes.has(l.type) && idx.has(l.a) && idx.has(l.b)).map((l) => ({ ...l, s: nodes[idx.get(l.a)], t: nodes[idx.get(l.b)] }));
+    const links = allLinks().filter((l) => idx.has(l.a) && idx.has(l.b)).map((l) => ({ ...l, s: nodes[idx.get(l.a)], t: nodes[idx.get(l.b)] }));
     for (const l of links) { l.s.deg++; l.t.deg++; }
     for (const n of nodes) { n.r = 4 + Math.sqrt(n.deg) * 2.2; n.label = it(n).length > 22 ? it(n).slice(0, 21) + "…" : it(n); }
     return {
@@ -699,7 +711,7 @@
     if (!G || G.focus === id) return;
     G.focus = id;
   };
-  const PULL_KEEP = 0.45;  // 寄せた先: 元の距離の 45% のところ
+  const PULL_KEEP = 0.9;  // 寄せた先: 乗せた玉との距離の 1 割だけ近づいたところ
   const PULL_EASE = 0.03;  // 毎コマ、目標へ 3% ずつ寄せる
   // 注目している玉につながる玉を、注目している玉の近くへゆっくり寄せる。注目が外れると元の位置へ戻す
   const pullNear = (g) => {
@@ -895,8 +907,7 @@
   const renderGraphTab = () => {
     const counts = Object.fromEntries(Object.keys(KIND_VAR).map((k) => [k, M[k].filter((it) => !CLOSED.has(it.status)).length]));
     const chips = Object.keys(KIND_VAR).map((k) => `<label><input type="checkbox" data-act="gkind" value="${k}" ${state.graphKinds.has(k) ? "checked" : ""}><span class="kdot" style="background:var(${KIND_VAR[k]})"></span>${KINDS.find((x) => x.key === k).label}<span class="n">${counts[k]}</span></label>`).join("");
-    return `<div class="map-tools"><div class="legend" role="group" aria-label="表示する種類">${chips}</div><span class="spacer"></span>
-      <button class="btn" type="button" data-act="ltypes" aria-haspopup="true">${icon("filter")}線の種類<span class="mono">${state.linkTypes.size}/${LINK_TYPES.length}</span></button></div>
+    return `<div class="map-tools"><div class="legend" role="group" aria-label="表示する種類">${chips}</div></div>
       <div class="map-frame space" data-bg="nebula"><canvas class="g3-wrap" id="fg3" role="img" aria-label="すべての項目のつながり"></canvas></div>`;
   };
 
@@ -946,7 +957,7 @@
     if (it.related?.length) h += sec(kind === "logs" ? "更新した項目" : "関連", list(it.related));
     const back = referrers(id).filter((x) => !(it.related || []).includes(x) && !(dependents.get(id) || []).includes(x));
     if (back.length) h += sec("この項目を参照している項目", list(back));
-    return `${status(it.status)}${it.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}<h2 class="d-title">${esc(it.title)}</h2><dl class="d-meta">${meta}</dl>${h}`;
+    return `${status(it.status)}<h2 class="d-title">${esc(it.title)}${it.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}</h2><dl class="d-meta">${meta}</dl>${h}`;
   };
   const fullDlg = document.getElementById("full");
   const renderPanel = () => {
@@ -1074,6 +1085,7 @@
     applyPins();
     if (k === "graph") drawGraph3();
     if (k === "decisions" && state.view === "map" && libOk("ELK")) ensureLayout().then((g) => drawMap(g, keep));
+    if (k === "overview") fitNext();
     renderMockbar();
     if (keep) {
       const w2 = document.querySelector(".table-wrap, .board");
@@ -1189,7 +1201,6 @@
       case "full": state.full = !state.full; render(); break;
       case "fclose": state.full = false; state.panel = null; render(); break;
       case "vclose": closeFullViewer(); break;
-      case "ltypes": openPop(el, linkTypesPop()); break;
       case "sim": state.sim = el.dataset.sim; layoutCache.clear(); lastScreen = ""; history.replaceState(null, "", hashOf()); render(); break;
       case "dgraw": { const f = el.closest(".diagram"), on = el.getAttribute("aria-pressed") !== "true"; el.setAttribute("aria-pressed", on); f.querySelector(".mermaid").hidden = on; f.querySelector(".dg-raw").hidden = !on; break; }
       case "dgcopy": { const f = el.closest(".diagram"); navigator.clipboard?.writeText(f.querySelector(".dg-raw").textContent).then(() => { el.innerHTML = icon("check"); setTimeout(() => (el.innerHTML = icon("copy")), 1400); }); break; }
@@ -1210,11 +1221,6 @@
   document.addEventListener("change", (e) => {
     const el = e.target, a = el.dataset.act;
     if (a === "closed") { state.tables[state.tab].showClosed = el.checked; render(); }
-    if (a === "ltype") {
-      el.checked ? state.linkTypes.add(el.value) : state.linkTypes.delete(el.value);
-      lastScreen = ""; render();
-      openPop(document.querySelector('[data-act="ltypes"]'), linkTypesPop());
-    }
     if (a === "gkind") { el.checked ? state.graphKinds.add(el.value) : state.graphKinds.delete(el.value); lastScreen = ""; render(); }
     if (a === "mapst") { el.checked ? state.mapShow.add(el.value) : state.mapShow.delete(el.value); lastScreen = ""; render(); }
     if (a === "fval") {
@@ -1259,6 +1265,7 @@
     if (e.key === "Escape" && state.panel && !state.full && !dlg.open && !viewerDlg.open && !pop.matches(":popover-open")) closePanel();
   });
   addEventListener("resize", applyPins);
+  addEventListener("resize", fitNext);
   // マップの背景（節以外）をつかんで動かす
   let drag = null;
   document.addEventListener("pointerdown", (e) => {
