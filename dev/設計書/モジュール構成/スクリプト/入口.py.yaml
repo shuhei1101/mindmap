@@ -162,6 +162,12 @@ functions:
         condition: 作成済みのワークスペースで `attrs --workspace`
         mock: なし
         expected: '0 を返し、標準出力が `{"attrs": []}`'
+      - name: test_main_when_json_argument
+        case: 正常
+        summary: --json を渡したら標準入力を読まずにその中身で足す
+        condition: "作成済みのワークスペースで `add note --workspace {ws} --json {\"title\": \"利用者's メモ\", \"content\": \"メモの中身\"}`。`sys.stdin` を読むと失敗するものに差し替える"
+        mock: '`sys.stdin`'
+        expected: 0 を返し、標準出力の `id` が `N-1`。`notes.yaml` の N-1 の `title` が `利用者's メモ`
   - name: build_parser
     title: 引数の定義
     kind: 関数
@@ -189,6 +195,12 @@ functions:
         condition: '`next --workspace w --limit 0`'
         mock: なし
         expected: '`SystemExit`（コード 2）'
+      - name: test_build_parser_when_json
+        case: 正常
+        summary: init・add・update の --json を解釈する
+        condition: '`parametrize`: `init --workspace w --json {...}` / `add note --workspace w --json {...}` / `update D-1 --workspace w --json {...}` / `--json` を省いた `add note --workspace w`'
+        mock: なし
+        expected: '`json` が渡した文字列。省いたときは `None`'
   - name: run_check_env
     title: 依存の確認
     kind: 関数
