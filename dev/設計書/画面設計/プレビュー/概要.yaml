@@ -29,16 +29,16 @@ elements:
   - name: ゴールまで
     id: tile-goal
     kind: section
-    description: ゴールのフェーズまでの決定済みの数と、フェーズごとの棒（決定済み / 全体）
+    description: ゴールのフェーズまでの決定済みの数と、フェーズごとの棒（決定済み / 全体）。数は `goal` と同じ決着で数え、対象外・取り下げも決定済みに含める
     io: 表示
     source: プレビューを開く.mindmap-data.derived.goal
     visible_when: 常時
   - name: 成果物のチェックリスト
     kind: list
     position: ゴールまで
-    description: ゴールの成果物。`doc` の資料の状態が完成ならチェック済み。押すとその資料の詳細パネルを開く
+    description: ゴールの成果物。`derived.goal.remaining_deliverables` に無い成果物をチェック済みにする（判定は `goal` と同じ。`doc` の資料の状態が完成）。押すとその資料の詳細パネルを開く
     io: 表示
-    source: プレビューを開く.mindmap-data.settings.goal.deliverables・プレビューを開く.mindmap-data.docs[].status
+    source: プレビューを開く.mindmap-data.settings.goal.deliverables・プレビューを開く.mindmap-data.derived.goal.remaining_deliverables
     visible_when: 成果物が 5 件以下のとき全て、5 件を超えたら先頭 5 件
   - name: 成果物のすべて表示
     kind: link
@@ -70,7 +70,7 @@ elements:
   - name: カテゴリー別の進み具合
     id: tile-progress
     kind: table
-    description: カテゴリーを行、フェーズを列にした表。セルは決定済み / 全体と棒。セルを押すと検討事項の表をそのカテゴリーとフェーズで絞って開く。行の見出しを押すとカテゴリーだけで絞る
+    description: カテゴリーを行、フェーズを列にした表。セルは決定済み / 全体と棒（対象外・取り下げも決定済みに含める）。セルを押すと検討事項の表をそのカテゴリーとフェーズで絞って開く。行の見出しを押すとカテゴリーだけで絞る
     io: 表示
     source: プレビューを開く.mindmap-data.derived.progress
     visible_when: 常時（そのカテゴリーとフェーズに項目が無いセルは「—」で押せない）
