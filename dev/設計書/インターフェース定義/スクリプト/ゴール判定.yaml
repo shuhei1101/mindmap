@@ -28,6 +28,7 @@ flows:
       - '`reached` が真、`goal_phase` が `要件`、`phases` が `目的`・`要件`'
       - '`remaining_decisions` と `remaining_deliverables` が空（ゴールより後ろの D-4 を含まない）'
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じ
+    test: test_normal_when_reached
   - name: 正常系（届いていない）
     summary: 決着していない検討事項と揃っていない成果物を残りとして返す
     setup:
@@ -53,6 +54,7 @@ flows:
       - '`reached` が偽'
       - '`remaining_decisions` が D-1・D-2 の順で、それぞれ `phase` と `status` を持つ'
       - '`remaining_deliverables` が「要件定義書」（`doc: A-1`）と「用語集」（`doc: null`）の順'
+    test: test_normal_when_not_reached
   - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
     summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
     setup:
@@ -74,6 +76,7 @@ flows:
     expected:
       - 終了コードが 1
       - 標準エラーにフォルダのパスがある
+    test: test_error_when_workspace_not_found
 lead: ゴールのフェーズまでの検討事項が決着し、ゴールの成果物が揃ったかを判定し、届いたかと残りの項目を返す。
 idempotent: true
 side_effects: なし（読むだけ）
@@ -121,5 +124,5 @@ constraints:
     constraint: '`remaining_decisions` はフェーズの順、同じフェーズの中は連番の小さい順。`remaining_deliverables` は `goal.deliverables` の並び'
   - item: 起動
     constraint: 起動した Python に依存が無ければ、スキル専用の仮想環境の Python で起動し直す（『コマンドの起動』）
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_goal.py`（結合テスト作成で置き、`test_file` に書く）'
+notes: {}
+test_file: tests/integration/scripts/test_goal.py

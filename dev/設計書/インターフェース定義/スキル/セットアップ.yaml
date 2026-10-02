@@ -28,6 +28,7 @@ flows:
       - 本文が指す `steps/` のファイルが全てある
       - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
       - '`claude plugin validate` が終了コード 0'
+    test: test_normal
 lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindmap:session` へ渡すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/単一ユースケース/話し合いのセットアップ#
@@ -65,5 +66,5 @@ constraints:
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:
-  対応テストファイル: '`tests/integration/skill/test_setup.py`（結合テスト作成で置き、`test_file` に書く）'
   確かめないもの: スキルをモデルが読んで動かす振る舞い（たたき台・案内）は、費用が掛かり結果が揺れるためテストしない。読み込まれてスラッシュコマンドになることと許可の規則が当たることは PoC（#22）で確かめた
+test_file: tests/integration/skill/test_setup.py

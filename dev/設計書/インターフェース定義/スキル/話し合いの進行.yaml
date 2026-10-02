@@ -30,6 +30,7 @@ flows:
       - '`skills/mindmap/` に SKILL.md が無く、`references/`・`playbooks/` がある'
       - スキルの全ての Markdown に特定の開発基盤の名前が無い
       - '`claude plugin validate` が終了コード 0'
+    test: test_normal
 lead: 作成済みのワークスペースで、取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定のステップを回すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/複合ユースケース/話し合いをゴールまで進める#
@@ -71,5 +72,5 @@ constraints:
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:
-  対応テストファイル: '`tests/integration/skill/test_session.py`（結合テスト作成で置き、`test_file` に書く）'
   確かめないもの: スキルをモデルが読んで動かす振る舞いは、費用が掛かり結果が揺れるためテストしない。サブエージェントの起動と許可が及ぶことは PoC（#22）で確かめた
+test_file: tests/integration/skill/test_session.py
