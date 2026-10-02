@@ -26,7 +26,7 @@ requirements:
     value: 3.12 以上
     rationale: コーディング規約が 3.12 の書き方（PEP 695）を前提にし、既存のテスト（`tests/conftest.py`）も 3.12 の構文を使う。ライブラリが求める版より新しい側で揃える
     source: dev/設計書/外部ライブラリ/jsonschema#
-    overflow: '`check-env` が `python_ok: false` で終了コード 1 を返す。ほかのコマンドは起動しない前提（スキルがセットアップで止める）'
+    overflow: '仮想環境の Python が古ければ、`check-env` が `python_ok: false` と作り直すコマンドを終了コード 1 で返す。仮想環境は `check-env` を起動したシステムの `python3` で作るので、それが古いときは利用者が 3.12 以上を入れる。ほかのコマンドは起動しない前提（スキルがセットアップで止める）'
   - name: ブラウザ
     english_name: browser
     category: 動作環境

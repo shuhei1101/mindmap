@@ -1,7 +1,7 @@
 title: "影響の洗い出し"
 entry:
   kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py impact`（コマンドの引数・標準出力・終了コード）'
+  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py impact`（コマンドの引数・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
 flows:
   - name: 正常系
     summary: 検討事項から依存とタスクをたどり、関係しない項目は出さない

@@ -38,7 +38,7 @@ classes:
     title: Python が古い
     container: skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
-    summary: Python の版が下限より古い。依存の確認の結果を持ち、入口がそれを標準出力に出して終了コード 1 にする
+    summary: 仮想環境の Python の版が下限より古いか、版を引けない。依存の確認の結果を持ち、入口がそれを標準出力に出して終了コード 1 にする
     kind: クラス
     inherits: Exception
     properties:
@@ -50,6 +50,17 @@ classes:
     container: skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: ライブラリが無いか下限より古い。依存の確認の結果を持つ
+    kind: クラス
+    inherits: Exception
+    properties:
+      - name: report
+        type: dict
+        description: 依存の確認の結果
+  - name: VenvNotFoundError
+    title: 仮想環境が無い
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 仮想環境の Python が無い。依存の確認の結果を持つ
     kind: クラス
     inherits: Exception
     properties:
@@ -85,6 +96,12 @@ constants:
     usecase: 記録の追加と更新
     summary: 標準入力で本文の Markdown を渡すキー（YAML には残さない）
     value: '"body_markdown"'
+  - name: PROBE_SCRIPT
+    title: 仮想環境への問い合わせ
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 仮想環境の Python に `-c` で渡すコード。版と `REQUIREMENTS` の配布名ごとの版（`importlib.metadata.version`。無ければ `null`）を JSON で標準出力に出す。`importlib.metadata` を読めない版では全て `null`
+    value: str
 functions:
   - name: main
     title: 入口
@@ -108,7 +125,7 @@ functions:
     process: |-
       1. 引数を解釈する（`build_parser`）
       2. コマンドで分ける
-         - `check-env` の場合、依存を確かめる（`run_check_env`）。`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
+         - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
          - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（標準入力を使うコマンドは `sys.stdin.read()` を渡す）
       3. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
       4. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
@@ -148,7 +165,7 @@ functions:
       type: argparse.ArgumentParser
       description: サブコマンドを持つ引数の定義（引数は各インターフェース定義のリクエストのとおり）
     process: |-
-      1. `check-env` 以外のサブコマンドに `--workspace`（必須）を持たせる
+      1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
       2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる
     unit_tests:
       - name: test_build_parser
@@ -169,57 +186,74 @@ functions:
     container: skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
-    summary: Python の版とライブラリの版を確かめ、足りなければ結果を持った例外を送る
+    summary: 仮想環境の Python の版とライブラリの版を確かめ、足りなければ結果を持った例外を送る
     description: ファイルの先頭に `from __future__ import annotations` を置き、Python 3.8 で読める構文だけで書く。
     args:
-      - name: version_info
-        type: tuple[int, ...]
+      - name: venv_dir
+        type: Path
+        required: true
+        passing: positional
+        description: 確かめる仮想環境のフォルダ（`--venv`）
+      - name: probe
+        type: Callable[[Path], dict | None]
         required: false
-        default: sys.version_info
-        passing: keyword
-        description: 動いている Python の版
-      - name: get_version
-        type: Callable[[str], str]
-        required: false
-        default: importlib.metadata.version
+        default: probe_venv
         passing: injected
-        description: 配布名から入っている版を引く関数（無ければ `PackageNotFoundError`）
+        description: 仮想環境の Python に版とライブラリの版を尋ねる関数
+      - name: base_python
+        type: str
+        required: false
+        default: sys.executable
+        passing: keyword
+        description: 仮想環境を作る Python（`check-env` を動かしている Python）
     returns:
       type: dict
       description: 依存の確認の結果（インターフェース定義『依存の確認』のレスポンスの形）
     process: |-
-      1. `version_info` が `MIN_PYTHON` 以上かを `python_ok` にする
-      2. `REQUIREMENTS` の配布名ごとに `get_version` で版を引き、下限と比べる（`parse_version`。引けなければ `installed: null`・`ok: false`）
-      3. 足りない配布名から入れるコマンドを作る（`build_install_command`）
-      4. 結果を判定する
-         - `python_ok` が偽の場合、`PythonVersionError(report)` を送る
-         - 足りないライブラリがある場合、`DependencyMissingError(report)` を送る
-         - それ以外は結果を返す
+      1. 仮想環境の Python の場所を引く（`venv_python_path`）
+      2. その Python が無い場合、`venv_ok: false`・`python: null`・全ての `installed: null` と、作って入れるコマンド（`build_install_command` の `create`）を持った `VenvNotFoundError(report)` を送る
+      3. `probe` で版とライブラリの版を尋ねる
+         - `None` が返った場合、版を引けないものとして `python: null`・`python_ok: false` にする
+         - それ以外は、版が `MIN_PYTHON` 以上かを `python_ok` にする（`parse_version`）
+      4. `REQUIREMENTS` の配布名ごとに入っている版と下限を比べる（`parse_version`。`null` なら `ok: false`）
+      5. 結果を判定する
+         - `python_ok` が偽の場合、作り直して入れるコマンド（`recreate`）を持った `PythonVersionError(report)` を送る
+         - 足りないライブラリがある場合、足りないものを入れるコマンド（`install`）を持った `DependencyMissingError(report)` を送る
+         - それ以外は `install: null` の結果を返す
     exceptions:
+      - name: VenvNotFoundError
+        condition: 仮想環境の Python が無い
       - name: PythonVersionError
-        condition: Python の版が `MIN_PYTHON` より古い
+        condition: 仮想環境の Python の版が `MIN_PYTHON` より古いか、版を引けない
       - name: DependencyMissingError
-        condition: Python の版は足りていて、どれかのライブラリが無いか下限より古い
+        condition: 仮想環境の Python の版は足りていて、どれかのライブラリが無いか下限より古い
     unit_tests:
       - name: test_run_check_env
         case: 正常
-        summary: 揃っていれば結果を返す
-        condition: '`version_info=(3, 12, 3)`、`get_version` は PyYAML `6.0.3`・jsonschema `4.26.0` を返す'
-        mock: '`get_version`'
-        expected: '`python_ok: true`、両方 `ok: true`、`install: null`'
+        summary: そろっていれば結果を返す
+        condition: '`tmp_path` に仮想環境の Python の場所だけファイルを置き、`probe` は `python: 3.12.3`・PyYAML `6.0.3`・jsonschema `4.26.0` を返す'
+        mock: '`probe`'
+        expected: '`venv_ok: true`・`python_ok: true`、両方 `ok: true`、`python_path` がその Python、`install: null`'
+      - name: test_run_check_env_when_venv_missing
+        case: 異常
+        summary: 仮想環境が無ければ VenvNotFoundError
+        condition: '`tmp_path` の下のまだ無いフォルダ'
+        mock: '`probe`（呼ばれないことを確かめる）'
+        expected: '`VenvNotFoundError`（`report` の `venv_ok: false`・`python: null`・全ての `installed: null`、`install` に `-m venv`）。`probe` が呼ばれない'
+        exception: 仮想環境が無い
       - name: test_run_check_env_when_python_old
         case: 異常
-        summary: Python が古ければ PythonVersionError
-        condition: '`version_info=(3, 9, 6)`'
-        mock: '`get_version`'
-        expected: '`PythonVersionError`（`report` の `python_ok: false`、`python: 3.9.6`）'
-        exception: Python の版が古い
+        summary: 仮想環境の Python が古いか版を引けなければ PythonVersionError
+        condition: '`parametrize`: `probe` が `python: 3.9.6` を返す / `None` を返す'
+        mock: '`probe`'
+        expected: '`PythonVersionError`（`report` の `python_ok: false`、`python` が `3.9.6` / `null`、`install` に `--clear`）'
+        exception: Python の版が古い・引けない
       - name: test_run_check_env_when_package_missing
         case: 異常
         summary: 無い・古いライブラリがあれば DependencyMissingError
-        condition: '`get_version` は PyYAML で `PackageNotFoundError`、jsonschema で `4.17.3` を返す'
-        mock: '`get_version`'
-        expected: '`DependencyMissingError`（`report` の PyYAML `installed: null`・`ok: false`、jsonschema `ok: false`、`install` に `PyYAML>=5.1` と `jsonschema>=4.18.0`）'
+        condition: '`probe` は `python: 3.12.3`、PyYAML `null`、jsonschema `4.17.3` を返す'
+        mock: '`probe`'
+        expected: '`DependencyMissingError`（`report` の PyYAML `installed: null`・`ok: false`、jsonschema `ok: false`、`install` に `PyYAML>=5.1` と `jsonschema>=4.18.0` があり `-m venv` が無い）'
         exception: ライブラリが無いか古い
       - name: test_run_check_env_when_old_syntax
         case: 正常
@@ -252,35 +286,57 @@ functions:
         mock: なし
         expected: '`(6, 0, 3)` / `(4, 18, 0)` / `(5, 1)`'
   - name: build_install_command
-    title: 入れるコマンド
+    title: そろえるコマンド
     kind: 関数
     container: skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
-    summary: 足りない配布名から `python3 -m pip install` のコマンドを作る
+    summary: 仮想環境とライブラリをそろえる 1 行のコマンドを作る
     args:
+      - name: mode
+        type: '"create" | "recreate" | "install"'
+        required: true
+        passing: positional
+        description: 仮想環境を作る / 作り直す / ライブラリだけ入れる
       - name: missing
         type: list[str]
         required: true
         passing: positional
-        description: 足りない配布名（`REQUIREMENTS` の順）
+        description: 入れる配布名（`REQUIREMENTS` の順）
+      - name: venv_dir
+        type: Path
+        required: true
+        passing: keyword
+        description: 仮想環境のフォルダ
+      - name: base_python
+        type: str
+        required: true
+        passing: keyword
+        description: 仮想環境を作る Python
+      - name: os_name
+        type: str
+        required: false
+        default: os.name
+        passing: keyword
+        description: '`venv_python_path` へ渡す OS の名前'
     returns:
       type: str | None
-      description: "`python3 -m pip install '{名前}>={下限}' ...`。足りないものが無ければ `None`"
+      description: パスと `{名前}>={下限}` を二重引用符で囲み、`&&` でつないだコマンド。入れるものが無ければ `None`
     process: |-
-      1. 空なら `None` を返す
-      2. 配布名ごとに `'{名前}>={下限}'` を並べたコマンドを返す
+      1. `install` で `missing` が空なら `None` を返す
+      2. `create` は `"{base_python}" -m venv "{venv_dir}"`、`recreate` は `"{base_python}" -m venv --clear "{venv_dir}"` を先頭に置き、`&&` でつなぐ
+      3. 仮想環境の Python（`venv_python_path`）で `-m pip install` し、`missing` の配布名ごとに `"{名前}>={下限}"` を並べる
     unit_tests:
       - name: test_build_install_command
         case: 正常
-        summary: 足りないものだけを並べる
-        condition: '`["PyYAML", "jsonschema"]`'
+        summary: 作る・作り直す・入れるだけを分ける
+        condition: '`parametrize`: `create` と `["PyYAML", "jsonschema"]` / `recreate` と同じ / `install` と `["jsonschema"]`。`venv_dir=/v`・`base_python=/usr/bin/python3`・`os_name="posix"`'
         mock: なし
-        expected: "`python3 -m pip install 'PyYAML>=5.1' 'jsonschema>=4.18.0'`"
+        expected: '`"/usr/bin/python3" -m venv "/v" && "/v/bin/python" -m pip install "PyYAML>=5.1" "jsonschema>=4.18.0"` / `-m venv --clear "/v"` で始まる同じ形 / `"/v/bin/python" -m pip install "jsonschema>=4.18.0"`'
       - name: test_build_install_command_when_none_missing
         case: 正常
-        summary: 足りないものが無ければ None
-        condition: '`[]`'
+        summary: 入れるものが無ければ None
+        condition: '`install` と `[]`'
         mock: なし
         expected: '`None`'
   - name: read_json_object
@@ -863,6 +919,93 @@ functions:
         condition: 属性 `担当` の D-1
         mock: なし
         expected: '`{attrs: [{name: 担当, count: 1, kinds: [decision]}]}` と 0'
+  - name: default_venv_dir
+    title: 仮想環境の既定の場所
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: スキル専用の仮想環境のフォルダ（`~/.mindmap/venv`）を返す
+    returns:
+      type: Path
+      description: '`Path.home() / ".mindmap" / "venv"`'
+    process: 1. ホームの下の `.mindmap/venv` を返す
+    unit_tests:
+      - name: test_default_venv_dir
+        case: 正常
+        summary: ホームの下の .mindmap/venv
+        condition: '`Path.home` を `tmp_path` を返す関数に差し替える'
+        mock: '`Path.home`'
+        expected: '`tmp_path / ".mindmap" / "venv"`'
+  - name: venv_python_path
+    title: 仮想環境の Python の場所
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 仮想環境のフォルダから、その Python の場所を返す
+    args:
+      - name: venv_dir
+        type: Path
+        required: true
+        passing: positional
+        description: 仮想環境のフォルダ
+      - name: os_name
+        type: str
+        required: false
+        default: os.name
+        passing: keyword
+        description: OS の名前
+    returns:
+      type: Path
+      description: '`nt` なら `Scripts/python.exe`、それ以外は `bin/python`'
+    process: 1. `os_name` で分けて返す
+    unit_tests:
+      - name: test_venv_python_path
+        case: 正常
+        summary: OS で場所を分ける
+        condition: '`parametrize`: `os_name="posix"` / `"nt"`'
+        mock: なし
+        expected: '`{venv_dir}/bin/python` / `{venv_dir}/Scripts/python.exe`'
+  - name: probe_venv
+    title: 仮想環境への問い合わせ
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 仮想環境の Python を子プロセスで起動し、版とライブラリの版を受け取る
+    side_effects: 子プロセスを起動する
+    args:
+      - name: python_path
+        type: Path
+        required: true
+        passing: positional
+        description: 仮想環境の Python
+      - name: run
+        type: Callable[..., subprocess.CompletedProcess]
+        required: false
+        default: subprocess.run
+        passing: injected
+        description: 子プロセスを起動する関数
+    returns:
+      type: dict | None
+      description: '`{python: 版, packages: {配布名: 版 | None}}`。起動できないか、終了コードが 0 でないか、出力を JSON として読めなければ `None`'
+    process: |-
+      1. `[str(python_path), "-c", PROBE_SCRIPT]` を配列のまま渡して起動する（シェルを通さない。標準出力を受け取る）
+      2. 終了コードが 0 なら標準出力を JSON として読んで返し、それ以外（`OSError` を含む）は `None` を返す
+    unit_tests:
+      - name: test_probe_venv
+        case: 正常
+        summary: テストを動かす Python に尋ねる
+        condition: '`sys.executable` を渡す'
+        mock: なし
+        expected: '`python` が `platform.python_version()` と同じで、`packages` に PyYAML・jsonschema のキーがある'
+      - name: test_probe_venv_when_failed
+        case: 異常
+        summary: 起動できないか出力が読めなければ None
+        condition: '`parametrize`: `run` が `OSError` を送る / 終了コード 1 を返す / 標準出力 `x` を返す'
+        mock: '`run`'
+        expected: '`None`'
 notes:
-  モジュールの読み込み: スクリプトはパッケージとして入れず、`python3 {スキルのフォルダ}/scripts/mindmap.py` で起動する。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
+  モジュールの読み込み: スクリプトはパッケージとして入れず、`check-env` はシステムの `python3`、それ以外は仮想環境の Python（`check-env` が返す `python_path`）で `{スキルのフォルダ}/scripts/mindmap.py` を起動する。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
   入口の構文: '`mindmap.py` と `check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、`check-env` を通った後にだけ読むので 3.12 の書き方を使ってよい。'

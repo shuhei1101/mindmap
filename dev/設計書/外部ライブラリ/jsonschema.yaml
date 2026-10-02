@@ -34,5 +34,7 @@ license: MIT（商用利用可。referencing も MIT）
 docs_url: https://python-jsonschema.readthedocs.io/
 install: |-
   ```bash
-  python3 -m pip install 'jsonschema>=4.18.0'
+  ~/.mindmap/venv/bin/python -m pip install 'jsonschema>=4.18.0'
   ```
+
+  スキル専用の仮想環境へ入れる。コマンドは `check-env` の `install` が返す

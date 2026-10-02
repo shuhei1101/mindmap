@@ -1,7 +1,7 @@
 title: "項目の更新"
 entry:
   kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py update`（コマンドの引数・標準入力・標準出力・終了コード）'
+  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py update`（コマンドの引数・標準入力・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
 flows:
   - name: 正常系
     summary: 検討事項の答えと状態を直し、不要になったキーを消す

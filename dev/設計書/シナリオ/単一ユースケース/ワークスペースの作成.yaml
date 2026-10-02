@@ -5,7 +5,8 @@ scenarios:
       - name: Mock
         description: なし（実際の Python でスクリプトを起動する）
       - name: Python の環境
-        description: Python 3・PyYAML・jsonschema が入っている
+        description: Python 3・PyYAML・jsonschema が入っている仮想環境
+        notes: テストごとの一時フォルダに `python -m venv` で作り、`check-env` の `--venv` で渡す
       - name: ワークスペースの場所
         description: テストごとの一時フォルダの下の、まだ無いフォルダ
       - name: 設定
@@ -38,7 +39,7 @@ scenarios:
         description: なし（実際の Python でスクリプトを起動する）
       - name: Python の環境
         description: PyYAML・jsonschema を入れていない Python の仮想環境
-        notes: テストごとの一時フォルダに `python -m venv` で作り、その Python でスクリプトを起動する
+        notes: テストごとの一時フォルダに `python -m venv` で作り、`check-env` の `--venv` で渡す
     flow: |-
       ```mermaid
       sequenceDiagram

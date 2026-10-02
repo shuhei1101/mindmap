@@ -2,7 +2,7 @@ summary: "スキルが呼ぶスクリプトのコマンド（引数・標準入�
 docs_index: true
 items:
   - page: 依存の確認.yaml
-    summary: 'check-env: Python と PyYAML・jsonschema の版を確かめる'
+    summary: 'check-env: スキル専用の仮想環境の Python と PyYAML・jsonschema の版を確かめる'
     group: 作る
   - page: ワークスペースの作成.yaml
     summary: 'init: 設定を受け取って空のワークスペースを作る'

@@ -28,8 +28,10 @@ license: MIT（商用利用可）
 official_url: https://pyyaml.org/
 install: |-
   ```bash
-  python3 -m pip install 'PyYAML>=5.1'
+  ~/.mindmap/venv/bin/python -m pip install 'PyYAML>=5.1'
   ```
+
+  スキル専用の仮想環境へ入れる。コマンドは `check-env` の `install` が返す
 limitations:
   - item: コメント
     content: '`safe_load` はコメントを捨てるため、書き戻すと行のコメント・行末のコメントは消える'
