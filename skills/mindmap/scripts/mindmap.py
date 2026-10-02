@@ -21,6 +21,7 @@ from check_env import (
     default_venv_dir,
     run_check_env,
 )
+from launcher import format_relaunch_error, relaunch_if_needed
 
 # `add` の種類（kinds.py の `KINDS` のキー。kinds.py は 3.12 の構文なので、ここでは読まずに写す）
 KIND_NAMES = ("decision", "task", "research", "doc", "term", "note", "log")
@@ -28,7 +29,20 @@ KIND_NAMES = ("decision", "task", "research", "doc", "term", "note", "log")
 
 def main(argv: list[str] | None = None) -> int:
     """引数を解釈してコマンドを実行し、出力と終了コードを決める。"""
-    args = build_parser().parse_args(argv)
+    arguments = sys.argv[1:] if argv is None else argv
+    # 引数を解釈する前に、起動した Python で動けるかを確かめる
+    try:
+        relaunched = relaunch_if_needed(arguments, script=Path(__file__).resolve())
+    except (VenvNotFoundError, PythonVersionError, DependencyMissingError) as error:
+        # 起動し直せない: 標準エラーに出して終了コード 1（標準出力には何も出さない）
+        for line in format_relaunch_error(error):
+            print(line, file=sys.stderr)
+        return 1
+    # 仮想環境の Python で起動し直した: 子プロセスの終了コードをそのまま返す
+    if relaunched is not None:
+        return relaunched
+
+    args = build_parser().parse_args(arguments)
     # check-env: ライブラリを読み込まずに、仮想環境の状態を答える
     if args.command == "check-env":
         return _run_check_env_command(args.venv)
@@ -50,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """13 のコマンドと引数を持つ ArgumentParser を作る。"""
+    """14 のコマンドと引数を持つ ArgumentParser を作る。"""
     parser = argparse.ArgumentParser(
         prog="mindmap.py", description="ワークスペースの YAML を読み書き・検索・点検する"
     )
@@ -98,6 +112,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_command("attrs", "使っている属性名と件数を返す")
     add_command("check", "スキーマ違反・参照切れ・本文のずれを洗い出す")
     add_command("build", "記録を埋め込んだ preview.html を書き出す")
+    add_command("goal", "ゴールに届いたかと残りを返す")
     return parser
 
 
@@ -155,6 +170,7 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
         "attrs": lambda: commands.run_attrs(root),
         "check": lambda: commands.run_check(root),
         "build": lambda: commands.run_build(root),
+        "goal": lambda: commands.run_goal(root),
     }
     return handlers[args.command]()
 

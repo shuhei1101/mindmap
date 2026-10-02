@@ -11,7 +11,7 @@ from typing import Any
 from builder import build_preview
 from checker import check_workspace
 from errors import ItemNotFoundError, OptionNotFoundError, SchemaMismatchError
-from graph import list_next_candidates, summarize_status, trace_impact
+from graph import judge_goal, list_next_candidates, summarize_status, trace_impact
 from kinds import KINDS, Kind
 from query import SearchFilter, list_attrs, search_items, show_item
 from store import (
@@ -193,6 +193,11 @@ def run_next(root: Path, limit: int | None) -> Result:
 def run_status(root: Path) -> Result:
     """再開時の状況を出力の形にする。"""
     return asdict(summarize_status(load_workspace(root))), 0
+
+
+def run_goal(root: Path) -> Result:
+    """ゴールに届いたかの判定を出力の形にする。"""
+    return asdict(judge_goal(load_workspace(root))), 0
 
 
 def run_find(root: Path, search_filter: SearchFilter) -> Result:
