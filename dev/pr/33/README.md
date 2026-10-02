@@ -31,7 +31,7 @@ AI Monitor には共通の部品を初期構築で写す仕組みがまだ無く
 - [x] ~~部品設計~~（部品は AI Monitor の `v0.2.0` のまま写し、定義は AI Monitor 側が持つ）
 - [x] ~~画面設計~~（UI 項目は AI Monitor の `v0.2.0` のまま写し、定義は AI Monitor 側が持つ）
 - [x] ~~モジュール構成設計~~（スクリプトのモジュールを変えない）
-- [ ] ドキュメント修正（`docs/_config.yml`・`docs/_layouts/`・`docs/_includes/`・`docs/assets/`・`docs/search.json`・`docs/llms.txt`・`docs/_data/nav.yml`・`docs/index.md`）
+- [x] ドキュメント修正（`docs/_config.yml`・`docs/_layouts/`・`docs/_includes/`・`docs/assets/`・`docs/search.json`・`docs/llms.txt`・`docs/_data/nav.yml`・`docs/index.md`）
 - [x] ~~単体テスト作成~~（スクリプトのコードを変えない）
 - [x] ~~実装~~（スクリプトのコードを変えない）
 - [x] ~~結合テスト作成~~（インターフェースと画面設計を変えない）
