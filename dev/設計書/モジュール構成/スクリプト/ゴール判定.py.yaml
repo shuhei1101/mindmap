@@ -104,3 +104,6 @@ functions:
         expected: 0 を返し、`reached` が偽で、`goal_phase`・`phases`・`remaining_decisions`・`remaining_deliverables` のキーがある
 notes:
   対応テストファイル: '`judge_goal` は `tests/unit/scripts/test_graph.py`、`run_goal` は `tests/unit/scripts/test_commands.py` に置く（単体テスト作成で置き、`test_files` に書く）'
+test_files:
+  - tests/unit/scripts/test_graph.py
+  - tests/unit/scripts/test_commands.py

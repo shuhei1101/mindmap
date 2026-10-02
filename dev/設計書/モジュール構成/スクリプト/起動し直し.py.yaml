@@ -175,3 +175,5 @@ functions:
 notes:
   対応テストファイル: '`tests/unit/scripts/test_launcher.py`（単体テスト作成で置き、`test_files` に書く）'
   構文: '`launcher.py` は `check-env` より前、依存が揃っていない Python でも読まれるので、`mindmap.py`・`check_env.py` と同じく Python 3.8 で読める構文だけで書く'
+test_files:
+  - tests/unit/scripts/test_launcher.py
