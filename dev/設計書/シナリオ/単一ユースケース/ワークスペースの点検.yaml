@@ -65,5 +65,4 @@ trigger: スキルが記録を書き終えた、または利用者がワーク�
 preconditions:
   - ワークスペースが作成済みである
 success_guarantee: 参照切れとずれが全て、どの項目のどのキーかとともに出る。どのファイルも書き換えない。
-notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_workspace_check.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/e2e/単一ユースケース/test_workspace_check.py

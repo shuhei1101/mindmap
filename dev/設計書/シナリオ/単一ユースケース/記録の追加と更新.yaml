@@ -90,5 +90,4 @@ preconditions:
   - ワークスペースが作成済みである
 success_guarantee: 足した項目に種類の頭の文字の ID と作成日・更新日が付き、直した項目の更新日が変わり、ワークスペースの全ての YAML がスキーマに合う。
 minimal_guarantee: スキーマに合わない書き込み・存在しない ID への書き込みでは、どのファイルも書き換えない。
-notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_record_add_update.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/e2e/単一ユースケース/test_record_add_update.py

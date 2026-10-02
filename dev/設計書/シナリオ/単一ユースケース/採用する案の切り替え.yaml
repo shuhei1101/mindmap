@@ -75,5 +75,4 @@ preconditions:
   - ワークスペースに、案を 2 つ以上持つ検討事項がある
 success_guarantee: 採用する案がちょうど 1 つになり、その検討事項に直接・間接に依存する項目と、それを進めるタスクが洗い出される。
 minimal_guarantee: 存在しない案を指したときは、どのファイルも書き換えない。
-notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_option_adopt.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/e2e/単一ユースケース/test_option_adopt.py

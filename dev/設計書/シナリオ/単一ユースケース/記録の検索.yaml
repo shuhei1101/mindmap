@@ -67,5 +67,4 @@ trigger: 会話で前の記録に触れる、または属性を付ける前に�
 preconditions:
   - ワークスペースが作成済みである
 success_guarantee: 条件に合う項目・1 件の中身と参照元・属性名の一覧が出る。どのファイルも書き換えない。
-notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_record_search.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/e2e/単一ユースケース/test_record_search.py

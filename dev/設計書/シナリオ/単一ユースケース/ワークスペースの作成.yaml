@@ -87,5 +87,4 @@ preconditions:
   - プラグイン mindmap がインストールされている
 success_guarantee: 指定したフォルダに、決めた設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` があり、全ての YAML がスキーマに合う。
 minimal_guarantee: 依存が足りないとき・既にワークスペースがあるときは、フォルダの中身を書き換えない。
-notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_workspace_create.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/e2e/単一ユースケース/test_workspace_create.py

@@ -64,5 +64,4 @@ preconditions:
   - ワークスペースが作成済みである
 success_guarantee: ワークスペースの `preview.html` に、全ての YAML と本文の Markdown を JSON にしたデータが埋め込まれている。
 minimal_guarantee: YAML がスキーマに合わないときは、前に書き出した `preview.html` を書き換えない。
-notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_preview_build.py`（E2E テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/e2e/単一ユースケース/test_preview_build.py
