@@ -1,0 +1,113 @@
+title: "検討事項をマップで辿る"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 対象 1・カテゴリー 2・フェーズ 2 にまたがる検討事項。決定済みの D-1、要見直しの D-3（前提 D-1・後続 D-5）、未決定の D-5
+        notes: 'D-3 は `depends_on: [D-1]`、D-5 は `depends_on: [D-3]`'
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`。表示の幅は 1280px
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 検討事項のタブを開く
+        P-->>U: マップ（決定済みを隠した木）
+        U->>P: 状態の印で決定済みを表示する
+        U->>P: D-3 を押す
+        P-->>U: 根までの枝と依存の線を強調し、D-3 の詳細パネルを開く
+        U->>P: 表示形式をカード、表の順に切り替える
+        P-->>U: カード、表
+      ```
+    expected:
+      - 開いた直後のマップに D-3・D-5 があり、決定済みの D-1 は無い
+      - 決定済みを表示した後、マップに D-1 がある
+      - D-3 を押した後、D-3 から根までの枝と、D-1・D-5 への依存の線が強調され、それ以外の項目は薄くなる
+      - 詳細パネルに D-3 が開き、URL のハッシュが検討事項のタブと D-3 を指す
+      - 表示形式を切り替えても、切り替えのボタンの位置と幅が変わらない
+      - 表に「着手できる」の列があり、D-5 は「いいえ」（前提の D-3 が未決定）
+    test: test_normal
+  - name: 正常シナリオ（キーワードで探す）
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 名前に「保存」を含む未決定の D-2 と要見直しの D-3、含まない未決定の D-5
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: マップのキーワードに「保存」を入れる
+        P-->>U: 名前に含む項目を強調し、状態の印にバッジを付ける
+      ```
+    expected:
+      - D-2・D-3 が黄色で強調され、D-5 は強調されない
+      - 未決定と要見直しの状態の印に、当たった件数（各 1）のバッジが付く
+    test: test_normal_when_keyword
+  - name: 正常シナリオ（狭い幅）
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 正常シナリオと同じ検討事項
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`。表示の幅は 390px
+        notes: 狭い幅の境は画面設計で決める
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 検討事項のタブを開く
+        P-->>U: 字下げした縦の一覧
+      ```
+    expected:
+      - マップの代わりに、対象 → カテゴリー → フェーズ → 検討事項を字下げした縦の一覧が出る
+      - ページに横スクロールが出ない
+    test: test_normal_when_narrow
+  - name: 異常シナリオ（配置のライブラリが読めない）
+    setup:
+      - name: Mock
+        description: CDN への elkjs の要求をブラウザの通信の差し替えで失敗させる（ほかのライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 未決定の検討事項 D-5
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 検討事項のタブを開く
+        P-->>U: マップの場所に、読めなかったライブラリの名前
+        U->>P: 表示形式を表に切り替える
+        P-->>U: 表
+      ```
+    expected:
+      - マップの場所に、読めなかったライブラリとして elkjs の名前が出る
+      - 表に切り替えると D-5 の行がある
+    test: test_error_when_layout_library_unavailable
+lead: 利用者が、検討事項を対象 → カテゴリー → フェーズ → 検討事項の木（マップ）で見て、状態で絞り、項目の枝と依存を辿る単一ユースケース。カード・表への切り替えを含む。
+issue: 5
+primary_actor: 利用者
+trigger: 利用者が検討事項のタブを開く
+preconditions:
+  - ワークスペースに記録があり、プレビューを書き出してある

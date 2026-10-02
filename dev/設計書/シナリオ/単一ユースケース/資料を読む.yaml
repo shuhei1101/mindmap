@@ -1,0 +1,36 @@
+title: "資料を読む"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: '成果物でない資料 A-1（種類: メモ書き）と、成果物の資料 A-2（種類: 仕様書、本文の Markdown に見出しと表を持つ）'
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 資料のタブを開く
+        P-->>U: 成果物を先頭にしたカード
+        U->>P: 絞り込みで種類 = 仕様書を選ぶ
+        P-->>U: 絞り込んだカード
+        U->>P: A-2 のカードを押す
+        P-->>U: A-2 の詳細パネル（本文）
+      ```
+    expected:
+      - 開いた直後のカードの並びが A-2、A-1 の順で、A-2 に成果物の印がある
+      - 絞り込んだ後のカードは A-2 だけで、条件のチップに種類 = 仕様書がある
+      - 詳細パネルに A-2 の本文が、見出しと表に描かれて出る
+    test: test_normal
+lead: 利用者が、資料を成果物を先頭にしたカードで見て、絞り込み、カードから本文を開く単一ユースケース。
+issue: 5
+primary_actor: 利用者
+trigger: 利用者が資料のタブを開く
+preconditions:
+  - ワークスペースに記録があり、プレビューを書き出してある
