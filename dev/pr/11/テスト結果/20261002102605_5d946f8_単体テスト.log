@@ -157,4 +157,4 @@ tests/unit/scripts/test_store.py::test_dump_yaml PASSED                  [ 98%]
 tests/unit/scripts/test_store.py::test_format_path[nested] PASSED        [ 99%]
 tests/unit/scripts/test_store.py::test_format_path[empty] PASSED         [100%]
 
-============================= 150 passed in 3.51s ==============================
+============================= 150 passed in 3.28s ==============================
