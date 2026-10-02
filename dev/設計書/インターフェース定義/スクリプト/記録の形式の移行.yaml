@@ -1,0 +1,182 @@
+title: "記録の形式の移行"
+entry:
+  kind: operation
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py migrate`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+flows:
+  - name: 正常系
+    summary: 資料の done を status に移す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '資料 A-1（`done: true`）・A-2（`done: false`）・A-3（`status: 確認中`）を持つワークスペース'
+        notes: A-1・A-2 は YAML を直接書いて作る
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: done を status に書き換え、スキーマと突き合わせる
+        IF->>WS: docs.yaml を置き換える
+        IF-->>クライアント: JSON（migrated）
+      ```
+    expected:
+      - 終了コードが 0
+      - '`migrated` が A-1（`done: true → status: 完成`）と A-2（`done: false → status: 下書き`）の 2 件'
+      - '`docs.yaml` の A-1 が `status: 完成`、A-2 が `status: 下書き` で、どちらも `done` を持たず、`updated` が呼ぶ前と同じ'
+      - A-3 が呼ぶ前と同じ
+      - 続けて `check` がスキーマ違反を返さない
+    test: test_normal
+  - name: 正常系（移す項目が無い）
+    summary: 今の形式のワークスペースでは何も書かない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '資料 A-1（`status: 完成`）を持つワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF-->>クライアント: JSON（migrated は空）
+      ```
+    expected:
+      - 終了コードが 0
+      - '`migrated` が空'
+      - '`docs.yaml` の中身と更新日時が呼ぶ前と同じ'
+    test: test_normal_when_nothing_to_migrate
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すと何も書かずに終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as フォルダ
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーにフォルダのパスがある
+      - フォルダにファイルが増えていない
+    test: test_error_when_workspace_not_found
+  - name: 異常系（別の理由でスキーマに合わない・SchemaMismatchError）
+    summary: 移してもスキーマに合わないと何も書かずに終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '資料 A-1（`done: true`）と、`status` を `完了` に直接書き換えた検討事項 D-1 を持つワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: 移した後もスキーマに合わない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーに `decisions.yaml: items[0].status:` で始まる行がある'
+      - '`docs.yaml` の中身が呼ぶ前と同じ'
+    test: test_error_when_schema_mismatch
+  - name: 異常系（書き込めない・WriteFailedError）
+    summary: 書き込めないワークスペースでは前の docs.yaml を残して終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '資料 A-1（`done: true`）を持ち、フォルダの書き込みの権限を外したワークスペース'
+        notes: root で動かすときは skip する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>WS: 一時ファイルを書けない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
+      - '`docs.yaml` の中身が呼ぶ前と同じ'
+    test: test_error_when_write_fails
+lead: 前の版の形式で書かれたワークスペースの YAML を、今のスキーマに合う形へ一度だけ書き換える。
+idempotent: true
+side_effects: 移す項目があるときだけ `docs.yaml` を一時ファイルから `os.replace` で置き換える。移す項目が無いときは何も書かない
+exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
+request:
+  - name: --workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+response:
+  - name: migrated[]
+    type: list[{id, file, change}]
+    description: 書き換えた項目。移す項目が無いときは空
+  - name: migrated[].id
+    type: str
+    description: 書き換えた項目の ID
+  - name: migrated[].file
+    type: str
+    description: 書き換えた YAML（ワークスペースからの相対パス）
+  - name: migrated[].change
+    type: str
+    description: 書き換えの中身
+    example: 'done: true → status: 完成'
+exceptions:
+  - name: なし（正常終了）
+    condition: 移せた、または移す項目が無かった
+    notes: 終了コード 0
+  - name: WorkspaceNotFoundError
+    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: 終了コード 1。何も書き込まない
+  - name: SchemaMismatchError
+    condition: 移した後のワークスペースのどれかの YAML が、移した箇所とは別の理由でスキーマに合わないか、YAML として読めない
+    notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+  - name: WriteFailedError
+    condition: 一時ファイルの書き込みか置き換えに失敗した
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。前の `docs.yaml` を残す
+error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
+constraints:
+  - item: 出力の形
+    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
+  - item: 終了コード
+    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 移す中身
+    constraint: '資料の `done` を消し、`status` を足す。`done: true` は `status: 完成`、`done: false` は `status: 下書き`。`status` を既に持つ項目は触らない。`updated` は変えない'
+  - item: 移す前の読み込み
+    constraint: YAML をスキーマと突き合わせずに読み、書き換えた後の全ての YAML をスキーマと突き合わせてから書く
+  - item: 他のコマンドからの案内
+    constraint: 他のコマンドが資料の `done` でスキーマに合わないときは、合わない箇所の行に続けて `migrate` で移せることを 1 行出す
+  - item: YAML の書き方
+    constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
+refs:
+  - dev/設計書/ER図/ワークスペース#tables[docs.yaml]
