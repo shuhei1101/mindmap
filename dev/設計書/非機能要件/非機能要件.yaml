@@ -26,7 +26,7 @@ requirements:
     value: 3.12 以上
     rationale: コーディング規約が 3.12 の書き方（PEP 695）を前提にし、既存のテスト（`tests/conftest.py`）も 3.12 の構文を使う。ライブラリが求める版より新しい側で揃える
     source: dev/設計書/外部ライブラリ/jsonschema#
-    overflow: '仮想環境の Python が古ければ、`check-env` が `python_ok: false` と作り直すコマンドを終了コード 1 で返す。仮想環境を作るシステムの `python3` も古ければ、`base_python_ok: false` で `install` を `null` にし、利用者が 3.12 以上を入れる。ほかのコマンドは起動しない前提（スキルがセットアップで止める）'
+    overflow: '仮想環境の Python が古ければ、`check-env` が `python_ok: false` と作り直すコマンドを終了コード 1 で返す。仮想環境を作るシステムの `python3` も古ければ、`base_python_ok: false` で `install` を `null` にし、利用者が 3.12 以上を入れる。ほかのコマンドは、起動した Python が 3.12 未満か依存が無ければ仮想環境の Python で起動し直し、仮想環境が使えなければ `check-env` を促すエラー（終了コード 1）で終わる（インターフェース定義『コマンドの起動』）。版の判定より前に読まれる `mindmap.py`・`launcher.py`・`check_env.py` は Python 3.8 で読める構文で書き、それより古い `python3` では構文エラーで終わる'
   - name: ブラウザ
     english_name: browser
     category: 動作環境

@@ -94,7 +94,7 @@ subsystems:
     role: 会話の進め方の手順（セットアップ `setup` と話し合いの進行 `session` の 2 つ）。ワークスペースへの記録はスクリプトのコマンドで行い、リサーチはサブエージェントに任せる
     runtime: Markdown（Claude Code が読む手順）
     runs_on: 利用者の端末の Claude Code
-    status: planned
+    status: implemented
   - name: スクリプト
     scope: scripts
     role: ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検と、プレビューの HTML の書き出し

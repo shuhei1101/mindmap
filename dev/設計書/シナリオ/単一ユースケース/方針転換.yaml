@@ -33,7 +33,7 @@ scenarios:
   - name: 正常シナリオ（成果物が要らなくなる）
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `update`・`add`・`build` を、決めた引数で順に再生する
+        description: モデルを呼ばない。手順が連ねる `update`・`check`・`add`・`build` と `mindmap.yaml` の書き換えを、決めた引数で順に再生する
       - name: 作成済みのワークスペース
         description: '`deliverable: true` の資料 A-1 と、`mindmap.yaml` のゴールの `deliverables` に A-1 を持つ'
       - name: 再生する書き込み
@@ -44,9 +44,12 @@ scenarios:
         actor U as 利用者
         participant CC as Claude Code（session）
         participant SCR as スクリプト
+        participant WS as mindmap.yaml
 
         U->>CC: 発言（スコープを変える）
-        CC->>SCR: update（A-1 の deliverable を外す、ゴールの deliverables から外す）
+        CC->>SCR: update（A-1 の deliverable を外す）
+        CC->>WS: Edit（ゴールの deliverables から A-1 を外す。利用者に書き込みの確認が出る）
+        CC->>SCR: check
         CC->>SCR: add（会話ログ）
         CC->>SCR: build
         CC-->>U: 資料へ格下げしたことを示す
