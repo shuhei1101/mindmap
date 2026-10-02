@@ -377,3 +377,20 @@ def test_run_attrs(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
     # 検証
     assert payload == {"attrs": [{"name": "担当", "count": 1, "kinds": ["decision"]}]}
     assert exit_code == 0
+
+
+def test_run_goal(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
+    """判定を出力の形にする（正常系）。"""
+    # 準備
+    root = make_workspace(make_item("D-1", phase="目的", status="未決定"))
+    # 実行
+    payload, exit_code = commands.run_goal(root)
+    # 検証
+    assert exit_code == 0
+    assert payload["reached"] is False
+    assert {
+        "goal_phase",
+        "phases",
+        "remaining_decisions",
+        "remaining_deliverables",
+    } <= set(payload)

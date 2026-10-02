@@ -1,0 +1,75 @@
+title: "リサーチ"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルとサブエージェントを呼ばない。手順が連ねる `add`（調査・タスク・会話ログ）・`update`・`build` を、決めた引数で順に再生する
+      - name: 作成済みのワークスペース
+        description: 外部ライブラリを決める未決定の検討事項 D-1 を持つ
+      - name: 再生する書き込み
+        description: '調査のタスク T-1（`kind`: 調査、`for: [D-1]`）を積み、確認の後に調査 R-1（ベストプラクティス）と R-2（候補の比較）を `related: [D-1]` で足し、T-1 を完了にする'
+        notes: 確認で示すのは「何を・どの観点で・何体で」
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SA as サブエージェント
+        participant SCR as スクリプト
+
+        CC->>SCR: add（調査のタスク T-1）
+        CC-->>U: 何を・どの観点で・何体で調べるかを示して確認を取る
+        U->>CC: 承認する
+        CC->>SA: 調べ方（references）を渡して起動する
+        SA-->>CC: 結論・確度・出典
+        CC->>SCR: add（調査 R-1・R-2、related: D-1）
+        CC->>SCR: update（T-1 を完了）
+        CC->>SCR: add（会話ログ）
+        CC->>SCR: build
+        CC-->>U: 結論と、D-1 の案への反映を示す
+      ```
+    expected:
+      - R-1・R-2 が `question`・`conclusion`・`confidence`・`angles` を持ち、`related` に D-1 がある
+      - T-1 が完了である
+      - '`show D-1` の参照元に R-1・R-2 がある'
+  - name: 正常シナリオ（確認で断られた）
+    setup:
+      - name: Mock
+        description: モデルとサブエージェントを呼ばない。手順が連ねる `add`（タスク・会話ログ）・`build` を再生する
+      - name: 作成済みのワークスペース
+        description: 未決定の検討事項 D-1 を持つ
+      - name: 利用者の返答
+        description: 確認で「今は調べない」と答える
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+
+        CC->>SCR: add（調査のタスク T-1）
+        CC-->>U: 何を・どの観点で・何体で調べるかを示して確認を取る
+        U->>CC: 断る
+        CC->>SCR: add（会話ログ）
+        CC->>SCR: build
+      ```
+    expected:
+      - 調査が 0 件のままである
+      - T-1 が未着手である
+lead: '`session` が、調べる必要のある検討事項について利用者の確認を取ってサブエージェントで調べ、結果を調査に書いて検討事項に繋ぐ単一ユースケース。'
+issue: 4
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: 何を・どの観点で・何体で調べるかを起動の前に知り、止められる。調べた結果がどの問いに答えたかが記録で辿れる
+trigger: 外部ライブラリ・外部 API を決める検討事項が積まれる、進め方ガイドの「必ず調べるもの」に当たる、または利用者が調べるよう頼む
+preconditions:
+  - ワークスペースが作成済みである
+  - 依存が揃っている
+success_guarantee: 調査は `question`・`conclusion`・`confidence`・`angles` を持ち、元の検討事項と `related` でつながる。利用者が自分から頼んだとき以外は、起動の前に確認を取る。
+minimal_guarantee: 利用者が確認で断ったときはサブエージェントを起動せず、調査のタスクを未着手で残す。
+frequency: 話し合いの中で数回
+priority: 中
+notes:
+  確認を省くとき: 利用者が自分から調べるよう頼んだときは確認を省き、正常シナリオの確認の往復だけが無い流れになる
+  E2E の範囲: このユースケースは E2E を持たない。調査とタスクの追加・更新は既存の『記録の追加と更新』の『正常シナリオ』、参照元の表示は『記録の検索』の『正常シナリオ』が確かめる。確認の往復とサブエージェントの結果はモデルの振る舞いで確かめない。サブエージェントの起動と許可は結合テストで確かめる

@@ -27,7 +27,7 @@ def _count_hooks(details: str) -> int:
 
 
 def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
-    """プラグイン mindmap がスキルのフォルダを持ち、hooks を持たずに読み込まれる（正常系）。"""
+    """プラグイン mindmap が 2 つのスキルと共通の置き場所を持ち、hooks を持たずに読み込まれる（正常系）。"""
     # 準備
     run_claude("plugin", "marketplace", "add", str(repo_root))
 
@@ -41,8 +41,13 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     install_path = Path(str(installed["installPath"]))
     # claude plugin list で mindmap@mindmap が有効である
     assert installed["enabled"] is True
-    # 取り込まれたプラグインのフォルダに skills/mindmap/schemas/ と skills/mindmap/scripts/ がある
-    assert (install_path / "skills" / "mindmap" / "schemas").is_dir()
-    assert (install_path / "skills" / "mindmap" / "scripts").is_dir()
+    # 取り込まれたプラグインのフォルダに 2 つのスキルの SKILL.md と、共通の置き場所の 4 つのフォルダがある
+    assert (install_path / "skills" / "setup" / "SKILL.md").is_file()
+    assert (install_path / "skills" / "session" / "SKILL.md").is_file()
+    shared = install_path / "skills" / "mindmap"
+    assert (shared / "references").is_dir()
+    assert (shared / "playbooks").is_dir()
+    assert (shared / "schemas").is_dir()
+    assert (shared / "scripts").is_dir()
     # claude plugin details で hooks が 0 件である
     assert _count_hooks(details.stdout) == 0

@@ -21,6 +21,7 @@ from check_env import (
     default_venv_dir,
     run_check_env,
 )
+from launcher import format_relaunch_error, relaunch_if_needed
 
 # `add` の種類（kinds.py の `KINDS` のキー。kinds.py は 3.12 の構文なので、ここでは読まずに写す）
 KIND_NAMES = ("decision", "task", "research", "doc", "term", "note", "log")
@@ -28,7 +29,20 @@ KIND_NAMES = ("decision", "task", "research", "doc", "term", "note", "log")
 
 def main(argv: list[str] | None = None) -> int:
     """引数を解釈してコマンドを実行し、出力と終了コードを決める。"""
-    args = build_parser().parse_args(argv)
+    arguments = sys.argv[1:] if argv is None else argv
+    # 引数を解釈する前に、起動した Python で動けるかを確かめる
+    try:
+        relaunched = relaunch_if_needed(arguments, script=Path(__file__).resolve())
+    except (VenvNotFoundError, PythonVersionError, DependencyMissingError) as error:
+        # 起動し直せない: 標準エラーに出して終了コード 1（標準出力には何も出さない）
+        for line in format_relaunch_error(error):
+            print(line, file=sys.stderr)
+        return 1
+    # 仮想環境の Python で起動し直した: 子プロセスの終了コードをそのまま返す
+    if relaunched is not None:
+        return relaunched
+
+    args = build_parser().parse_args(arguments)
     # check-env: ライブラリを読み込まずに、仮想環境の状態を答える
     if args.command == "check-env":
         return _run_check_env_command(args.venv)
@@ -50,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """13 のコマンドと引数を持つ ArgumentParser を作る。"""
+    """14 のコマンドと引数を持つ ArgumentParser を作る。"""
     parser = argparse.ArgumentParser(
         prog="mindmap.py", description="ワークスペースの YAML を読み書き・検索・点検する"
     )
@@ -69,11 +83,14 @@ def build_parser() -> argparse.ArgumentParser:
         )
         return subparser
 
-    add_command("init", "設定を受け取って空のワークスペースを作る")
+    init_parser = add_command("init", "設定を受け取って空のワークスペースを作る")
+    _add_json_argument(init_parser, "設定の JSON")
     add_parser = add_command("add", "1 項目を足す")
     add_parser.add_argument("kind", choices=KIND_NAMES, help="足す項目の種類")
+    _add_json_argument(add_parser, "項目の中身の JSON")
     update_parser = add_command("update", "1 項目のキーを置き換える")
     update_parser.add_argument("id", help="直す項目の ID")
+    _add_json_argument(update_parser, "置き換えるキーの JSON")
     adopt_parser = add_command("adopt", "検討事項の採用する案を切り替える")
     adopt_parser.add_argument("id", help="検討事項の ID")
     adopt_parser.add_argument("key", help="採用する案の記号")
@@ -98,7 +115,18 @@ def build_parser() -> argparse.ArgumentParser:
     add_command("attrs", "使っている属性名と件数を返す")
     add_command("check", "スキーマ違反・参照切れ・本文のずれを洗い出す")
     add_command("build", "記録を埋め込んだ preview.html を書き出す")
+    add_command("goal", "ゴールに届いたかと残りを返す")
     return parser
+
+
+def _add_json_argument(parser: argparse.ArgumentParser, what: str) -> None:
+    """中身の JSON を標準入力の代わりに引数で渡す `--json` を足す。"""
+    parser.add_argument("--json", help=f"{what}（渡したときは標準入力を読まない）")
+
+
+def _read_json_input(args: argparse.Namespace) -> str:
+    """`--json` があればその値を、無ければ標準入力を読んで返す。"""
+    return args.json if args.json is not None else sys.stdin.read()
 
 
 def _positive_int(text: str) -> int:
@@ -131,9 +159,9 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
 
     root = args.workspace
     handlers = {
-        "init": lambda: commands.run_init(root, sys.stdin.read()),
-        "add": lambda: commands.run_add(root, args.kind, sys.stdin.read()),
-        "update": lambda: commands.run_update(root, args.id, sys.stdin.read()),
+        "init": lambda: commands.run_init(root, _read_json_input(args)),
+        "add": lambda: commands.run_add(root, args.kind, _read_json_input(args)),
+        "update": lambda: commands.run_update(root, args.id, _read_json_input(args)),
         "adopt": lambda: commands.run_adopt(root, args.id, args.key),
         "status": lambda: commands.run_status(root),
         "next": lambda: commands.run_next(root, args.limit),
@@ -155,6 +183,7 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
         "attrs": lambda: commands.run_attrs(root),
         "check": lambda: commands.run_check(root),
         "build": lambda: commands.run_build(root),
+        "goal": lambda: commands.run_goal(root),
     }
     return handlers[args.command]()
 

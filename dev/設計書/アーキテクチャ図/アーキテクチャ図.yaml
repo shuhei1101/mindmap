@@ -81,7 +81,7 @@ repository:
   style: モノレポ
   repositories:
     - name: shuhei1101/mindmap
-  layout: '`.claude-plugin/`（マーケットプレイスとプラグインのマニフェスト）/ `skills/mindmap/`（スキル。配下に `schemas/`・`scripts/`）'
+  layout: '`.claude-plugin/`（マーケットプレイスとプラグインのマニフェスト）/ `skills/setup/`・`skills/session/`（スキル。SKILL.md と `steps/`）/ `skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・プレビューの `preview/`。SKILL.md は持たない）'
   notes: リポジトリの直下がマーケットプレイスとプラグインの両方の直下を兼ねる（マーケットプレイスはプラグインを `./` で指す）。
 subsystems:
   - name: プラグイン
@@ -91,10 +91,10 @@ subsystems:
     runs_on: 利用者の端末の Claude Code
   - name: スキル
     scope: skill
-    role: 会話の進め方の手順。ワークスペースへの記録はスクリプトのコマンドで行う
+    role: 会話の進め方の手順（セットアップ `setup` と話し合いの進行 `session` の 2 つ）。ワークスペースへの記録はスクリプトのコマンドで行い、リサーチはサブエージェントに任せる
     runtime: Markdown（Claude Code が読む手順）
     runs_on: 利用者の端末の Claude Code
-    status: planned
+    status: implemented
   - name: スクリプト
     scope: scripts
     role: ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検と、プレビューの HTML の書き出し
