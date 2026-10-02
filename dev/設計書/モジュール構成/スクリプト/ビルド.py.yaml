@@ -61,9 +61,13 @@ functions:
          - 問題がある場合、`SchemaMismatchError` を送る（書かない）
       2. データを集めて雛形に埋め込む（`collect_preview_data`、`embed_data`）
       3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える
+         - `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る（前の `preview.html` は残る）
     exceptions:
       - name: SchemaMismatchError
         condition: ワークスペースに問題がある
+      - name: WriteFailedError
+        condition: '`preview.html` の書き込み・置き換えで `OSError` が起きた（一時ファイルを消した後）'
+        message: '書き込めませんでした: {パス}（{理由}）'
     unit_tests:
       - name: test_build_preview
         case: 正常
@@ -78,6 +82,13 @@ functions:
         mock: なし
         expected: '`SchemaMismatchError`。`preview.html` が呼ぶ前と同じ'
         exception: ワークスペースに問題がある
+      - name: test_build_preview_when_replace_fails
+        case: 異常
+        summary: 置き換えに失敗したら前の preview.html を残す
+        condition: 前の `preview.html` を置き、`os.replace` を `OSError` を送る関数に差し替える
+        mock: '`os.replace`（`builder` モジュールの参照を monkeypatch）'
+        expected: '`WriteFailedError`。`preview.html` が呼ぶ前と同じで、`.tmp` のファイルが無い'
+        exception: 置き換えで OSError
   - name: collect_preview_data
     title: プレビューのデータの収集
     kind: 関数

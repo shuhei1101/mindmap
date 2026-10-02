@@ -77,6 +77,31 @@ flows:
       - '標準エラーに `decisions.yaml: items[0].status:` で始まる行がある'
       - '`preview.html` の中身が呼ぶ前と同じ'
     test: test_error_when_schema_mismatch
+  - name: 異常系（書き込めない・WriteFailedError）
+    summary: 書き込めないワークスペースでは前の preview.html を残して終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 一度書き出した後、ワークスペースのフォルダの書き込みの権限を外したワークスペース
+        notes: root で動かすときは skip する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py build
+        participant WS as ワークスペース
+
+        クライアント->>IF: build --workspace
+        IF-->>WS: 全ての YAML と docs/ を読む
+        IF->>WS: 一時ファイルを書けない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
+      - '`preview.html` の中身が呼ぶ前と同じ'
+    test: test_error_when_write_fails
 lead: ワークスペースの全ての YAML と本文を 1 つの JSON にまとめ、プレビューの画面の雛形に埋め込んだ 1 ファイル `preview.html` を書き出す。
 idempotent: true
 side_effects: ワークスペースの `preview.html` を一時ファイルから `os.replace` で置き換える。サーバーは立てず、ブラウザも開かない
@@ -116,6 +141,9 @@ exceptions:
   - name: SchemaMismatchError
     condition: ワークスペースのどれかの YAML がスキーマに合わないか、YAML として読めない
     notes: 終了コード 1。標準エラーに合わない箇所。`preview.html` を書き換えない
+  - name: WriteFailedError
+    condition: '`preview.html` の書き込みか置き換えに失敗した'
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。前の `preview.html` を残す
 error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
 constraints:
   - item: 出力の形

@@ -81,6 +81,33 @@ flows:
       - '標準エラーに `decisions.yaml: items[1].status:` で始まる行があり、`完了` を含む'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
     test: test_error_when_schema_mismatch
+  - name: 異常系（書き込めない・WriteFailedError）
+    summary: 書き込めないワークスペースでは何も書き換えず、エラーの行を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 検討事項 D-1 を持ち、ワークスペースのフォルダと `docs/` の書き込みの権限を外したワークスペース
+        notes: root で動かすときは skip する
+      - name: 標準入力
+        description: '`body_markdown` つきの検討事項'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py add
+        participant WS as ワークスペース
+
+        クライアント->>IF: add decision --workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>WS: 一時ファイルを書けない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
+      - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
+    test: test_error_when_write_fails
 lead: 標準入力で渡した中身に ID・作成日時・更新日時を付けて、種類の YAML に 1 項目足す。本文を渡したときは `docs/{ID}.md` に書く。
 idempotent: false
 side_effects: 種類の YAML に 1 項目を足す。`body_markdown` を渡したときは `docs/{ID}.md` を書き、項目の `body` を `{ID}.md` にする。本文と YAML の一時ファイルを両方書き終えてから、本文 → YAML の順に `os.replace` で置き換える
@@ -146,6 +173,9 @@ exceptions:
   - name: SchemaMismatchError
     condition: 足した後のワークスペースのどれかの YAML がスキーマに合わない（標準入力が JSON として読めないとき・スクリプトが付けるキーを渡したときも含む）
     notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+  - name: WriteFailedError
+    condition: 一時ファイルの書き込みか置き換えに失敗した（権限が無い・ほかのプロセスが開いている など）
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。置き換えた本文は消し、どのファイルも書き換えない
 error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける（キーのパスは `items[0].status` の形）。'
 constraints:
   - item: 出力の形

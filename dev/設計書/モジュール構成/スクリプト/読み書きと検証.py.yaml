@@ -69,15 +69,18 @@ data_models:
       - name: root
         type: Path
         description: ワークスペースのフォルダ（絶対パス）
+      - name: raw
+        type: dict[str, Any]
+        description: 'ファイル名 → 読んだ値そのまま（設定と 7 種類。無い種類のファイルは `{"items": []}`、YAML として読めないファイルは含めない）。検証はこの値をスキーマと突き合わせる'
       - name: settings
         type: dict[str, Any]
-        description: '`mindmap.yaml` の中身。読めなければ空'
+        description: '`mindmap.yaml` の値。辞書でない・読めないときは空'
       - name: items
         type: dict[Kind, list[dict[str, Any]]]
-        description: 種類ごとの `items`（ファイルの並びのまま）。無い・読めないファイルは空
+        description: 種類ごとの `items`（ファイルの並びのまま）。一番上が辞書で `items` が配列のときだけ取り出し、それ以外は空（配列の要素のうち辞書でないものも除く）
       - name: load_problems
         type: list[Problem]
-        description: 'YAML として読めなかったファイル（`kind: schema`）'
+        description: 'YAML として読めなかったファイル（`kind: schema`・`key: (全体)`）'
   - name: Problem
     title: 問題
     container: skills/mindmap/scripts/store.py
@@ -225,6 +228,13 @@ classes:
     summary: 検討事項が渡した記号の案を持たない。メッセージに渡した記号と持っている記号の一覧
     kind: クラス
     inherits: MindmapError
+  - name: WriteFailedError
+    title: 書き込みに失敗した
+    container: skills/mindmap/scripts/errors.py
+    usecase: 共通
+    summary: ファイルの書き込み・置き換えで `OSError` が起きた。後始末をした後に送る。メッセージに置き換え先のパスと `OSError` の理由（`raise ... from` で元の例外をつなぐ）
+    kind: クラス
+    inherits: MindmapError
 constants:
   - name: KINDS
     title: 種類の一覧
@@ -348,11 +358,12 @@ functions:
     process: |-
       1. `root` を絶対パスにし、`mindmap.yaml` があるか確かめる
          - 無い場合、`WorkspaceNotFoundError` を送る
-      2. 設定を `yaml.safe_load` で読む（読む。`_read_yaml`）
-      3. `KINDS` の順に種類ごとの YAML を読み、`items` を取り出す（読む。`_read_yaml`）
-         - ファイルが無い場合、空の `items` にする
-         - YAML として読めない場合、`kind: schema` の問題を `load_problems` に足し、空の `items` にする
-      4. `Workspace` を返す
+      2. 設定と `KINDS` の順の種類ごとの YAML を読み、読んだ値をそのまま `raw` に入れる（読む。`_read_yaml`）
+         - 種類のファイルが無い場合、`{"items": []}` を入れる
+         - YAML として読めない場合（設定も含む）、`kind: schema`・`key: (全体)` の問題を `load_problems` に足し、`raw` には入れない
+      3. `settings` は設定の値が辞書のときだけその値、それ以外は空にする
+      4. `items` は、値が辞書で `items` が配列のときだけその要素のうち辞書のものを取り出し、それ以外は空にする（形の誤りは検証が `raw` から拾う）
+      5. `Workspace` を返す
     exceptions:
       - name: WorkspaceNotFoundError
         condition: '`root` に `mindmap.yaml` が無い'
@@ -381,6 +392,18 @@ functions:
         mock: なし
         expected: '`WorkspaceNotFoundError`（メッセージに `tmp_path`）'
         exception: mindmap.yaml が無い
+      - name: test_load_workspace_when_top_level_list
+        case: 正常
+        summary: 一番上が配列のファイルは項目を空にし、読んだ値は raw に残す
+        condition: '`decisions.yaml` を `- id: D-1` から書き始めた配列にする'
+        mock: なし
+        expected: '`items["decision"]` が空、`raw["decisions.yaml"]` がその配列、`load_problems` が空'
+      - name: test_load_workspace_when_settings_broken
+        case: 正常
+        summary: 設定が YAML として読めなければ問題に記録して空にする
+        condition: '`mindmap.yaml` に YAML として読めない文字列を置く'
+        mock: なし
+        expected: '`settings` が空、`load_problems` に `file: mindmap.yaml`・`key: (全体)` の 1 件、`raw` に `mindmap.yaml` が無い'
   - name: validate_workspace
     title: ワークスペースの検証
     kind: 関数
@@ -399,9 +422,9 @@ functions:
       description: '`load_problems` とスキーマ違反（どれも `kind: schema`）。ファイル名の順、同じファイルの中はキーのパスの順'
     process: |-
       1. スキーマの検証器を作る（検証器の用意。`load_validators`）
-      2. 設定を `{...}` の形で、種類ごとの項目を `{"items": [...]}` の形で検証し、`iter_errors` のエラーごとに問題を作る
-         - キーのパスは `absolute_path` を `items[0].status` の形にする（`_format_path`）
-         - パスが `items[{n}]` を含む場合、その項目の `id` を問題の `id` に入れる
+      2. `raw` の値をそのまま、ファイルに対応するスキーマと突き合わせ、`iter_errors` のエラーごとに問題を作る（一番上の形の誤りもここで拾う）
+         - キーのパスは `absolute_path` を `items[0].status` の形にする（`_format_path`。一番上は `(全体)`）
+         - パスが `items[{n}]` を含み、その要素が `id` を持つ場合、その `id` を問題の `id` に入れる
       3. `load_problems` と合わせて並べて返す
     unit_tests:
       - name: test_validate_workspace
@@ -428,6 +451,12 @@ functions:
         condition: '`load_problems` に `notes.yaml` の問題を 1 件持つワークスペース'
         mock: なし
         expected: その 1 件を含む
+      - name: test_validate_workspace_when_top_level_invalid
+        case: 正常
+        summary: 一番上の形の誤りを拾う
+        condition: '`parametrize`: `decisions.yaml` が一番上の配列 / `decisions.yaml` が `items` の横に `extra` のキーを持つ'
+        mock: なし
+        expected: '`file: decisions.yaml`・`kind: schema` の問題があり、`key` が `(全体)`'
   - name: load_validators
     title: 検証器の用意
     kind: 関数
@@ -572,16 +601,23 @@ functions:
         passing: positional
         description: 書き込む変更
     process: |-
-      1. `items` を差し替えたワークスペースを作り、検証する（ワークスペースの検証。`validate_workspace`）
+      1. `raw` のその種類のファイルを `{"items": 変更後の並び}` に差し替えたワークスペースを作り、検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（何も書かない）
       2. YAML の一時ファイルを書く（`dump_yaml`、`_write_temp`）。本文があれば本文の一時ファイルも書き、置き換える前の本文を控える（無ければ `None`）
+         - 一時ファイルの書き込みで `OSError` が起きた場合、書いた一時ファイルを消して `WriteFailedError` を送る
       3. 本文 → YAML の順に `os.replace` で置き換える
-         - YAML の置き換えで `OSError` が起きた場合、本文を控えに戻し（控えが `None` なら本文を消し）、残った一時ファイルを消して、その `OSError` を送り直す
-         - 本文の置き換えで `OSError` が起きた場合、一時ファイルを消して送り直す
+         - 本文の置き換えで `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る
+         - YAML の置き換えで `OSError` が起きた場合、本文を控えに戻し（控えが `None` なら本文を消し）、残った一時ファイルを消して `WriteFailedError` を送る
     exceptions:
       - name: SchemaMismatchError
         condition: 変更を当てた後のワークスペースに問題がある
         message: スキーマに合いません（`lines` に問題ごとの行）
+      - name: WriteFailedError
+        condition: 一時ファイルの書き込みか本文の置き換えで `OSError` が起きた（一時ファイルを消した後）
+        message: '書き込めませんでした: {パス}（{理由}）'
+      - name: WriteFailedError
+        condition: YAML の置き換えで `OSError` が起きた（本文を戻した後）
+        message: '書き込めませんでした: {パス}（{理由}）'
     unit_tests:
       - name: test_save_change
         case: 正常
@@ -596,18 +632,27 @@ functions:
         mock: なし
         expected: '`SchemaMismatchError`（`lines` に `decisions.yaml: items[0].status:` で始まる行）。`decisions.yaml` と `docs/` が呼ぶ前と同じ'
         exception: 変更を当てた後のワークスペースに問題がある
+      - name: test_save_change_when_temp_write_fails
+        case: 異常
+        summary: 一時ファイルを書けなければ何も置き換えない
+        condition: '`_write_temp` を、本文の一時ファイルのときだけ `OSError` を送る関数に差し替える'
+        mock: '`_write_temp`（`store` モジュールの参照を monkeypatch）'
+        expected: '`WriteFailedError`。`decisions.yaml` と `docs/` が呼ぶ前と同じで、`.tmp` のファイルが無い'
+        exception: 一時ファイルの書き込みで OSError
       - name: test_save_change_when_yaml_replace_fails_with_previous_body
-        case: 正常
+        case: 異常
         summary: YAML の置き換えに失敗したら前の本文に戻す
         condition: '`docs/D-1.md` がある状態で本文を書き換える変更。`os.replace` を、置き換え先が `decisions.yaml` のときだけ `OSError` を送る関数に差し替える'
         mock: '`os.replace`（`store` モジュールの参照を monkeypatch）'
-        expected: '`OSError` が送られ、`docs/D-1.md` と `decisions.yaml` が呼ぶ前と同じ。`.tmp` のファイルが無い'
+        expected: '`WriteFailedError`（メッセージに `decisions.yaml`）。`docs/D-1.md` と `decisions.yaml` が呼ぶ前と同じで、`.tmp` のファイルが無い'
+        exception: YAML の置き換えで OSError
       - name: test_save_change_when_yaml_replace_fails_without_previous_body
-        case: 正常
+        case: 異常
         summary: YAML の置き換えに失敗したら新しく書いた本文を消す
         condition: '`docs/D-1.md` が無い状態で本文を足す変更。`os.replace` を同じように差し替える'
         mock: '`os.replace`'
-        expected: '`OSError` が送られ、`docs/D-1.md` が無く、`decisions.yaml` が呼ぶ前と同じ'
+        expected: '`WriteFailedError`。`docs/D-1.md` が無く、`decisions.yaml` が呼ぶ前と同じ'
+        exception: YAML の置き換えで OSError
   - name: create_workspace
     title: ワークスペースの作成
     kind: 関数
@@ -634,13 +679,17 @@ functions:
       1. `root/mindmap.yaml` があれば `WorkspaceExistsError` を送る
       2. 設定と空の 7 種類で `Workspace` を組み、検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（フォルダも作らない）
-      3. フォルダと `docs/`・`handoff/` を作り、`mindmap.yaml` と 7 種類の YAML（`items: []`）を書く（`dump_yaml`）
+      3. フォルダと `docs/`・`handoff/` を作り、7 種類の YAML（`items: []`）を書き、最後に `mindmap.yaml` を書く（`dump_yaml`）
+         - `OSError` が起きた場合、この関数が作ったファイルとフォルダを消して `WriteFailedError` を送る（`mindmap.yaml` を最後に書くので、途中で止まってもワークスペースとして扱われない）
     exceptions:
       - name: WorkspaceExistsError
         condition: '`root` に `mindmap.yaml` が既にある'
         message: '既にワークスペースがあります: {root}'
       - name: SchemaMismatchError
         condition: 設定が設定のスキーマに合わない
+      - name: WriteFailedError
+        condition: フォルダ・ファイルを作る途中で `OSError` が起きた（作ったものを消した後）
+        message: '書き込めませんでした: {パス}（{理由}）'
     unit_tests:
       - name: test_create_workspace
         case: 正常
@@ -662,6 +711,13 @@ functions:
         mock: なし
         expected: '`SchemaMismatchError`（`lines` に `mindmap.yaml` と `phases`）。`tmp_path / "ws"` が無い'
         exception: 設定が設定のスキーマに合わない
+      - name: test_create_workspace_when_write_fails
+        case: 異常
+        summary: 途中で書けなくなったら作ったものを消す
+        condition: '`dump_yaml` で作った文字列を書く処理を、`logs.yaml` のときだけ `OSError` を送るように `Path.write_text` を差し替える。`tmp_path / "ws"`（無い）'
+        mock: '`Path.write_text`（monkeypatch）'
+        expected: '`WriteFailedError`。`tmp_path / "ws"` が無い'
+        exception: 作る途中で OSError
   - name: read_body
     title: 本文の読み込み
     kind: 関数

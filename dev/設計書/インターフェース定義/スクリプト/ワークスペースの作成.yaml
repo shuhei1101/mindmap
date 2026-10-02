@@ -76,6 +76,30 @@ flows:
       - 標準エラーに `mindmap.yaml` と `phases` がある
       - '`--workspace` のフォルダが作られていない'
     test: test_error_when_settings_mismatch
+  - name: 異常系（書き込めない・WriteFailedError）
+    summary: 書き込めない場所には作らず、エラーの行を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 書き込めないフォルダ
+        description: 書き込みの権限を外した一時フォルダの下の、まだ無いフォルダを `--workspace` に渡す
+        notes: root で動かすときは権限が効かないので skip する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py init
+        participant WS as フォルダ
+
+        クライアント->>IF: init --workspace（標準入力に設定）
+        IF->>WS: フォルダを作れない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
+      - '`--workspace` のフォルダが無い'
+    test: test_error_when_write_fails
 lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` を作る。
 idempotent: false
 side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`handoff/` を作る'
@@ -121,6 +145,9 @@ exceptions:
   - name: SchemaMismatchError
     condition: 標準入力の設定が設定のスキーマに合わない（JSON として読めないときも含む）
     notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+  - name: WriteFailedError
+    condition: フォルダ・ファイルを作る途中で書き込めなかった（権限が無い・ほかのプロセスが開いている など）
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。作ったものを消し、`mindmap.yaml` は残さない
 error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける（キーのパスは `items[0].status` の形）。'
 constraints:
   - item: 出力の形
