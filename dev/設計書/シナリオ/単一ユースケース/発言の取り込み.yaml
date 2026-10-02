@@ -35,6 +35,7 @@ scenarios:
       - 会話ログ L-1 がある
       - 足した全ての項目が `target`・`category`・`phase` を持つ
       - '`preview.html` が最後の書き込みより後に書き出されている'
+    test: test_normal
   - name: 正常シナリオ（保留・解除・中止）
     setup:
       - name: Mock
@@ -92,6 +93,7 @@ scenarios:
       - '資料 A-1 が `kind: 図` と `related: [D-1]` を持つ'
       - '`docs/` に A-1 の本文の Markdown がある'
       - '`check` が YAML と Markdown のずれを 0 件で返す'
+    test: test_normal_when_diagram_kept_as_doc
   - name: 正常シナリオ（脱線した質問）
     setup:
       - name: Mock
@@ -117,6 +119,7 @@ scenarios:
       - 用語集 G-1 が `meaning` を持つ
       - メモ N-1 がタグ `脱線` を持つ
       - タスクが 0 件のままである
+    test: test_normal_when_off_topic_question
 lead: 話し合いを進めるスキル `session` が、利用者の発言を対象・カテゴリー・フェーズに振り分けて記録し、進め方ガイドの観点と照らして派生の検討事項・未整理・タスクを積む単一ユースケース。
 issue: 4
 primary_actor: 利用者
@@ -132,5 +135,5 @@ minimal_guarantee: スキーマに合わない書き込みはスクリプトが�
 frequency: 利用者の発言のたび
 priority: 高
 notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_utterance_intake.py`（E2E テスト作成で置き、`test_file` に書く）'
   E2E の範囲: モデルを呼ばず、手順が連ねる書き込みを再生してワークスペースの状態を確かめる。E2E を持つのは、既存のシナリオに無い組み合わせ（`parent` と未整理と `for` を持つ書き込みの組・`docs/` の本文を持つ資料・タスクを積まない脱線の記録）を持つシナリオだけ。発言をどう振り分けるかというモデルの判断は確かめない
+test_file: tests/e2e/単一ユースケース/test_utterance_intake.py

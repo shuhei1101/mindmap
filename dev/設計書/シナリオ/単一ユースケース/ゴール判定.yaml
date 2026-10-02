@@ -32,6 +32,7 @@ scenarios:
       - '`goal` の出力が「届いた」で、残りの検討事項と成果物が 0 件である（ゴールより後ろの D-9 を含まない）'
       - '`handoff/` に、決まった検討事項の一覧と成果物 A-1 の本文がある'
       - 会話ログが 1 件足されている
+    test: test_normal_when_reached
   - name: 正常シナリオ（ゴールに届いていない）
     setup:
       - name: Mock
@@ -52,6 +53,7 @@ scenarios:
     expected:
       - '`goal` の出力が「届いていない」で、残りに D-1 と A-1 がある'
       - '`handoff/` に何も書かれていない'
+    test: test_normal_when_not_reached
 lead: '`session` が、ゴールのフェーズまでの検討事項と成果物が揃ったかを確かめ、利用者の確定を取って `handoff/` に引き渡しの資料を書き出す単一ユースケース。'
 issue: 4
 primary_actor: 利用者
@@ -68,6 +70,6 @@ success_guarantee: ゴールに届いたときだけ、利用者の確定の後�
 frequency: 話し合いの終わりに 1〜数回
 priority: 高
 notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_goal_check.py`（E2E テスト作成で置き、`test_file` に書く）'
   引き渡しの形: '`handoff/` に書き出す資料の形は進め方ガイドの「引き渡しの形」が決める。書き出しはスクリプトのコマンドを持たず、スキルが Markdown を書く'
   ゴールに届いたかの判定: 'スクリプトにコマンド `goal` を足して判定させる。ゴールのフェーズまでの検討事項が全て決定済みか対象外・取り下げで、ゴールの `deliverables` の資料が全て `done: true` のときに届いたとする。引数と出力の形はインターフェース定義設計で決める'
+test_file: tests/e2e/単一ユースケース/test_goal_check.py

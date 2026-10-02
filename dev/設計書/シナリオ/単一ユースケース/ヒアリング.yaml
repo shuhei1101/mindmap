@@ -30,6 +30,7 @@ scenarios:
       - D-1・D-2 が決定済みで `answer` を持つ
       - 書き込みの後の `next` の候補に D-3 がある
       - 会話ログが 1 件足されている
+    test: test_normal
 lead: '`session` が、前提が揃った未決定の検討事項を選んで 1 ラウンドにまとめて利用者に聞き、答えを記録する単一ユースケース。'
 issue: 4
 primary_actor: 利用者
@@ -44,5 +45,5 @@ success_guarantee: 1 ラウンドで聞くのは `next` が返した前提が揃
 frequency: 話し合いの中で何度も
 priority: 高
 notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_hearing.py`（E2E テスト作成で置き、`test_file` に書く）'
   E2E の範囲: モデルを呼ばず、手順が連ねるコマンドを再生する。質問の文面は確かめない
+test_file: tests/e2e/単一ユースケース/test_hearing.py
