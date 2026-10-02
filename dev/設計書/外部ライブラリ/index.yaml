@@ -16,3 +16,5 @@ items:
     summary: プレビューで本文の図を SVG に描く
   - page: storybook.yaml
     summary: プレビューの部品を状態ごとのストーリーで見る（開発用）
+  - page: playwright.yaml
+    summary: プレビューのテストでブラウザを動かす（pytest-playwright。開発用）

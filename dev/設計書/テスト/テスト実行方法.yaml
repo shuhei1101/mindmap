@@ -17,7 +17,21 @@ layers:
         pytest {テストファイルパス}
         ```
   - name: 単体テスト（フロント）
-    run_all: 未確定
+    description: pytest-playwright で、プレビューの部品・画面の JavaScript を `page.add_script_tag` で読み、`page.evaluate` で関数を引数付きで呼んで、返った DOM と計算した値を本物のブラウザ（Chromium）で確かめる。描画のライブラリは `page.route` で差し替える
+    prerequisites:
+      - Python 3.12 以上と、`requirements-dev.txt` の開発用の依存（pytest・pytest-playwright・playwright ほか）
+      - '`python -m playwright install --only-shell chromium` でブラウザを入れてある（CI は `--with-deps` を付ける）'
+      - 実行はリポジトリの直下で行う
+    run_all: |-
+      ```bash
+      pytest tests/unit/preview
+      ```
+    run_one:
+      label: ファイル
+      command: |-
+        ```bash
+        pytest {テストファイルパス}
+        ```
   - name: 結合テスト（バック）
     run_all: |-
       ```bash
@@ -38,7 +52,21 @@ layers:
         pytest {テストファイルパス}
         ```
   - name: 結合テスト（フロント）
-    run_all: 未確定
+    description: pytest-playwright で 2 つを確かめる。インターフェース定義『プレビューを開く』は、`make_workspace` と `run_mindmap("build", ...)` で書き出した `preview.html` を file:// と URL のハッシュで開き、描画のライブラリの配信元を失敗させるときは `page.route` で要求を abort する。部品設計の状態は、`storybook build` の出力を一時の HTTP サーバーで配る fixture から `iframe.html?id={story}--{state}` を開いて確かめる
+    prerequisites:
+      - 単体テスト（フロント）の前提
+      - jsDelivr と Google Fonts へ HTTPS で届く（『プレビューを開く』の正常系は描画のライブラリを配信元から読む）
+      - '部品のテスト（`tests/integration/storybook/`）: 先に `npx storybook build -o storybook-static` を済ませておく（Node 20.19 以上。部品のストーリー（Storybook）の節）'
+    run_all: |-
+      ```bash
+      pytest tests/integration/preview tests/integration/storybook
+      ```
+    run_one:
+      label: ファイル
+      command: |-
+        ```bash
+        pytest {テストファイルパス}
+        ```
   - name: E2E テスト
     run_all: |-
       ```bash
@@ -50,6 +78,7 @@ layers:
       - 'プラグインのシナリオ: Claude Code 2.1.287 以上（`claude` が PATH にある）。スクリプトのシナリオは `claude` を使わない'
       - 'スクリプトのシナリオ: PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている。仮想環境はテストごとの一時フォルダに `--without-pip` で作り、ライブラリはテストを動かす Python のものを見せる（通信しない）'
       - 実行はリポジトリの直下で行う。マーケットプレイスにはこの作業ツリーの直下を渡す。設定のフォルダは conftest が `CLAUDE_CONFIG_DIR` にテストごとの空の一時フォルダを渡して差し替えるため、利用者の環境を汚さない
+      - 'プレビューのシナリオ: 単体テスト（フロント）の前提と、jsDelivr と Google Fonts へ HTTPS で届くこと'
     run_one:
       label: シナリオ
       command: |-

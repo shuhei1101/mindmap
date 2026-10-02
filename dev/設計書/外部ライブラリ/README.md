@@ -14,3 +14,4 @@
 | [elkjs](./elkjs.yaml) | プレビューの検討事項のマップの配置を計算する |
 | [mermaid](./mermaid.yaml) | プレビューで本文の図を SVG に描く |
 | [storybook](./storybook.yaml) | プレビューの部品を状態ごとのストーリーで見る（開発用） |
+| [playwright](./playwright.yaml) | プレビューのテストでブラウザを動かす（pytest-playwright。開発用） |
