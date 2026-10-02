@@ -30,29 +30,82 @@ requirements:
   - name: ブラウザ
     english_name: browser
     category: 動作環境
-    external_constraint: 未確定
-    source_kind: 未確定
-    value: 未確定
-    rationale: プレビューの画面の設計（#5）で、使う描画のライブラリが対応するブラウザと合わせて決める
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    value: Chrome と Edge の最新版（PC）。スマートフォンは閲覧できれば足りる
+    rationale: コーディング規約『対応ブラウザ』の既定（PC は Chrome と Edge、スマートフォンは閲覧できれば足りる）に従う。使う描画のライブラリ（marked・DOMPurify・elkjs・mermaid）は jsDelivr の配布物を file:// で開いた Chromium で動かして確かめ、性能は Chrome 154 で測った。Edge・Firefox・Safari の実機では確かめていない
+    measurement: '実機での確認: Chrome と Edge で `preview.html` を file:// で開き、概要から詳細パネルとつながりまでの操作を最後まで済ませる'
   - name: 画面サイズ
     english_name: screen_size
     category: 動作環境
-    external_constraint: 未確定
-    source_kind: 未確定
-    value: 未確定
-    rationale: プレビューの画面の設計（#5）で決める
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    value: 幅 390px 以上
+    rationale: PC の画面に加えて、スマートフォンの縦向き（幅 390px）で閲覧できるようにする。幅 900px 以下は狭い幅の作り（マップは字下げした縦の一覧、詳細パネルは別画面）、幅 1100px 以上（マップは 901px 以上）は詳細パネルの分だけ本文を寄せる。性能は 1280×800 と 1920×1080 で測った
+    measurement: ブラウザの表示幅を 390px・900px・901px・1100px・1280px・1920px にして全ての画面を開き、操作が最後まで済むことを見る
   - name: 入力方式
     english_name: input_method
     category: 動作環境
-    external_constraint: 未確定
-    source_kind: 未確定
-    value: 未確定
-    rationale: プレビューの画面の設計（#5）で決める
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    value: マウスとキーボード（PC）。スマートフォンは閲覧できれば足りる
+    rationale: つながりの回転・拡大・玉への寄せ（カーソルを乗せる）と、マップ・図の移動（背景のドラッグ）はマウスの操作を前提にする。押せるものはボタンかリンクにし、全ての操作にキーボードで届く。タッチでの回転・拡大は対象にしない
+    measurement: '実機での確認: PC で、マウスで全ての操作を済ませ、続けてキーボードだけで項目を開く・閉じる・切り替える操作を済ませる'
   - name: 通信
     english_name: network
     category: 動作環境
     external_constraint: 制限なし
     source_kind: 制限なし
-    value: スクリプトは通信しない。プレビューは開いたブラウザが CDN へ HTTPS で届くこと
-    rationale: 'スクリプトの仕事はワークスペースのファイルの読み書きだけ。プレビューの描画のライブラリは CDN から読むと決めている（アーキテクチャ図の制約）。CDN に届かないときの画面の扱いは #5 が持つ'
+    value: スクリプトは通信しない。プレビューは開いたブラウザが jsDelivr（描画のライブラリ）と Google Fonts（文字）へ HTTPS で届くこと
+    rationale: スクリプトの仕事はワークスペースのファイルの読み書きだけ。プレビューの描画のライブラリは jsDelivr から、文字は Google Fonts から読むと決めている（アーキテクチャ図の制約）。届かないときは、読めなかったライブラリの名前を画面に出す（インターフェース定義『プレビューを開く』の異常系）
+  - name: つながりで扱う項目の数
+    english_name: graph_item_count
+    category: 性能
+    external_constraint: 制限なし
+    source_kind: ユーザー要望
+    source: https://github.com/shuhei1101/mindmap/pull/21#discussion_r4162670745
+    value: '1000'
+    unit: 件
+    rationale: ユーザーが推奨案で決めた。1000 件は PoC で測った最大の件数で、1000 件まで全 60 条件（拡大・縮小・回転・押下）で、落ちたコマ・1 コマの処理時間・長いタスクの基準を満たした（https://github.com/shuhei1101/mindmap/pull/23）
+    measurement: 'PoC と同じ条件で測る: 項目 1000 件・表示の幅 1280×800 と 1920×1080・画素の倍率 1 と 2・操作は拡大・縮小・回転・押下の各 5 秒'
+    overflow: 1000 件を超えても件数で切らず全て描く。そのときの 1 コマの時間とメモリは確かめていない
+  - name: つながりの落ちたコマの割合
+    english_name: graph_dropped_frames
+    category: 性能
+    external_constraint: 画面の 1 コマの間隔（60Hz で約 16.7ms）
+    source_kind: PC 性能
+    source: https://github.com/shuhei1101/mindmap/pull/23
+    value: '1'
+    unit: '%以下（25ms を超えたコマの割合）'
+    rationale: 1000 件の PoC の成功条件。採用した描き方（文字を一度だけ画像に描き、毎コマは画像を置く）で最大 0.9%。測った端末は Windows・Chrome 154・Ryzen 7 9800X3D・RTX 5070・画面 143Hz で、それより低い性能の端末は確かめていない。143Hz の画面では 25ms は 3 コマ分に当たるため、間隔の中央値の 1.5 倍を超えたコマも数えた。そちらは最大 1.6%（600 件の押下）で、1% をわずかに超える条件が 600 件以上に数件ある
+    measurement: PoC と同じ条件で、操作中の各コマの間隔を測り、25ms を超えたコマの割合を求める
+  - name: つながりの 1 コマの処理時間
+    english_name: graph_frame_time
+    category: 性能
+    external_constraint: 画面の 1 コマの間隔（60Hz で約 16.7ms）
+    source_kind: PC 性能
+    source: https://github.com/shuhei1101/mindmap/pull/23
+    value: '8'
+    unit: ms（1 コマの処理時間の p95 の上限）
+    rationale: 1000 件の PoC の成功条件（JavaScript の側の処理時間）。採用した描き方で最大 5.0ms、長いタスクは 0 回だった。測った端末は Windows・Chrome 154・Ryzen 7 9800X3D・RTX 5070・画面 143Hz で、それより低い性能の端末は確かめていない
+    measurement: PoC と同じ条件で、1 コマの JavaScript の処理時間を測り、p95 を求める。同じ条件で長いタスクが 0 回であることも見る
+  - name: つながりで使うメモリ
+    english_name: graph_memory
+    category: 性能
+    external_constraint: 制限なし
+    source_kind: PC 性能
+    source: https://github.com/shuhei1101/mindmap/pull/23
+    value: 2GB 以上の空きメモリ
+    rationale: 1000 件の PoC で、ブラウザ全体の私用メモリは最大 1,462MB（表示の幅 1920×1080 の押下）。安全率 20%（規約『資源の値の決め方』の既定）を足して 1,754MB とし、切りよく 2GB にする。ブラウザ全体はタブ 1 枚にブラウザ本体と描画の支援（GPU）のプロセスを含む値。PoC の画面にはつながり以外が無いため、本番の表や本文の分は含まない。JavaScript のヒープは 1000 件でも 6MB 以下で、重さの元はブラウザの描画の側（キャンバスと文字の画像）にある。測った端末は Windows・Chrome 154・Ryzen 7 9800X3D・RTX 5070・画面 143Hz
+    measurement: PoC と同じ条件で、操作の直後のブラウザ全体の私用メモリを測る
+    breakdown:
+      - part: 1000 件の最大
+        value: 1,462MB
+        notes: 表示の幅 1920×1080 の押下（ブラウザ全体の私用メモリ）
+      - part: 安全率 20%
+        value: 292MB
+        notes: 規約『資源の値の決め方』の既定
+      - part: アプリの決定値
+        value: 2GB
+        notes: 合計 1,754MB を切りよく丸める
 lead: mindmap が外部の制約から逆算して決める値。
