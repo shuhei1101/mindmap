@@ -1,0 +1,38 @@
+title: "プレビューを開く"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `build` を再生する。ブラウザは起動しない
+      - name: 作成済みのワークスペース
+        description: 検討事項 D-1 を持つ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: 記録を見たい
+        CC->>SCR: build
+        SCR->>WS: preview.html を書き出す
+        SCR-->>CC: 書き出したファイルのパス
+        CC-->>U: preview.html の絶対パスを示し、ブラウザで開くよう案内する
+      ```
+    expected:
+      - '`preview.html` があり、埋め込まれたデータに D-1 がある'
+      - '`build` の出力に `preview.html` のパスがある'
+lead: '`session` が、ワークスペースの記録をプレビューの HTML に書き出し、利用者がブラウザで開けるようにする単一ユースケース。'
+issue: 4
+primary_actor: 利用者
+trigger: 利用者が記録を見たいと言う
+preconditions:
+  - ワークスペースが作成済みである
+  - 依存が揃っている
+success_guarantee: '`preview.html` が今の記録で書き出し直され、応答にそのファイルの絶対パスがある。'
+frequency: 話し合いの中で数回
+priority: 中
+notes:
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_preview_open.py`（E2E テスト作成で置き、`test_file` に書く）'
+  開き方: スキルはブラウザを起動するコマンドを持たず、パスを示して利用者が開く。OS ごとの起動コマンドを `allowed-tools` に足さずに済み、Claude Code が動く端末とブラウザの端末が違うとき（WSL・リモート）にも崩れない
