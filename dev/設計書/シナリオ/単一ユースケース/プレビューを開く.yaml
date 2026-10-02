@@ -34,5 +34,5 @@ success_guarantee: '`preview.html` が今の記録で書き出し直され、応
 frequency: 話し合いの中で数回
 priority: 中
 notes:
-  対応テストファイル: '`tests/e2e/単一ユースケース/test_preview_open.py`（E2E テスト作成で置き、`test_file` に書く）'
   開き方: スキルはブラウザを起動するコマンドを持たず、パスを示して利用者が開く。OS ごとの起動コマンドを `allowed-tools` に足さずに済み、Claude Code が動く端末とブラウザの端末が違うとき（WSL・リモート）にも崩れない
+  E2E の範囲: このユースケースは E2E を持たない。`build` の出力と埋め込みのデータは既存の『プレビューの書き出し』の『正常シナリオ』が確かめる。パスの示し方はモデルの応答で確かめない
