@@ -2,6 +2,7 @@ $ pytest tests/integration -v -rs
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
 rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-scripts-workspace-schema-and-commands
+configfile: pytest.ini
 plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 collecting ... collected 50 items
@@ -58,5 +59,5 @@ tests/integration/scripts/test_update.py::test_error_when_schema_mismatch PASSED
 tests/integration/scripts/test_update.py::test_error_when_write_fails PASSED [100%]
 
 =========================== short test summary info ============================
-SKIPPED [2] tests/integration/scripts/conftest.py:239: 手元に 3.8〜3.11 の Python が無い
-======================== 48 passed, 2 skipped in 53.79s ========================
+SKIPPED [2] tests/integration/scripts/conftest.py:53: 手元に 3.8〜3.11 の Python が無い
+======================== 48 passed, 2 skipped in 51.13s ========================

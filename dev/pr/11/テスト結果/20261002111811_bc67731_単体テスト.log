@@ -2,6 +2,7 @@ $ pytest tests/unit -v
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
 rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-scripts-workspace-schema-and-commands
+configfile: pytest.ini
 plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
 collecting ... collected 157 items
@@ -164,4 +165,4 @@ tests/unit/scripts/test_store.py::test_save_change_when_item_value_fixed PASSED 
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[copy_from_target] PASSED [ 99%]
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[from_umask] PASSED [100%]
 
-============================= 157 passed in 3.45s ==============================
+============================= 157 passed in 4.00s ==============================
