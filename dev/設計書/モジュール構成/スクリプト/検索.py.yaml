@@ -1,0 +1,267 @@
+title: "スクリプト / 検索"
+lead: 条件で項目を探し、1 件の中身と参照元、使っている属性名を出す。読み書きと検証だけに依存し、ファイルを書かない。
+directory: |-
+  ```
+  skills/mindmap/scripts/
+    query.py   検索・1 件の表示と参照元・属性名の一覧
+  ```
+data_models:
+  - name: SearchFilter
+    title: 検索の条件
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    role: DTO
+    summary: '`find` の引数をまとめた条件。`None` の条件は絞らない'
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。'
+    properties:
+      - name: text
+        type: str | None
+        default: None
+        description: 文字の欄に含まれる文字
+      - name: kind
+        type: Kind | None
+        default: None
+        description: 種類
+      - name: status
+        type: str | None
+        default: None
+        description: 状態
+      - name: tag
+        type: str | None
+        default: None
+        description: タグ
+      - name: target
+        type: str | None
+        default: None
+        description: 対象
+      - name: category
+        type: str | None
+        default: None
+        description: カテゴリー
+      - name: phase
+        type: str | None
+        default: None
+        description: フェーズ
+      - name: attrs
+        type: list[tuple[str, str | None]]
+        default: '[]'
+        description: 属性名と値（値が `None` ならその属性を持つことだけ）
+constants:
+  - name: REFERENCE_KEYS
+    title: 参照のキー
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    summary: 参照元として拾うキーとその並び
+    value: ("depends_on", "parent", "for", "related", "sources")
+functions:
+  - name: search_items
+    title: 項目の検索
+    kind: 関数
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    scope: public
+    summary: 条件の全てに合う項目を種類の順・連番の順に返す
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: search_filter
+        type: SearchFilter
+        required: true
+        passing: positional
+        description: 条件
+    returns:
+      type: list[dict[str, str | None]]
+      description: '`{id, kind, title, status}` の並び（`status` を持たない種類は `None`）'
+    process: |-
+      1. `KINDS` の順に、`kind` の条件に合う種類の項目を見る
+      2. `status`・`target`・`category`・`phase` は一致、`tag` は `tags` に含む、`attrs` は全ての名前と値（値は文字列にして）が一致、で絞る
+      3. `text` は項目の全ての文字列の値のどれかに、英字の大小を区別せず含まれるかで絞る（`_contains_text`）
+      4. 各種類の中は連番の小さい順に並べる
+    unit_tests:
+      - name: test_search_items_when_text_and_attr
+        case: 正常
+        summary: 文字と属性の両方に合う項目だけを返す
+        condition: 'D-1: タイトルに `スキーマ`・属性 `担当: 自分`／D-2: 案の `content` に `スキーマ`・属性なし／T-1: 属性 `担当: 自分`。`text=スキーマ`・`attrs=[(担当, 自分)]`'
+        mock: なし
+        expected: D-1 の 1 件
+      - name: test_search_items_when_nested_text
+        case: 正常
+        summary: 入れ子の文字列にも当たる
+        condition: 同じワークスペースで `text=スキーマ` だけ
+        mock: なし
+        expected: D-1・D-2
+      - name: test_search_items_when_fields
+        case: 正常
+        summary: 種類・状態・タグ・対象・カテゴリー・フェーズで絞る
+        condition: '`parametrize` で各条件を 1 つずつ渡す（例: `kind=task`・`status=未決定`・`tag=データ`）'
+        mock: なし
+        expected: それぞれの条件に合う ID だけ
+      - name: test_search_items_when_no_filter
+        case: 正常
+        summary: 条件が無ければ全てを種類の順に返す
+        condition: T-1・D-2・D-1 の順にファイルに書いたワークスペース（D は D-2 が先）
+        mock: なし
+        expected: D-1・D-2・T-1
+  - name: _contains_text
+    title: 文字の包含
+    kind: 関数
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    scope: internal
+    summary: 値の中の文字列（配列・辞書の値をたどる）に文字が含まれるか
+    args:
+      - name: value
+        type: Any
+        required: true
+        passing: positional
+        description: 項目の値
+      - name: needle
+        type: str
+        required: true
+        passing: positional
+        description: 小文字にした探す文字
+    returns:
+      type: bool
+      description: 含まれれば真
+    process: |-
+      1. 文字列なら小文字にして `needle` を含むかを返す
+      2. 配列は要素、辞書は値をたどり、どれかが真なら真（辞書のキーは見ない）
+      3. それ以外は偽
+    unit_tests:
+      - name: test_contains_text
+        case: 正常
+        summary: 入れ子の値をたどり、キーと数値は見ない
+        condition: '`parametrize`: `{"a": ["Schema"]}` と `schema` / `{"schema": 1}` と `schema` / `3` と `3`'
+        mock: なし
+        expected: 真 / 偽 / 偽
+  - name: parse_attr
+    title: 属性の条件の解釈
+    kind: 関数
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    scope: public
+    summary: '`--attr` の `名前=値`・`名前` を名前と値に分ける'
+    args:
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: '`--attr` の値'
+    returns:
+      type: tuple[str, str | None]
+      description: 名前と値（`=` が無ければ値は `None`）
+    process: 1. 最初の `=` で分ける（無ければ値は `None`）
+    unit_tests:
+      - name: test_parse_attr
+        case: 正常
+        summary: 名前と値に分ける
+        condition: '`parametrize`: `担当=自分` / `担当` / `式=a=b`'
+        mock: なし
+        expected: '`(担当, 自分)` / `(担当, None)` / `(式, a=b)`'
+  - name: show_item
+    title: 項目の表示
+    kind: 関数
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    scope: public
+    summary: 1 項目の全てのキー・種類・本文・参照元をまとめる
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: ID
+    returns:
+      type: dict[str, Any]
+      description: '`{item, kind, body_markdown, referenced_by}`'
+    process: |-
+      1. 項目を引く（項目の引き当て。`find_item`）
+      2. `body` があれば本文を読む（本文の読み込み。`read_body`）
+      3. 参照元を引く（`list_referrers`）
+    exceptions:
+      - name: ItemNotFoundError
+        condition: ID の項目が無い（`find_item` から伝わる）
+    unit_tests:
+      - name: test_show_item
+        case: 正常
+        summary: 中身・本文・参照元をまとめる
+        condition: 'D-1（`body: D-1.md`、`docs/D-1.md` あり）・D-2 `depends_on: [D-1]`・`related: [D-1]`・T-1 `for: [D-1]`'
+        mock: なし
+        expected: '`kind: decision`、`body_markdown` が本文、`referenced_by` が `[D-2 depends_on, D-2 related, T-1 for]`'
+      - name: test_show_item_when_body_missing
+        case: 正常
+        summary: 本文を持たない項目は body_markdown が None
+        condition: '`body` を持たない D-1'
+        mock: なし
+        expected: '`body_markdown` が `None`'
+  - name: list_referrers
+    title: 参照元の一覧
+    kind: 関数
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    scope: public
+    summary: その ID を `REFERENCE_KEYS` のどれかで指す項目を、キーごとに 1 行で返す
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: ID
+    returns:
+      type: list[dict[str, str]]
+      description: '`{id, key}` の並び（種類の順 → 連番の順 → `REFERENCE_KEYS` の順）'
+    process: |-
+      1. 全ての項目の `REFERENCE_KEYS` を見て、値（`parent` は文字列、ほかは配列）に ID を含むものを拾う
+         - 同じ項目が複数のキーで指す場合、キーごとに行を分ける
+    unit_tests:
+      - name: test_list_referrers
+        case: 正常
+        summary: parent・sources を含む全ての参照のキーを拾い、キーごとに行を分ける
+        condition: 'L-1 を指す D-1 `sources: [L-1]`・D-2 `related: [L-1]`、D-1 を指す D-3 `parent: D-1`'
+        mock: なし
+        expected: L-1 に対して `[D-1 sources, D-2 related]`、D-1 に対して `[D-3 parent]`
+  - name: list_attrs
+    title: 属性名の一覧
+    kind: 関数
+    container: skills/mindmap/scripts/query.py
+    usecase: 記録の検索
+    scope: public
+    summary: 全ての項目の `attrs` の名前ごとに、持つ項目の数と種類を数える
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+    returns:
+      type: list[dict[str, Any]]
+      description: '`{name, count, kinds}` の並び（名前の順。`kinds` は `KINDS` の順で重なりなし）'
+    process: |-
+      1. 全ての項目の `attrs` のキーごとに件数と種類を数える
+      2. 名前の順に並べる
+    unit_tests:
+      - name: test_list_attrs
+        case: 正常
+        summary: 種類をまたいで数える
+        condition: 'D-1・D-2: `担当`／T-1: `期限`・`担当`'
+        mock: なし
+        expected: '`担当`（3・`[decision, task]`）・`期限`（1・`[task]`）'
+      - name: test_list_attrs_when_none
+        case: 正常
+        summary: 属性が無ければ空
+        condition: '`attrs` を持たない D-1 だけ'
+        mock: なし
+        expected: 空の並び

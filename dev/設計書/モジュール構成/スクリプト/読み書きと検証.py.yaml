@@ -1,0 +1,797 @@
+title: "スクリプト / 読み書きと検証"
+lead: ワークスペースの YAML と本文を読み書きし、JSON Schema と突き合わせる。ほかの全てのモジュールがここに依存し、ここはほかに依存しない。
+directory: |-
+  ```
+  skills/mindmap/
+    schemas/
+      common.schema.json     共通のキー（$defs）
+      settings.schema.json   mindmap.yaml
+      decisions.schema.json  ほか 6 種類も同じ名前の付け方（tasks / research / docs / terms / notes / logs）
+    scripts/
+      kinds.py               種類の定義と状態の分類（定数）
+      errors.py              コマンドが終了コード 1 にする例外
+      store.py               読み込み・検証・採番・書き込み
+  ```
+diagrams:
+  - name: 全体
+    diagram: |-
+      ```mermaid
+      classDiagram
+        direction LR
+        class ワークスペース
+        class 種類の定義
+        class 問題
+        class 書き込みの変更
+        class 本文の書き込み
+        class 項目の場所
+        ワークスペース --> 問題 : 読めなかったファイル
+        書き込みの変更 --> 本文の書き込み
+        項目の場所 --> 種類の定義
+      ```
+data_models:
+  - name: KindSpec
+    title: 種類の定義
+    container: skills/mindmap/scripts/kinds.py
+    usecase: 共通
+    role: DTO
+    summary: 1 種類のファイル・ID の頭の文字・スキーマ・本文と状態の有無
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。'
+    properties:
+      - name: kind
+        type: Kind
+        description: 種類（`decision` など）
+      - name: file
+        type: str
+        description: ワークスペースの中の YAML のファイル名
+        example: decisions.yaml
+      - name: prefix
+        type: str
+        description: ID の頭の文字
+        example: D
+      - name: schema
+        type: str
+        description: '`schemas/` のスキーマのファイル名'
+        example: decisions.schema.json
+      - name: has_body
+        type: bool
+        description: 本文（`body`）を持てるか
+      - name: settled_statuses
+        type: frozenset[str]
+        description: 決着とみなす状態。状態を持たない種類は空
+  - name: Workspace
+    title: ワークスペース
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    role: DTO
+    summary: 読み込んだ設定・種類ごとの項目・読めなかったファイル
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。項目は YAML のままの `dict` で持ち、型はスキーマが守る。'
+    properties:
+      - name: root
+        type: Path
+        description: ワークスペースのフォルダ（絶対パス）
+      - name: settings
+        type: dict[str, Any]
+        description: '`mindmap.yaml` の中身。読めなければ空'
+      - name: items
+        type: dict[Kind, list[dict[str, Any]]]
+        description: 種類ごとの `items`（ファイルの並びのまま）。無い・読めないファイルは空
+      - name: load_problems
+        type: list[Problem]
+        description: 'YAML として読めなかったファイル（`kind: schema`）'
+  - name: Problem
+    title: 問題
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    role: DTO
+    summary: スキーマ違反・参照切れなど 1 件の問題
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。点検の出力の `problems[]` と同じキーを持ち、`dataclasses.asdict` で JSON にする。'
+    properties:
+      - name: kind
+        type: Literal["schema", "duplicate_id", "broken_ref", "missing_body", "orphan_body"]
+        description: 問題の種類
+      - name: file
+        type: str
+        description: ワークスペースからの相対パス
+      - name: id
+        type: str | None
+        description: 問題のある項目の ID
+      - name: key
+        type: str | None
+        description: キーのパス（`items[0].status` の形）
+      - name: detail
+        type: str
+        description: 中身
+  - name: ItemRef
+    title: 項目の場所
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    role: DTO
+    summary: ID で引いた項目と、その種類・並びの位置
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。'
+    properties:
+      - name: kind
+        type: Kind
+        description: 種類
+      - name: index
+        type: int
+        description: '`items` の中の位置'
+      - name: item
+        type: dict[str, Any]
+        description: 項目
+  - name: BodyWrite
+    title: 本文の書き込み
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    role: DTO
+    summary: '`docs/` に書く 1 つの本文'
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。'
+    properties:
+      - name: name
+        type: str
+        description: '`docs/` の中のファイル名（`{ID}.md`）'
+      - name: text
+        type: str
+        description: 本文の Markdown
+  - name: Change
+    title: 書き込みの変更
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    role: DTO
+    summary: 1 つの種類の項目の並びを丸ごと置き換える変更と、一緒に書く本文
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。'
+    properties:
+      - name: kind
+        type: Kind
+        description: 書き換える種類
+      - name: items
+        type: list[dict[str, Any]]
+        description: 書き換えた後の `items` の並び全体
+      - name: body
+        type: BodyWrite | None
+        default: None
+        description: 一緒に書く本文
+enums:
+  - name: Kind
+    title: 種類
+    container: skills/mindmap/scripts/kinds.py
+    usecase: 共通
+    summary: ワークスペースの項目の種類（`Literal` の型エイリアス）
+    values:
+      - value: decision
+        title: 検討事項
+        description: decisions.yaml・D
+      - value: task
+        title: タスク
+        description: tasks.yaml・T
+      - value: research
+        title: 調査
+        description: research.yaml・R
+      - value: doc
+        title: 資料
+        description: docs.yaml・A
+      - value: term
+        title: 用語集
+        description: terms.yaml・G
+      - value: note
+        title: メモ
+        description: notes.yaml・N
+      - value: log
+        title: 会話ログ
+        description: logs.yaml・L
+classes:
+  - name: MindmapError
+    title: コマンドのエラー
+    container: skills/mindmap/scripts/errors.py
+    usecase: 共通
+    summary: 入口が捕まえて終了コード 1 と標準エラーにする例外の親
+    kind: クラス
+    inherits: Exception
+    properties:
+      - name: lines
+        type: list[str]
+        description: '`エラー: {内容}` の後に続けて標準エラーに出す行'
+  - name: WorkspaceNotFoundError
+    title: ワークスペースが無い
+    container: skills/mindmap/scripts/errors.py
+    usecase: 共通
+    summary: '`mindmap.yaml` が無いフォルダを指した。メッセージにフォルダのパス'
+    kind: クラス
+    inherits: MindmapError
+  - name: WorkspaceExistsError
+    title: ワークスペースが既にある
+    container: skills/mindmap/scripts/errors.py
+    usecase: ワークスペースの作成
+    summary: '`mindmap.yaml` が既にあるフォルダに作ろうとした。メッセージにフォルダのパス'
+    kind: クラス
+    inherits: MindmapError
+  - name: SchemaMismatchError
+    title: スキーマに合わない
+    container: skills/mindmap/scripts/errors.py
+    usecase: 共通
+    summary: '書き込もうとした・書き出そうとしたワークスペースがスキーマに合わない。`lines` は問題ごとの `{ファイル名}: {キーのパス}: {理由}`'
+    kind: クラス
+    inherits: MindmapError
+  - name: ItemNotFoundError
+    title: ID が無い
+    container: skills/mindmap/scripts/errors.py
+    usecase: 共通
+    summary: 渡した ID の項目が無い。メッセージに ID
+    kind: クラス
+    inherits: MindmapError
+  - name: OptionNotFoundError
+    title: 案が無い
+    container: skills/mindmap/scripts/errors.py
+    usecase: 採用する案の切り替え
+    summary: 検討事項が渡した記号の案を持たない。メッセージに渡した記号と持っている記号の一覧
+    kind: クラス
+    inherits: MindmapError
+constants:
+  - name: KINDS
+    title: 種類の一覧
+    container: skills/mindmap/scripts/kinds.py
+    usecase: 共通
+    summary: 種類 → 種類の定義。並びは D・T・R・A・G・N・L の順で、一覧を出す並びにも使う
+    entries:
+      - key: decision
+        value: decisions.yaml / D / decisions.schema.json / 本文あり
+        description: '決着: 決定済み・対象外・取り下げ'
+      - key: task
+        value: tasks.yaml / T / tasks.schema.json / 本文なし
+        description: '決着: 完了・中止'
+      - key: research
+        value: research.yaml / R / research.schema.json / 本文あり
+        description: 状態なし
+      - key: doc
+        value: docs.yaml / A / docs.schema.json / 本文あり
+        description: 状態なし
+      - key: term
+        value: terms.yaml / G / terms.schema.json / 本文なし
+        description: 状態なし
+      - key: note
+        value: notes.yaml / N / notes.schema.json / 本文なし
+        description: 状態なし
+      - key: log
+        value: logs.yaml / L / logs.schema.json / 本文あり
+        description: 状態なし
+  - name: SETTINGS_FILE
+    title: 設定のファイル名
+    container: skills/mindmap/scripts/kinds.py
+    usecase: 共通
+    summary: ワークスペースの設定のファイル名
+    value: '"mindmap.yaml"'
+  - name: BODY_DIR
+    title: 本文のフォルダ名
+    container: skills/mindmap/scripts/kinds.py
+    usecase: 共通
+    summary: 本文の Markdown を置くフォルダ名
+    value: '"docs"'
+  - name: HANDOFF_DIR
+    title: 引き渡しのフォルダ名
+    container: skills/mindmap/scripts/kinds.py
+    usecase: ワークスペースの作成
+    summary: ゴール判定で書き出す資料のフォルダ名
+    value: '"handoff"'
+  - name: SCHEMA_DIR
+    title: スキーマのフォルダ
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    summary: このファイルから見た `skills/mindmap/schemas/`
+    value: Path(__file__).resolve().parent.parent / "schemas"
+  - name: COMMON_SCHEMA
+    title: 共通のスキーマのファイル名
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    summary: Registry に登録し、各種類のスキーマが `$ref` で指す名前
+    value: '"common.schema.json"'
+  - name: SETTINGS_SCHEMA
+    title: 設定のスキーマのファイル名
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    summary: '`mindmap.yaml` を検証するスキーマ'
+    value: '"settings.schema.json"'
+  - name: TEMP_SUFFIX
+    title: 一時ファイルの拡張子
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    summary: 置き換える前に書く一時ファイルの拡張子（置き換えるファイルと同じフォルダに作る）
+    value: '".tmp"'
+functions:
+  - name: kind_of_id
+    title: ID の種類
+    kind: 関数
+    container: skills/mindmap/scripts/kinds.py
+    usecase: 共通
+    scope: public
+    summary: ID の頭の文字から種類を引く
+    args:
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: 項目の ID
+    returns:
+      type: Kind | None
+      description: 種類。`{頭の文字}-{正の整数}` の形でないか、頭の文字がどの種類にも当たらなければ `None`
+    process: |-
+      1. `{英大文字}-{数字}` の形かを確かめる
+         - 形が合わない場合、`None` を返す
+      2. 頭の文字が `prefix` に一致する種類を `KINDS` から引いて返す（無ければ `None`）
+    unit_tests:
+      - name: test_kind_of_id_when_known_prefix
+        case: 正常
+        summary: 頭の文字から種類を引く
+        condition: '`D-12`・`L-1`'
+        mock: なし
+        expected: '`decision`・`log`'
+      - name: test_kind_of_id_when_unknown
+        case: 正常
+        summary: 形が合わない・頭の文字が無い ID は None
+        condition: '`X-1`・`D-`・`D-0x`・`d-1`'
+        mock: なし
+        expected: どれも `None`
+  - name: load_workspace
+    title: ワークスペースの読み込み
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: 設定と 7 種類の YAML を読む。読めないファイルは問題に記録して空として扱う
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+    returns:
+      type: Workspace
+      description: 読み込んだワークスペース
+    process: |-
+      1. `root` を絶対パスにし、`mindmap.yaml` があるか確かめる
+         - 無い場合、`WorkspaceNotFoundError` を送る
+      2. 設定を `yaml.safe_load` で読む（読む。`_read_yaml`）
+      3. `KINDS` の順に種類ごとの YAML を読み、`items` を取り出す（読む。`_read_yaml`）
+         - ファイルが無い場合、空の `items` にする
+         - YAML として読めない場合、`kind: schema` の問題を `load_problems` に足し、空の `items` にする
+      4. `Workspace` を返す
+    exceptions:
+      - name: WorkspaceNotFoundError
+        condition: '`root` に `mindmap.yaml` が無い'
+        message: 'ワークスペースがありません: {root}'
+    test_setup:
+      - name: ワークスペースのフォルダ
+        description: '`tmp_path` に YAML を書いて作る'
+        notes: fixture `make_workspace`（`tests/unit/scripts/conftest.py`）
+    unit_tests:
+      - name: test_load_workspace
+        case: 正常
+        summary: 設定と種類ごとの項目を読む
+        condition: 設定と、D-1 を持つ `decisions.yaml` を置く。ほかの種類のファイルは置かない
+        mock: なし
+        expected: '`items["decision"]` が D-1 の 1 件、ほかの種類が空、`load_problems` が空'
+      - name: test_load_workspace_when_yaml_broken
+        case: 正常
+        summary: 読めない YAML を問題に記録して続ける
+        condition: '`tasks.yaml` に YAML として読めない文字列を置く'
+        mock: なし
+        expected: '`items["task"]` が空、`load_problems` に `file: tasks.yaml`・`kind: schema` の 1 件'
+      - name: test_load_workspace_when_settings_missing
+        case: 異常
+        summary: mindmap.yaml が無いフォルダは読まない
+        condition: 空の `tmp_path`
+        mock: なし
+        expected: '`WorkspaceNotFoundError`（メッセージに `tmp_path`）'
+        exception: mindmap.yaml が無い
+  - name: validate_workspace
+    title: ワークスペースの検証
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: 設定と 7 種類をスキーマと突き合わせ、合わない箇所を問題の並びにする
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: 検証するワークスペース
+    returns:
+      type: list[Problem]
+      description: '`load_problems` とスキーマ違反（どれも `kind: schema`）。ファイル名の順、同じファイルの中はキーのパスの順'
+    process: |-
+      1. スキーマの検証器を作る（検証器の用意。`load_validators`）
+      2. 設定を `{...}` の形で、種類ごとの項目を `{"items": [...]}` の形で検証し、`iter_errors` のエラーごとに問題を作る
+         - キーのパスは `absolute_path` を `items[0].status` の形にする（`_format_path`）
+         - パスが `items[{n}]` を含む場合、その項目の `id` を問題の `id` に入れる
+      3. `load_problems` と合わせて並べて返す
+    unit_tests:
+      - name: test_validate_workspace
+        case: 正常
+        summary: 合うワークスペースは問題 0 件
+        condition: '`init` と同じ設定と、正しい D-1'
+        mock: なし
+        expected: 空の並び
+      - name: test_validate_workspace_when_status_invalid
+        case: 正常
+        summary: 共通でない種類固有の値の誤りを拾う
+        condition: D-2 の `status` が `完了`（items の 2 つめ）
+        mock: なし
+        expected: '`file: decisions.yaml`・`key: items[1].status`・`id: D-2`・`kind: schema` の 1 件'
+      - name: test_validate_workspace_when_common_key_invalid
+        case: 正常
+        summary: 共通のスキーマ側で決めたキーの誤りも拾う（ファイルをまたぐ $ref）
+        condition: T-1 の `tags` が文字列（配列でない）
+        mock: なし
+        expected: '`file: tasks.yaml`・`key: items[0].tags` の 1 件'
+      - name: test_validate_workspace_when_load_problem
+        case: 正常
+        summary: 読めなかったファイルの問題も含める
+        condition: '`load_problems` に `notes.yaml` の問題を 1 件持つワークスペース'
+        mock: なし
+        expected: その 1 件を含む
+  - name: load_validators
+    title: 検証器の用意
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: 共通のスキーマを Registry に登録し、設定と 7 種類の検証器を作る
+    returns:
+      type: dict[str, Draft202012Validator]
+      description: スキーマのファイル名 → 検証器
+    process: |-
+      1. `SCHEMA_DIR` の `common.schema.json` を読み、`DRAFT202012.create_resource` で `Registry` に `common.schema.json` の名前で登録する
+      2. 設定と 7 種類のスキーマを読み、`Draft202012Validator(schema, registry=registry)` を作って返す
+    unit_tests:
+      - name: test_load_validators
+        case: 正常
+        summary: 同梱のスキーマから 8 つの検証器を作り、各スキーマがそれ自体として正しい
+        condition: リポジトリの `skills/mindmap/schemas/`
+        mock: なし
+        expected: キーが `settings.schema.json` と 7 種類のスキーマ名で、`Draft202012Validator.check_schema` がどれも通る
+  - name: find_item
+    title: 項目の引き当て
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: ID で項目を引く
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: 項目の ID
+    returns:
+      type: ItemRef
+      description: 項目の場所
+    process: |-
+      1. 種類を引く（ID の種類。`kind_of_id`）
+         - 種類が無い場合、`ItemNotFoundError` を送る
+      2. その種類の `items` から `id` が一致する最初の項目を探す
+         - 無い場合、`ItemNotFoundError` を送る
+    exceptions:
+      - name: ItemNotFoundError
+        condition: ID の形が合わないか、頭の文字がどの種類にも当たらない
+        message: '項目がありません: {item_id}'
+      - name: ItemNotFoundError
+        condition: その種類に ID の項目が無い
+        message: '項目がありません: {item_id}'
+    unit_tests:
+      - name: test_find_item
+        case: 正常
+        summary: ID の項目と位置を返す
+        condition: D-1・D-2 を持つワークスペースで `D-2`
+        mock: なし
+        expected: '`kind: decision`・`index: 1`・`item` が D-2'
+      - name: test_find_item_when_unknown_prefix
+        case: 異常
+        summary: 種類に当たらない ID
+        condition: '`X-1`'
+        mock: なし
+        expected: '`ItemNotFoundError`（メッセージに `X-1`）'
+        exception: 頭の文字がどの種類にも当たらない
+      - name: test_find_item_when_id_missing
+        case: 異常
+        summary: 種類に当たるが項目が無い ID
+        condition: '`D-9`'
+        mock: なし
+        expected: '`ItemNotFoundError`（メッセージに `D-9`）'
+        exception: その種類に ID の項目が無い
+  - name: next_id
+    title: 採番
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 記録の追加と更新
+    scope: public
+    summary: その種類の連番の最大 + 1 の ID を返す
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: kind
+        type: Kind
+        required: true
+        passing: positional
+        description: 種類
+    returns:
+      type: str
+      description: '`{頭の文字}-{連番}`'
+    process: |-
+      1. その種類の項目の `id` のうち、頭の文字が一致し連番が数字のものの最大を取る（無ければ 0）
+      2. 最大 + 1 で ID を作って返す
+    unit_tests:
+      - name: test_next_id
+        case: 正常
+        summary: 間が空いていても最大 + 1 を振る
+        condition: D-1・D-3 を持つ
+        mock: なし
+        expected: '`D-4`'
+      - name: test_next_id_when_empty
+        case: 正常
+        summary: 項目が無ければ 1 を振る
+        condition: タスクが 0 件
+        mock: なし
+        expected: '`T-1`'
+  - name: now_utc
+    title: 今の日時
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: 今の日時を UTC のタイムゾーン付き ISO 8601（秒まで）で返す
+    returns:
+      type: str
+      description: 例 `2026-10-02T08:00:00+00:00`
+    process: 1. `datetime.now(UTC)` を秒で切り捨て、`isoformat()` の文字列を返す
+    notes:
+      テスト: 分岐を持たないため単体テストを置かず、呼ぶ側のテストで `monkeypatch` で差し替える
+  - name: save_change
+    title: 変更の書き込み
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: 1 種類の項目の並びと本文を、検証してから両方とも書き換えるか、どちらも書き換えない
+    side_effects: 種類の YAML と `docs/{ID}.md` を置き換える
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: 書き込む前のワークスペース
+      - name: change
+        type: Change
+        required: true
+        passing: positional
+        description: 書き込む変更
+    process: |-
+      1. `items` を差し替えたワークスペースを作り、検証する（ワークスペースの検証。`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（何も書かない）
+      2. YAML の一時ファイルを書く（`dump_yaml`、`_write_temp`）。本文があれば本文の一時ファイルも書き、置き換える前の本文を控える（無ければ `None`）
+      3. 本文 → YAML の順に `os.replace` で置き換える
+         - YAML の置き換えで `OSError` が起きた場合、本文を控えに戻し（控えが `None` なら本文を消し）、残った一時ファイルを消して、その `OSError` を送り直す
+         - 本文の置き換えで `OSError` が起きた場合、一時ファイルを消して送り直す
+    exceptions:
+      - name: SchemaMismatchError
+        condition: 変更を当てた後のワークスペースに問題がある
+        message: スキーマに合いません（`lines` に問題ごとの行）
+    unit_tests:
+      - name: test_save_change
+        case: 正常
+        summary: 項目の並びと本文を書き、一時ファイルを残さない
+        condition: D-1 を足した並びと本文 `D-1.md`
+        mock: なし
+        expected: '`decisions.yaml` を読むと D-1 があり、`docs/D-1.md` が渡した本文。ワークスペースに `.tmp` のファイルが無い'
+      - name: test_save_change_when_schema_mismatch
+        case: 異常
+        summary: スキーマに合わない変更は書かない
+        condition: '`status: 完了` の D-1 を足した並びと本文'
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` に `decisions.yaml: items[0].status:` で始まる行）。`decisions.yaml` と `docs/` が呼ぶ前と同じ'
+        exception: 変更を当てた後のワークスペースに問題がある
+      - name: test_save_change_when_yaml_replace_fails_with_previous_body
+        case: 正常
+        summary: YAML の置き換えに失敗したら前の本文に戻す
+        condition: '`docs/D-1.md` がある状態で本文を書き換える変更。`os.replace` を、置き換え先が `decisions.yaml` のときだけ `OSError` を送る関数に差し替える'
+        mock: '`os.replace`（`store` モジュールの参照を monkeypatch）'
+        expected: '`OSError` が送られ、`docs/D-1.md` と `decisions.yaml` が呼ぶ前と同じ。`.tmp` のファイルが無い'
+      - name: test_save_change_when_yaml_replace_fails_without_previous_body
+        case: 正常
+        summary: YAML の置き換えに失敗したら新しく書いた本文を消す
+        condition: '`docs/D-1.md` が無い状態で本文を足す変更。`os.replace` を同じように差し替える'
+        mock: '`os.replace`'
+        expected: '`OSError` が送られ、`docs/D-1.md` が無く、`decisions.yaml` が呼ぶ前と同じ'
+  - name: create_workspace
+    title: ワークスペースの作成
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`handoff/` を作る
+    side_effects: フォルダとファイルを作る
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: 作るワークスペースのフォルダ
+      - name: settings
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: 設定の中身
+    returns:
+      type: list[str]
+      description: 作ったファイルとフォルダ（ワークスペースからの相対パス。フォルダは末尾に `/`）
+    process: |-
+      1. `root/mindmap.yaml` があれば `WorkspaceExistsError` を送る
+      2. 設定と空の 7 種類で `Workspace` を組み、検証する（ワークスペースの検証。`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（フォルダも作らない）
+      3. フォルダと `docs/`・`handoff/` を作り、`mindmap.yaml` と 7 種類の YAML（`items: []`）を書く（`dump_yaml`）
+    exceptions:
+      - name: WorkspaceExistsError
+        condition: '`root` に `mindmap.yaml` が既にある'
+        message: '既にワークスペースがあります: {root}'
+      - name: SchemaMismatchError
+        condition: 設定が設定のスキーマに合わない
+    unit_tests:
+      - name: test_create_workspace
+        case: 正常
+        summary: まだ無いフォルダにワークスペースを作る
+        condition: '`tmp_path / "ws"`（無い）と正しい設定'
+        mock: なし
+        expected: 戻り値が 8 つの YAML と `docs/`・`handoff/`。`mindmap.yaml` を読むと渡した設定
+      - name: test_create_workspace_when_exists
+        case: 異常
+        summary: mindmap.yaml があるフォルダには作らない
+        condition: '`mindmap.yaml` を置いた `tmp_path`'
+        mock: なし
+        expected: '`WorkspaceExistsError`。`mindmap.yaml` が呼ぶ前と同じ'
+        exception: mindmap.yaml が既にある
+      - name: test_create_workspace_when_settings_invalid
+        case: 異常
+        summary: 設定がスキーマに合わなければフォルダも作らない
+        condition: '`phases` の無い設定と `tmp_path / "ws"`（無い）'
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` に `mindmap.yaml` と `phases`）。`tmp_path / "ws"` が無い'
+        exception: 設定が設定のスキーマに合わない
+  - name: read_body
+    title: 本文の読み込み
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: '`docs/` の本文を読む'
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: name
+        type: str
+        required: true
+        passing: positional
+        description: '`docs/` の中のファイル名'
+    returns:
+      type: str | None
+      description: 本文。ファイルが無いか、名前が `docs/` の外を指すときは `None`
+    process: |-
+      1. `docs/{name}` を解決し、`docs/` の配下にあるか確かめる
+         - 配下に無い場合、`None` を返す
+      2. ファイルがあれば UTF-8 で読んで返し、無ければ `None` を返す
+    unit_tests:
+      - name: test_read_body
+        case: 正常
+        summary: ある本文を読む
+        condition: '`docs/D-1.md` を置く'
+        mock: なし
+        expected: その中身
+      - name: test_read_body_when_missing
+        case: 正常
+        summary: 無い本文は None
+        condition: '`docs/D-9.md` を置かない'
+        mock: なし
+        expected: '`None`'
+      - name: test_read_body_when_outside
+        case: 正常
+        summary: docs/ の外を指す名前は読まない
+        condition: '`../mindmap.yaml`'
+        mock: なし
+        expected: '`None`'
+  - name: dump_yaml
+    title: YAML の文字列化
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: public
+    summary: 日本語をそのままにし、キーの並びを保って YAML の文字列にする
+    args:
+      - name: data
+        type: Any
+        required: true
+        passing: positional
+        description: YAML にする値
+    returns:
+      type: str
+      description: YAML の文字列
+    process: 1. `yaml.safe_dump(data, allow_unicode=True, sort_keys=False)` を返す
+    unit_tests:
+      - name: test_dump_yaml
+        case: 正常
+        summary: 日本語とキーの並びを保つ
+        condition: '`{"title": "問い", "id": "D-1"}`'
+        mock: なし
+        expected: '`title: 問い` の行が `id: D-1` の行より前にある'
+  - name: _read_yaml
+    title: YAML の読み込み
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: internal
+    summary: 1 ファイルを `yaml.safe_load` で読む
+    args:
+      - name: path
+        type: Path
+        required: true
+        passing: positional
+        description: 読むファイル
+    returns:
+      type: Any
+      description: 読んだ値（空のファイルは `None`）
+    process: 1. UTF-8 で読み、`yaml.safe_load` の結果を返す（`yaml.YAMLError` はそのまま伝える）
+  - name: _format_path
+    title: キーのパスの文字列化
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: internal
+    summary: '`absolute_path` を `items[0].status` の形の文字列にする'
+    args:
+      - name: path
+        type: Iterable[str | int]
+        required: true
+        passing: positional
+        description: キーと添字の並び
+    returns:
+      type: str
+      description: 添字は `[n]`、キーは `.` でつなぐ。空なら `(全体)`
+    process: |-
+      1. 整数は直前に `[n]` をつなぎ、文字列は `.` でつなぐ（先頭は `.` を付けない）
+      2. 空のときは `(全体)` を返す
+    unit_tests:
+      - name: test_format_path
+        case: 正常
+        summary: キーと添字をつなぐ
+        condition: '`["items", 0, "options", 1, "key"]`・`[]`'
+        mock: なし
+        expected: '`items[0].options[1].key`・`(全体)`'
+  - name: _write_temp
+    title: 一時ファイルの書き込み
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 共通
+    scope: internal
+    summary: 置き換え先と同じフォルダに一時ファイルを書き、そのパスを返す
+    args:
+      - name: target
+        type: Path
+        required: true
+        passing: positional
+        description: 置き換え先
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: 中身
+    returns:
+      type: Path
+      description: 一時ファイルのパス
+    process: 1. `tempfile.mkstemp(dir=target.parent, suffix=TEMP_SUFFIX)` で作り、UTF-8 で書いてパスを返す

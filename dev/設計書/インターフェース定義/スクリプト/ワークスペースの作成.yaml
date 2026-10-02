@@ -29,7 +29,7 @@ flows:
       - '`mindmap.yaml` を読むと、渡した設定と同じ中身である'
       - '`decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` が `items: []` である'
       - '`docs/` と `handoff/` がある'
-      - '`files` に作った 9 つのファイルと 2 つのフォルダがある'
+      - '`files` に作った 8 つの YAML と 2 つのフォルダがある'
     test: test_normal
   - name: 異常系（既にワークスペースがある・WorkspaceExistsError）
     summary: mindmap.yaml があるフォルダには作らず、何も書き換えない

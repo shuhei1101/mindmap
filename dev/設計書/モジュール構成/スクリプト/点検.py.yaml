@@ -1,0 +1,153 @@
+title: "スクリプト / 点検"
+lead: ワークスペースのスキーマ違反・ID の重複・参照切れ・本文のずれを洗い出す。読み書きと検証だけに依存し、ファイルを書かない。
+directory: |-
+  ```
+  skills/mindmap/scripts/
+    checker.py   スキーマ違反・ID の重複・参照切れ・本文のずれ
+  ```
+constants:
+  - name: REF_RULES
+    title: 参照の正しい種類
+    container: skills/mindmap/scripts/checker.py
+    usecase: ワークスペースの点検
+    summary: （参照する側の種類, キー）→ 指してよい種類。表に無い組はそのキーを持たない
+    entries:
+      - key: (decision, depends_on)
+        value: decision
+      - key: (decision, parent)
+        value: decision
+      - key: (decision, sources)
+        value: log
+      - key: (task, depends_on)
+        value: task
+      - key: (task, for)
+        value: decision
+      - key: (全ての種類, related)
+        value: 全ての種類
+      - key: (設定, goal.deliverables[].doc)
+        value: doc
+functions:
+  - name: check_workspace
+    title: ワークスペースの点検
+    kind: 関数
+    container: skills/mindmap/scripts/checker.py
+    usecase: ワークスペースの点検
+    scope: public
+    summary: 全ての問題をファイル名の順、同じファイルの中は項目の並びの順に返す
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+    returns:
+      type: list[Problem]
+      description: 問題の並び（無ければ空）
+    process: |-
+      1. スキーマ違反を拾う（ワークスペースの検証。`validate_workspace`）
+      2. ID の重複を拾う（`_check_duplicate_ids`）
+      3. 参照切れを拾う（`_check_refs`）
+      4. 本文のずれを拾う（`_check_bodies`）
+      5. ファイル名の順に並べる（同じファイルの中は拾った順を保つ）
+    unit_tests:
+      - name: test_check_workspace
+        case: 正常
+        summary: 整ったワークスペースは問題 0 件
+        condition: 'D-1（本文 `docs/D-1.md` あり）・D-2 `depends_on: [D-1]`'
+        mock: なし
+        expected: 空の並び
+      - name: test_check_workspace_when_problems
+        case: 正常
+        summary: 4 種類の問題をまとめて返す
+        condition: 'D-1 `depends_on: [D-9]`・D-2 `status: 完了`・R-1 `body: R-1.md`（ファイル無し）・`docs/X-1.md`（どこからも指されない）'
+        mock: なし
+        expected: '`broken_ref`（D-1・`depends_on`）・`schema`（`items[1].status`）・`orphan_body`（`docs/X-1.md`）・`missing_body`（R-1）を含み、`decisions.yaml` → `docs/X-1.md` → `research.yaml` の順'
+  - name: _check_duplicate_ids
+    title: ID の重複の点検
+    kind: 関数
+    container: skills/mindmap/scripts/checker.py
+    usecase: ワークスペースの点検
+    scope: internal
+    summary: 同じ ID を 2 つ目以降に持つ項目を `duplicate_id` にする
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+    returns:
+      type: list[Problem]
+      description: 問題の並び
+    process: '1. 全ての種類の項目を順に見て、既に出た ID を持つ項目を `duplicate_id`（`key: items[n].id`）にする'
+    unit_tests:
+      - name: test_check_duplicate_ids
+        case: 正常
+        summary: 2 つ目の項目だけを問題にする
+        condition: '`decisions.yaml` に D-1 が 2 つ'
+        mock: なし
+        expected: '`items[1].id` の 1 件'
+  - name: _check_refs
+    title: 参照切れの点検
+    kind: 関数
+    container: skills/mindmap/scripts/checker.py
+    usecase: ワークスペースの点検
+    scope: internal
+    summary: 存在しない ID と、`REF_RULES` に合わない種類の ID を指す参照を `broken_ref` にする
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+    returns:
+      type: list[Problem]
+      description: 問題の並び（`detail` に指した ID と理由）
+    process: |-
+      1. 全ての項目と設定の `goal.deliverables[].doc` について、`REF_RULES` のキーの値の ID を見る
+         - 種類が合わない場合、`broken_ref`（`指してはいけない種類: {ID}`）
+         - その種類に ID が無い場合、`broken_ref`（`存在しない ID: {ID}`）
+    unit_tests:
+      - name: test_check_refs_when_missing
+        case: 正常
+        summary: 存在しない ID を指す参照
+        condition: 'D-1 `depends_on: [D-9]`・T-1 `for: [D-8]`・設定の `goal.deliverables[0].doc: A-9`'
+        mock: なし
+        expected: 3 件の `broken_ref`（`detail` に `D-9`・`D-8`・`A-9`）
+      - name: test_check_refs_when_wrong_kind
+        case: 正常
+        summary: 決めた種類でない ID を指す参照
+        condition: 'D-1 `parent: T-1`（T-1 はある）'
+        mock: なし
+        expected: '`broken_ref`（D-1・`parent`・`detail` に `T-1`）'
+      - name: test_check_refs_when_related_any_kind
+        case: 正常
+        summary: related は種類を問わない
+        condition: 'D-1 `related: [T-1, G-1]`（どちらもある）'
+        mock: なし
+        expected: 空の並び
+  - name: _check_bodies
+    title: 本文のずれの点検
+    kind: 関数
+    container: skills/mindmap/scripts/checker.py
+    usecase: ワークスペースの点検
+    scope: internal
+    summary: 指す本文が無い項目と、どこからも指されない `docs/*.md` を拾う
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+    returns:
+      type: list[Problem]
+      description: 問題の並び
+    process: |-
+      1. `body` を持つ項目ごとに、`docs/{body}` が無ければ `missing_body`（その項目の YAML・`key: items[n].body`）
+      2. `docs/` の `*.md` のうち、どの項目の `body` にも無いものを `orphan_body`（`file: docs/{名前}`・`id`・`key` は `None`）
+    unit_tests:
+      - name: test_check_bodies
+        case: 正常
+        summary: 本文が無い項目と指されない本文を拾う
+        condition: 'R-1 `body: R-1.md`（ファイル無し）・D-1 `body: D-1.md`（ファイルあり）・`docs/X-1.md`'
+        mock: なし
+        expected: '`missing_body`（R-1）と `orphan_body`（`docs/X-1.md`）の 2 件'
