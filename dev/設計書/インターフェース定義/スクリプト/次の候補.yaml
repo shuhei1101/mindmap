@@ -126,5 +126,4 @@ constraints:
     constraint: 検討事項は `決定済み`・`対象外`・`取り下げ`、タスクは `完了`・`中止`。それ以外が未完了
   - item: 並べ方
     constraint: フェーズの並び（設定の `phases` の順。無い・設定に無いフェーズは最後）→ 影響度（大 → 中 → 小 → 無し）→ 後続の件数の多い順 → ID の連番の小さい順
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_next.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_next.py

@@ -199,5 +199,4 @@ constraints:
   - item: 部分成功
     constraint: 起こさない。本文を置き換える前に前の本文を控え、YAML の置き換えに失敗したら本文を控えに戻して（前に本文が無ければ消して）からエラーで終わる（終了コード 1。残った一時ファイルも消す）
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_update.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_update.py

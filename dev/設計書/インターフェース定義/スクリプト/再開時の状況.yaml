@@ -106,5 +106,4 @@ constraints:
     constraint: 3 件（定数。全件は次の候補のコマンドで引く）
   - item: 各一覧の並び
     constraint: ID の種類（D → T）、連番の小さい順（次の候補を除く）
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_status.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_status.py

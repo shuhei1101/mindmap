@@ -129,5 +129,4 @@ constraints:
     constraint: 一度出た項目はもうたどらない（起点も含めて結果に 2 度出ない）
   - item: 状態による絞り込み
     constraint: しない（決定済み・完了も含めて出す）
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_impact.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_impact.py

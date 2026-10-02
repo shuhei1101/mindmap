@@ -125,5 +125,4 @@ constraints:
     constraint: '`body` が指す `docs/` のファイルが無いものを `missing_body`、どの項目の `body` からも指されない `docs/*.md` を `orphan_body` にする'
   - item: 問題の並び
     constraint: ファイル名の順、同じファイルの中は項目の並びの順
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_check.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_check.py

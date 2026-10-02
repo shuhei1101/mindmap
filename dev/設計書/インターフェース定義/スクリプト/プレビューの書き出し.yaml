@@ -158,5 +158,4 @@ constraints:
     constraint: '`preview.html` はワークスペースの他のローカルのファイルを指さない。描画のライブラリは CDN から読む（雛形が持つ）'
   - item: 通信
     constraint: スクリプトは通信しない
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_build.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_build.py

@@ -202,8 +202,6 @@ constraints:
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 通信と書き込み
     constraint: しない（そろえるコマンドを返すだけで、仮想環境を作らずライブラリも入れない。流すかはスキルが利用者に確かめてから決める）
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_check_env.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
 request:
   - name: --venv
     type: str
@@ -212,3 +210,4 @@ request:
     location: argument
     description: 確かめる仮想環境のフォルダ。スキルは渡さずに既定を使う
     notes: テストで一時フォルダの仮想環境を指すために使う
+test_file: tests/integration/scripts/test_check_env.py

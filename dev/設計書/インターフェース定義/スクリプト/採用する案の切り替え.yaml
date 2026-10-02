@@ -209,5 +209,4 @@ constraints:
   - item: 影響の洗い出し
     constraint: しない（影響は `impact`、要見直しにするかはスキルの手順が決める）
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_adopt.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_adopt.py

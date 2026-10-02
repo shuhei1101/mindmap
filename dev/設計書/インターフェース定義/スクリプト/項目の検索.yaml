@@ -160,5 +160,4 @@ constraints:
     constraint: 渡した条件の全てに合う項目。条件を 1 つも渡さなければ全ての項目
   - item: 件数
     constraint: 制限なし
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_find.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_find.py

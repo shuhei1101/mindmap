@@ -157,5 +157,4 @@ constraints:
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_init.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_init.py

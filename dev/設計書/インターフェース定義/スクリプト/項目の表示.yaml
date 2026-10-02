@@ -122,5 +122,4 @@ constraints:
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 参照元にするキー
     constraint: '`depends_on`・`parent`・`for`・`related`・`sources`（設定の `goal.deliverables[].doc` は含めない）'
-notes:
-  対応テストファイル: '`tests/integration/scripts/test_show.py`（結合テスト作成でファイルを作った commit で `test_file` に移す）'
+test_file: tests/integration/scripts/test_show.py
