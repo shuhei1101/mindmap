@@ -1,0 +1,481 @@
+title: "プレビュー / 基盤"
+lead: 画面が共通で使う土台。記録の索引と画面に出す値の計算、描画のライブラリの呼び出しと読めないときの知らせ、URL のハッシュと履歴を持つ。
+directory: |-
+  ```
+  skills/mindmap/preview/
+    core/
+      namespace.js   名前空間 window.MindmapPreview を作る（差し込む順の先頭）
+      records.js     記録の索引・着手できるか・次の候補・ゴールまで・進み具合・関係する項目・検索
+      libs.js        描画のライブラリの有無と呼び出し（Markdown・図・配置）
+      router.js      URL のハッシュの読み書きと履歴
+  ```
+
+  全てのファイルは ES モジュールではない classic script で、即時実行関数の中で `window.MindmapPreview` の下に関数を置く。読んだだけでは DOM に触らない。
+data_models:
+  - name: RecordIndex
+    title: 記録の索引
+    container: skills/mindmap/preview/core/records.js
+    usecase: 共通
+    summary: 埋め込みのデータを ID で引けるようにし、参照の逆向きを持つ
+    properties:
+      - name: data
+        type: object
+        description: 埋め込みのデータ（`settings`・7 種類・`bodies`・`built_at`）そのもの
+      - name: byId
+        type: Map<string, {kind, item}>
+        description: ID → 種類と項目
+      - name: referencedBy
+        type: Map<string, string[]>
+        description: ID → その項目を `depends_on`・`for`・`related`・`sources` で指す項目の ID（ID の順）
+  - name: Route
+    title: 画面の場所
+    container: skills/mindmap/preview/core/router.js
+    usecase: 共通
+    summary: URL のハッシュが指す画面・表示形式・項目・絞り込み（インターフェース定義『プレビューを開く』のリクエスト）
+    properties:
+      - name: tab
+        type: "'overview' | 'decisions' | 'tasks' | 'research' | 'docs' | 'terms' | 'notes' | 'logs' | 'graph'"
+        description: 画面
+      - name: view
+        type: "'map' | 'board' | 'cards' | 'table'"
+        description: 表示形式
+      - name: id
+        type: string | null
+        description: 開いている項目
+      - name: full
+        type: boolean
+        description: 詳細を全画面で開いているか
+      - name: filters
+        type: Record<string, string[]>
+        description: 開いたときの `f.{列}`（書き戻さない）
+constants:
+  - name: SETTLED_STATUSES
+    title: 決着した状態
+    container: skills/mindmap/preview/core/records.js
+    usecase: 共通
+    summary: 前提が満たされたとみなす検討事項の状態（スクリプトの `kinds.py` の決着と同じ）
+    value: '["決定済み", "対象外", "取り下げ"]'
+  - name: DEFAULT_VIEW
+    title: 画面ごとの既定の表示形式
+    container: skills/mindmap/preview/core/router.js
+    usecase: 共通
+    summary: '`tab` → 既定の `view`'
+    entries:
+      - key: decisions
+        value: map
+      - key: tasks
+        value: board
+      - key: docs
+        value: cards
+      - key: そのほか
+        value: table
+  - name: VIEWS_OF
+    title: 画面が持つ表示形式
+    container: skills/mindmap/preview/core/router.js
+    usecase: 共通
+    summary: '`tab` → 切り替えられる `view` の並び'
+    entries:
+      - key: decisions
+        value: '["map", "board", "table"]'
+      - key: tasks
+        value: '["board", "table"]'
+      - key: docs
+        value: '["cards", "table"]'
+      - key: そのほか
+        value: '["table"]'
+  - name: LIBRARIES
+    title: 描画のライブラリ
+    container: skills/mindmap/preview/core/libs.js
+    usecase: 共通
+    summary: ライブラリの名前 → 読めたときに置かれるグローバル
+    entries:
+      - key: marked
+        value: marked
+      - key: DOMPurify
+        value: DOMPurify
+      - key: elkjs
+        value: ELK
+      - key: mermaid
+        value: mermaid
+functions:
+  - name: buildIndex
+    title: 記録の索引を作る
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 共通
+    scope: public
+    summary: 埋め込みのデータから `RecordIndex` を作る
+    args:
+      - name: data
+        type: object
+        required: true
+        passing: positional
+        description: '`mindmap-data` を `JSON.parse` した値'
+    returns:
+      type: RecordIndex
+      description: 索引
+    process: |-
+      1. 7 種類の項目を ID で `byId` に入れる
+      2. 各項目の `depends_on`・`for`・`related`・`sources` が指す ID ごとに、指した側の ID を `referencedBy` に足す（記録に無い ID もそのまま持つ）
+    unit_tests:
+      - name: test_build_index
+        case: 正常
+        summary: ID で引け、参照元を逆に引ける
+        condition: 'D-1・D-2（`depends_on: [D-1]`）・T-1（`for: [D-1]`）を持つデータ'
+        mock: なし
+        expected: '`byId.get("T-1").kind` が `tasks`。`referencedBy.get("D-1")` が `["D-2", "T-1"]`'
+  - name: isReady
+    title: 着手できるか
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 概要を見る
+    scope: public
+    summary: 未決定の検討事項の前提が全て決着しているかを返す
+    args:
+      - name: decision
+        type: object
+        required: true
+        passing: positional
+        description: 検討事項
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引
+    returns:
+      type: boolean
+      description: 状態が未決定で、`depends_on` の検討事項が全て `SETTLED_STATUSES` なら真。記録に無い前提は決着していないとみなす
+    unit_tests:
+      - name: test_is_ready
+        case: 正常
+        summary: 前提が決着していれば真
+        condition: '`parametrize`: 前提が無い未決定 / 前提が決定済み・対象外 / 前提に未決定がある / 前提が記録に無い / 自分が保留'
+        mock: なし
+        expected: 真 / 真 / 偽 / 偽 / 偽
+  - name: nextCandidates
+    title: 次に検討する項目
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 概要を見る
+    scope: public
+    summary: 着手できる検討事項を、スクリプトの `next` と同じ順に並べて返す
+    args:
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引
+    returns:
+      type: object[]
+      description: 検討事項の並び
+    process: |-
+      1. `isReady` が真の検討事項を集める
+      2. フェーズ（`settings.phases` の順。無いフェーズは最後）→ 影響度（大 → 中 → 小 → 無し）→ 後続の件数の多い順 → 連番の順に並べる
+    unit_tests:
+      - name: test_next_candidates
+        case: 正常
+        summary: フェーズ → 影響度 → 後続の件数の順に並べる
+        condition: '`phases` 目的・要件、未決定の D-1（要件・大）・D-2（目的・小）・D-3（要件・大・後続 2 件）・D-4（前提 D-9 が未決定）'
+        mock: なし
+        expected: D-2・D-3・D-1 の順で、D-4 を含まない
+  - name: goalProgress
+    title: ゴールまで
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 概要を見る
+    scope: public
+    summary: ゴールのフェーズまでの決定済みの数・フェーズごとの棒・成果物のチェックリストを返す
+    args:
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引
+    returns:
+      type: '{settled, total, phases: {name, settled, total}[], deliverables: {title, doc, complete}[]}'
+      description: ゴールまでの値。フェーズの範囲はスクリプトのゴール判定と同じ（`goal.phase` が `phases` に無ければ全て）。`complete` は `doc` の資料の `status` が `完成` か
+    unit_tests:
+      - name: test_goal_progress
+        case: 正常
+        summary: 成果物は資料の状態が完成のものだけチェックする
+        condition: '`goal.phase` 要件、成果物が A-1（完成）・A-2（確認中）・`doc` なし、要件の検討事項 2 件のうち 1 件が決定済み'
+        mock: なし
+        expected: '`deliverables` の `complete` が 真・偽・偽。要件のフェーズの棒が 1 / 2'
+  - name: progressByCategory
+    title: カテゴリー別の進み具合
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 概要を見る
+    scope: public
+    summary: カテゴリー × フェーズごとの決着した数と全体の数を返す
+    args:
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引
+    returns:
+      type: '{category, cells: {phase, settled, total}[], settled, total}[]'
+      description: '`settings.categories` の順。セルは `settings.phases` の順'
+    unit_tests:
+      - name: test_progress_by_category
+        case: 正常
+        summary: セルごとに数える
+        condition: カテゴリー 2 つ・フェーズ 2 つ、片方のセルに項目が無い
+        mock: なし
+        expected: 項目が無いセルの `total` が 0、そのほかは決着 / 全体の数
+  - name: relatedItems
+    title: 関係する項目
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 項目の詳細を読む
+    scope: public
+    summary: 詳細パネルに出す前提・後続・関連タスク・経緯・関連・参照している項目を返す
+    args:
+      - name: id
+        type: string
+        required: true
+        passing: positional
+        description: 項目の ID
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引
+    returns:
+      type: '{prerequisites, successors, tasks, logs, related, referencedBy}'
+      description: それぞれ ID の並び。前提は `depends_on`、後続はその逆向き、関連タスクは `for` で指すタスク、経緯は `related` で指す会話ログ、参照している項目はそれ以外の `referencedBy`
+    unit_tests:
+      - name: test_related_items
+        case: 正常
+        summary: 関係の種類ごとに分ける
+        condition: 'D-2（`depends_on: [D-1]`）・T-1（`for: [D-1]`）・L-1（`related: [D-1]`）・N-1（`related: [D-1]`）と D-1（`depends_on: [D-0]`）'
+        mock: なし
+        expected: D-1 の `prerequisites` が D-0、`successors` が D-2、`tasks` が T-1、`logs` が L-1、`referencedBy` が N-1
+  - name: searchItems
+    title: 全体の検索
+    kind: 関数
+    container: skills/mindmap/preview/core/records.js
+    usecase: 項目を検索する
+    scope: public
+    summary: 空白で区切った語を全て含む項目を返す
+    args:
+      - name: query
+        type: string
+        required: true
+        passing: positional
+        description: 検索の言葉
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引
+    returns:
+      type: '{id, kind, title}[]'
+      description: ID・タイトル・項目の文字の値・本文（`bodies`）のどこかに語が全てある項目。大文字・小文字を区別しない。種類の順 → 連番の順。言葉が空なら空
+    unit_tests:
+      - name: test_search_items
+        case: 正常
+        summary: 全ての語を含む項目を返す
+        condition: '`parametrize`: `"d-1"` / 本文にだけある語 / 2 語のうち 1 語だけ含む項目 / 空白だけ'
+        mock: なし
+        expected: D-1 / その項目 / 返らない / 空
+  - name: missingLibraries
+    title: 読めなかったライブラリ
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.js
+    usecase: 共通
+    scope: public
+    summary: 渡したライブラリのうち、グローバルが無いものの名前を返す
+    args:
+      - name: names
+        type: string[]
+        required: true
+        passing: positional
+        description: '`LIBRARIES` のキー'
+    returns:
+      type: string[]
+      description: 読めなかったライブラリの名前（渡した順）
+    unit_tests:
+      - name: test_missing_libraries
+        case: 正常
+        summary: グローバルが無いものだけ返す
+        condition: '`window.marked` だけを置いて `["marked", "DOMPurify"]`'
+        mock: なし
+        expected: '`["DOMPurify"]`'
+  - name: libraryNotice
+    title: 読めなかったライブラリの知らせ
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.js
+    usecase: 共通
+    scope: public
+    summary: 読めなかったライブラリの名前を出す `role="alert"` の要素を返す
+    args:
+      - name: names
+        type: string[]
+        required: true
+        passing: positional
+        description: 読めなかったライブラリの名前
+      - name: what
+        type: string
+        required: true
+        passing: positional
+        description: 表示できないもの（本文・図・マップ）
+    returns:
+      type: HTMLElement
+      description: '`{what}を表示できません。読めなかったライブラリ: {名前を「・」でつなぐ}` と、通信を確かめて読み込み直すよう促す文を持つ要素（文字は `textContent` で入れる）'
+    unit_tests:
+      - name: test_library_notice
+        case: 正常
+        summary: 名前を並べた知らせを返す
+        condition: '`(["marked", "DOMPurify"], "本文")`'
+        mock: なし
+        expected: '`role` が `alert` で、文字に `読めなかったライブラリ: marked・DOMPurify`'
+  - name: renderMarkdown
+    title: 本文を描く
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.js
+    usecase: 項目の詳細を読む
+    scope: public
+    summary: 本文の Markdown を無害化した要素にする。mermaid のコードブロックは図の入れ物に置き換える
+    args:
+      - name: source
+        type: string
+        required: true
+        passing: positional
+        description: 本文の Markdown
+    returns:
+      type: HTMLElement
+      description: 描いた本文。marked か DOMPurify が読めないときは、`libraryNotice` と原文の `pre` を持つ要素
+    process: |-
+      1. marked・DOMPurify が読めたか確かめる（`missingLibraries`）
+         - 読めていない場合、知らせと原文を返す（本文に mermaid のコードブロックがあり mermaid も読めていなければ名前に足す）
+      2. `marked.parse` した HTML を `DOMPurify.sanitize` して要素に入れる
+      3. `language-mermaid` のコードブロックを、原文を `data-source` に持つ図の入れ物に置き換える（描くのは `renderDiagrams`）
+    unit_tests:
+      - name: test_render_markdown
+        case: 正常
+        summary: 無害化して描き、図の入れ物を作る
+        condition: 見出し・表・`<img src=x onerror=alert(1)>`・mermaid のコードブロックを持つ本文。marked・DOMPurify はリポジトリの外部ライブラリの設計書の版を `page.route` で返す
+        mock: 描画のライブラリの配信元（`page.route`）
+        expected: '`h1`・`table` があり、`onerror` が無く、図の入れ物が 1 つで `data-source` に原文'
+      - name: test_render_markdown_when_library_missing
+        case: 正常
+        summary: ライブラリが無ければ知らせと原文
+        condition: marked を読まない。本文に mermaid のコードブロック
+        mock: なし
+        expected: '`role="alert"` に `marked`・`DOMPurify`・`mermaid`、`pre` に原文'
+  - name: renderDiagrams
+    title: 図を描く
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.js
+    usecase: 項目の詳細を読む
+    scope: public
+    is_async: true
+    summary: 要素の中の図の入れ物を mermaid で SVG に描く
+    args:
+      - name: root
+        type: HTMLElement
+        required: true
+        passing: positional
+        description: '`renderMarkdown` の戻り値'
+    returns:
+      type: Promise<void>
+      description: 全て描き終えたら解決する
+    process: |-
+      1. mermaid が読めていない場合、各入れ物に知らせ（`libraryNotice(["mermaid"], "図")`）と原文を入れる
+      2. 初めて描くときに `mermaid.initialize({startOnLoad: false, securityLevel: "strict", theme: "base"})` を呼ぶ
+      3. 入れ物ごとに `mermaid.render` した SVG を入れる
+         - 描けなかった場合、その入れ物に描けなかったことと原文を入れる（ほかの図は続ける）
+    unit_tests:
+      - name: test_render_diagrams
+        case: 正常
+        summary: 図を SVG に描き、描けない図は原文を残す
+        condition: 正しいフローチャートと、構文の誤った図の入れ物。mermaid は `page.route` で返す
+        mock: 描画のライブラリの配信元（`page.route`）
+        expected: 1 つ目に `svg`、2 つ目に描けなかったことと原文
+  - name: parseHash
+    title: ハッシュを読む
+    kind: 関数
+    container: skills/mindmap/preview/core/router.js
+    usecase: 共通
+    scope: public
+    summary: URL のハッシュを `Route` にする
+    args:
+      - name: hash
+        type: string
+        required: true
+        passing: positional
+        description: '`location.hash`'
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: positional
+        description: 索引（`id` が記録にあるかを見る）
+    returns:
+      type: Route
+      description: 画面の場所
+    process: |-
+      1. `#` の後ろを `URLSearchParams` で読む
+      2. `tab` が画面の値でなければ `overview`、`view` が `VIEWS_OF` に無ければ `DEFAULT_VIEW`
+      3. `id` が記録に無ければ `null`。`full` は `id` があり `1` のときだけ真
+      4. `f.` で始まるキーを `filters` に、値を `|` で分けて入れる
+    unit_tests:
+      - name: test_parse_hash
+        case: 正常
+        summary: 既定と誤った値を扱う
+        condition: '`parametrize`: 空 / `#tab=decisions&view=table&id=D-1&f.status=要見直し|保留` / `#tab=nope&view=cards` / `#tab=decisions&id=D-99&full=1` / `#tab=tasks&view=map`'
+        mock: なし
+        expected: 'overview・table・null / decisions・table・D-1・`{status: [要見直し, 保留]}` / overview・table / decisions・map・null・full 偽 / tasks・board'
+  - name: toHash
+    title: ハッシュを作る
+    kind: 関数
+    container: skills/mindmap/preview/core/router.js
+    usecase: 共通
+    scope: public
+    summary: '`Route` を URL のハッシュにする（既定の値と `filters` は書かない）'
+    args:
+      - name: route
+        type: Route
+        required: true
+        passing: positional
+        description: 画面の場所
+    returns:
+      type: string
+      description: '`#tab=...&view=...&id=...&full=1` の形。全て既定なら空文字'
+    unit_tests:
+      - name: test_to_hash
+        case: 正常
+        summary: 既定の値を書かない
+        condition: '`parametrize`: 概要の既定 / 検討事項の表で D-1 を全画面、`filters` あり'
+        mock: なし
+        expected: 空 / `#tab=decisions&view=table&id=D-1&full=1`（`f.` を含まない）
+  - name: navigate
+    title: 画面を移る
+    kind: 関数
+    container: skills/mindmap/preview/core/router.js
+    usecase: 共通
+    scope: public
+    summary: ハッシュを書き換え、履歴に積むか置き換える
+    side_effects: '`history.pushState` か `history.replaceState`'
+    args:
+      - name: route
+        type: Route
+        required: true
+        passing: positional
+        description: 移る先
+      - name: push
+        type: boolean
+        required: true
+        passing: keyword
+        description: 履歴に積むか（画面の移動・項目の移動・幅 900px 以下で詳細パネルを開くときは真。表示形式の切り替え・詳細パネルの開閉・重ねる画面の開閉は偽）
+    returns:
+      type: void
+      description: '-'
+    unit_tests:
+      - name: test_navigate
+        case: 正常
+        summary: 積むか置き換えるかで履歴の長さが変わる
+        condition: '`parametrize`: `push` 真 / 偽'
+        mock: なし
+        expected: '`history.length` が 1 増える / 変わらず、`location.hash` が `toHash` の値'
