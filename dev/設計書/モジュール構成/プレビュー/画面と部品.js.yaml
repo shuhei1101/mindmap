@@ -122,7 +122,7 @@ components:
     container: skills/mindmap/preview/screens/overview.js
     usecase: 概要を見る
     kind: 画面
-    summary: 画面設計『概要』のタイルを描く。値は `nextCandidates`・`goalProgress`・`progressByCategory` から取る
+    summary: 画面設計『概要』のタイルを描く。次の候補・ゴールまで・カテゴリー別の進み具合は埋め込みのデータの `derived` をそのまま並べる（画面で計算しない）
     props:
       - name: index
         type: RecordIndex

@@ -28,6 +28,7 @@ flows:
       - '`path` がワークスペースの `preview.html`'
       - '`preview.html` の `mindmap-data` の中身を JSON として読むと、`settings` と 7 つの種類の項目が YAML と同じで、`bodies` に `A-1.md` の本文がある'
       - '`mindmap-data` の `settings.summary` が `mindmap.yaml` の題名'
+      - '`mindmap-data` の `derived.next` が同じワークスペースでの `next` の `candidates` と同じで、`derived.goal` の `reached`・残りが `goal` の出力と同じ'
       - '`preview.html` の中に `</script>` が雛形のぶんだけある（本文の `</script>` で要素が閉じていない）'
       - '`preview.html` が読み込む `src`・`href` にローカルのパスが無い'
     test: test_normal
@@ -129,6 +130,15 @@ response:
   - name: 埋め込みのデータ.built_at
     type: str
     description: 書き出した日時（UTC のタイムゾーン付き ISO 8601）
+  - name: 埋め込みのデータ.derived.next[]
+    type: list[{id, title, phase, weight, followers}]
+    description: 次に検討する項目。『次の候補』（`next`、上限なし）と同じ並びと中身。画面の「着手できる」はここにある ID
+  - name: 埋め込みのデータ.derived.goal
+    type: dict
+    description: 『ゴール判定』（`goal`）の出力と同じキーに、判定に入れたフェーズごとの決着した数と全体の数 `phase_progress[]`（`{phase, settled, total}`）を足したもの
+  - name: 埋め込みのデータ.derived.progress[]
+    type: 'list[{category, cells: list[{phase, settled, total}], settled, total}]'
+    description: カテゴリー別の進み具合。`settings.categories` の順、セルは `settings.phases` の順。決着は『次の候補』『ゴール判定』と同じ（検討事項の決定済み・対象外・取り下げ）
 response_notes: |-
   > [!NOTE]
   > 埋め込みのデータは、雛形の `<script type="application/json" id="mindmap-data"></script>` の中身として入る。画面はこの要素の中身を `JSON.parse` して読む。

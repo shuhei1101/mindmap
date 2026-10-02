@@ -17,9 +17,9 @@ elements:
   - name: 次に検討する項目
     id: tile-next
     kind: list
-    description: 状態が未決定で、前提（`depends_on`）が全て決定済みの検討事項。フェーズの浅い順 → 影響度 → 後続の件数の順に、タイルの枠に収まるだけ並べる（縦に積む幅では上位 3 件）。押すと詳細パネルを開く
+    description: 前提（`depends_on`）が全て決着（決定済み・対象外・取り下げ）した未決定の検討事項を、`build` が `next` と同じ並びで埋め込んだ順に、タイルの枠に収まるだけ並べる（縦に積む幅では上位 3 件）。押すと詳細パネルを開く
     io: 表示
-    source: プレビューを開く.mindmap-data.decisions
+    source: プレビューを開く.mindmap-data.derived.next
     visible_when: 常時（0 件のときは「次に検討する項目はありません」）
   - name: 次に検討する項目のすべて表示
     kind: link
@@ -31,7 +31,7 @@ elements:
     kind: section
     description: ゴールのフェーズまでの決定済みの数と、フェーズごとの棒（決定済み / 全体）
     io: 表示
-    source: プレビューを開く.mindmap-data.settings.goal・プレビューを開く.mindmap-data.decisions
+    source: プレビューを開く.mindmap-data.derived.goal
     visible_when: 常時
   - name: 成果物のチェックリスト
     kind: list
@@ -72,7 +72,7 @@ elements:
     kind: table
     description: カテゴリーを行、フェーズを列にした表。セルは決定済み / 全体と棒。セルを押すと検討事項の表をそのカテゴリーとフェーズで絞って開く。行の見出しを押すとカテゴリーだけで絞る
     io: 表示
-    source: プレビューを開く.mindmap-data.settings.categories・プレビューを開く.mindmap-data.settings.phases・プレビューを開く.mindmap-data.decisions
+    source: プレビューを開く.mindmap-data.derived.progress
     visible_when: 常時（そのカテゴリーとフェーズに項目が無いセルは「—」で押せない）
 lead: プレビューを開いたときの既定の画面。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・カテゴリー別の進み具合のタイルを並べる。
 mock: dev/mock/pages/overview/21/standard/index.html

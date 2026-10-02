@@ -5,7 +5,7 @@ directory: |-
   skills/mindmap/preview/
     core/
       namespace.js   名前空間 window.MindmapPreview を作る（差し込む順の先頭）
-      records.js     記録の索引・着手できるか・次の候補・ゴールまで・進み具合・関係する項目・検索
+      records.js     記録の索引・関係する項目・検索（次の候補・ゴールまで・進み具合は build が計算した `derived` を使う）
       libs.js        描画のライブラリの有無と呼び出し（Markdown・図・配置）
       router.js      URL のハッシュの読み書きと履歴
   ```
@@ -20,13 +20,16 @@ data_models:
     properties:
       - name: data
         type: object
-        description: 埋め込みのデータ（`settings`・7 種類・`bodies`・`built_at`）そのもの
+        description: 埋め込みのデータ（`settings`・7 種類・`bodies`・`derived`・`built_at`）そのもの。次の候補・ゴールまで・進み具合は `derived` をそのまま使い、画面で計算し直さない
       - name: byId
         type: Map<string, {kind, item}>
         description: ID → 種類と項目
       - name: referencedBy
         type: Map<string, string[]>
         description: ID → その項目を `depends_on`・`for`・`related`・`sources` で指す項目の ID（ID の順）
+      - name: readyIds
+        type: Set<string>
+        description: 着手できる検討事項の ID（`data.derived.next` の ID。表の「着手できる」の列が使う）
   - name: Route
     title: 画面の場所
     container: skills/mindmap/preview/core/router.js
@@ -49,12 +52,6 @@ data_models:
         type: Record<string, string[]>
         description: 開いたときの `f.{列}`（書き戻さない）
 constants:
-  - name: SETTLED_STATUSES
-    title: 決着した状態
-    container: skills/mindmap/preview/core/records.js
-    usecase: 共通
-    summary: 前提が満たされたとみなす検討事項の状態（スクリプトの `kinds.py` の決着と同じ）
-    value: '["決定済み", "対象外", "取り下げ"]'
   - name: DEFAULT_VIEW
     title: 画面ごとの既定の表示形式
     container: skills/mindmap/preview/core/router.js
@@ -117,113 +114,14 @@ functions:
     process: |-
       1. 7 種類の項目を ID で `byId` に入れる
       2. 各項目の `depends_on`・`for`・`related`・`sources` が指す ID ごとに、指した側の ID を `referencedBy` に足す（記録に無い ID もそのまま持つ）
+      3. `derived.next` の ID を `readyIds` に入れる
     unit_tests:
       - name: test_build_index
         case: 正常
         summary: ID で引け、参照元を逆に引ける
-        condition: 'D-1・D-2（`depends_on: [D-1]`）・T-1（`for: [D-1]`）を持つデータ'
+        condition: 'D-1・D-2（`depends_on: [D-1]`）・T-1（`for: [D-1]`）を持ち、`derived.next` が D-1 だけのデータ'
         mock: なし
-        expected: '`byId.get("T-1").kind` が `tasks`。`referencedBy.get("D-1")` が `["D-2", "T-1"]`'
-  - name: isReady
-    title: 着手できるか
-    kind: 関数
-    container: skills/mindmap/preview/core/records.js
-    usecase: 概要を見る
-    scope: public
-    summary: 未決定の検討事項の前提が全て決着しているかを返す
-    args:
-      - name: decision
-        type: object
-        required: true
-        passing: positional
-        description: 検討事項
-      - name: index
-        type: RecordIndex
-        required: true
-        passing: positional
-        description: 索引
-    returns:
-      type: boolean
-      description: 状態が未決定で、`depends_on` の検討事項が全て `SETTLED_STATUSES` なら真。記録に無い前提は決着していないとみなす
-    unit_tests:
-      - name: test_is_ready
-        case: 正常
-        summary: 前提が決着していれば真
-        condition: '`parametrize`: 前提が無い未決定 / 前提が決定済み・対象外 / 前提に未決定がある / 前提が記録に無い / 自分が保留'
-        mock: なし
-        expected: 真 / 真 / 偽 / 偽 / 偽
-  - name: nextCandidates
-    title: 次に検討する項目
-    kind: 関数
-    container: skills/mindmap/preview/core/records.js
-    usecase: 概要を見る
-    scope: public
-    summary: 着手できる検討事項を、スクリプトの `next` と同じ順に並べて返す
-    args:
-      - name: index
-        type: RecordIndex
-        required: true
-        passing: positional
-        description: 索引
-    returns:
-      type: object[]
-      description: 検討事項の並び
-    process: |-
-      1. `isReady` が真の検討事項を集める
-      2. フェーズ（`settings.phases` の順。無いフェーズは最後）→ 影響度（大 → 中 → 小 → 無し）→ 後続の件数の多い順 → 連番の順に並べる
-    unit_tests:
-      - name: test_next_candidates
-        case: 正常
-        summary: フェーズ → 影響度 → 後続の件数の順に並べる
-        condition: '`phases` 目的・要件、未決定の D-1（要件・大）・D-2（目的・小）・D-3（要件・大・後続 2 件）・D-4（前提 D-9 が未決定）'
-        mock: なし
-        expected: D-2・D-3・D-1 の順で、D-4 を含まない
-  - name: goalProgress
-    title: ゴールまで
-    kind: 関数
-    container: skills/mindmap/preview/core/records.js
-    usecase: 概要を見る
-    scope: public
-    summary: ゴールのフェーズまでの決定済みの数・フェーズごとの棒・成果物のチェックリストを返す
-    args:
-      - name: index
-        type: RecordIndex
-        required: true
-        passing: positional
-        description: 索引
-    returns:
-      type: '{settled, total, phases: {name, settled, total}[], deliverables: {title, doc, complete}[]}'
-      description: ゴールまでの値。フェーズの範囲はスクリプトのゴール判定と同じ（`goal.phase` が `phases` に無ければ全て）。`complete` は `doc` の資料の `status` が `完成` か
-    unit_tests:
-      - name: test_goal_progress
-        case: 正常
-        summary: 成果物は資料の状態が完成のものだけチェックする
-        condition: '`goal.phase` 要件、成果物が A-1（完成）・A-2（確認中）・`doc` なし、要件の検討事項 2 件のうち 1 件が決定済み'
-        mock: なし
-        expected: '`deliverables` の `complete` が 真・偽・偽。要件のフェーズの棒が 1 / 2'
-  - name: progressByCategory
-    title: カテゴリー別の進み具合
-    kind: 関数
-    container: skills/mindmap/preview/core/records.js
-    usecase: 概要を見る
-    scope: public
-    summary: カテゴリー × フェーズごとの決着した数と全体の数を返す
-    args:
-      - name: index
-        type: RecordIndex
-        required: true
-        passing: positional
-        description: 索引
-    returns:
-      type: '{category, cells: {phase, settled, total}[], settled, total}[]'
-      description: '`settings.categories` の順。セルは `settings.phases` の順'
-    unit_tests:
-      - name: test_progress_by_category
-        case: 正常
-        summary: セルごとに数える
-        condition: カテゴリー 2 つ・フェーズ 2 つ、片方のセルに項目が無い
-        mock: なし
-        expected: 項目が無いセルの `total` が 0、そのほかは決着 / 全体の数
+        expected: '`byId.get("T-1").kind` が `tasks`。`referencedBy.get("D-1")` が `["D-2", "T-1"]`。`readyIds` が D-1 だけ'
   - name: relatedItems
     title: 関係する項目
     kind: 関数
