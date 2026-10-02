@@ -5,7 +5,7 @@ elements:
     component: dev/設計書/部品設計/プレビュー/トップバー.js#
     args:
       - name: title
-        value: プレビューを開く.mindmap-data.name
+        value: プレビューを開く.mindmap-data.settings.summary
       - name: tabs
         value: 概要・検討事項・タスク・調査・資料・用語集・メモ・会話ログ（件数はプレビューを開く.mindmap-data.{種類} の件数）
       - name: current

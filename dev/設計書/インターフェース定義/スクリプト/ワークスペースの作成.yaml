@@ -114,7 +114,7 @@ request:
     type: JSON のオブジェクト
     required: false
     location: body
-    description: 設定の中身（`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`）。キーと型は ER 図『ワークスペース』の `mindmap.yaml`
+    description: 設定の中身（`summary`・`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`）。キーと型は ER 図『ワークスペース』の `mindmap.yaml`
     constraints: 設定のスキーマに合うこと
   - name: --json
     type: str
@@ -126,6 +126,7 @@ request:
 request_example: |-
   ```json
   {
+    "summary": "要件出しのスキル mindmap を設計する",
     "field": "システム開発",
     "target_label": "システム",
     "phases": ["目的", "要件", "構成"],

@@ -4,13 +4,13 @@ entry:
   value: '`python3 {スキルのフォルダ}/scripts/mindmap.py migrate`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系
-    summary: 資料の done を status に移す
+    summary: 題名を足し、資料の done を status に移す
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: make_workspace
-        description: '資料 A-1（`done: true`）・A-2（`done: false`）・A-3（`status: 確認中`）を持つワークスペース'
-        notes: A-1・A-2 は YAML を直接書いて作る
+        description: '`summary` を持たない `mindmap.yaml` と、資料 A-1（`done: true`）・A-2（`done: false`）・A-3（`status: 確認中`）を持つワークスペース'
+        notes: '`mindmap.yaml` と A-1・A-2 は YAML を直接書いて作る。引数は `--summary 要件出しのスキルを設計する`'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -18,15 +18,16 @@ flows:
         participant IF as mindmap.py migrate
         participant WS as ワークスペース
 
-        クライアント->>IF: migrate --workspace
+        クライアント->>IF: migrate --workspace --summary
         IF-->>WS: 全ての YAML を読む
-        IF->>IF: done を status に書き換え、スキーマと突き合わせる
-        IF->>WS: docs.yaml を置き換える
+        IF->>IF: 題名を足し、done を status に書き換え、スキーマと突き合わせる
+        IF->>WS: mindmap.yaml と docs.yaml を置き換える
         IF-->>クライアント: JSON（migrated）
       ```
     expected:
       - 終了コードが 0
-      - '`migrated` が A-1（`done: true → status: 完成`）と A-2（`done: false → status: 下書き`）の 2 件'
+      - '`migrated` が `mindmap.yaml`（`summary` を足した）と A-1（`done: true → status: 完成`）と A-2（`done: false → status: 下書き`）の 3 件'
+      - '`mindmap.yaml` の `summary` が渡した題名'
       - '`docs.yaml` の A-1 が `status: 完成`、A-2 が `status: 下書き` で、どちらも `done` を持たず、`updated` が呼ぶ前と同じ'
       - A-3 が呼ぶ前と同じ
       - 続けて `check` がスキーマ違反を返さない
@@ -126,9 +127,31 @@ flows:
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
       - '`docs.yaml` の中身が呼ぶ前と同じ'
     test: test_error_when_write_fails
+  - name: 異常系（題名が無い・SummaryRequiredError）
+    summary: 題名を持たないワークスペースで --summary を渡さないと何も書かずに終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '`summary` を持たない `mindmap.yaml` と、資料 A-1（`done: true`）を持つワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: mindmap.yaml を読む（summary が無い）
+        IF-->>クライアント: エラー、終了コード 2
+      ```
+    expected:
+      - 終了コードが 2
+      - 標準エラーに `--summary` がある
+      - '`mindmap.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
 lead: 前の版の形式で書かれたワークスペースの YAML を、今のスキーマに合う形へ一度だけ書き換える。
 idempotent: true
-side_effects: 移す項目があるときだけ `docs.yaml` を一時ファイルから `os.replace` で置き換える。移す項目が無いときは何も書かない
+side_effects: 移すものがあるときだけ `mindmap.yaml`・`docs.yaml` を一時ファイルから `os.replace` で置き換える。移すものが無いときは何も書かない
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
 request:
   - name: --workspace
@@ -137,13 +160,21 @@ request:
     location: argument
     description: ワークスペースのフォルダのパス
     constraints: '`mindmap.yaml` があるフォルダ'
+  - name: --summary
+    type: str
+    required: false
+    default: なし（`mindmap.yaml` が `summary` を持つときだけ省ける）
+    location: argument
+    description: '`mindmap.yaml` に足す題名。`mindmap.yaml` が `summary` を持たないときに使う'
+    constraints: 空でない文字列。`mindmap.yaml` が `summary` を既に持つときは使わず、持っている題名を変えない
+    example: 要件出しのスキル mindmap を設計する
 response:
   - name: migrated[]
     type: list[{id, file, change}]
     description: 書き換えた項目。移す項目が無いときは空
   - name: migrated[].id
-    type: str
-    description: 書き換えた項目の ID
+    type: str | None
+    description: 書き換えた項目の ID。`mindmap.yaml` の書き換えは `null`
   - name: migrated[].file
     type: str
     description: 書き換えた YAML（ワークスペースからの相対パス）
@@ -164,6 +195,9 @@ exceptions:
   - name: WriteFailedError
     condition: 一時ファイルの書き込みか置き換えに失敗した
     notes: 終了コード 1。標準エラーに書けなかったパスと理由。前の `docs.yaml` を残す
+  - name: SummaryRequiredError
+    condition: '`mindmap.yaml` が `summary` を持たず、`--summary` も渡されない'
+    notes: 終了コード 2（引数の誤り）。標準エラーに `--summary` で題名を渡すよう書く。何も書き込まない
 error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
 constraints:
   - item: 出力の形
@@ -171,7 +205,7 @@ constraints:
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 移す中身
-    constraint: '資料の `done` を消し、`status` を足す。`done: true` は `status: 完成`、`done: false` は `status: 下書き`。`status` を既に持つ項目は触らない。`updated` は変えない'
+    constraint: '資料の `done` を消し、`status` を足す。`done: true` は `status: 完成`、`done: false` は `status: 下書き`。`status` を既に持つ項目は触らない。`updated` は変えない。`mindmap.yaml` が `summary` を持たないときは `--summary` の題名を足す'
   - item: 移す前の読み込み
     constraint: YAML をスキーマと突き合わせずに読み、書き換えた後の全ての YAML をスキーマと突き合わせてから書く
   - item: YAML の書き方

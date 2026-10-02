@@ -89,6 +89,12 @@ tables:
         title: 関連する場所
         type: array
         description: 要素は `title`・`url`
+      - name: summary
+        title: 題名
+        type: string
+        not_null: true
+        description: 話し合いの題名（何についての話し合いかを 1 文で）。プレビューのトップバーに出す
+        example: 要件出しのスキル mindmap を設計する
   - name: skills/mindmap/schemas/common.schema.json
     title: 共通のキー
     datastore: JSON
