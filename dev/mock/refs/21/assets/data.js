@@ -15,10 +15,10 @@ window.MINDMAP = {
       "stage": "インターフェース",
       "summary": "フォルダ構成・YAML のスキーマ・steps・コマンドが決まり、作り始められる",
       "deliverables": [
-        { "title": "YAML のスキーマ", "done": false },
-        { "title": "スクリプトのコマンドと引数", "done": false },
-        { "title": "進め方ガイドの中身", "done": false },
-        { "title": "プレビューの画面とデザイン方針", "done": false }
+        { "title": "YAML のスキーマ" },
+        { "title": "スクリプトのコマンドと引数" },
+        { "title": "進め方ガイドの中身" },
+        { "title": "プレビューの画面とデザイン方針" }
       ]
     },
     "targets": [
@@ -1541,8 +1541,8 @@ window.MINDMAP = {
     {
       "id": "A-001",
       "deliverable": true,
-      "done": true,
       "title": "mindmap スキルの構成図",
+      "status": "完成",
       "kind": "図",
       "target": "mindmap",
       "category": "進め方",
@@ -1560,8 +1560,8 @@ window.MINDMAP = {
     {
       "id": "A-002",
       "deliverable": true,
-      "done": true,
       "title": "ワークスペースのフォルダ構成",
+      "status": "確認中",
       "kind": "文書",
       "target": "mindmap",
       "category": "データ構造",
@@ -1579,6 +1579,7 @@ window.MINDMAP = {
     {
       "id": "A-003",
       "title": "1 回の発言を取り込む流れ",
+      "status": "下書き",
       "kind": "図",
       "target": "mindmap",
       "category": "進め方",

@@ -25,6 +25,8 @@
   const CLOSED = new Set(["取り下げ", "対象外", "完了", "中止"]);
   const CLOSED_LABEL = { decisions: "取り下げ・対象外を表示" };
   const DEFAULT_VIEW = { decisions: "map", tasks: "board", docs: "cards" };
+  const DOC_STATUS = ["下書き", "確認中", "完成"];
+  const BOARD_COLS = { decisions: ["要見直し", "未決定", "保留", "未整理", "決定済み", "対象外", "取り下げ"], tasks: ["未着手", "進行中", "保留", "完了", "中止"] };
   const KIND_NOUN = { decisions: "検討事項", tasks: "タスク", research: "調査", docs: "資料", terms: "用語", notes: "メモ", logs: "会話ログ" };
   const RECORD_KINDS = ["research", "terms", "notes", "logs"];
 
@@ -135,6 +137,9 @@
     "取り下げ": '<path d="m1.5 1.5 7 7M8.5 1.5l-7 7" stroke="var(--st-off)" stroke-width="1.6"/>',
     "対象外": '<path d="M1 5h8" stroke="var(--st-off)" stroke-width="1.8"/>',
     "中止": '<path d="m1.5 1.5 7 7M8.5 1.5l-7 7" stroke="var(--st-off)" stroke-width="1.6"/>',
+    "下書き": '<circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-off)" stroke-width="1.6" stroke-dasharray="2 1.6"/>',
+    "確認中": '<circle cx="5" cy="5" r="3.8" fill="none" stroke="var(--st-open)" stroke-width="1.6"/><path d="M5 1.2a3.8 3.8 0 0 1 0 7.6Z" fill="var(--st-open)"/>',
+    "完成": '<circle cx="5" cy="5" r="4.5" fill="var(--st-done)"/>',
   };
   const mark = (st) => (MARKS[st] ? `<svg class="mark" viewBox="0 0 10 10" aria-hidden="true">${MARKS[st]}</svg>` : "");
   const status = (st) => (st ? `<span class="st" data-st="${esc(st)}">${mark(st)}${esc(st)}</span>` : "");
@@ -197,7 +202,8 @@
     ],
     docs: [
       C.id, C.title(),
-      { key: "deliverable", label: "成果物", pri: 2, nowrap: true, filter: true, order: ["成果物", "成果物以外"], get: (r) => (r.deliverable ? "成果物" : "成果物以外"), cell: (r) => (r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>${r.done ? " 完了" : ""}` : '<span class="muted">—</span>') },
+      { key: "deliverable", label: "成果物", pri: 2, nowrap: true, filter: true, order: ["成果物", "成果物以外"], get: (r) => (r.deliverable ? "成果物" : "成果物以外"), cell: (r) => (r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : '<span class="muted">—</span>') },
+      { key: "status", label: "状態", pri: 1, nowrap: true, filter: true, order: DOC_STATUS, get: (r) => r.status, cell: (r) => status(r.status) },
       { key: "kind", label: "種類", pri: 2, nowrap: true, filter: true, get: (r) => r.kind, cell: (r) => esc(r.kind) },
       { key: "related", label: "関連", pri: 3, get: (r) => (r.related || []).join(" "), cell: (r) => idlinks(r.related) },
       C.category, C.stage, C.tags, C.updated,
@@ -286,12 +292,13 @@
   };
 
   // ===== タブ =====
+  const keepPanel = () => (state.panel ? { id: state.panel } : {});
   const renderTabs = () => {
     document.getElementById("brand-sub").textContent = W.summary;
     const cur = (k) => (state.tab === k ? ' aria-current="page"' : "");
     document.getElementById("tabs").innerHTML = KINDS.map((k) =>
-      `<a class="tab" href="${pageUrl(k.key)}"${cur(k.key)}>${icon(TAB_ICON[k.key])}${k.label}${M[k.key] ? `<span class="count">${M[k.key].length}</span>` : ""}</a>`).join("")
-      + `<span class="tab-gap"></span><a class="tab tab-special" href="${pageUrl("graph")}"${cur("graph")}>${icon("orbit")}つながり</a>`;
+      `<a class="tab" href="${pageUrl(k.key, keepPanel())}"${cur(k.key)}>${icon(TAB_ICON[k.key])}${k.label}${M[k.key] ? `<span class="count">${M[k.key].length}</span>` : ""}</a>`).join("")
+      + `<span class="tab-gap"></span><a class="tab tab-special" href="${pageUrl("graph", keepPanel())}"${cur("graph")}>${icon("orbit")}つながり</a>`;
   };
 
   // ===== 概要: 区画をタイルに分け、数字と見出しで一目で読めるようにする =====
@@ -336,9 +343,10 @@
     }).join("");
     // 成果物は資料のうち印の付いたもの。できたものにチェックを付け、5 件を超えたら資料の一覧へ
     const deliv = M.docs.filter((d) => d.deliverable).concat(W.goal.deliverables.filter((x) => !M.docs.some((d) => d.deliverable && d.title === x.title)));
-    const doneN = deliv.filter((x) => x.done).length;
+    const isDone = (x) => x.status === "完成";
+    const doneN = deliv.filter(isDone).length;
     const deliverHtml = `<div class="deliv"><div class="deliv-head">${icon("box")}成果物<span class="mono">${doneN}/${deliv.length}</span>${deliv.length > 5 ? all(pageUrl("docs", { "f.deliverable": "成果物" }), deliv.length) : ""}</div>
-      <ul class="checklist">${deliv.slice(0, 5).map((x) => `<li class="${x.done ? "done" : ""}">${icon(x.done ? "checked" : "unchecked")}${x.id ? `<button data-act="open" data-id="${x.id}">${esc(x.title)}</button>` : `<span>${esc(x.title)}</span>`}</li>`).join("")}</ul></div>`;
+      <ul class="checklist">${deliv.slice(0, 5).map((x) => `<li class="${isDone(x) ? "done" : ""}">${icon(isDone(x) ? "checked" : "unchecked")}${x.id ? `<button data-act="open" data-id="${x.id}">${esc(x.title)}</button>` : `<span>${esc(x.title)}</span>`}</li>`).join("")}</ul></div>`;
     return `
       <header class="hero">
         <p class="hero-sub">${esc(W.field)} · ゴールは${esc(W.goal.stage)}のフェーズまで</p>
@@ -378,7 +386,7 @@
   // ===== 表のタブ =====
   const visibleCols = (kind) => { const h = new Set(colPrefs(kind).hidden); return COLUMNS[kind].filter((c) => !h.has(c.key)); };
   const segment = (kind) => {
-    const opts = kind === "decisions" ? [["map", "マップ"], ["cards", "カード"], ["table", "表"]] : kind === "tasks" ? [["board", "ボード"], ["table", "表"]] : kind === "docs" ? [["cards", "カード"], ["table", "表"]] : null;
+    const opts = kind === "decisions" ? [["map", "マップ"], ["board", "ボード"], ["table", "表"]] : kind === "tasks" ? [["board", "ボード"], ["table", "表"]] : kind === "docs" ? [["cards", "カード"], ["table", "表"]] : null;
     if (!opts) return "";
     return `<div class="segment" role="group" aria-label="表示形式">${opts.map(([v, l]) => `<button data-act="view" data-view="${v}" aria-pressed="${state.view === v}">${icon(v)}${l}</button>`).join("")}</div>`;
   };
@@ -387,7 +395,7 @@
   const renderToolbar = (kind) => `<div class="toolbar">${segment(kind)}
       <label class="sr-only" for="q-${kind}">キーワードで絞り込み</label>
       <input class="input grow" id="q-${kind}" data-act="q" type="search" placeholder="キーワード" value="${esc(state.tables[kind].q)}">
-      ${closedCheck(kind)}
+      ${state.view === "table" ? closedCheck(kind) : ""}
       <span class="spacer"></span>
       ${state.view !== "table" ? `<button class="btn" data-act="facets" aria-label="絞り込み">${icon("filter")}<span class="lbl">絞り込み</span></button>` : ""}
       ${state.view === "table" ? `<button class="btn" data-act="cols" aria-label="表示する列">${icon("cols")}<span class="lbl">表示する列</span></button>` : ""}
@@ -420,12 +428,14 @@
     const body = rows.length
       ? rows.map((r) => `<tr class="${r.status && CLOSED.has(r.status) ? "dim " : ""}${state.panel === r.id ? "selected" : ""}" data-id="${r.id}">${cols.map((c, i) =>
           `<td data-pri="${c.pri}" data-col="${i}" class="${c.num ? "num " : ""}${c.nowrap ? "nowrap " : ""}${i < pin ? "pinned" : ""}">${c.cell(r)}</td>`).join("")}</tr>`).join("")
-      : `<tr><td colspan="${cols.length}" class="no-match">該当する${KIND_NOUN[kind]}はありません。別の条件を試してください。</td></tr>`;
+      : `<tr><td colspan="${cols.length}" class="no-match-cell"><div class="no-match">該当する${KIND_NOUN[kind]}はありません。別の条件を試してください。</div></td></tr>`;
     return `<div class="table-wrap" data-kind="${kind}"><table class="grid"><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
   };
   const applyPins = () => {
     const wrap = document.querySelector(".table-wrap");
     if (!wrap) return;
+    // 該当なしの文言は、横に送っても表の枠の幅で左に留める
+    wrap.style.setProperty("--wrap-w", wrap.clientWidth + "px");
     const pin = colPrefs(wrap.dataset.kind).pin;
     let left = 0;
     [...wrap.querySelectorAll("thead th")].forEach((th, i) => {
@@ -436,27 +446,29 @@
   };
 
   // ===== ボード（タスク） =====
-  const renderBoard = () => {
-    const rows = rowsFor("tasks");
-    const cols = ["未着手", "進行中", "保留", "完了", "中止"];
+  const boardRows = (kind) => {
+    const t = state.tables[kind], keep = t.showClosed;
+    t.showClosed = true;
+    const rows = rowsFor(kind);
+    t.showClosed = keep;
+    return rows;
+  };
+  const boardCard = (kind, r) => kind === "decisions"
+    ? `<button class="card" data-act="open" data-id="${r.id}"><div class="c-ttl">${esc(r.title)}</div><div class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.category)} · ${esc(r.stage)}</span>${impact(r.weight)}</div>${(r.depends_on || []).length ? `<div class="c-for">${r.depends_on.map((id) => `<div><span class="mono">${id}</span> ${esc(titleOf(id))}</div>`).join("")}</div>` : ""}</button>`
+    : `<button class="card" data-act="open" data-id="${r.id}"><div class="c-ttl">${esc(r.title)}</div><div class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.kind)}</span><span>${esc(r.category)}</span></div>${(r.for || []).length ? `<div class="c-for">${r.for.map((id) => `<div><span class="mono">${id}</span> ${esc(titleOf(id))}</div>`).join("")}</div>` : ""}</button>`;
+  const renderBoard = (kind = "tasks") => {
+    const rows = boardRows(kind);
+    const cols = BOARD_COLS[kind];
     return `<div class="board" style="--cols:${cols.length}">${cols.map((st) => {
       const cards = rows.filter((r) => r.status === st);
-      return `<section class="board-col" aria-label="${st}"><h3>${mark(st)}${st}<span class="n">${cards.length}</span></h3>${cards.length ? cards.map((r) =>
-        `<button class="card" data-act="open" data-id="${r.id}"><div class="c-ttl">${esc(r.title)}</div><div class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.kind)}</span><span>${esc(r.category)}</span></div>${(r.for || []).length ? `<div class="c-for">${r.for.map((id) => `<div><span class="mono">${id}</span> ${esc(titleOf(id))}</div>`).join("")}</div>` : ""}</button>`).join("") : `<p class="empty">なし</p>`}</section>`;
+      return `<section class="board-col" aria-label="${st}"><h3>${mark(st)}${st}<span class="n">${cards.length}</span></h3>${cards.length ? cards.map((r) => boardCard(kind, r)).join("") : `<p class="empty">なし</p>`}</section>`;
     }).join("")}</div>`;
-  };
-
-  // ===== 検討事項のカード =====
-  const renderDecisionCards = () => {
-    const rows = rowsFor("decisions").sort((a, b) => oi(STATUS_ORDER, a.status) - oi(STATUS_ORDER, b.status));
-    return rows.length ? `<div class="doc-grid">${rows.map((r) => `<button class="card" data-act="open" data-id="${r.id}"><span class="c-ttl">${mark(r.status)} ${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.status)}</span><span>${esc(r.category)} · ${esc(r.stage)}</span>${impact(r.weight)}</span></button>`).join("")}</div>`
-      : `<p class="no-match">該当する検討事項はありません。別の条件を試してください。</p>`;
   };
 
   // ===== 資料のカード =====
   const renderDocCards = () => {
     const rows = [...rowsFor("docs")].sort((a, b) => (b.deliverable ? 1 : 0) - (a.deliverable ? 1 : 0));
-    return rows.length ? `<div class="doc-grid">${rows.map((r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.related || []).length ? `<span class="c-for">${r.related.map((id) => `<span><span class="mono">${id}</span> ${esc(titleOf(id))}</span>`).join("")}</span>` : ""}</button>`).join("")}</div>`
+    return rows.length ? `<div class="doc-grid">${rows.map((r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span>${status(r.status)}<span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.related || []).length ? `<span class="c-for">${r.related.map((id) => `<span><span class="mono">${id}</span> ${esc(titleOf(id))}</span>`).join("")}</span>` : ""}</button>`).join("")}</div>`
       : `<p class="no-match">該当する資料はありません。別の条件を試してください。</p>`;
   };
 
@@ -608,6 +620,11 @@
   };
 
   // ===== つながり: すべての項目と関連を、軽い自前の 3D（キャンバスへの透視投影）で見る =====
+  // 線の種類: 見た目（実線・点線・破線・一点鎖線）で見分ける
+  const LINK_TYPES = [["dep", "依存", "前提 → 後続"], ["rel", "関連", "関連として挙げた項目"], ["src", "根拠", "会話ログ・調査から"], ["for", "進めるタスク", "タスク → 進める検討事項"]];
+  const LINK_DASH = { dep: [], rel: [1.5, 3], src: [6, 4], for: [10, 3, 2, 3] };
+  const linkSample = (k) => `<svg class="ls" viewBox="0 0 28 6" aria-hidden="true"><path d="M1 3h26" stroke="currentColor" stroke-width="1.8" stroke-dasharray="${LINK_DASH[k].join(" ")}" fill="none"/></svg>`;
+  const linkTypesPop = () => `<h3>表示する線の種類</h3>${LINK_TYPES.map(([k, l, d]) => `<label><input type="checkbox" data-act="ltype" value="${k}" ${state.linkTypes.has(k) ? "checked" : ""}>${linkSample(k)}<span>${l}<span class="ls-sub">${d}</span></span></label>`).join("")}`;
   const KIND_VAR = { decisions: "--k-dec", tasks: "--k-task", research: "--k-res", docs: "--k-doc", terms: "--k-term", notes: "--k-note", logs: "--k-log" };
   state.graphKinds ??= new Set(["decisions", "tasks", "research", "docs", "logs"]);
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -678,15 +695,28 @@
     g.alpha *= 0.994;
   };
   // 注目（マウスを乗せる・選ぶ）が変わったら、つながりが寄ってくるよう少し動かす
-  const setFocus = (id, strong = false) => {
+  const setFocus = (id) => {
     if (!G || G.focus === id) return;
     G.focus = id;
-    G.alpha = Math.max(G.alpha, strong ? 0.2 : 0.1);
+  };
+  const PULL_KEEP = 0.45;  // 寄せた先: 元の距離の 45% のところ
+  const PULL_EASE = 0.03;  // 毎コマ、目標へ 3% ずつ寄せる
+  // 注目している玉につながる玉を、注目している玉の近くへゆっくり寄せる。注目が外れると元の位置へ戻す
+  const pullNear = (g) => {
+    const sel = g.focus && g.idx.has(g.focus) ? g.focus : null;
+    const near = new Set();
+    if (sel) for (const l of g.links) { if (l.a === sel) near.add(l.b); if (l.b === sel) near.add(l.a); }
+    const S = sel ? g.nodes[g.idx.get(sel)].home : null;
+    for (const n of g.nodes) {
+      const h = n.home;
+      const t = S && near.has(n.id) ? { x: S.x + (h.x - S.x) * PULL_KEEP, y: S.y + (h.y - S.y) * PULL_KEEP, z: S.z + (h.z - S.z) * PULL_KEEP } : h;
+      n.x += (t.x - n.x) * PULL_EASE; n.y += (t.y - n.y) * PULL_EASE; n.z += (t.z - n.z) * PULL_EASE;
+    }
   };
   const graphSelect = () => {
     if (!G) return;
     const n = G.nodes[G.idx.get(state.panel)];
-    setFocus(n ? n.id : G.hover?.id ?? null, !!n);
+    setFocus(n ? n.id : G.hover?.id ?? null);
     G.distT = n ? G.fit * 0.38 : G.fit;
     if (!n) G.centerT = { x: 0, y: 0, z: 0 };
   };
@@ -699,7 +729,9 @@
     if (!cv) return;
     G = buildGraph3();
     for (let i = 0; i < 260; i++) stepForces(G);   // 先に形を整えてから見せる
-    G.alpha = 0.06;
+    // 形を整えた位置を元の位置として覚え、以降は力の計算を止める
+    for (const n of G.nodes) n.home = { x: n.x, y: n.y, z: n.z };
+    G.alpha = 0;
     // 全体が枠に収まる距離（外れた玉に引っぱられないよう、近い順に 9 割目の玉までの半径を使う）
     const radii = G.nodes.map((n) => Math.hypot(n.x, n.y, n.z)).sort((a, b) => a - b);
     const R = Math.max(40, radii[Math.floor(radii.length * 0.9)] || 40);
@@ -774,7 +806,7 @@
     const frame = (now) => {
       if (!G || !document.getElementById("fg3")) { G = null; return; }
       if (document.hidden) { requestAnimationFrame(frame); return; }
-      stepForces(G);
+      pullNear(G);
       const R0 = G.rot;
       if (!drag) {
         // 離した後の滑り（勢いはゆっくり弱まる）と、何もしていないときのごくゆっくりした自動の回転
@@ -797,13 +829,14 @@
       ctx.clearRect(0, 0, W, H);
       const P = new Map(G.nodes.map((n) => [n.id, proj({ x: n.x * ease + G.center.x * (1 - ease), y: n.y * ease + G.center.y * (1 - ease), z: n.z * ease + G.center.z * (1 - ease) })]));
       // つながる玉どうしを、ごく薄い線で結ぶ（遠いほど薄い）
-      ctx.lineWidth = 0.6; ctx.strokeStyle = C.line;
+      ctx.lineWidth = 0.9; ctx.strokeStyle = C.line;
       for (const l of G.links) {
+        ctx.setLineDash(LINK_DASH[l.type]);
         const a = P.get(l.a), b = P.get(l.b);
         if (a.z + G.dist <= 10 || b.z + G.dist <= 10) continue;
         if ((a.sx < 0 && b.sx < 0) || (a.sx > W && b.sx > W) || (a.sy < 0 && b.sy < 0) || (a.sy > H && b.sy > H)) continue;
         const dep = Math.max(0, Math.min(1, 1.25 - ((a.z + b.z) / 2 + G.dist) / (G.dist * 2.2)));
-        ctx.globalAlpha = 0.22 * dep * Math.min(l.s.fade ?? 1, l.t.fade ?? 1);
+        ctx.globalAlpha = 0.32 * dep * Math.min(l.s.fade ?? 1, l.t.fade ?? 1);
         ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy); ctx.stroke();
       }
       // 注目している項目とつながる線と、そこを流れる小さな玉（注目している項目から外へ、ゆっくり）
@@ -811,14 +844,15 @@
         if (l.a !== sel && l.b !== sel) continue;
         const from = P.get(sel), to = P.get(l.a === sel ? l.b : l.a);
         if (from.z + G.dist <= 10 || to.z + G.dist <= 10) continue;
-        ctx.globalAlpha = 1; ctx.strokeStyle = C.line; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(from.sx, from.sy); ctx.lineTo(to.sx, to.sy); ctx.stroke();
+        ctx.globalAlpha = 1; ctx.strokeStyle = C.line; ctx.lineWidth = 1.3; ctx.setLineDash(LINK_DASH[l.type]);
+        ctx.beginPath(); ctx.moveTo(from.sx, from.sy); ctx.lineTo(to.sx, to.sy); ctx.stroke(); ctx.setLineDash([]);
         for (const off of [0, 0.5]) {
           const t = ((now / 4200) + off + (l.a.length % 7) * 0.13) % 1;
           ctx.globalAlpha = 0.9 * Math.sin(Math.PI * t); ctx.fillStyle = C.dot;
           ctx.beginPath(); ctx.arc(from.sx + (to.sx - from.sx) * t, from.sy + (to.sy - from.sy) * t, 1.8, 0, Math.PI * 2); ctx.fill();
         }
       }
+      ctx.setLineDash([]);
       // 奥から順に描く。遠いほど小さく薄く、注目しているときはつながらないものを沈める
       const order = [...G.nodes].sort((a, b) => P.get(b.id).z - P.get(a.id).z);
       ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.letterSpacing = "0.8px";
@@ -861,10 +895,8 @@
   const renderGraphTab = () => {
     const counts = Object.fromEntries(Object.keys(KIND_VAR).map((k) => [k, M[k].filter((it) => !CLOSED.has(it.status)).length]));
     const chips = Object.keys(KIND_VAR).map((k) => `<label><input type="checkbox" data-act="gkind" value="${k}" ${state.graphKinds.has(k) ? "checked" : ""}><span class="kdot" style="background:var(${KIND_VAR[k]})"></span>${KINDS.find((x) => x.key === k).label}<span class="n">${counts[k]}</span></label>`).join("");
-    const LINK_TYPES = [["dep", "依存"], ["rel", "関連"], ["src", "根拠"], ["for", "タスクが進める検討事項"]];
-    const types = LINK_TYPES.map(([k, l]) => `<button type="button" data-act="ltype" data-type="${k}" aria-pressed="${state.linkTypes.has(k)}"><i class="${k}"></i>${l}</button>`).join("");
-    return `<div class="map-tools"><div class="legend" role="group" aria-label="表示する種類">${chips}</div></div>
-      <div class="link-types" role="group" aria-label="表示するつながりの種類">${types}</div>
+    return `<div class="map-tools"><div class="legend" role="group" aria-label="表示する種類">${chips}</div><span class="spacer"></span>
+      <button class="btn" type="button" data-act="ltypes" aria-haspopup="true">${icon("filter")}線の種類<span class="mono">${state.linkTypes.size}/${LINK_TYPES.length}</span></button></div>
       <div class="map-frame space" data-bg="nebula"><canvas class="g3-wrap" id="fg3" role="img" aria-label="すべての項目のつながり"></canvas></div>`;
   };
 
@@ -1034,9 +1066,9 @@
     if (k === "overview") main.innerHTML = renderOverview();
     else if (k === "decisions" && state.view === "map") main.innerHTML = renderMapShell();
     else if (k === "graph") main.innerHTML = renderGraphTab();
-    else if (k === "decisions" && state.view === "cards") main.innerHTML = renderToolbar(k) + renderChips(k) + renderDecisionCards();
+    else if (k === "decisions" && state.view === "board") main.innerHTML = renderToolbar(k) + renderChips(k) + renderBoard("decisions");
     else if (k === "docs" && state.view === "cards") main.innerHTML = renderToolbar(k) + renderChips(k) + renderDocCards();
-    else if (k === "tasks" && state.view === "board") main.innerHTML = renderToolbar(k) + renderChips(k) + renderBoard();
+    else if (k === "tasks" && state.view === "board") main.innerHTML = renderToolbar(k) + renderChips(k) + renderBoard("tasks");
     else main.innerHTML = renderToolbar(k) + renderChips(k) + renderTable(k);
     renderPanel();
     applyPins();
@@ -1157,7 +1189,7 @@
       case "full": state.full = !state.full; render(); break;
       case "fclose": state.full = false; state.panel = null; render(); break;
       case "vclose": closeFullViewer(); break;
-      case "ltype": state.linkTypes.has(el.dataset.type) ? state.linkTypes.delete(el.dataset.type) : state.linkTypes.add(el.dataset.type); lastScreen = ""; render(); break;
+      case "ltypes": openPop(el, linkTypesPop()); break;
       case "sim": state.sim = el.dataset.sim; layoutCache.clear(); lastScreen = ""; history.replaceState(null, "", hashOf()); render(); break;
       case "dgraw": { const f = el.closest(".diagram"), on = el.getAttribute("aria-pressed") !== "true"; el.setAttribute("aria-pressed", on); f.querySelector(".mermaid").hidden = on; f.querySelector(".dg-raw").hidden = !on; break; }
       case "dgcopy": { const f = el.closest(".diagram"); navigator.clipboard?.writeText(f.querySelector(".dg-raw").textContent).then(() => { el.innerHTML = icon("check"); setTimeout(() => (el.innerHTML = icon("copy")), 1400); }); break; }
@@ -1178,6 +1210,11 @@
   document.addEventListener("change", (e) => {
     const el = e.target, a = el.dataset.act;
     if (a === "closed") { state.tables[state.tab].showClosed = el.checked; render(); }
+    if (a === "ltype") {
+      el.checked ? state.linkTypes.add(el.value) : state.linkTypes.delete(el.value);
+      lastScreen = ""; render();
+      openPop(document.querySelector('[data-act="ltypes"]'), linkTypesPop());
+    }
     if (a === "gkind") { el.checked ? state.graphKinds.add(el.value) : state.graphKinds.delete(el.value); lastScreen = ""; render(); }
     if (a === "mapst") { el.checked ? state.mapShow.add(el.value) : state.mapShow.delete(el.value); lastScreen = ""; render(); }
     if (a === "fval") {

@@ -107,7 +107,7 @@
   --accent-weak: var(--teal-50);
   --accent-line: var(--teal-200);
   --on-accent: var(--zinc-0);
-  --hover: var(--zinc-100);
+  --hover: color-mix(in oklab, var(--text) 9%, var(--surface));
   --row-hover: var(--zinc-60);
   --row-selected: var(--teal-50);
   --st-done: var(--green-700);
@@ -161,7 +161,7 @@
     --accent-weak: var(--teal-900);
     --accent-line: var(--teal-800);
     --on-accent: var(--ink-50);
-    --hover: var(--ink-250);
+    --hover: color-mix(in oklab, var(--text) 9%, var(--surface));
     --row-hover: var(--ink-175);
     --row-selected: var(--teal-900);
     --st-done: var(--green-300);
@@ -213,7 +213,7 @@
   --accent-weak: var(--teal-900);
   --accent-line: var(--teal-800);
   --on-accent: var(--ink-50);
-  --hover: var(--ink-250);
+  --hover: color-mix(in oklab, var(--text) 9%, var(--surface));
   --row-hover: var(--ink-175);
   --row-selected: var(--teal-900);
   --st-done: var(--green-300);

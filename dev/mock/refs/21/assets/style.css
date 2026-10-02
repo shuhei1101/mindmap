@@ -46,8 +46,9 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 .panel-body { overflow-y: auto; padding: 22px 24px 56px; }
 .icon-btn { display: inline-grid; place-items: center; width: var(--control-h); height: var(--control-h); border: 1px solid transparent; background: none; border-radius: var(--radius); color: var(--text-2); }
 .icon-btn:hover { background: var(--hover); color: var(--text); }
-/* 広い画面だけ、詳細パネルの分だけ本文を寄せる（それ以外は重ねて出す） */
-@media (min-width: 1680px) { body.panel-open .content { margin-right: var(--panel-w); } }
+/* 幅 1100px 以上（マップは 901px 以上）は、詳細パネルの分だけ本文を寄せる（それより狭いと重ねる） */
+@media (min-width: 1100px) { body.panel-open .content { max-width: none; margin-right: var(--panel-w); } }
+@media (min-width: 901px) { body.panel-open .content.map-view { max-width: none; margin-right: var(--panel-w); } }
 
 /* ===== 部品 ===== */
 .btn { display: inline-flex; align-items: center; gap: 6px; height: var(--control-h); padding: 0 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
@@ -419,9 +420,9 @@ table.grid tbody tr.selected td { background: var(--row-selected); box-shadow: i
 .map-frame .zoom { position: absolute; left: auto; right: 14px; bottom: 14px; }
 .fg-wrap { height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 150px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; cursor: grab; }
 
-/* 資料の詳細パネルは本文を読むため広くする。並べるのは 1680px 以上だけ */
+/* 資料の詳細パネルは本文を読むため広くする */
 .panel.wide { width: min(760px, 100%); }
-@media (min-width: 1680px) { body.panel-open:has(.panel.wide) .content { max-width: none; margin-right: min(760px, 100%); } }
+@media (min-width: 1100px) { body.panel-open:has(.panel.wide) .content { max-width: none; margin-right: min(760px, 100%); } }
 .mermaid { margin: 8px 0; text-align: center; }
 
 /* ===== 資料のカード ===== */
@@ -553,18 +554,13 @@ dialog.full .panel-body { flex: 1; max-width: 920px; width: 100%; margin: 0 auto
 /* 全画面の中の図の拡大 */
 dialog.full .full-viewer { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 
-/* ===== つながりの種類（線）の表示 / 非表示 ===== */
-.link-types { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
-/* 線の種類の切り替え: 表示中は実線の枠 */
-.link-types button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--text-2); border-radius: var(--radius); background: var(--surface); font-size: var(--fs-small); font-weight: 600; }
-/* 非表示の線の種類: 破線の枠と打ち消し線 */
-.link-types button[aria-pressed="false"] { border: 1px dashed var(--border); color: var(--text-3); font-weight: 400; text-decoration: line-through; }
-/* 線の種類の見本 */
-.link-types i { width: 16px; height: 0; border-top: 2px solid var(--text-2); }
-.link-types i.dep { border-top-style: solid; }
-.link-types i.rel { border-top-style: dotted; }
-.link-types i.src { border-top-style: dashed; }
-.link-types i.for { border-top-width: 3px; border-top-color: var(--accent); }
+/* ===== つながりの線の種類: 項目の種類の右端のドロップダウン ===== */
+/* 項目の種類と線の種類のドロップダウンを 1 行に並べる */
+.map-tools .spacer { flex: 1; }
+/* 線の種類の見本（実線・点線・破線・一点鎖線） */
+.pop svg.ls { width: 28px; height: 6px; flex: none; color: var(--text-2); }
+/* 線の種類の説明 */
+.pop .ls-sub { display: block; color: var(--text-3); font-size: var(--fs-xs); }
 
 /* パンくずの帯: 本文と同じ幅に置く */
 .crumbs-bar { max-width: var(--content-max); margin: 0 auto; padding: 16px var(--page-pad) 0; }
@@ -580,5 +576,15 @@ dialog.full .panel-head { flex: none; }
 body:has(> .mockbar) { --mock-h: 32px; }
 /* モック専用の操作列を上端に留める */
 .mockbar { position: sticky; top: 0; z-index: 31; height: var(--mock-h); padding-top: 0; padding-bottom: 0; }
-/* 1680px 以上で詳細パネルを並べるときは、パンくずも本文と同じだけ寄せる */
-@media (min-width: 1680px) { body.panel-open .crumbs-bar { margin-right: var(--panel-w); } }
+/* 詳細パネルを並べるときは、パンくずも本文と同じだけ寄せる */
+@media (min-width: 1100px) { body.panel-open .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
+@media (min-width: 901px) { body.panel-open:has(.content.map-view) .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
+@media (min-width: 1100px) { body.panel-open:has(.panel.wide) .crumbs-bar { margin-right: min(760px, 100%); } }
+
+/* ===== カテゴリー別の進み具合のセル: ホバー・フォーカスで面を変える（濃さはトークンの --hover） ===== */
+.cat-table a.cell, .cat-table a.cat-link { display: inline-flex; padding: 4px 6px; margin: -4px -6px; border-radius: var(--radius); color: inherit; text-decoration: none; }
+.cat-table a.cell:hover, .cat-table a.cell:focus-visible, .cat-table a.cat-link:hover, .cat-table a.cat-link:focus-visible { background: var(--hover); }
+
+/* 表の該当なし: 行のセルの中で、表の枠の幅だけを左に留める（ピン留めや横に送っても見える） */
+table.grid td.no-match-cell { padding: 0; }
+table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--wrap-w, 100%); }
