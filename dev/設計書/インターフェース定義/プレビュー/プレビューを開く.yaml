@@ -8,7 +8,7 @@ flows:
     summary: ハッシュが指す画面・表示形式・項目を開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは jsDelivr から読む）
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
       - name: make_workspace
         description: 検討事項 D-1・D-3（D-3 は要見直しで、本文に見出しと mermaid の図を持つ）を書き出した `preview.html`
     flow: |-
@@ -16,7 +16,7 @@ flows:
       sequenceDiagram
         actor ユーザー
         participant IF as preview.html
-        participant CDN as jsDelivr
+        participant CDN as 描画のライブラリの配信元
 
         ユーザー->>IF: #tab=decisions&view=table&id=D-3 で開く
         IF-->>CDN: 描画のライブラリを読む
@@ -33,7 +33,7 @@ flows:
     summary: ハッシュが無いと概要を開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは jsDelivr から読む）
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
       - name: make_workspace
         description: 検討事項 D-1 を書き出した `preview.html`
     flow: |-
@@ -54,7 +54,7 @@ flows:
     summary: ハッシュの f.{列} で絞った表を条件のチップ付きで開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは jsDelivr から読む）
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
       - name: make_workspace
         description: 要見直しの D-3・保留の D-4・未決定の D-1 を書き出した `preview.html`
         notes: ハッシュは `tab=decisions&view=table&f.status=要見直し|保留`
@@ -76,7 +76,7 @@ flows:
     summary: 記録に無い ID を指すハッシュでは画面だけを開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは jsDelivr から読む）
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
       - name: make_workspace
         description: 検討事項 D-1 だけを書き出した `preview.html`
         notes: ハッシュは `tab=decisions&id=D-99`
@@ -95,10 +95,10 @@ flows:
       - URL のハッシュに `id` が無い
     test: test_normal_when_item_not_found
   - name: 異常系（描画のライブラリが読めない）
-    summary: jsDelivr に届かないと、使う箇所に読めなかったライブラリの名前を出す
+    summary: 描画のライブラリの配信元に届かないと、使う箇所に読めなかったライブラリの名前を出す
     setup:
       - name: Mock
-        description: ブラウザから `cdn.jsdelivr.net` への要求を全て失敗させる
+        description: ブラウザから描画のライブラリの配信元への要求を全て失敗させる
       - name: make_workspace
         description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を書き出した `preview.html`
         notes: ハッシュは `tab=decisions&id=D-3`
@@ -107,7 +107,7 @@ flows:
       sequenceDiagram
         actor ユーザー
         participant IF as preview.html
-        participant CDN as jsDelivr
+        participant CDN as 描画のライブラリの配信元
 
         ユーザー->>IF: #tab=decisions&id=D-3 で開く
         IF-->>CDN: 描画のライブラリを読む（届かない）
@@ -196,15 +196,15 @@ constraints:
   - item: 記録
     constraint: '`mindmap-data` を `JSON.parse` して読むだけで、書き換えない'
   - item: 描画のライブラリ
-    constraint: marked・DOMPurify・elkjs・mermaid を jsDelivr から、版を固定し `integrity` と `crossorigin="anonymous"` を付けた script 要素で読む。読めなかったときは代わりの読み込みをせず、そのライブラリを使う箇所に名前を出す。本文は原文を出し、表・ボード・カード・つながりはそのまま使える
+    constraint: 描画のライブラリ（`refs` の外部ライブラリの設計書）を配信元から、版を固定し `integrity` と `crossorigin="anonymous"` を付けた script 要素で読む。読めなかったときは代わりの読み込みをせず、そのライブラリを使う箇所に名前を出す。本文は原文を出し、表・ボード・カード・つながりはそのまま使える
   - item: 本文の無害化
-    constraint: '本文の Markdown は marked で描いた後、DOMPurify を通してから差し込む。mermaid は `securityLevel: strict` で描く'
+    constraint: '本文の Markdown は HTML に描いた後、無害化してから差し込む。図はスクリプトを動かさない安全の設定で描く'
   - item: 文字
-    constraint: Inter・Noto Sans JP・JetBrains Mono を Google Fonts から読む。読めないときは端末の文字で描く
+    constraint: 画面の文字（デザイン方針の書体）を文字の配信元から読む。読めないときは端末の文字で描く
   - item: 端末の保存領域
     constraint: ライト / ダークと、表ごとの表示する列・ピン留めを `localStorage` の 1 つのキーに持つ。表の絞り込みの条件は保存しない。保存できない環境では開いている間だけ保つ
   - item: 通信
-    constraint: jsDelivr と Google Fonts だけ。記録を外へ送らない
+    constraint: 描画のライブラリと文字の配信元だけ。記録を外へ送らない
 refs:
   - dev/設計書/インターフェース定義/スクリプト/プレビューの書き出し#
   - dev/設計書/外部ライブラリ/marked#

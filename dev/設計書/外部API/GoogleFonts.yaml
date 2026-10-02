@@ -18,7 +18,9 @@ lead: Web フォントの CSS とフォントのファイルを配る Google の
 used_in:
   - skills/mindmap/preview/template.html
 verification:
-  state: 未確認
+  state: 済
+  date: '2026-10-02'
+  detail: file:// で開いた HTML から `GET /css2`（Inter 400・500・600・700、JetBrains Mono 400・600、Noto Sans JP 400・500・700、`display=swap`）を link 要素で読み、Chromium で `document.fonts.check` が 3 つの書体とも真を返し、`document.fonts` に 3 つが `loaded` で並ぶことを確かめた
 base_urls:
   - env: 全て
     url: https://fonts.googleapis.com
