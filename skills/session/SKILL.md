@@ -33,7 +33,7 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 ## コマンド
 
 どれも `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` の後ろに続けて呼ぶ。
-中身の JSON は `--json '{JSON}'` の引数で渡す。値の中に `'` が要るときは `'\''` と書く。`'` は書き換わって引数が壊れることがあるので、JSON には `'` を入れない言い方にする。
+中身の JSON は `--json '{JSON}'` の引数で渡す。値の中に `'` が要るときは `'\''` と書く。
 
 | コマンド | 呼び方 | 使う引数 |
 | --- | --- | --- |
