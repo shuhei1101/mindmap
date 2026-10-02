@@ -939,7 +939,7 @@
       blocks.forEach((c, i) => {
         const fig = document.createElement("figure");
         fig.className = "diagram";
-        fig.innerHTML = `<div class="dg-tools"><button class="icon-btn" data-act="dgzoom" aria-label="図を拡大して見る" title="拡大して見る">${icon("expand")}</button><button class="btn ghost" data-act="dgraw" aria-pressed="false">原文</button><button class="icon-btn" data-act="dgcopy" aria-label="原文をコピー" title="原文をコピー">${icon("copy")}</button></div><div class="mermaid"></div><pre class="dg-raw" hidden></pre>`;
+        fig.innerHTML = `<div class="dg-tools"><button class="icon-btn" data-act="dgzoom" aria-label="図を拡大して見る" title="拡大して見る">${icon("expand")}</button><button class="btn ghost" data-act="dgraw" aria-pressed="false">Raw</button><button class="icon-btn" data-act="dgcopy" aria-label="原文をコピー" title="原文をコピー">${icon("copy")}</button></div><div class="mermaid"></div><pre class="dg-raw" hidden></pre>`;
         fig.querySelector(".mermaid").textContent = c.textContent;
         fig.querySelector(".dg-raw").textContent = c.textContent;
         c.closest("pre").replaceWith(fig);

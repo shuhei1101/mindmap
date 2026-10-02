@@ -580,3 +580,5 @@ dialog.full .panel-head { flex: none; }
 body:has(> .mockbar) { --mock-h: 32px; }
 /* モック専用の操作列を上端に留める */
 .mockbar { position: sticky; top: 0; z-index: 31; height: var(--mock-h); padding-top: 0; padding-bottom: 0; }
+/* 1680px 以上で詳細パネルを並べるときは、パンくずも本文と同じだけ寄せる */
+@media (min-width: 1680px) { body.panel-open .crumbs-bar { margin-right: var(--panel-w); } }
