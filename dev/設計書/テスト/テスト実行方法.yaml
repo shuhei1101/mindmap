@@ -1,0 +1,60 @@
+title: "テスト実行方法"
+layers:
+  - name: 単体テスト（バック）
+    run_all: |-
+      ```bash
+      pytest tests/unit
+      ```
+    description: pytest で、スクリプトの関数を `tests/unit/scripts/` から直接呼んで確かめる。`conftest.py` が `skills/mindmap/scripts` を `sys.path` に足すので、各モジュールを `import store` のように同じ名前で読む。ファイルの読み書きは `tmp_path` の一時フォルダで行い、利用者の環境は触らない。
+    prerequisites:
+      - Python 3.12 以上と pytest
+      - PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている
+      - 実行はリポジトリの直下で行う
+    run_one:
+      label: ファイル
+      command: |-
+        ```bash
+        pytest {テストファイルパス}
+        ```
+  - name: 単体テスト（フロント）
+    run_all: 未確定
+  - name: 結合テスト（バック）
+    run_all: |-
+      ```bash
+      pytest tests/integration
+      ```
+    description: pytest で、インターフェース定義の流れを確かめる。プラグインは実際の Claude Code の CLI（`claude plugin ...`）を呼び、スクリプトは実際の `mindmap.py` を子プロセスで起動して、引数・標準入力・標準出力の JSON・標準エラー・終了コードとワークスペースのファイルを確かめる。Mock は使わない。
+    prerequisites:
+      - Python 3.12 以上と pytest
+      - 'プラグインのテスト（`tests/integration/plugin/`）: Claude Code 2.1.287 以上（`claude` が PATH にある）。スクリプトのテスト（`tests/integration/scripts/`）は `claude` を使わない'
+      - 'スクリプトのテスト: PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている。仮想環境はテストごとの一時フォルダに `--without-pip` で作り、ライブラリはテストを動かす Python のものを見せる（通信しない）'
+      - 'スクリプトのテストで、条件が揃わなければ skip する流れ: 手元に Python 3.8〜3.11 が無い（`check-env` の古い Python の 2 流れ）/ PyPI へ通信できない（`check-env` が返すそろえるコマンドを流す部分）/ root か Windows で書き込みの権限を外せない（各コマンドの書き込めない流れ）'
+      - 実行はリポジトリの直下で行う。設定のフォルダは conftest が `CLAUDE_CONFIG_DIR` にテストごとの空の一時フォルダを渡して差し替えるため、利用者の環境を汚さない
+      - '`pytest tests/unit tests/integration` を 1 回で流せる。`tests/integration/scripts/` は単体テストと同じ名前のファイル（`test_check_env.py`）を持つため、`__init__.py` を置いて名前が衝突しないようにしている'
+    run_one:
+      label: ファイル
+      command: |-
+        ```bash
+        pytest {テストファイルパス}
+        ```
+  - name: 結合テスト（フロント）
+    run_all: 未確定
+  - name: E2E テスト
+    run_all: |-
+      ```bash
+      pytest tests/e2e
+      ```
+    description: pytest で、シナリオ設計書の利用者の操作を通しで確かめる。プラグインは実際の Claude Code の CLI（`claude plugin ...`）を使い、スクリプトはスキルがコマンドを連ねて呼ぶ流れを実際の `mindmap.py` を子プロセスで起動して確かめる。Mock は使わない。
+    prerequisites:
+      - Python 3.12 以上と pytest
+      - 'プラグインのシナリオ: Claude Code 2.1.287 以上（`claude` が PATH にある）。スクリプトのシナリオは `claude` を使わない'
+      - 'スクリプトのシナリオ: PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている。仮想環境はテストごとの一時フォルダに `--without-pip` で作り、ライブラリはテストを動かす Python のものを見せる（通信しない）'
+      - 実行はリポジトリの直下で行う。マーケットプレイスにはこの作業ツリーの直下を渡す。設定のフォルダは conftest が `CLAUDE_CONFIG_DIR` にテストごとの空の一時フォルダを渡して差し替えるため、利用者の環境を汚さない
+    run_one:
+      label: シナリオ
+      command: |-
+        ```bash
+        pytest {シナリオのテストファイルパス}
+        ```
+  - name: 外部疎通テスト
+    run_all: 未確定

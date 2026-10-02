@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "調査",
+  "description": "`research.yaml` の形。調べた結果。",
+  "type": "object",
+  "required": [
+    "items"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "description": "項目の並び（1 要素 = 1 項目）",
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "created",
+        "updated",
+        "question"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/item/properties/id",
+          "pattern": "^R-[0-9]+$"
+        },
+        "title": {
+          "$ref": "common.schema.json#/$defs/item/properties/title"
+        },
+        "target": {
+          "$ref": "common.schema.json#/$defs/item/properties/target"
+        },
+        "category": {
+          "$ref": "common.schema.json#/$defs/item/properties/category"
+        },
+        "phase": {
+          "$ref": "common.schema.json#/$defs/item/properties/phase"
+        },
+        "tags": {
+          "$ref": "common.schema.json#/$defs/item/properties/tags"
+        },
+        "attrs": {
+          "$ref": "common.schema.json#/$defs/item/properties/attrs"
+        },
+        "related": {
+          "$ref": "common.schema.json#/$defs/item/properties/related"
+        },
+        "links": {
+          "$ref": "common.schema.json#/$defs/item/properties/links"
+        },
+        "created": {
+          "$ref": "common.schema.json#/$defs/item/properties/created"
+        },
+        "updated": {
+          "$ref": "common.schema.json#/$defs/item/properties/updated"
+        },
+        "question": {
+          "type": "string",
+          "description": "何を調べたか"
+        },
+        "conclusion": {
+          "type": "string",
+          "description": "調べた結論"
+        },
+        "confidence": {
+          "type": "string",
+          "enum": [
+            "高",
+            "中",
+            "低"
+          ],
+          "description": "結論の確からしさ"
+        },
+        "angles": {
+          "type": "array",
+          "description": "調べた観点",
+          "items": {
+            "type": "string"
+          }
+        },
+        "body": {
+          "type": "string",
+          "description": "`docs/` の本文の Markdown のファイル名（`{ID}.md`）",
+          "pattern": "^[^/\\\\]+\\.md$"
+        }
+      }
+    }
+  }
+}

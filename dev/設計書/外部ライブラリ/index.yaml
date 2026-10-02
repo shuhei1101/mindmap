@@ -1,0 +1,8 @@
+summary: 採用済みの外部ライブラリ / 外部ツールのリファレンス
+items:
+  - page: claude-code.yaml
+    summary: プラグインを読み込み、スキルを動かす CLI
+  - page: PyYAML.yaml
+    summary: ワークスペースの YAML を読み書きする
+  - page: jsonschema.yaml
+    summary: ワークスペースの YAML を JSON Schema で検証する

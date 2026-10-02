@@ -1,0 +1,51 @@
+title: "claude-code"
+kind: "CLI"
+version:
+  current: 2.1.287
+  latest: 2.1.287
+  checked_on: '2026-10-02'
+  source: npm の @anthropic-ai/claude-code
+catalogs:
+  - name: コマンド
+    version: 2.1.287
+    entries:
+      - name: claude plugin marketplace add
+        kind: コマンド
+        purpose: このリポジトリをマーケットプレイスとして登録する
+      - name: claude plugin marketplace list
+        kind: コマンド
+        purpose: 登録済みのマーケットプレイスを確かめる
+      - name: claude plugin install
+        kind: コマンド
+        purpose: プラグイン mindmap をインストールする
+      - name: claude plugin list
+        kind: コマンド
+        purpose: インストール済みのプラグインと有効かを確かめる
+      - name: claude plugin details
+        kind: コマンド
+        purpose: プラグインが持つ部品（hooks の有無）を確かめる
+      - name: claude plugin validate
+        kind: コマンド
+        purpose: マーケットプレイスとプラグインのマニフェストを検証する
+  - name: ファイル
+    version: 2.1.287
+    entries:
+      - name: .claude-plugin/marketplace.json
+        kind: ファイル
+        purpose: マーケットプレイスの名前・持ち主・載せるプラグインを Claude Code に伝える
+      - name: .claude-plugin/plugin.json
+        kind: ファイル
+        purpose: プラグインの名前・版・説明を Claude Code に伝える
+      - name: skills/{スキル名}/
+        kind: フォルダ
+        purpose: プラグインが同梱するスキルを置く
+lead: Anthropic のコーディングエージェントの CLI。プラグインとマーケットプレイスの仕組みを持ち、プラグインが同梱するスキルを読み込む。
+purl: pkg:npm/%40anthropic-ai/claude-code
+supplier: Anthropic
+dependency_scope: 必須
+adoption: 採用
+upstream: anthropics/claude-code
+verification:
+  state: 未確認
+license: 独自の利用規約（npm のライセンス欄は `SEE LICENSE IN README.md`）。このプラグインは同梱せず、利用者が入れたものを使う
+docs_url: https://code.claude.com/docs/en/plugins/marketplace-reference

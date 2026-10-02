@@ -1,0 +1,18 @@
+summary: 単一ユースケースのシナリオ
+items:
+  - page: プラグインのインストール.yaml
+    summary: マーケットプレイスを登録してプラグイン mindmap をインストールする
+  - page: ワークスペースの作成.yaml
+    summary: 依存を確かめ、新しいワークスペースを作る
+  - page: 記録の追加と更新.yaml
+    summary: 検討事項・タスクなどの項目を足す・直す
+  - page: 採用する案の切り替え.yaml
+    summary: 検討事項の採用する案を切り替え、影響を受ける項目を洗い出す
+  - page: 状況の確認.yaml
+    summary: 再開時の状況と、次に検討する項目の候補を読む
+  - page: 記録の検索.yaml
+    summary: 項目を探し、1 件の中身と参照元・使っている属性名を読む
+  - page: ワークスペースの点検.yaml
+    summary: 参照切れと、YAML と本文の Markdown のずれを洗い出す
+  - page: プレビューの書き出し.yaml
+    summary: ワークスペースの記録をプレビューの HTML に書き出す

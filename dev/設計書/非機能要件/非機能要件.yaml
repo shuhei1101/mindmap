@@ -1,0 +1,58 @@
+title: "非機能要件"
+requirements:
+  - name: Claude Code の版
+    english_name: claude_code_version
+    category: 動作環境
+    external_constraint: スキルを持つプラグインは 2.0.20 から読み込める。シェルの `claude plugin` のサブコマンドが入った版は CHANGELOG から引けない
+    source_kind: 実行基盤の制限
+    value: 2.1.287 以上
+    rationale: 動かして確かめた版。設計どおりのマニフェストで `claude plugin validate`・`marketplace add`・`install`・`list`・`uninstall`・`marketplace remove` が通ることを確かめた（https://github.com/shuhei1101/mindmap/pull/9#discussion_r4160895275）。これより古い版は確かめていない
+    source: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md#2020
+  - name: OS
+    english_name: os
+    category: 動作環境
+    external_constraint: Claude Code が動く OS（macOS・Linux・Windows）
+    source_kind: 実行基盤の制限
+    value: Linux・macOS・Windows（WSL を含む）
+    rationale: スクリプトは標準ライブラリのファイル操作と PyYAML・jsonschema だけを使い、OS ごとの分岐を持たない。テストは Linux（WSL2 の Ubuntu 24.04）で流し、macOS・Windows は確かめていない
+    source: https://github.com/shuhei1101/mindmap/pull/12
+    measurement: '実機での確認: macOS・Windows の端末で `check-env`・`init`・`add`・`build` を流す'
+    overflow: Windows で、ほかのプロセスが開いている YAML を `os.replace` で置き換えようとすると失敗する。そのとき書き込みのコマンドはエラーで終わり、元のファイルは変わらない
+  - name: Python の版
+    english_name: python_version
+    category: 動作環境
+    external_constraint: PyYAML 5.1 以上・jsonschema 4.18.0 以上が動く版
+    source_kind: 外部ライブラリの制限
+    value: 3.12 以上
+    rationale: コーディング規約が 3.12 の書き方（PEP 695）を前提にし、既存のテスト（`tests/conftest.py`）も 3.12 の構文を使う。ライブラリが求める版より新しい側で揃える
+    source: dev/設計書/外部ライブラリ/jsonschema#
+    overflow: '仮想環境の Python が古ければ、`check-env` が `python_ok: false` と作り直すコマンドを終了コード 1 で返す。仮想環境を作るシステムの `python3` も古ければ、`base_python_ok: false` で `install` を `null` にし、利用者が 3.12 以上を入れる。ほかのコマンドは起動しない前提（スキルがセットアップで止める）'
+  - name: ブラウザ
+    english_name: browser
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: プレビューの画面の設計（#5）で、使う描画のライブラリが対応するブラウザと合わせて決める
+  - name: 画面サイズ
+    english_name: screen_size
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: プレビューの画面の設計（#5）で決める
+  - name: 入力方式
+    english_name: input_method
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 未確定
+    value: 未確定
+    rationale: プレビューの画面の設計（#5）で決める
+  - name: 通信
+    english_name: network
+    category: 動作環境
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    value: スクリプトは通信しない。プレビューは開いたブラウザが CDN へ HTTPS で届くこと
+    rationale: 'スクリプトの仕事はワークスペースのファイルの読み書きだけ。プレビューの描画のライブラリは CDN から読むと決めている（アーキテクチャ図の制約）。CDN に届かないときの画面の扱いは #5 が持つ'
+lead: mindmap が外部の制約から逆算して決める値。

@@ -1,0 +1,40 @@
+title: "jsonschema"
+kind: "ライブラリ"
+version:
+  current: 4.18.0 以上（確かめたのは 4.26.0）
+  latest: 4.26.0
+  checked_on: '2026-10-02'
+  pinning: 下限だけを決める。`registry=` と referencing が 4.18.0 からのため（それより前は非推奨の `RefResolver`）。`check-env` が下限を確かめる
+catalogs:
+  - name: API
+    version: 4.26.0
+    entries:
+      - name: jsonschema.Draft202012Validator
+        kind: クラス
+        purpose: ワークスペースの YAML を読んだデータをスキーマで検証する（`iter_errors` で全てのエラーを引く）
+      - name: jsonschema.ValidationError.absolute_path
+        kind: 属性
+        purpose: 合わない箇所の項目の位置とキーを取り出す
+      - name: referencing.Registry
+        kind: クラス
+        purpose: 共通のスキーマを登録し、別のファイルを指す `$ref` を解決する
+      - name: referencing.jsonschema.DRAFT202012.create_resource
+        kind: 関数
+        purpose: '`$schema` を持たない共通のスキーマを Draft 2020-12 として登録する'
+lead: JSON Schema でデータを検証する Python のライブラリ。別のファイルを指す `$ref` の解決は依存先の referencing が担う。
+purl: pkg:pypi/jsonschema
+dependency_scope: 必須
+adoption: 採用
+upstream: python-jsonschema/jsonschema
+verification:
+  state: 済
+  date: '2026-10-02'
+  detail: PoC（https://github.com/shuhei1101/mindmap/pull/12）で jsonschema 4.26.0・referencing 0.37.0 を動かした。共通のスキーマを `DRAFT202012.create_resource` で `Registry` に登録して `registry=` に渡すと、別のファイルを指す `$ref` が解決され、反する値でエラーの `absolute_path` が `['items', 0, 'status']` になった
+license: MIT（商用利用可。referencing も MIT）
+docs_url: https://python-jsonschema.readthedocs.io/
+install: |-
+  ```bash
+  ~/.mindmap/venv/bin/python -m pip install 'jsonschema>=4.18.0'
+  ```
+
+  スキル専用の仮想環境へ入れる。コマンドは `check-env` の `install` が返す

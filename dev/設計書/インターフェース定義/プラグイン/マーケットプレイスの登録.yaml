@@ -1,0 +1,83 @@
+title: "マーケットプレイスの登録"
+entry:
+  kind: operation
+  value: '`.claude-plugin/marketplace.json`（Claude Code の `claude plugin marketplace add` が読むファイル）'
+flows:
+  - name: 正常系
+    summary: マニフェストが検証を通り、マーケットプレイス mindmap として登録される
+    setup:
+      - name: Mock
+        description: なし（実際の Claude Code の CLI で実行する）
+      - name: 設定のフォルダ
+        description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにする
+        notes: 環境変数 `CLAUDE_CONFIG_DIR`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant C as Claude Code
+        participant IF as .claude-plugin/marketplace.json
+
+        C-->>IF: マニフェストを読む
+        C->>C: マニフェストを検証する
+        C->>C: マーケットプレイス mindmap を登録する
+      ```
+    expected:
+      - '`claude plugin validate` をリポジトリの直下で流すと、終了コード 0 で誤りが無く、警告は `plugin.json` の `version` の 1 件だけである'
+      - '`claude plugin marketplace add` にリポジトリの直下を渡すと、登録済みのマーケットプレイスの一覧に `mindmap` が出る'
+      - マーケットプレイス mindmap から入れられるプラグインが `mindmap` の 1 件だけである
+    test: test_normal
+lead: Claude Code がこのリポジトリをマーケットプレイスとして登録するときに読む、マーケットプレイスのマニフェストの形。
+callers:
+  - dev/設計書/外部ライブラリ/claude-code#
+request:
+  - name: name
+    type: '"mindmap"'
+    required: true
+    description: マーケットプレイス名。利用者が `mindmap@mindmap` の `@` の後ろで打つ
+    constraints: 公式の予約名に当たらないこと
+  - name: owner.name
+    type: '"shuhei1101"'
+    required: true
+    description: マーケットプレイスの持ち主
+  - name: plugins[].name
+    type: '"mindmap"'
+    required: true
+    description: 載せるプラグインの名前。`plugin.json` の `name` と同じ値
+    constraints: 要素は 1 件だけ
+  - name: plugins[].source
+    type: '"./"'
+    required: true
+    description: プラグインの置き場所。リポジトリの直下を相対パスで指す
+  - name: plugins[].description
+    type: string
+    required: true
+    description: プラグインの説明。インストールの画面に出る
+    example: 話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル
+    notes: リポジトリの説明と同じ文言
+  - name: description
+    type: string
+    required: true
+    description: マーケットプレイスの説明
+    notes: リポジトリの説明と同じ文言
+request_example: |-
+  ```json
+  {
+    "name": "mindmap",
+    "owner": { "name": "shuhei1101" },
+    "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
+    "plugins": [
+      {
+        "name": "mindmap",
+        "source": "./",
+        "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル"
+      }
+    ]
+  }
+  ```
+constraints:
+  - item: 載せるプラグインの数
+    constraint: 1 件（mindmap だけ）
+  - item: Claude Code の版
+    constraint: 2.1.287 以上
+    notes: 非機能要件の「Claude Code の版」
+test_file: tests/integration/plugin/test_marketplace_registration.py

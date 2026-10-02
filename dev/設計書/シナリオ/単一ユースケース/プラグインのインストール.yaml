@@ -1,0 +1,43 @@
+title: "プラグインのインストール"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際の Claude Code の CLI で実行する）
+      - name: 設定のフォルダ
+        description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにし、利用者の環境を汚さない
+        notes: 環境変数 `CLAUDE_CONFIG_DIR` で差し替える
+      - name: マーケットプレイスの場所
+        description: このリポジトリの作業ツリーの直下。GitHub から登録するときも取り込む中身は同じ
+        notes: ローカルのパスを渡す
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code
+        participant PLG as プラグイン
+
+        U->>CC: マーケットプレイスを登録する
+        CC->>PLG: .claude-plugin/marketplace.json を読む
+        CC-->>U: マーケットプレイス mindmap を登録した
+        U->>CC: プラグイン mindmap@mindmap をインストールする
+        CC->>PLG: .claude-plugin/plugin.json と skills/ を取り込む
+        CC-->>U: プラグイン mindmap をインストールした
+        U->>CC: インストール済みのプラグインの一覧を見る
+        CC-->>U: mindmap@mindmap（有効）
+      ```
+    expected:
+      - 登録済みのマーケットプレイスの一覧に `mindmap` がある
+      - インストール済みのプラグインの一覧に `mindmap@mindmap` が有効である
+      - インストールしたプラグインのフォルダに `skills/mindmap/schemas/` と `skills/mindmap/scripts/` がある
+      - インストールしたプラグインが hooks を持たない
+    test: test_normal
+lead: 利用者がこのリポジトリを Claude Code のマーケットプレイスとして登録し、プラグイン mindmap をインストールする単一ユースケース。
+issue: 2
+primary_actor: Claude Code の利用者
+trigger: 利用者がマーケットプレイスを登録するコマンドを打つ
+preconditions:
+  - Claude Code が入っている
+  - プラグイン mindmap をまだインストールしていない
+success_guarantee: プラグイン mindmap が有効な状態で入り、スキルのフォルダ `skills/mindmap/` を持つ。
+test_file: tests/e2e/単一ユースケース/test_plugin_install.py

@@ -1,0 +1,128 @@
+title: "ワークスペースの点検"
+entry:
+  kind: operation
+  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py check`（コマンドの引数・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+flows:
+  - name: 正常系（問題が無い）
+    summary: 整ったワークスペースで問題 0 件を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: D-1（本文 `docs/D-1.md` あり）と、D-1 に依存する D-2 を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check
+        participant WS as ワークスペース
+
+        クライアント->>IF: check --workspace
+        IF-->>WS: 全ての YAML と docs/ を読む
+        IF-->>クライアント: JSON（ok: true）
+      ```
+    expected:
+      - 終了コードが 0
+      - '`ok` が真で `problems` が空'
+    test: test_normal_when_clean
+  - name: 正常系（問題がある）
+    summary: スキーマ違反・参照切れ・本文のずれを全て返し、終了コード 1 で終える
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 次の問題を手で仕込んだワークスペース
+        notes: 'D-1: `depends_on: [D-9]`（D-9 は無い）／D-2: `status: 完了`／R-1: `body: R-1.md` だが `docs/R-1.md` が無い／`docs/X-1.md` をどの項目も指さない'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check
+        participant WS as ワークスペース
+
+        クライアント->>IF: check --workspace
+        IF-->>WS: 全ての YAML と docs/ を読む
+        IF-->>クライアント: JSON（ok: false・problems）、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '`ok` が偽'
+      - '`problems` に `broken_ref`（D-1・`depends_on`・`D-9`）がある'
+      - '`problems` に `schema`（`decisions.yaml`・`items[1].status`）がある'
+      - '`problems` に `missing_body`（R-1）と `orphan_body`（`docs/X-1.md`）がある'
+      - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
+    test: test_normal_when_problems_found
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check
+        participant WS as フォルダ
+
+        クライアント->>IF: check --workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーにフォルダのパスがあり、標準出力が空
+    test: test_error_when_workspace_not_found
+lead: ワークスペースのスキーマに合わない箇所・参照切れ・YAML と `docs/` の Markdown のずれを全て洗い出す。
+idempotent: true
+side_effects: なし（読むだけ。見つけた問題は直さない）
+request:
+  - name: --workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+response:
+  - name: ok
+    type: bool
+    description: 問題が 1 つも無いか
+  - name: problems[].kind
+    type: '"schema" | "duplicate_id" | "broken_ref" | "missing_body" | "orphan_body"'
+    description: 問題の種類（スキーマに合わない・ID の重複・参照切れ・指す本文が無い・どの項目からも指されない本文）
+  - name: problems[].file
+    type: str
+    description: 問題のあるファイル（ワークスペースからの相対パス）
+  - name: problems[].id
+    type: str | None
+    description: 問題のある項目の ID（`orphan_body` と項目を特定できない `schema` は `null`）
+  - name: problems[].key
+    type: str | None
+    description: 問題のあるキーのパス（`items[0].status`・`depends_on` など）
+  - name: problems[].detail
+    type: str
+    description: 中身（参照先の ID・スキーマの理由など）
+response_notes: |-
+  > [!NOTE]
+  > 問題があるときも点検そのものは正常に終えているので、標準出力に同じ形の JSON を出し、終了コードだけを 1 にする。
+exceptions:
+  - name: なし（正常終了）
+    condition: 点検できた
+    notes: 問題が無ければ終了コード 0、あれば 1
+  - name: WorkspaceNotFoundError
+    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: 終了コード 1。標準出力には何も出さない
+error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 出力の形
+    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
+  - item: 終了コード
+    constraint: 0 問題なし / 1 問題あり・実行時のエラー / 2 引数の誤り
+  - item: 参照切れを確かめるキー
+    constraint: '`depends_on`・`parent`・`for`・`related`・`sources` と設定の `goal.deliverables[].doc`。存在しない ID と、キーが決めた種類でない ID（`parent` が `D-` 以外など）を `broken_ref` にする'
+  - item: 本文のずれ
+    constraint: '`body` が指す `docs/` のファイルが無いものを `missing_body`、どの項目の `body` からも指されない `docs/*.md` を `orphan_body` にする'
+  - item: 問題の並び
+    constraint: ファイル名の順、同じファイルの中は項目の並びの順
+test_file: tests/integration/scripts/test_check.py

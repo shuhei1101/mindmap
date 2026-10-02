@@ -1,0 +1,93 @@
+title: "記録の追加と更新"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませた、項目を持たないワークスペース
+      - name: 検討事項の中身
+        description: タイトル・対象・カテゴリー・フェーズ・状態・問いの説明・影響度
+        notes: 状態 `未決定`、影響度 `大`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 検討事項を足す
+        SCR->>SCR: ID・作成日・更新日を付け、スキーマと突き合わせる
+        SCR->>WS: decisions.yaml に書く
+        SCR-->>CC: 振った ID
+        CC->>SCR: その ID の答えと状態を直す
+        SCR->>SCR: 更新日を変え、スキーマと突き合わせる
+        SCR->>WS: decisions.yaml に書く
+        SCR-->>CC: 直した ID
+      ```
+    expected:
+      - 追加が返した ID が `D-` で始まる
+      - '`decisions.yaml` にその ID の項目が 1 件あり、足したタイトル・対象・カテゴリー・フェーズ・問いの説明・影響度を持つ'
+      - 更新の後、その項目の答えと状態が直した値になっている
+      - その項目の作成日が追加のときの値のまま、更新日が記録されている
+      - ワークスペースの全ての YAML がスキーマに合う
+    test: test_normal
+  - name: 異常シナリオ（スキーマに合わない）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませ、検討事項を 1 件足したワークスペース
+      - name: 検討事項の中身
+        description: 状態に、決めた状態の名前に無い値を入れた検討事項
+        notes: 状態 `完了`（タスクの状態で、検討事項には無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 状態の値が誤った検討事項を足す
+        SCR->>SCR: スキーマと突き合わせて合わない
+        SCR-->>CC: 合わない箇所を示すエラー
+      ```
+    expected:
+      - 追加が 0 以外の終了コードで終わる
+      - 標準エラーに、合わないキー `status` と、その値 `完了` がある
+      - ワークスペースの全てのファイルの中身が、追加を呼ぶ前と同じである
+    test: test_error_when_schema_mismatch
+  - name: 異常シナリオ（存在しない ID を直す）
+    setup:
+      - name: Mock
+        description: なし（実際の Python でスクリプトを起動する）
+      - name: make_workspace
+        description: 作成を済ませ、検討事項を 1 件足したワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（スキル）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: 存在しない ID の答えを直す
+        SCR->>WS: ID を探して見つからない
+        SCR-->>CC: ID が無いエラー
+      ```
+    expected:
+      - 更新が 0 以外の終了コードで終わる
+      - 標準エラーに、渡した ID がある
+      - ワークスペースの全てのファイルの中身が、更新を呼ぶ前と同じである
+    test: test_error_when_id_not_found
+lead: スキルが、会話で出た検討事項・タスク・調査・資料・用語・メモ・会話ログをワークスペースに足し、後から直す単一ユースケース。
+issue: 3
+primary_actor: スキルの手順を実行する Claude Code
+stakeholders:
+  - name: 利用者
+    interest: 会話で決めたことが漏れなく残る。形の崩れた記録で、ワークスペースが読めなくならない
+trigger: スキルが取り込みのステップで、発言を記録する項目に振り分け終える
+preconditions:
+  - ワークスペースが作成済みである
+success_guarantee: 足した項目に種類の頭の文字の ID と作成日・更新日が付き、直した項目の更新日が変わり、ワークスペースの全ての YAML がスキーマに合う。
+minimal_guarantee: スキーマに合わない書き込み・存在しない ID への書き込みでは、どのファイルも書き換えない。
+test_file: tests/e2e/単一ユースケース/test_record_add_update.py

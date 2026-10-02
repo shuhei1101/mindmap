@@ -1,0 +1,1029 @@
+title: "スクリプト / 入口"
+lead: コマンドの引数を解釈して各機能へ振り分け、結果を JSON・エラーを標準エラーと終了コードにする。依存の確認だけは PyYAML・jsonschema を読まずに済ませる。
+directory: |-
+  ```
+  skills/mindmap/scripts/
+    mindmap.py    入口（引数の解釈・振り分け・出力。Python 3.8 で読める構文）
+    check_env.py  依存の確認（Python 3.8 で読める構文）
+    commands.py   コマンドごとの処理（標準入力の解釈 → 各機能 → 出力の辞書）
+  ```
+diagrams:
+  - name: 全体
+    diagram: |-
+      ```mermaid
+      classDiagram
+        direction LR
+        class 入口
+        class 依存の確認
+        class コマンドの処理
+        class 読み書きと検証
+        class 検索
+        class 依存と影響
+        class 点検
+        class ビルド
+        入口 --> 依存の確認 : check-env
+        入口 --> コマンドの処理 : それ以外（遅延 import）
+        コマンドの処理 --> 読み書きと検証
+        コマンドの処理 --> 検索
+        コマンドの処理 --> 依存と影響
+        コマンドの処理 --> 点検
+        コマンドの処理 --> ビルド
+        検索 --> 読み書きと検証
+        依存と影響 --> 読み書きと検証
+        点検 --> 読み書きと検証
+        ビルド --> 読み書きと検証
+      ```
+classes:
+  - name: PythonVersionError
+    title: Python が古い
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 仮想環境の Python の版が下限より古いか、版を引けない。依存の確認の結果を持ち、入口がそれを標準出力に出して終了コード 1 にする
+    kind: クラス
+    inherits: Exception
+    properties:
+      - name: report
+        type: dict
+        description: 依存の確認の結果
+  - name: DependencyMissingError
+    title: 依存が足りない
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: ライブラリが無いか下限より古い。依存の確認の結果を持つ
+    kind: クラス
+    inherits: Exception
+    properties:
+      - name: report
+        type: dict
+        description: 依存の確認の結果
+  - name: VenvNotFoundError
+    title: 仮想環境が無い
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 仮想環境の Python が無い。依存の確認の結果を持つ
+    kind: クラス
+    inherits: Exception
+    properties:
+      - name: report
+        type: dict
+        description: 依存の確認の結果
+constants:
+  - name: MIN_PYTHON
+    title: Python の版の下限
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 非機能要件の「Python の版」
+    value: (3, 12)
+  - name: REQUIREMENTS
+    title: ライブラリの版の下限
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 配布名 → 版の下限（外部ライブラリの設計書の版）
+    entries:
+      - key: PyYAML
+        value: '5.1'
+      - key: jsonschema
+        value: 4.18.0
+  - name: RESERVED_KEYS
+    title: スクリプトが付けるキー
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の追加と更新
+    summary: 標準入力で渡させないキー
+    value: ("id", "created", "updated", "body")
+  - name: BODY_INPUT_KEY
+    title: 本文を渡すキー
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の追加と更新
+    summary: 標準入力で本文の Markdown を渡すキー（YAML には残さない）
+    value: '"body_markdown"'
+  - name: PROBE_SCRIPT
+    title: 仮想環境への問い合わせ
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    summary: 仮想環境の Python に `-c` で渡すコード。版と `REQUIREMENTS` の配布名ごとの版（`importlib.metadata.version`。無ければ `null`）を JSON で標準出力に出す。`importlib.metadata` を読めない版では全て `null`
+    value: str
+functions:
+  - name: main
+    title: 入口
+    kind: 関数
+    container: skills/mindmap/scripts/mindmap.py
+    usecase: 共通
+    scope: public
+    summary: 引数を解釈してコマンドを実行し、出力と終了コードを決める
+    description: ファイルの先頭に `from __future__ import annotations` を置き、Python 3.8 で読める構文だけで書く（`type` 文・`match` 文を使わない）。末尾で `sys.exit(main())`。
+    side_effects: 標準出力・標準エラーに書く
+    args:
+      - name: argv
+        type: list[str] | None
+        required: false
+        default: None
+        passing: positional
+        description: 引数（`None` なら `sys.argv[1:]`）
+    returns:
+      type: int
+      description: 終了コード（0 正常 / 1 実行時のエラー・点検で問題あり / 2 引数の誤りは argparse が終える）
+    process: |-
+      1. 引数を解釈する（`build_parser`）
+      2. コマンドで分ける
+         - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
+         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（標準入力を使うコマンドは `sys.stdin.read()` を渡す）
+      3. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
+      4. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
+    unit_tests:
+      - name: test_main_when_check_env
+        case: 正常
+        summary: check-env は commands を読まずに結果を出す
+        condition: '`run_check_env` を、揃っている結果を返す関数に差し替える。`sys.modules` から `commands` を除いておく'
+        mock: '`run_check_env`'
+        expected: 0 を返し、標準出力がその結果の JSON。`commands` が `sys.modules` に無い
+      - name: test_main_when_dependency_missing
+        case: 正常
+        summary: 依存が足りなければ結果を出して 1
+        condition: '`run_check_env` を `DependencyMissingError(report)` を送る関数に差し替える'
+        mock: '`run_check_env`'
+        expected: 1 を返し、標準出力が `report` の JSON
+      - name: test_main_when_mindmap_error
+        case: 正常
+        summary: コマンドのエラーは標準エラーと 1
+        condition: '`mindmap.yaml` が無い `tmp_path` で `status --workspace`'
+        mock: なし
+        expected: '1 を返し、標準エラーが `エラー: ` で始まりパスを含む。標準出力が空'
+      - name: test_main
+        case: 正常
+        summary: コマンドの結果を JSON で出す
+        condition: 作成済みのワークスペースで `attrs --workspace`
+        mock: なし
+        expected: '0 を返し、標準出力が `{"attrs": []}`'
+  - name: build_parser
+    title: 引数の定義
+    kind: 関数
+    container: skills/mindmap/scripts/mindmap.py
+    usecase: 共通
+    scope: public
+    summary: 13 のコマンドと引数を持つ `ArgumentParser` を作る
+    returns:
+      type: argparse.ArgumentParser
+      description: サブコマンドを持つ引数の定義（引数は各インターフェース定義のリクエストのとおり）
+    process: |-
+      1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
+      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる
+    unit_tests:
+      - name: test_build_parser
+        case: 正常
+        summary: 繰り返しの --attr と位置引数を解釈する
+        condition: '`find --workspace w --attr a=1 --attr b`・`adopt D-1 B --workspace w`'
+        mock: なし
+        expected: '`attr` が `[a=1, b]`、`id` が `D-1`・`key` が `B`'
+      - name: test_build_parser_when_limit_invalid
+        case: 異常
+        summary: 1 より小さい --limit は引数の誤り
+        condition: '`next --workspace w --limit 0`'
+        mock: なし
+        expected: '`SystemExit`（コード 2）'
+  - name: run_check_env
+    title: 依存の確認
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 仮想環境の Python の版とライブラリの版を確かめ、足りなければ結果を持った例外を送る
+    description: ファイルの先頭に `from __future__ import annotations` を置き、Python 3.8 で読める構文だけで書く。
+    args:
+      - name: venv_dir
+        type: Path
+        required: true
+        passing: positional
+        description: 確かめる仮想環境のフォルダ（`--venv`）
+      - name: probe
+        type: Callable[[Path], dict | None]
+        required: false
+        default: probe_venv
+        passing: injected
+        description: 仮想環境の Python に版とライブラリの版を尋ねる関数
+      - name: base_python
+        type: str
+        required: false
+        default: sys.executable
+        passing: keyword
+        description: 仮想環境を作る Python（`check-env` を動かしている Python）
+      - name: base_version
+        type: tuple[int, ...]
+        required: false
+        default: sys.version_info
+        passing: keyword
+        description: 仮想環境を作る Python の版
+    returns:
+      type: dict
+      description: 依存の確認の結果（インターフェース定義『依存の確認』のレスポンスの形）
+    process: |-
+      1. `base_version` が `MIN_PYTHON` 以上かを `base_python_ok` にし、`base_python`・`base_python_version` と一緒に結果へ載せる
+      2. 仮想環境の Python の場所を引く（`venv_python_path`）
+      3. その Python が無い場合、`venv_ok: false`・`python: null`・全ての `installed: null` と、作って入れるコマンド（`build_install_command` の `create`。`base_python_ok` が偽なら `null`）を持った `VenvNotFoundError(report)` を送る
+      4. `probe` で版とライブラリの版を尋ねる
+         - `None` が返った場合、版を引けないものとして `python: null`・`python_ok: false` にする
+         - それ以外は、版が `MIN_PYTHON` 以上かを `python_ok` にする（`parse_version`）
+      5. `REQUIREMENTS` の配布名ごとに入っている版と下限を比べる（`parse_version`。`null` なら `ok: false`）
+      6. 結果を判定する
+         - `python_ok` が偽の場合、作り直して入れるコマンド（`recreate`。`base_python_ok` が偽なら `null`）を持った `PythonVersionError(report)` を送る
+         - 足りないライブラリがある場合、足りないものを入れるコマンド（`install`）を持った `DependencyMissingError(report)` を送る
+         - それ以外は `install: null` の結果を返す
+    exceptions:
+      - name: VenvNotFoundError
+        condition: 仮想環境の Python が無い
+      - name: PythonVersionError
+        condition: 仮想環境の Python の版が `MIN_PYTHON` より古いか、版を引けない
+      - name: DependencyMissingError
+        condition: 仮想環境の Python の版は足りていて、どれかのライブラリが無いか下限より古い
+    unit_tests:
+      - name: test_run_check_env
+        case: 正常
+        summary: そろっていれば結果を返す
+        condition: '`tmp_path` に仮想環境の Python の場所だけファイルを置き、`probe` は `python: 3.12.3`・PyYAML `6.0.3`・jsonschema `4.26.0` を返す'
+        mock: '`probe`'
+        expected: '`venv_ok: true`・`python_ok: true`、両方 `ok: true`、`python_path` がその Python、`install: null`'
+      - name: test_run_check_env_when_venv_missing
+        case: 異常
+        summary: 仮想環境が無ければ VenvNotFoundError
+        condition: '`tmp_path` の下のまだ無いフォルダ'
+        mock: '`probe`（呼ばれないことを確かめる）'
+        expected: '`VenvNotFoundError`（`report` の `venv_ok: false`・`python: null`・全ての `installed: null`、`install` に `-m venv`）。`probe` が呼ばれない'
+        exception: 仮想環境が無い
+      - name: test_run_check_env_when_python_old
+        case: 異常
+        summary: 仮想環境の Python が古いか版を引けなければ PythonVersionError
+        condition: '`parametrize`: `probe` が `python: 3.9.6` を返す / `None` を返す'
+        mock: '`probe`'
+        expected: '`PythonVersionError`（`report` の `python_ok: false`、`python` が `3.9.6` / `null`、`install` に `--clear`）'
+        exception: Python の版が古い・引けない
+      - name: test_run_check_env_when_package_missing
+        case: 異常
+        summary: 無い・古いライブラリがあれば DependencyMissingError
+        condition: '`probe` は `python: 3.12.3`、PyYAML `null`、jsonschema `4.17.3` を返す'
+        mock: '`probe`'
+        expected: '`DependencyMissingError`（`report` の PyYAML `installed: null`・`ok: false`、jsonschema `ok: false`、`install` に `PyYAML>=5.1` と `jsonschema>=4.18.0` があり `-m venv` が無い）'
+        exception: ライブラリが無いか古い
+      - name: test_run_check_env_when_old_syntax
+        case: 正常
+        summary: 入口と依存の確認のファイルが Python 3.8 の構文で読め、型注釈を実行時に評価しない
+        condition: '`mindmap.py`・`check_env.py` を `ast.parse(..., feature_version=(3, 8))` で読み、先頭の文を見る'
+        mock: なし
+        expected: どちらも `SyntaxError` にならず、docstring の次の文が `from __future__ import annotations`
+      - name: test_run_check_env_when_base_python_old
+        case: 異常
+        summary: 仮想環境を作る Python が古ければ、作る・作り直すコマンドを返さない
+        condition: '`base_version=(3, 9, 6)`。`parametrize`: 仮想環境が無い / `probe` が `python: 3.9.6` を返す'
+        mock: '`probe`'
+        expected: '`VenvNotFoundError` / `PythonVersionError` で、`report` の `base_python_ok: false`・`base_python_version: 3.9.6`・`install: null`'
+        exception: 仮想環境を作る Python が古い
+  - name: parse_version
+    title: 版の解釈
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 版の文字列を比べられる整数の組にする
+    args:
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: 版（例 `6.0.3`・`4.18.0rc1`）
+    returns:
+      type: tuple[int, ...]
+      description: '`.` で区切った各部分の先頭の数字（数字が無い部分で打ち切る）'
+    process: 1. `.` で分け、各部分の先頭の数字を整数にする。先頭が数字でない部分が出たらそこで打ち切る
+    unit_tests:
+      - name: test_parse_version
+        case: 正常
+        summary: 数字の組にする
+        condition: '`parametrize`: `6.0.3` / `4.18.0rc1` / `5.1`'
+        mock: なし
+        expected: '`(6, 0, 3)` / `(4, 18, 0)` / `(5, 1)`'
+  - name: build_install_command
+    title: そろえるコマンド
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 仮想環境とライブラリをそろえる 1 行のコマンドを作る
+    args:
+      - name: mode
+        type: '"create" | "recreate" | "install"'
+        required: true
+        passing: positional
+        description: 仮想環境を作る / 作り直す / ライブラリだけ入れる
+      - name: missing
+        type: list[str]
+        required: true
+        passing: positional
+        description: 入れる配布名（`REQUIREMENTS` の順）
+      - name: venv_dir
+        type: Path
+        required: true
+        passing: keyword
+        description: 仮想環境のフォルダ
+      - name: base_python
+        type: str
+        required: true
+        passing: keyword
+        description: 仮想環境を作る Python
+      - name: os_name
+        type: str
+        required: false
+        default: os.name
+        passing: keyword
+        description: '`venv_python_path` へ渡す OS の名前'
+    returns:
+      type: str | None
+      description: パスと `{名前}>={下限}` を二重引用符で囲み、`&&` でつないだコマンド。入れるものが無ければ `None`
+    process: |-
+      1. `install` で `missing` が空なら `None` を返す
+      2. `create` は `"{base_python}" -m venv "{venv_dir}"`、`recreate` は `"{base_python}" -m venv --clear "{venv_dir}"` を先頭に置き、`&&` でつなぐ
+      3. 仮想環境の Python（`venv_python_path`）で `-m pip install` し、`missing` の配布名ごとに `"{名前}>={下限}"` を並べる
+    unit_tests:
+      - name: test_build_install_command
+        case: 正常
+        summary: 作る・作り直す・入れるだけを分ける
+        condition: '`parametrize`: `create` と `["PyYAML", "jsonschema"]` / `recreate` と同じ / `install` と `["jsonschema"]`。`venv_dir=/v`・`base_python=/usr/bin/python3`・`os_name="posix"`'
+        mock: なし
+        expected: '`"/usr/bin/python3" -m venv "/v" && "/v/bin/python" -m pip install "PyYAML>=5.1" "jsonschema>=4.18.0"` / `-m venv --clear "/v"` で始まる同じ形 / `"/v/bin/python" -m pip install "jsonschema>=4.18.0"`'
+      - name: test_build_install_command_when_none_missing
+        case: 正常
+        summary: 入れるものが無ければ None
+        condition: '`install` と `[]`'
+        mock: なし
+        expected: '`None`'
+  - name: read_json_object
+    title: 標準入力の解釈
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 共通
+    scope: public
+    summary: 標準入力を JSON のオブジェクトとして読む
+    args:
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: 標準入力の中身
+    returns:
+      type: dict[str, Any]
+      description: 読んだオブジェクト
+    process: |-
+      1. `json.loads` で読む
+         - 読めない場合、`SchemaMismatchError`（`標準入力: (全体): JSON として読めません`）を送る
+         - オブジェクトでない場合、`SchemaMismatchError`（`標準入力: (全体): オブジェクトではありません`）を送る
+    exceptions:
+      - name: SchemaMismatchError
+        condition: JSON として読めない
+      - name: SchemaMismatchError
+        condition: JSON のオブジェクトでない
+    unit_tests:
+      - name: test_read_json_object
+        case: 正常
+        summary: オブジェクトを読む
+        condition: '`{"title": "問い"}`'
+        mock: なし
+        expected: '`{"title": "問い"}`'
+      - name: test_read_json_object_when_invalid
+        case: 異常
+        summary: 読めない・オブジェクトでない入力
+        condition: '`parametrize`: `{` / `[1]`'
+        mock: なし
+        expected: '`SchemaMismatchError`'
+        exception: JSON として読めない・オブジェクトでない
+  - name: validate_input_keys
+    title: 渡せないキーの確認
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の追加と更新
+    scope: public
+    summary: スクリプトが付けるキーと、本文を持てない種類への `body_markdown` を弾く
+    args:
+      - name: kind
+        type: Kind
+        required: true
+        passing: positional
+        description: 種類
+      - name: data
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: 標準入力のオブジェクト
+    process: |-
+      1. `RESERVED_KEYS` のキーがあれば `SchemaMismatchError`（`標準入力: {キー}: スクリプトが付けるキーです`）を送る
+      2. `body_markdown` があり、`KINDS[kind].has_body` が偽なら `SchemaMismatchError` を送る
+    exceptions:
+      - name: SchemaMismatchError
+        condition: '`id`・`created`・`updated`・`body` のどれかを持つ'
+      - name: SchemaMismatchError
+        condition: 本文を持てない種類に `body_markdown` を持つ
+    unit_tests:
+      - name: test_validate_input_keys
+        case: 正常
+        summary: 渡せるキーだけなら何もしない
+        condition: '`decision` に `{"title": "t", "body_markdown": "b"}`'
+        mock: なし
+        expected: 例外を送らない
+      - name: test_validate_input_keys_when_reserved
+        case: 異常
+        summary: スクリプトが付けるキーを弾く
+        condition: '`parametrize`: `id` / `created` / `updated` / `body`'
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` にそのキー）'
+        exception: スクリプトが付けるキーを持つ
+      - name: test_validate_input_keys_when_body_not_allowed
+        case: 異常
+        summary: 本文を持てない種類への body_markdown を弾く
+        condition: '`task` に `{"body_markdown": "b"}`'
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` に `body_markdown`）'
+        exception: 本文を持てない種類に body_markdown を持つ
+  - name: merge_changes
+    title: 変更の当てはめ
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の追加と更新
+    scope: public
+    summary: 渡したキーを値ごと置き換え、`null` のキーを消した新しい項目を返す
+    args:
+      - name: item
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: 元の項目（書き換えない）
+      - name: changes
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: 置き換えるキーと値（`body_markdown` を除いたもの）
+    returns:
+      type: tuple[dict[str, Any], list[str]]
+      description: 新しい項目と、値が変わった・消えたキー（渡した順）
+    process: |-
+      1. 元の項目を写し、渡したキーごとに当てはめる
+         - 値が `None` の場合、キーがあれば消して変わったキーに加える
+         - それ以外で元の値と違う場合、置き換えて変わったキーに加える（新しいキーは末尾に足す）
+    unit_tests:
+      - name: test_merge_changes
+        case: 正常
+        summary: 置き換え・消す・同じ値を見分ける
+        condition: '元 `{"id": "D-1", "status": "未決定", "weight": "大", "lead": "l"}` に `{"status": "決定済み", "weight": null, "lead": "l", "answer": "a"}`'
+        mock: なし
+        expected: '`{"id": "D-1", "status": "決定済み", "lead": "l", "answer": "a"}` と `[status, weight, answer]`。元の項目は変わらない'
+  - name: switch_adopted
+    title: 採用する案の切り替え
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 採用する案の切り替え
+    scope: public
+    summary: 指定した記号の案だけを採用にした新しい項目を返す
+    args:
+      - name: item
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: 検討事項（書き換えない）
+      - name: key
+        type: str
+        required: true
+        passing: positional
+        description: 採用する案の記号
+    returns:
+      type: tuple[dict[str, Any], str | None]
+      description: 新しい項目と、それまで採用していた案の記号（無ければ `None`）
+    process: |-
+      1. `options` にその記号の案が無ければ `OptionNotFoundError`（持っている記号の一覧つき）を送る
+      2. それまで `adopted` が真だった最初の案の記号を控える
+      3. 指定した案の `adopted` を真、ほかを偽にした新しい項目を返す
+    exceptions:
+      - name: OptionNotFoundError
+        condition: 検討事項がその記号の案を持たない（`options` が無いときも含む）
+        message: '案がありません: {key}（持っている案: {記号の一覧}）'
+    unit_tests:
+      - name: test_switch_adopted
+        case: 正常
+        summary: 採用を切り替え、前の記号を返す
+        condition: 案 A（採用）・案 B を持つ項目と `B`
+        mock: なし
+        expected: '案 A `adopted: false`・案 B `adopted: true` の項目と `A`'
+      - name: test_switch_adopted_when_none_adopted
+        case: 正常
+        summary: 採用が無ければ前の記号は None
+        condition: どの案も採用していない項目と `A`
+        mock: なし
+        expected: '案 A だけ `adopted: true` の項目と `None`'
+      - name: test_switch_adopted_when_option_missing
+        case: 異常
+        summary: 無い記号は切り替えない
+        condition: 案 A・B を持つ項目と `Z`
+        mock: なし
+        expected: '`OptionNotFoundError`（メッセージに `Z`・`A`・`B`）'
+        exception: その記号の案を持たない
+  - name: run_init
+    title: init の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 標準入力の設定でワークスペースを作る
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: stdin_text
+        type: str
+        required: true
+        passing: positional
+        description: 標準入力
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{workspace, files}` と 0'
+    process: |-
+      1. 標準入力を読む（`read_json_object`）
+      2. ワークスペースを作る（ワークスペースの作成。`create_workspace`）
+    unit_tests:
+      - name: test_run_init
+        case: 正常
+        summary: 作ったワークスペースとファイルを返す
+        condition: まだ無い `tmp_path / "ws"` と正しい設定の JSON
+        mock: なし
+        expected: '`workspace` が絶対パス、`files` が 10 件（8 つの YAML と 2 つのフォルダ）、0'
+  - name: run_add
+    title: add の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の追加と更新
+    scope: public
+    summary: ID・日時・本文を付けて 1 項目を足す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: kind
+        type: Kind
+        required: true
+        passing: positional
+        description: 種類
+      - name: stdin_text
+        type: str
+        required: true
+        passing: positional
+        description: 標準入力
+      - name: now
+        type: Callable[[], str]
+        required: false
+        default: now_utc
+        passing: injected
+        description: 今の日時を返す関数
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{id, file, body}` と 0'
+    process: |-
+      1. ワークスペースと標準入力を読み、渡せないキーを確かめる（`load_workspace`、`read_json_object`、`validate_input_keys`）
+      2. ID を振り、`id` を先頭に、`created`・`updated` を末尾に置いた項目を作る（`next_id`）
+         - `body_markdown` がある場合、項目の `body` を `{ID}.md` にし、本文の書き込みを作る
+      3. 末尾に足した並びを書き込む（変更の書き込み。`save_change`）
+    unit_tests:
+      - name: test_run_add
+        case: 正常
+        summary: 本文つきの検討事項を足す
+        condition: D-1 を持つワークスペース、`body_markdown` つきの検討事項。`now` は `2026-10-02T08:00:00+00:00` を返す
+        mock: '`now`'
+        expected: '`{id: D-2, file: decisions.yaml, body: docs/D-2.md}` と 0。D-2 の `created`・`updated` がその日時で `body` が `D-2.md`'
+      - name: test_run_add_when_no_body
+        case: 正常
+        summary: 本文が無ければ body を付けない
+        condition: 空のワークスペースにタスク
+        mock: '`now`'
+        expected: '`{id: T-1, file: tasks.yaml, body: null}`。T-1 に `body` のキーが無い'
+  - name: run_update
+    title: update の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の追加と更新
+    scope: public
+    summary: 1 項目のキーを置き換え、更新日時を変える
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: ID
+      - name: stdin_text
+        type: str
+        required: true
+        passing: positional
+        description: 標準入力
+      - name: now
+        type: Callable[[], str]
+        required: false
+        default: now_utc
+        passing: injected
+        description: 今の日時を返す関数
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{id, file, changed}` と 0'
+    process: |-
+      1. ワークスペースを読み、項目を引く（`load_workspace`、`find_item`）
+      2. 標準入力を読み、渡せないキーを確かめる（`read_json_object`、`validate_input_keys`）
+      3. 変更を当てはめ、`updated` を今の日時にする（`merge_changes`）
+         - `body_markdown` がある場合、`body` を `{ID}.md` にし、本文の書き込みを作る（`changed` に `body` を含めるのは値が変わったときだけ）
+      4. その位置を差し替えた並びを書き込む（`save_change`）
+    unit_tests:
+      - name: test_run_update
+        case: 正常
+        summary: キーを置き換えて更新日時を変える
+        condition: 'D-1（`created`・`updated` が `2026-10-01T00:00:00+00:00`）に `{"answer": "a", "weight": null}`。`now` は `2026-10-02T08:00:00+00:00`'
+        mock: '`now`'
+        expected: '`changed` が `[answer, weight]`、D-1 の `updated` が `now` の値で `created` はそのまま'
+  - name: run_adopt
+    title: adopt の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 採用する案の切り替え
+    scope: public
+    summary: 検討事項の採用する案を切り替えて書き込む
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: 検討事項の ID
+      - name: key
+        type: str
+        required: true
+        passing: positional
+        description: 案の記号
+      - name: now
+        type: Callable[[], str]
+        required: false
+        default: now_utc
+        passing: injected
+        description: 今の日時を返す関数
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{id, adopted, previous}` と 0'
+    process: |-
+      1. ワークスペースを読み、項目を引く（`load_workspace`、`find_item`）
+         - 種類が `decision` でない場合、`ItemNotFoundError` を送る
+      2. 採用を切り替え、`updated` を今の日時にする（`switch_adopted`）
+      3. 差し替えた並びを書き込む（`save_change`）
+    exceptions:
+      - name: ItemNotFoundError
+        condition: ID が検討事項でない
+        message: '検討事項がありません: {item_id}'
+    unit_tests:
+      - name: test_run_adopt
+        case: 正常
+        summary: 切り替えて書き込む
+        condition: 案 A（採用）・B を持つ D-1 と `B`
+        mock: '`now`'
+        expected: '`{id: D-1, adopted: B, previous: A}` と 0。`decisions.yaml` の D-1 の案 B が採用'
+      - name: test_run_adopt_when_not_decision
+        case: 異常
+        summary: 検討事項でない ID は切り替えない
+        condition: T-1 を持つワークスペースで `T-1`
+        mock: なし
+        expected: '`ItemNotFoundError`（メッセージに `T-1`）'
+        exception: ID が検討事項でない
+  - name: run_check
+    title: check の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: ワークスペースの点検
+    scope: public
+    summary: 点検して、問題があれば終了コード 1 を返す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{ok, problems}` と、問題が無ければ 0・あれば 1'
+    process: |-
+      1. ワークスペースを読み、点検する（`load_workspace`、`check_workspace`）
+      2. 問題が無ければ `ok: true` と 0、あれば `ok: false` と 1 を返す
+    unit_tests:
+      - name: test_run_check
+        case: 正常
+        summary: 問題が無ければ 0
+        condition: 整った D-1
+        mock: なし
+        expected: '`{ok: true, problems: []}` と 0'
+      - name: test_run_check_when_problems
+        case: 正常
+        summary: 問題があれば 1
+        condition: 'D-1 `depends_on: [D-9]`'
+        mock: なし
+        expected: '`ok: false`・`problems` が 1 件と 1'
+  - name: run_build
+    title: build の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: プレビューを書き出してそのパスを返す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: now
+        type: Callable[[], str]
+        required: false
+        default: now_utc
+        passing: injected
+        description: 今の日時を返す関数
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{path}` と 0'
+    process: 1. ワークスペースを読み、書き出す（`load_workspace`、`build_preview`）
+    unit_tests:
+      - name: test_run_build
+        case: 正常
+        summary: 書き出したパスを返す
+        condition: D-1 を持つワークスペース
+        mock: '`now`'
+        expected: '`{path: {ワークスペース}/preview.html}` と 0。そのファイルがある'
+  - name: run_impact
+    title: impact の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 採用する案の切り替え
+    scope: public
+    summary: 影響を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: 起点の ID
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{id, affected}` と 0'
+    process: |-
+      1. ワークスペースを読み、影響を洗い出す（`load_workspace`、`trace_impact`）
+      2. `affected` を `asdict` して返す
+    unit_tests:
+      - name: test_run_impact
+        case: 正常
+        summary: 影響を出力の形にする
+        condition: 'D-2 `depends_on: [D-1]` で `D-1`'
+        mock: なし
+        expected: '`{id: D-1, affected: [{id: D-2, title, status, via: [], key: depends_on}]}` と 0'
+  - name: run_next
+    title: next の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 状況の確認
+    scope: public
+    summary: 次の候補を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: limit
+        type: int | None
+        required: true
+        passing: positional
+        description: '`--limit`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{candidates}` と 0'
+    process: |-
+      1. ワークスペースを読み、候補を並べる（`load_workspace`、`list_next_candidates`）
+      2. `asdict` して返す
+    unit_tests:
+      - name: test_run_next
+        case: 正常
+        summary: 候補を出力の形にする
+        condition: 未決定の D-1 だけで `limit=None`
+        mock: なし
+        expected: '`{candidates: [{id: D-1, title, phase, weight, followers: 0}]}` と 0'
+  - name: run_status
+    title: status の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 状況の確認
+    scope: public
+    summary: 再開時の状況を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`StatusSummary` を `asdict` した辞書と 0'
+    process: |-
+      1. ワークスペースを読み、まとめる（`load_workspace`、`summarize_status`）
+      2. `asdict` して返す
+    unit_tests:
+      - name: test_run_status
+        case: 正常
+        summary: 状況を出力の形にする
+        condition: 要見直しの D-1 だけ
+        mock: なし
+        expected: '`needs_review` が `[{id: D-1, title}]` で、`in_progress`・`resumable`・`waiting`・`on_hold`・`next` のキーがある'
+  - name: run_find
+    title: find の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の検索
+    scope: public
+    summary: 引数から条件を作り、検索結果を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: search_filter
+        type: SearchFilter
+        required: true
+        passing: positional
+        description: 引数から作った条件（`--attr` は `parse_attr` で分ける）
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{items}` と 0'
+    process: 1. ワークスペースを読み、探す（`load_workspace`、`search_items`）
+    unit_tests:
+      - name: test_run_find
+        case: 正常
+        summary: 検索結果を出力の形にする
+        condition: D-1 だけで条件なし
+        mock: なし
+        expected: '`{items: [{id: D-1, kind: decision, title, status}]}` と 0'
+  - name: run_show
+    title: show の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の検索
+    scope: public
+    summary: 1 項目の表示を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: item_id
+        type: str
+        required: true
+        passing: positional
+        description: ID
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{item, kind, body_markdown, referenced_by}` と 0'
+    process: 1. ワークスペースを読み、まとめる（`load_workspace`、`show_item`）
+    unit_tests:
+      - name: test_run_show
+        case: 正常
+        summary: 1 件を出力の形にする
+        condition: D-1 で `D-1`
+        mock: なし
+        expected: '`item`・`kind`・`body_markdown`・`referenced_by` のキーを持ち 0'
+  - name: run_attrs
+    title: attrs の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の検索
+    scope: public
+    summary: 属性名の一覧を出力の形にする
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{attrs}` と 0'
+    process: 1. ワークスペースを読み、数える（`load_workspace`、`list_attrs`）
+    unit_tests:
+      - name: test_run_attrs
+        case: 正常
+        summary: 属性名を出力の形にする
+        condition: 属性 `担当` の D-1
+        mock: なし
+        expected: '`{attrs: [{name: 担当, count: 1, kinds: [decision]}]}` と 0'
+  - name: default_venv_dir
+    title: 仮想環境の既定の場所
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: スキル専用の仮想環境のフォルダ（`~/.mindmap/venv`）を返す
+    returns:
+      type: Path
+      description: '`Path.home() / ".mindmap" / "venv"`'
+    process: 1. ホームの下の `.mindmap/venv` を返す
+    unit_tests:
+      - name: test_default_venv_dir
+        case: 正常
+        summary: ホームの下の .mindmap/venv
+        condition: '`Path.home` を `tmp_path` を返す関数に差し替える'
+        mock: '`Path.home`'
+        expected: '`tmp_path / ".mindmap" / "venv"`'
+  - name: venv_python_path
+    title: 仮想環境の Python の場所
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 仮想環境のフォルダから、その Python の場所を返す
+    args:
+      - name: venv_dir
+        type: Path
+        required: true
+        passing: positional
+        description: 仮想環境のフォルダ
+      - name: os_name
+        type: str
+        required: false
+        default: os.name
+        passing: keyword
+        description: OS の名前
+    returns:
+      type: Path
+      description: '`nt` なら `Scripts/python.exe`、それ以外は `bin/python`'
+    process: 1. `os_name` で分けて返す
+    unit_tests:
+      - name: test_venv_python_path
+        case: 正常
+        summary: OS で場所を分ける
+        condition: '`parametrize`: `os_name="posix"` / `"nt"`'
+        mock: なし
+        expected: '`{venv_dir}/bin/python` / `{venv_dir}/Scripts/python.exe`'
+  - name: probe_venv
+    title: 仮想環境への問い合わせ
+    kind: 関数
+    container: skills/mindmap/scripts/check_env.py
+    usecase: ワークスペースの作成
+    scope: public
+    summary: 仮想環境の Python を子プロセスで起動し、版とライブラリの版を受け取る
+    side_effects: 子プロセスを起動する
+    args:
+      - name: python_path
+        type: Path
+        required: true
+        passing: positional
+        description: 仮想環境の Python
+      - name: run
+        type: Callable[..., subprocess.CompletedProcess]
+        required: false
+        default: subprocess.run
+        passing: injected
+        description: 子プロセスを起動する関数
+    returns:
+      type: dict | None
+      description: '`{python: 版, packages: {配布名: 版 | None}}`。起動できないか、終了コードが 0 でないか、出力を JSON として読めなければ `None`'
+    process: |-
+      1. `[str(python_path), "-c", PROBE_SCRIPT]` を配列のまま渡して起動する（シェルを通さない。標準出力を受け取る）
+      2. 終了コードが 0 なら標準出力を JSON として読んで返し、それ以外（`OSError` を含む）は `None` を返す
+    unit_tests:
+      - name: test_probe_venv
+        case: 正常
+        summary: テストを動かす Python に尋ねる
+        condition: '`sys.executable` を渡す'
+        mock: なし
+        expected: '`python` が `platform.python_version()` と同じで、`packages` に PyYAML・jsonschema のキーがある'
+      - name: test_probe_venv_when_failed
+        case: 異常
+        summary: 起動できないか出力が読めなければ None
+        condition: '`parametrize`: `run` が `OSError` を送る / 終了コード 1 を返す / 標準出力 `x` を返す'
+        mock: '`run`'
+        expected: '`None`'
+notes:
+  モジュールの読み込み: スクリプトはパッケージとして入れず、`check-env` はシステムの `python3`、それ以外は仮想環境の Python（`check-env` が返す `python_path`）で `{スキルのフォルダ}/scripts/mindmap.py` を起動する。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
+  入口の構文: '`mindmap.py` と `check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、`check-env` を通った後にだけ読むので 3.12 の書き方を使ってよい。'
+test_files:
+  - tests/unit/scripts/test_mindmap.py
+  - tests/unit/scripts/test_check_env.py
+  - tests/unit/scripts/test_commands.py

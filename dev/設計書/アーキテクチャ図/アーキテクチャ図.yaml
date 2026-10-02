@@ -1,0 +1,130 @@
+title: "アーキテクチャ図"
+overview:
+  direction: LR
+  nodes:
+    - id: U
+      label: 利用者
+      shape: stadium
+      kind: actor
+    - id: GH
+      label: GitHub
+      kind: external
+    - id: CC
+      label: Claude Code
+      kind: external
+    - id: PLG
+      label: プラグイン
+      kind: system
+    - id: SKL
+      label: スキル
+      kind: system
+    - id: SCR
+      label: スクリプト
+      kind: system
+    - id: WS
+      label: ワークスペース（YAML）
+      shape: cylinder
+      kind: store
+    - id: PRV
+      label: プレビュー（HTML）
+      kind: system
+    - id: BR
+      label: ブラウザ
+      kind: external
+    - id: CDN
+      label: CDN（銘柄未定）
+      kind: external
+  edges:
+    - from: U
+      to: CC
+      label: 会話
+    - from: CC
+      to: GH
+      label: マーケットプレイスの取得
+    - from: CC
+      to: PLG
+      label: 読み込み
+    - from: PLG
+      to: SKL
+      label: 同梱
+    - from: CC
+      to: SKL
+      label: 手順の読み込み
+    - from: CC
+      to: SCR
+      label: コマンド
+    - from: SCR
+      to: WS
+      label: 読み書き
+    - from: SCR
+      to: PRV
+      label: 書き出し
+    - from: U
+      to: BR
+      label: 閲覧
+    - from: BR
+      to: PRV
+      label: ファイルを開く
+    - from: BR
+      to: CDN
+      label: HTTPS
+  subgraphs:
+    - id: SYS
+      label: mindmap
+      nodes:
+        - PLG
+        - SKL
+        - SCR
+        - WS
+        - PRV
+repository:
+  style: モノレポ
+  repositories:
+    - name: shuhei1101/mindmap
+  layout: '`.claude-plugin/`（マーケットプレイスとプラグインのマニフェスト）/ `skills/mindmap/`（スキル。配下に `schemas/`・`scripts/`）'
+  notes: リポジトリの直下がマーケットプレイスとプラグインの両方の直下を兼ねる（マーケットプレイスはプラグインを `./` で指す）。
+subsystems:
+  - name: プラグイン
+    scope: plugin
+    role: マーケットプレイスとプラグインのマニフェスト。Claude Code にスキルを読み込ませる入口
+    runtime: JSON（Claude Code が読む）
+    runs_on: 利用者の端末の Claude Code
+  - name: スキル
+    scope: skill
+    role: 会話の進め方の手順。ワークスペースへの記録はスクリプトのコマンドで行う
+    runtime: Markdown（Claude Code が読む手順）
+    runs_on: 利用者の端末の Claude Code
+    status: planned
+  - name: スクリプト
+    scope: scripts
+    role: ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検と、プレビューの HTML の書き出し
+    runtime: Python 3
+    runs_on: 利用者の端末（Claude Code から起動するコマンド）
+    status: implemented
+  - name: プレビュー
+    scope: preview
+    role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面
+    runtime: JavaScript（ブラウザ）
+    runs_on: 利用者の端末のブラウザ（ファイルとして開く。サーバーは立てない）
+    status: planned
+external_systems:
+  - name: Claude Code
+    purpose: プラグインの読み込み・スキルの手順の実行・スクリプトのコマンドの起動
+    direction: 双方向
+    protocol: プラグインのマニフェスト（JSON）/ スキル（Markdown）/ コマンドの標準入出力
+    notes:
+      事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
+    detail: dev/設計書/外部ライブラリ/claude-code#
+  - name: CDN（銘柄未定）
+    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得
+    direction: 受信のみ
+    protocol: HTTPS
+    notes:
+      事前確認: 要。プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。
+lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
+constraints: |-
+  - hooks・MCP サーバーを持たない
+  - 他のスキル・外部の仕組みに依存しない
+  - スキル・スクリプト・プレビューの中で、特定の開発基盤の名前を出さない
+  - 常駐するサーバーを持たない（プレビューはファイルとして開く）
+  - ネットがある前提で、描画のライブラリは CDN から読む（埋め込む選択肢は持たない）

@@ -1,0 +1,9 @@
+title: mindmap
+summary: mindmap の公開ドキュメント全体の目次
+items:
+  - page: はじめに/
+    summary: 概要・コアコンセプト・変更履歴
+  - page: 使い方/
+    summary: インストールと日々の操作
+  - page: リファレンス/
+    summary: コマンド・ワークスペースの書式
