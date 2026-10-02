@@ -10,7 +10,7 @@ flows:
         description: なし（実際の Python で起動する）
       - name: make_workspace
         description: '`phases` が 目的 → 要件 → 構成、`goal.phase` が 要件、`goal.deliverables` が A-1 を指すワークスペース'
-        notes: 'D-1 `目的`・`決定済み`／D-2 `要件`・`対象外`／D-3 `要件`・`取り下げ`／D-4 `構成`・`未決定`／A-1 `done: true`'
+        notes: 'D-1 `目的`・`決定済み`／D-2 `要件`・`対象外`／D-3 `要件`・`取り下げ`／D-4 `構成`・`未決定`／A-1 `status: 完成`'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -36,7 +36,7 @@ flows:
         description: なし（実際の Python で起動する）
       - name: make_workspace
         description: '`phases` が 目的 → 要件 → 構成、`goal.phase` が 要件、`goal.deliverables` が「要件定義書」（`doc: A-1`）と「用語集」（`doc` なし）のワークスペース'
-        notes: 'D-1 `目的`・`未決定`／D-2 `要件`・`要見直し`／D-3 `要件`・`決定済み`／A-1 `done: false`'
+        notes: 'D-1 `目的`・`未決定`／D-2 `要件`・`要見直し`／D-3 `要件`・`決定済み`／A-1 `status: 確認中`'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -102,7 +102,7 @@ response:
     description: 判定に入れたフェーズの検討事項のうち、決着していないもの
   - name: remaining_deliverables[]
     type: list[{title, doc}]
-    description: '`goal.deliverables` のうち、`doc` を持たないか、`doc` が指す資料が `done: true` でないもの。`doc` が無いときは `null`'
+    description: '`goal.deliverables` のうち、`doc` を持たないか、`doc` が指す資料が `status: 完成` でないもの。`doc` が無いときは `null`'
 exceptions:
   - name: なし（正常終了）
     condition: 判定できた（届いたかどうかによらない）

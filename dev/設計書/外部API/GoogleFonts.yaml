@@ -1,0 +1,26 @@
+title: "GoogleFonts"
+version:
+  api_version: CSS API v2（URL 埋め込み型。パスの `css2`）
+  checked_on: '2026-10-02'
+auth:
+  method: なし（公開の URL を link 要素で読む）
+endpoints:
+  - name: GET /css2
+    method: GET
+    path: /css2
+    summary: Inter・Noto Sans JP・JetBrains Mono の `@font-face` を返す CSS を読む
+    status_codes:
+      - code: '200'
+        condition: 指定したフォントの CSS を返す
+      - code: '400'
+        condition: 存在しないフォントの名前・太さを指定した
+lead: Web フォントの CSS とフォントのファイルを配る Google のサービス（Google Fonts）。
+used_in:
+  - skills/mindmap/preview/template.html
+verification:
+  state: 未確認
+base_urls:
+  - env: 全て
+    url: https://fonts.googleapis.com
+official_url: https://fonts.google.com/
+docs_url: https://developers.google.com/fonts/docs/css2

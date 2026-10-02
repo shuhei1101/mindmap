@@ -5,7 +5,7 @@ scenarios:
       - name: Mock
         description: モデルを呼ばない。手順が連ねる `goal`・`show`・`handoff/` への書き出し・`add`（会話ログ）・`build` を、決めた引数で順に再生する
       - name: 作成済みのワークスペース
-        description: 'ゴールがインターフェースまでで、目的からインターフェースまでの検討事項が全て決定済みか対象外で、ゴールの `deliverables` の資料 A-1 が `done: true`'
+        description: 'ゴールがインターフェースまでで、目的からインターフェースまでの検討事項が全て決定済みか対象外で、ゴールの `deliverables` の資料 A-1 が `status: 完成`'
         notes: コンテンツのフェーズに未決定の D-9 を置き、ゴールより後ろのフェーズは判定に入らないことを確かめる
       - name: 利用者の返答
         description: 示した検討事項と成果物を確定する
@@ -38,7 +38,7 @@ scenarios:
       - name: Mock
         description: モデルを呼ばない。手順が連ねる `goal` を再生する
       - name: 作成済みのワークスペース
-        description: 'ゴールのフェーズまでに未決定の D-1 と、ゴールの `deliverables` に `done: false` の成果物 A-1 を持つ'
+        description: 'ゴールのフェーズまでに未決定の D-1 と、ゴールの `deliverables` に `status: 確認中` の成果物 A-1 を持つ'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -71,5 +71,5 @@ frequency: 話し合いの終わりに 1〜数回
 priority: 高
 notes:
   引き渡しの形: '`handoff/` に書き出す資料の形は進め方ガイドの「引き渡しの形」が決める。書き出しはスクリプトのコマンドを持たず、スキルが Markdown を書く'
-  ゴールに届いたかの判定: 'スクリプトにコマンド `goal` を足して判定させる。ゴールのフェーズまでの検討事項が全て決定済みか対象外・取り下げで、ゴールの `deliverables` の資料が全て `done: true` のときに届いたとする。引数と出力の形はインターフェース定義設計で決める'
+  ゴールに届いたかの判定: 'スクリプトにコマンド `goal` を足して判定させる。ゴールのフェーズまでの検討事項が全て決定済みか対象外・取り下げで、ゴールの `deliverables` の資料が全て `status: 完成` のときに届いたとする。引数と出力の形はインターフェース定義設計で決める'
 test_file: tests/e2e/単一ユースケース/test_goal_check.py

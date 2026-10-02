@@ -151,11 +151,11 @@ constraints:
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 雛形
-    constraint: '`skills/mindmap/preview/template.html`。`<script type="application/json" id="mindmap-data"></script>` をちょうど 1 つ持つ。画面の中身は #5 が持ち、この PR はデータの件数を出すだけの雛形を置く'
+    constraint: '`skills/mindmap/preview/` の `template.html` と、画面の CSS・JavaScript のファイル。`build` は CSS を `<style>`、JavaScript を `<script>` の中身として `template.html` に差し込んでから、データを埋め込む。`template.html` は `<script type="application/json" id="mindmap-data"></script>` をちょうど 1 つ持つ'
   - item: 埋め込みの安全
-    constraint: 埋め込む JSON の `<`・`>`・`&` を、それぞれ JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える。`JSON.parse` で元の文字に戻り、本文に `</script>` があっても要素を閉じさせない。Python の `json.dumps` はこれらをエスケープしないので、書き出しの側で置き換える
+    constraint: 埋め込む JSON の `<`・`>`・`&` を、それぞれ JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える。`JSON.parse` で元の文字に戻り、本文に `</script>` があっても要素を閉じさせない。Python の `json.dumps` はこれらをエスケープしないので、書き出しの側で置き換える。差し込む CSS・JavaScript が `</style>`・`</script>` を含むときは、同梱の雛形の誤りとして書き出さずにエラーにする
   - item: 読み込むファイル
-    constraint: '`preview.html` はワークスペースの他のローカルのファイルを指さない。描画のライブラリは CDN から読む（雛形が持つ）'
+    constraint: '`preview.html` はワークスペースの他のローカルのファイルと、雛形の CSS・JavaScript のファイルを指さない。描画のライブラリは jsDelivr から、文字は Google Fonts から読む（雛形が持つ）'
   - item: 通信
     constraint: スクリプトは通信しない
 test_file: tests/integration/scripts/test_build.py

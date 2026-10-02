@@ -288,12 +288,13 @@ tables:
         not_null: true
         default: 'false'
         description: ゴールで引き渡す成果物か
-      - name: done
-        title: できたか
-        type: boolean
+      - name: status
+        title: 状態
+        type: string
         not_null: true
-        default: 'false'
-        description: 成果物ができたか
+        default: 下書き
+        description: 資料の状態。成果物は `完成` でできたとみなす
+        enum_values: 下書き / 確認中 / 完成
       - name: body
         title: 本文
         type: string

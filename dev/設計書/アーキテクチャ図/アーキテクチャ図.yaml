@@ -34,6 +34,9 @@ overview:
     - id: CDN
       label: jsDelivr
       kind: external
+    - id: GF
+      label: Google Fonts
+      kind: external
   edges:
     - from: U
       to: CC
@@ -67,6 +70,9 @@ overview:
       label: ファイルを開く
     - from: BR
       to: CDN
+      label: HTTPS
+    - from: BR
+      to: GF
       label: HTTPS
   subgraphs:
     - id: SYS
@@ -126,10 +132,17 @@ external_systems:
       - dev/設計書/外部ライブラリ/DOMPurify#
       - dev/設計書/外部ライブラリ/elkjs#
       - dev/設計書/外部ライブラリ/mermaid#
+  - name: Google Fonts
+    purpose: プレビューの文字（Inter・Noto Sans JP・JetBrains Mono）の取得
+    direction: 受信のみ
+    protocol: HTTPS
+    detail: dev/設計書/外部API/GoogleFonts#
+    notes:
+      事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。
 lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
 constraints: |-
   - hooks・MCP サーバーを持たない
   - 他のスキル・外部の仕組みに依存しない
   - スキル・スクリプト・プレビューの中で、特定の開発基盤の名前を出さない
   - 常駐するサーバーを持たない（プレビューはファイルとして開く）
-  - ネットがある前提で、描画のライブラリは CDN から読む（埋め込む選択肢は持たない）
+  - ネットがある前提で、描画のライブラリは CDN から、文字は Google Fonts から読む（埋め込む選択肢は持たない）
