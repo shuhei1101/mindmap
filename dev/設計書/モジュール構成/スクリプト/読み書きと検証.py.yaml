@@ -879,3 +879,6 @@ functions:
         condition: '`parametrize`: `0o640` の置き換え先がある / 置き換え先が無く umask が `0o022`。Windows では skip'
         mock: なし（umask は `os.umask` で設定し、後で戻す）
         expected: 一時ファイルの権限が `0o640` / `0o644`
+test_files:
+  - tests/unit/scripts/test_kinds.py
+  - tests/unit/scripts/test_store.py

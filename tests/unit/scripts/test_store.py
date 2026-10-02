@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import os
 import re
-from collections.abc import Callable
+import stat
+import sys
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any
 
@@ -19,9 +22,28 @@ from errors import (
     WorkspaceNotFoundError,
     WriteFailedError,
 )
+from fixture_types import MakeItem, MakeWorkspace, SnapshotTree
 
 # 壊れた YAML（閉じていないフローの配列）
 BROKEN_YAML = "items: [unclosed"
+
+
+def _prepare_target(target: Path, mode: int | None) -> None:
+    """mode があれば、その権限を持つ置き換え先のファイルを作る（None なら作らない）。"""
+    # 置き換え先が無い場合を作るときは何もしない
+    if mode is None:
+        return
+    target.write_text("元の中身\n", encoding="utf-8")
+    target.chmod(mode)
+
+
+@pytest.fixture
+def restore_umask() -> Iterator[None]:
+    """テストの後で umask を元に戻す。"""
+    original = os.umask(0)
+    os.umask(original)
+    yield
+    os.umask(original)
 
 
 def _fail_body_temp(
@@ -478,3 +500,76 @@ def test_format_path(path: list[str | int], expected: str) -> None:
     text = store._format_path(path)
     # 検証
     assert text == expected
+
+
+@pytest.mark.parametrize(
+    "broken_text",
+    [
+        pytest.param("- id: D-1\n", id="top_level_list"),
+        pytest.param("items:\n- id: D-1\nextra: 1\n", id="extra_key"),
+        pytest.param("items:\n- id: D-1\n- 文字列の要素\n", id="string_element"),
+        pytest.param(BROKEN_YAML, id="yaml_unreadable"),
+    ],
+)
+def test_save_change_when_file_shape_broken(
+    make_workspace: MakeWorkspace,
+    make_item: MakeItem,
+    snapshot_tree: SnapshotTree,
+    broken_text: str,
+) -> None:
+    """書き戻すと中身を失うファイルには書かない（異常系）。"""
+    # 準備
+    root = make_workspace(
+        make_item("D-1"),
+        make_item("D-2"),
+        raw_files={"decisions.yaml": broken_text},
+    )
+    workspace = store.load_workspace(root)
+    before = snapshot_tree(root)
+    change = store.Change(kind="decision", items=[make_item("D-1")])
+    # 実行・検証
+    with pytest.raises(SchemaMismatchError) as exc_info:
+        store.save_change(workspace, change)
+    assert all(line.startswith("decisions.yaml: ") for line in exc_info.value.lines)
+    assert len(exc_info.value.lines) >= 1
+    assert snapshot_tree(root) == before
+
+
+def test_save_change_when_item_value_fixed(
+    make_workspace: MakeWorkspace, make_item: MakeItem
+) -> None:
+    """項目の中の合わない値は、それを直す変更なら書ける（正常系）。"""
+    # 準備
+    root = make_workspace(make_item("D-1", status="完了"))
+    workspace = store.load_workspace(root)
+    change = store.Change(kind="decision", items=[make_item("D-1", status="未決定")])
+    # 実行
+    store.save_change(workspace, change)
+    # 検証
+    saved = yaml.safe_load((root / "decisions.yaml").read_text(encoding="utf-8"))
+    assert saved["items"][0]["status"] == "未決定"
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="権限のビットは Windows では効かない")
+@pytest.mark.parametrize(
+    ("target_mode", "expected_mode"),
+    [
+        pytest.param(0o640, 0o640, id="copy_from_target"),
+        pytest.param(None, 0o644, id="from_umask"),
+    ],
+)
+def test_write_temp_when_mode(
+    tmp_path: Path,
+    restore_umask: None,
+    target_mode: int | None,
+    expected_mode: int,
+) -> None:
+    """置き換え先の権限を一時ファイルに写す（正常系）。"""
+    # 準備
+    target = tmp_path / "target.yaml"
+    _prepare_target(target, target_mode)
+    os.umask(0o022)
+    # 実行
+    temp = store._write_temp(target, "新しい中身\n")
+    # 検証
+    assert stat.S_IMODE(temp.stat().st_mode) == expected_mode
