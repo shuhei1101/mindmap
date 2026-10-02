@@ -102,6 +102,31 @@ flows:
       - '`packages` の PyYAML・jsonschema が `installed: null`・`ok: false`'
       - '`install` がその仮想環境の Python で `-m pip install` し、`PyYAML>=5.1` と `jsonschema>=4.18.0` を含む（`-m venv` を含まない）'
     test: test_error_when_dependency_missing
+  - name: 異常系（仮想環境を作る Python が古い・VenvNotFoundError）
+    summary: 仮想環境が無く、check-env を動かす Python も下限より古ければ、流しても直らないコマンドを返さない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 仮想環境を作る Python
+        description: 下限より古い Python（3.8〜3.11）で `check-env` を起動する
+        notes: 手元に古い Python が無ければ skip し、判定は単体テスト（`base_version` を渡す）で確かめる
+      - name: 仮想環境の場所
+        description: テストごとの一時フォルダの下の、まだ無いフォルダを `--venv` で渡す
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py check-env
+
+        クライアント->>IF: check-env --venv（古い Python で起動）
+        IF->>IF: 仮想環境の Python が無い・自分の版が下限より古い
+        IF-->>クライアント: JSON（base_python_ok: false、install: null）、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '`venv_ok`・`base_python_ok` が偽で、`base_python_version` に起動した Python の版がある'
+      - '`install` が `null`'
+    test: test_error_when_base_python_too_old
 lead: スキル専用の仮想環境（既定は `~/.mindmap/venv`）に、下限以上の Python・PyYAML・jsonschema がそろっているかを確かめ、ほかのコマンドを起動する Python と、足りないときにそろえる 1 行のコマンドを返す。
 idempotent: true
 side_effects: なし（何も書き込まない）
@@ -138,19 +163,29 @@ response:
     description: 下限以上が入っているか
   - name: install
     type: str | None
-    description: 仮想環境とライブラリをそろえる 1 行のコマンド。全てそろっていれば `null`
+    description: 仮想環境とライブラリをそろえる 1 行のコマンド。全てそろっていれば `null`。仮想環境を作る・作り直す必要があり、仮想環境を作る Python が下限より古いときも `null`
     example: '"/usr/bin/python3" -m venv "/home/user/.mindmap/venv" && "/home/user/.mindmap/venv/bin/python" -m pip install "PyYAML>=5.1" "jsonschema>=4.18.0"'
     notes: 仮想環境が無いときは「作る + 入れる」、あるときは「入れる」だけ、Python が古いときは `--clear` で作り直して入れる。仮想環境を作る Python は `check-env` を動かしている Python（`sys.executable`）
+  - name: base_python
+    type: str
+    description: 仮想環境を作る Python（`check-env` を動かしている Python）のパス
+  - name: base_python_version
+    type: str
+    description: 仮想環境を作る Python の版
+    example: 3.9.6
+  - name: base_python_ok
+    type: bool
+    description: 仮想環境を作る Python の版が下限（非機能要件の「Python の版」）以上か。偽のとき、仮想環境を作る・作り直す `install` は `null`
 exceptions:
   - name: なし（正常終了）
     condition: 仮想環境があり、その Python と両方のライブラリが下限以上
     notes: 終了コード 0
   - name: VenvNotFoundError
     condition: 仮想環境の Python が無い
-    notes: 終了コード 1。標準出力には正常終了と同じ形の JSON（`install` は作る + 入れる）
+    notes: 終了コード 1。標準出力には正常終了と同じ形の JSON（`install` は作る + 入れる。仮想環境を作る Python が古ければ `null`）
   - name: PythonVersionError
     condition: 仮想環境の Python の版が下限より古い
-    notes: 終了コード 1。標準出力には同じ形の JSON（`install` は作り直して入れる）
+    notes: 終了コード 1。標準出力には同じ形の JSON（`install` は作り直して入れる。仮想環境を作る Python も古ければ `null`）
   - name: DependencyMissingError
     condition: 仮想環境の Python は下限以上で、どちらかのライブラリが無いか下限より古い
     notes: 終了コード 1。標準出力には同じ形の JSON（`install` は入れる）

@@ -206,18 +206,25 @@ functions:
         default: sys.executable
         passing: keyword
         description: 仮想環境を作る Python（`check-env` を動かしている Python）
+      - name: base_version
+        type: tuple[int, ...]
+        required: false
+        default: sys.version_info
+        passing: keyword
+        description: 仮想環境を作る Python の版
     returns:
       type: dict
       description: 依存の確認の結果（インターフェース定義『依存の確認』のレスポンスの形）
     process: |-
-      1. 仮想環境の Python の場所を引く（`venv_python_path`）
-      2. その Python が無い場合、`venv_ok: false`・`python: null`・全ての `installed: null` と、作って入れるコマンド（`build_install_command` の `create`）を持った `VenvNotFoundError(report)` を送る
-      3. `probe` で版とライブラリの版を尋ねる
+      1. `base_version` が `MIN_PYTHON` 以上かを `base_python_ok` にし、`base_python`・`base_python_version` と一緒に結果へ載せる
+      2. 仮想環境の Python の場所を引く（`venv_python_path`）
+      3. その Python が無い場合、`venv_ok: false`・`python: null`・全ての `installed: null` と、作って入れるコマンド（`build_install_command` の `create`。`base_python_ok` が偽なら `null`）を持った `VenvNotFoundError(report)` を送る
+      4. `probe` で版とライブラリの版を尋ねる
          - `None` が返った場合、版を引けないものとして `python: null`・`python_ok: false` にする
          - それ以外は、版が `MIN_PYTHON` 以上かを `python_ok` にする（`parse_version`）
-      4. `REQUIREMENTS` の配布名ごとに入っている版と下限を比べる（`parse_version`。`null` なら `ok: false`）
-      5. 結果を判定する
-         - `python_ok` が偽の場合、作り直して入れるコマンド（`recreate`）を持った `PythonVersionError(report)` を送る
+      5. `REQUIREMENTS` の配布名ごとに入っている版と下限を比べる（`parse_version`。`null` なら `ok: false`）
+      6. 結果を判定する
+         - `python_ok` が偽の場合、作り直して入れるコマンド（`recreate`。`base_python_ok` が偽なら `null`）を持った `PythonVersionError(report)` を送る
          - 足りないライブラリがある場合、足りないものを入れるコマンド（`install`）を持った `DependencyMissingError(report)` を送る
          - それ以外は `install: null` の結果を返す
     exceptions:
@@ -261,6 +268,13 @@ functions:
         condition: '`mindmap.py`・`check_env.py` を `ast.parse(..., feature_version=(3, 8))` で読み、先頭の文を見る'
         mock: なし
         expected: どちらも `SyntaxError` にならず、docstring の次の文が `from __future__ import annotations`
+      - name: test_run_check_env_when_base_python_old
+        case: 異常
+        summary: 仮想環境を作る Python が古ければ、作る・作り直すコマンドを返さない
+        condition: '`base_version=(3, 9, 6)`。`parametrize`: 仮想環境が無い / `probe` が `python: 3.9.6` を返す'
+        mock: '`probe`'
+        expected: '`VenvNotFoundError` / `PythonVersionError` で、`report` の `base_python_ok: false`・`base_python_version: 3.9.6`・`install: null`'
+        exception: 仮想環境を作る Python が古い
   - name: parse_version
     title: 版の解釈
     kind: 関数
