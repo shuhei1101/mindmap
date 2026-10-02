@@ -1,0 +1,1 @@
+# GitHub Pages を AI Monitor の共通のレイアウト・スタイルで配信する
