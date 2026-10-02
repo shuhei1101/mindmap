@@ -1,7 +1,7 @@
 title: "項目の追加"
 entry:
   kind: operation
-  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py add`（コマンドの引数・標準入力・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py add`（コマンドの引数・標準入力・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系
     summary: 本文つきの検討事項を足す
@@ -151,7 +151,7 @@ request:
     description: 足す項目の種類（位置引数）。書き込むファイルと ID の頭の文字が決まる（decision → decisions.yaml・D / task → tasks.yaml・T / research → research.yaml・R / doc → docs.yaml・A / term → terms.yaml・G / note → notes.yaml・N / log → logs.yaml・L）
   - name: 標準入力
     type: JSON のオブジェクト
-    required: true
+    required: false
     location: body
     description: 項目の中身。キーと型は ER 図『ワークスペース』のその種類の表と共通のキー
     constraints: '`id`・`created`・`updated`・`body` は持たない（スクリプトが付ける）'
@@ -162,6 +162,13 @@ request:
     location: body
     description: 本文の Markdown。YAML には残らず、`docs/{ID}.md` に書かれる
     constraints: 調査・資料・検討事項・会話ログだけが持てる（ほかの種類に渡すと SchemaMismatchError）。資料は必須
+  - name: --json
+    type: str
+    required: false
+    default: なし（標準入力を読む）
+    location: argument
+    description: 標準入力と同じ項目の中身の JSON を 1 つの引数で渡す。渡したときは標準入力を読まない
+    constraints: 標準入力と同じ
 request_example: |-
   ```json
   {

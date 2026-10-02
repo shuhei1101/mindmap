@@ -48,8 +48,13 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert MARKETPLACE_NAME in _registered_marketplace_names(marketplace_list.stdout)
     # インストール済みのプラグインの一覧に mindmap@mindmap が有効である
     assert installed["enabled"] is True
-    # インストールしたプラグインのフォルダに skills/mindmap/schemas/ と skills/mindmap/scripts/ がある
-    assert (install_path / "skills" / "mindmap" / "schemas").is_dir()
-    assert (install_path / "skills" / "mindmap" / "scripts").is_dir()
+    # インストールしたプラグインのフォルダに 2 つのスキルの SKILL.md と、共通の置き場所の 4 つのフォルダがある
+    assert (install_path / "skills" / "setup" / "SKILL.md").is_file()
+    assert (install_path / "skills" / "session" / "SKILL.md").is_file()
+    shared = install_path / "skills" / "mindmap"
+    assert (shared / "references").is_dir()
+    assert (shared / "playbooks").is_dir()
+    assert (shared / "schemas").is_dir()
+    assert (shared / "scripts").is_dir()
     # インストールしたプラグインが hooks を持たない
     assert _count_hooks(details.stdout) == 0

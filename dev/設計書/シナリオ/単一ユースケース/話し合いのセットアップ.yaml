@@ -1,0 +1,137 @@
+title: "話し合いのセットアップ"
+scenarios:
+  - name: 正常シナリオ（新しいワークスペース）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・`init`・`build` を、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 空のワークスペースのフォルダ
+        description: まだ `mindmap.yaml` を持たないフォルダ
+        notes: 引数に渡す
+      - name: 選んだ分野
+        description: 利用者が分野をシステム開発と答え、進め方ガイドの既定のゴール（インターフェースまで）を選ぶ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（setup）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindmap:setup {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC->>WS: mindmap.yaml の有無を見る
+        CC->>CC: 進め方ガイドから分野・最上位の軸の呼び名・フェーズ・カテゴリー・ゴールのたたき台を作る
+        CC-->>U: たたき台を示して確認を取る
+        U->>CC: 確定する
+        CC->>SCR: init（決めた設定）
+        SCR->>WS: mindmap.yaml と空の YAML を作る
+        CC->>SCR: build
+        SCR->>WS: preview.html を書き出す
+        CC-->>U: /mindmap:session で話し合いを続けるよう案内する
+      ```
+    expected:
+      - '`mindmap.yaml` の分野がシステム開発、最上位の軸の呼び名がシステム、フェーズが 目的 → 要件 → 構成 → インターフェース → コンテンツ、ゴールがインターフェースまでになっている'
+      - 検討事項・タスク・調査・資料・用語集・メモ・会話ログの YAML が空で作られている
+      - '`preview.html` がある'
+    notes:
+      E2E: 既存の『ワークスペースの作成』の『正常シナリオ』が確かめる
+  - name: 正常シナリオ（既存のワークスペース）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・`status` を、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 途中まで進んだワークスペース
+        description: 要見直しの検討事項 D-1・進行中のタスク T-1・保留で依存先が決定済みの検討事項 D-2・前提が揃った未決定 D-3 を持つ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（setup）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindmap:setup {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC->>WS: mindmap.yaml の有無を見る
+        CC->>SCR: status
+        SCR->>WS: 全ての YAML を読む
+        SCR-->>CC: 要見直し・進行中・再開可能・次の候補
+        CC-->>U: 状況と続きの推奨を示し、/mindmap:session で続けるよう案内する
+      ```
+    expected:
+      - '`status` の出力の要見直しに D-1、進行中に T-1、再開可能に D-2、次の候補に D-3 がある'
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+    notes:
+      E2E: 既存の『状況の確認』の『正常シナリオ（再開時の状況）』が確かめる
+  - name: 正常シナリオ（フォルダの指定なし）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env` を再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 引数
+        description: 何も渡さない
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（setup）
+        participant SCR as スクリプト
+
+        U->>CC: /mindmap:setup
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC-->>U: ワークスペースのフォルダの指定を求める
+      ```
+    expected:
+      - '`check-env` が終了コード 0 で終わる'
+      - '`init` が呼ばれず、どのフォルダにも `mindmap.yaml` が作られていない'
+    notes:
+      E2E: 持たない。フォルダの指定を求めるのはモデルの応答で、コマンドの再生では作られない
+  - name: 異常シナリオ（依存が足りない）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env` を再生する
+      - name: 依存が足りない環境
+        description: スキル専用の仮想環境が無い
+        notes: '`check-env` が終了コード 1 と `install` のコマンドを返す'
+      - name: 空のワークスペースのフォルダ
+        description: まだ `mindmap.yaml` を持たないフォルダ
+        notes: 引数に渡す
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（setup）
+        participant SCR as スクリプト
+
+        U->>CC: /mindmap:setup {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 終了コード 1・足りないもの・install のコマンド
+        CC-->>U: 足りないものと、そろえるコマンドを示して止まる
+      ```
+    expected:
+      - '`check-env` が終了コード 1 で終わり、出力の `install` が `null` でない'
+      - ワークスペースのフォルダに何も書かれていない
+    notes:
+      E2E: 既存の『ワークスペースの作成』の『異常シナリオ（依存が足りない）』が確かめる
+lead: 利用者がセットアップのスキル `setup` を呼び、依存を確かめてから、新しいワークスペースを作るか、既存のワークスペースの状況を読んで続きを選ぶ単一ユースケース。
+issue: 4
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: 依存が足りなければ何をすればよいかが分かる。新しい話し合いは分野に合った軸で始まり、既存の話し合いは前回の続きから迷わず再開できる
+trigger: 利用者が `/mindmap:setup` を呼ぶ（引数にワークスペースのフォルダを渡すか、何も渡さない）
+preconditions:
+  - プラグイン mindmap がインストールされている
+success_guarantee: 新しいワークスペースは、進め方ガイドに沿った分野・最上位の軸の呼び名・フェーズ・カテゴリー・ゴールを持つ `mindmap.yaml` と `preview.html` を持つ。既存のワークスペースは、どのファイルも書き換えずに状況と続きの推奨が示される。どちらも最後に `/mindmap:session` で話し合いを続けるよう案内する。
+minimal_guarantee: 依存が足りないときと、ワークスペースのフォルダが決まらないときは、ワークスペースに何も書かずに止まる。
+frequency: 話し合いを始めるとき・再開するときに 1 回
+priority: 高
+notes:
+  E2E の範囲: このユースケースは E2E を持たない（各シナリオの補足の既存のシナリオが、スクリプトの振る舞いを確かめる）。たたき台の中身・状況の示し方・続きの推奨・`/mindmap:session` の案内はモデルの応答で、確かめない

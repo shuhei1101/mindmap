@@ -74,6 +74,22 @@ class StatusSummary:
     next: list[Candidate]
 
 
+@dataclass(frozen=True, slots=True, kw_only=True)
+class GoalReport:
+    """ゴール判定の結果。ゴールに届いたかと、残りの検討事項・成果物。"""
+
+    # 届いたか（残りがどちらも空のときだけ真）
+    reached: bool
+    # 設定の `goal.phase`
+    goal_phase: str
+    # 判定に入れたフェーズ
+    phases: list[str]
+    # 決着していない検討事項（`id`・`title`・`phase`・`status`）
+    remaining_decisions: list[dict[str, str]]
+    # 揃っていない成果物（`title`・`doc`）
+    remaining_deliverables: list[dict[str, str | None]]
+
+
 def build_reverse_edges(workspace: Workspace) -> dict[str, list[tuple[str, str]]]:
     """参照先の ID → それを参照する項目とキーの並びを作る。"""
     edges: dict[str, list[tuple[str, str]]] = {}
@@ -123,6 +139,57 @@ def trace_impact(workspace: Workspace, start_id: str) -> list[Affected]:
             )
         visited.update(found)
     return affected
+
+
+def judge_goal(workspace: Workspace) -> GoalReport:
+    """ゴールのフェーズまでの検討事項が決着し、ゴールの成果物が揃ったかを判定する。"""
+    settings = workspace.settings
+    phases = settings.get("phases")
+    phase_order = [str(phase) for phase in phases] if isinstance(phases, list) else []
+    goal = settings.get("goal")
+    goal_settings = goal if isinstance(goal, dict) else {}
+    goal_phase = str(goal_settings.get("phase", ""))
+    # ゴールのフェーズが phases にあれば先頭からそこまで、無ければ全てのフェーズ（厳しい側に倒す）
+    judged_phases = (
+        phase_order[: phase_order.index(goal_phase) + 1]
+        if goal_phase in phase_order
+        else phase_order
+    )
+    # 判定に入るフェーズの検討事項のうち、決着していないものをフェーズの順 → 連番の順に集める
+    unsettled = [
+        item
+        for item in workspace.items["decision"]
+        if item.get("phase") in judged_phases and not is_settled("decision", item)
+    ]
+    unsettled.sort(key=lambda item: (judged_phases.index(item["phase"]), id_number(item["id"])))
+    remaining_decisions = [
+        {
+            "id": item["id"],
+            "title": str(item.get("title", "")),
+            "phase": item["phase"],
+            "status": str(item.get("status", "")),
+        }
+        for item in unsettled
+    ]
+    # ゴールの成果物のうち、資料に繋がっていないか、資料が完成していないものを並びのまま集める
+    docs = {item["id"]: item for item in workspace.items["doc"]}
+    deliverables = goal_settings.get("deliverables")
+    remaining_deliverables: list[dict[str, str | None]] = []
+    for deliverable in deliverables if isinstance(deliverables, list) else []:
+        doc_id = deliverable.get("doc")
+        doc = docs.get(doc_id) if doc_id is not None else None
+        # 資料が無いか、完成（done）が真でない
+        if doc is None or not doc.get("done"):
+            remaining_deliverables.append(
+                {"title": str(deliverable.get("title", "")), "doc": doc_id}
+            )
+    return GoalReport(
+        reached=not remaining_decisions and not remaining_deliverables,
+        goal_phase=goal_phase,
+        phases=judged_phases,
+        remaining_decisions=remaining_decisions,
+        remaining_deliverables=remaining_deliverables,
+    )
 
 
 def is_settled(kind: Kind, item: dict[str, Any] | None) -> bool:

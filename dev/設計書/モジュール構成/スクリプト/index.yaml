@@ -13,3 +13,7 @@ items:
     summary: スキーマ違反・ID の重複・参照切れ・本文のずれ
   - page: ビルド.py.yaml
     summary: プレビューのデータの収集・埋め込み・書き出し
+  - page: 起動し直し.py.yaml
+    summary: 起動した Python の依存の判定と、仮想環境の Python での起動し直し
+  - page: ゴール判定.py.yaml
+    summary: ゴールに届いたかの判定と goal の処理

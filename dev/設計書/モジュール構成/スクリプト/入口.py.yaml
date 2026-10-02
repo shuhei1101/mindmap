@@ -3,7 +3,8 @@ lead: コマンドの引数を解釈して各機能へ振り分け、結果を J
 directory: |-
   ```
   skills/mindmap/scripts/
-    mindmap.py    入口（引数の解釈・振り分け・出力。Python 3.8 で読める構文）
+    mindmap.py    入口（起動し直しの確認・引数の解釈・振り分け・出力。Python 3.8 で読める構文）
+    launcher.py   起動し直し（Python 3.8 で読める構文。『起動し直し』）
     check_env.py  依存の確認（Python 3.8 で読める構文）
     commands.py   コマンドごとの処理（標準入力の解釈 → 各機能 → 出力の辞書）
   ```
@@ -14,6 +15,7 @@ diagrams:
       classDiagram
         direction LR
         class 入口
+        class 起動し直し
         class 依存の確認
         class コマンドの処理
         class 読み書きと検証
@@ -21,6 +23,8 @@ diagrams:
         class 依存と影響
         class 点検
         class ビルド
+        入口 --> 起動し直し : 引数を解釈する前
+        起動し直し --> 依存の確認 : 下限・仮想環境の確認
         入口 --> 依存の確認 : check-env
         入口 --> コマンドの処理 : それ以外（遅延 import）
         コマンドの処理 --> 読み書きと検証
@@ -123,12 +127,16 @@ functions:
       type: int
       description: 終了コード（0 正常 / 1 実行時のエラー・点検で問題あり / 2 引数の誤りは argparse が終える）
     process: |-
-      1. 引数を解釈する（`build_parser`）
-      2. コマンドで分ける
+      1. 引数を解釈する前に、起動した Python で動けるかを確かめる（`relaunch_if_needed`。`script` はこのファイル）
+         - 終了コードが返った場合、起動し直した子プロセスの終了コードをそのまま返す
+         - `VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` を捕まえた場合、標準エラーにエラーの行を出して 1 を返す（`format_relaunch_error`。標準出力には何も出さない）
+         - `None` の場合、このまま続ける
+      2. 引数を解釈する（`build_parser`）
+      3. コマンドで分ける
          - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
-         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（標準入力を使うコマンドは `sys.stdin.read()` を渡す）
-      3. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
-      4. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
+         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`）
+      4. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
+      5. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
     unit_tests:
       - name: test_main_when_check_env
         case: 正常
@@ -154,19 +162,26 @@ functions:
         condition: 作成済みのワークスペースで `attrs --workspace`
         mock: なし
         expected: '0 を返し、標準出力が `{"attrs": []}`'
+      - name: test_main_when_json_argument
+        case: 正常
+        summary: --json を渡したら標準入力を読まずにその中身で足す
+        condition: "作成済みのワークスペースで `add note --workspace {ws} --json {\"title\": \"利用者's メモ\", \"content\": \"メモの中身\"}`。`sys.stdin` を読むと失敗するものに差し替える"
+        mock: '`sys.stdin`'
+        expected: 0 を返し、標準出力の `id` が `N-1`。`notes.yaml` の N-1 の `title` が `利用者's メモ`
   - name: build_parser
     title: 引数の定義
     kind: 関数
     container: skills/mindmap/scripts/mindmap.py
     usecase: 共通
     scope: public
-    summary: 13 のコマンドと引数を持つ `ArgumentParser` を作る
+    summary: 14 のコマンドと引数を持つ `ArgumentParser` を作る
     returns:
       type: argparse.ArgumentParser
       description: サブコマンドを持つ引数の定義（引数は各インターフェース定義のリクエストのとおり）
     process: |-
       1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
-      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる
+      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal` は `--workspace` だけ
+      3. `init`・`add`・`update` に `--json`（中身の JSON の文字列。省略時 `None`）を持たせる
     unit_tests:
       - name: test_build_parser
         case: 正常
@@ -180,6 +195,12 @@ functions:
         condition: '`next --workspace w --limit 0`'
         mock: なし
         expected: '`SystemExit`（コード 2）'
+      - name: test_build_parser_when_json
+        case: 正常
+        summary: init・add・update の --json を解釈する
+        condition: '`parametrize`: `init --workspace w --json {...}` / `add note --workspace w --json {...}` / `update D-1 --workspace w --json {...}` / `--json` を省いた `add note --workspace w`'
+        mock: なし
+        expected: '`json` が渡した文字列。省いたときは `None`'
   - name: run_check_env
     title: 依存の確認
     kind: 関数
@@ -1021,8 +1042,8 @@ functions:
         mock: '`run`'
         expected: '`None`'
 notes:
-  モジュールの読み込み: スクリプトはパッケージとして入れず、`check-env` はシステムの `python3`、それ以外は仮想環境の Python（`check-env` が返す `python_path`）で `{スキルのフォルダ}/scripts/mindmap.py` を起動する。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
-  入口の構文: '`mindmap.py` と `check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、`check-env` を通った後にだけ読むので 3.12 の書き方を使ってよい。'
+  モジュールの読み込み: スクリプトはパッケージとして入れず、スキルは全てのコマンドをシステムの `python3` で `{スキルのフォルダ}/scripts/mindmap.py` を起動する（依存が揃っていなければ入口が仮想環境の Python で起動し直す。『起動し直し』）。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
+  入口の構文: '`mindmap.py`・`launcher.py`・`check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、起動した Python の依存が揃った後にだけ読むので 3.12 の書き方を使ってよい。'
 test_files:
   - tests/unit/scripts/test_mindmap.py
   - tests/unit/scripts/test_check_env.py

@@ -1,7 +1,7 @@
 title: "項目の更新"
 entry:
   kind: operation
-  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py update`（コマンドの引数・標準入力・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py update`（コマンドの引数・標準入力・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系
     summary: 検討事項の答えと状態を直し、不要になったキーを消す
@@ -147,7 +147,7 @@ request:
     example: D-2
   - name: 標準入力
     type: JSON のオブジェクト
-    required: true
+    required: false
     location: body
     description: 置き換えるキーと値。渡したキーだけを値ごと置き換え（配列・オブジェクトも丸ごと）、値が `null` のキーは消す。渡さないキーはそのまま
     constraints: '`id`・`created`・`updated`・`body` は持たない'
@@ -158,6 +158,13 @@ request:
     location: body
     description: 本文の Markdown。`docs/{ID}.md` をこの内容で置き換える
     constraints: 調査・資料・検討事項・会話ログだけが持てる（ほかの種類に渡すと SchemaMismatchError）
+  - name: --json
+    type: str
+    required: false
+    default: なし（標準入力を読む）
+    location: argument
+    description: 標準入力と同じ置き換えるキーの JSON を 1 つの引数で渡す。渡したときは標準入力を読まない
+    constraints: 標準入力と同じ
 response:
   - name: id
     type: str

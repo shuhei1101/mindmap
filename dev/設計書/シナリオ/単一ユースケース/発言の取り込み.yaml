@@ -1,0 +1,139 @@
+title: "発言の取り込み"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `add`・`build` を、決めた引数で順に再生する
+      - name: 作成済みのワークスペース
+        description: 分野がシステム開発で、検討事項を持たないワークスペース
+      - name: 再生する書き込み
+        description: 決め事を持つ検討事項 D-1（決定済み）、D-1 を `parent` に持つ派生の検討事項 D-2（未決定）、問いの形にならない D-3（未整理）、D-2 を進めるタスク T-1、会話ログ L-1
+        notes: どの項目も `target`・`category`・`phase` を持つ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: 発言（決め事を含む）
+        CC->>CC: 対象・カテゴリー・フェーズに振り分け、進め方ガイドの観点と照らす
+        CC->>SCR: add（検討事項・派生の検討事項・未整理・タスク）
+        SCR->>WS: スキーマと突き合わせて書く
+        CC->>SCR: add（会話ログ）
+        SCR->>WS: 書く
+        CC->>SCR: build
+        SCR->>WS: preview.html を書き出す
+        CC-->>U: 記録した項目と、積んだ問いを短く示す
+      ```
+    expected:
+      - D-1 が決定済みで `answer` を持つ
+      - 'D-2 が `parent: D-1` を持ち、未決定である'
+      - D-3 が未整理である
+      - 'T-1 が `for: [D-2]` を持つ'
+      - 会話ログ L-1 がある
+      - 足した全ての項目が `target`・`category`・`phase` を持つ
+      - '`preview.html` が最後の書き込みより後に書き出されている'
+    test: test_normal
+  - name: 正常シナリオ（保留・解除・中止）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `update`・`add`・`build` を、決めた引数で順に再生する
+      - name: 作成済みのワークスペース
+        description: 未決定の D-1・保留の D-2・未着手のタスク T-1 を持つ
+      - name: 再生する書き込み
+        description: D-1 を保留に、D-2 を未決定に戻し、T-1 を中止にする。それぞれ `reason` を持たせる
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: 発言（後回し・再開・やめる）
+        CC->>SCR: update（D-1 を保留、D-2 を未決定、T-1 を中止）
+        SCR->>WS: 書く
+        CC->>SCR: add（会話ログ）
+        CC->>SCR: build
+        CC-->>U: 変えた状態を短く示す
+      ```
+    expected:
+      - D-1 が保留で `reason` を持つ
+      - D-2 が未決定である
+      - T-1 が中止で `reason` を持つ
+      - 会話ログが 1 件足されている
+    notes:
+      E2E: 持たない。状態と `reason` を直すのは `update` だけで、既存の『記録の追加と更新』の『正常シナリオ』が確かめる
+  - name: 正常シナリオ（図や文書を資料に残す）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `docs/` への本文の書き出し・`add`・`build` を、決めた引数で順に再生する
+      - name: 作成済みのワークスペース
+        description: 検討事項 D-1 を持つ
+      - name: 再生する書き込み
+        description: '会話で出した Mermaid の図を本文にした資料 A-1（`kind`: 図、`related: [D-1]`）'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: 発言
+        CC-->>U: 図を出す
+        CC->>WS: docs/ に図の本文を書く
+        CC->>SCR: add（資料 A-1）
+        CC->>SCR: add（会話ログ）
+        CC->>SCR: build
+      ```
+    expected:
+      - '資料 A-1 が `kind: 図` と `related: [D-1]` を持つ'
+      - '`docs/` に A-1 の本文の Markdown がある'
+      - '`check` が YAML と Markdown のずれを 0 件で返す'
+    test: test_normal_when_diagram_kept_as_doc
+  - name: 正常シナリオ（脱線した質問）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `add`・`build` を、決めた引数で順に再生する
+      - name: 作成済みのワークスペース
+        description: タスクを持たない
+      - name: 再生する書き込み
+        description: 言葉の意味を尋ねた質問は用語集 G-1、それ以外の脱線はメモ N-1（タグ `脱線`）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+
+        U->>CC: 「○○って何？」
+        CC-->>U: 答える
+        CC->>SCR: add（用語集 G-1 かメモ N-1）
+        CC->>SCR: add（会話ログ）
+        CC->>SCR: build
+      ```
+    expected:
+      - 用語集 G-1 が `meaning` を持つ
+      - メモ N-1 がタグ `脱線` を持つ
+      - タスクが 0 件のままである
+    test: test_normal_when_off_topic_question
+lead: 話し合いを進めるスキル `session` が、利用者の発言を対象・カテゴリー・フェーズに振り分けて記録し、進め方ガイドの観点と照らして派生の検討事項・未整理・タスクを積む単一ユースケース。
+issue: 4
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: 抽象と具体を行き来する発言をそのまま話しても、決め事とそこから派生する問いが記録に残る。脱線した質問がタスクに紛れない
+trigger: '`session` で話し合っている間に、利用者が発言する'
+preconditions:
+  - ワークスペースが作成済みである
+  - 依存が揃っている
+success_guarantee: 発言ごとに会話ログが 1 件足され、記録した項目は対象・カテゴリー・フェーズを持つ。編集の最後に `preview.html` が書き出し直されている。
+minimal_guarantee: スキーマに合わない書き込みはスクリプトが拒み、ワークスペースは書き込みの前のまま残る。
+frequency: 利用者の発言のたび
+priority: 高
+notes:
+  E2E の範囲: モデルを呼ばず、手順が連ねる書き込みを再生してワークスペースの状態を確かめる。E2E を持つのは、既存のシナリオに無い組み合わせ（`parent` と未整理と `for` を持つ書き込みの組・`docs/` の本文を持つ資料・タスクを積まない脱線の記録）を持つシナリオだけ。発言をどう振り分けるかというモデルの判断は確かめない
+test_file: tests/e2e/単一ユースケース/test_utterance_intake.py
