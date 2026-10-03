@@ -1,0 +1,195 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較と手順の一覧・手順を当てる・`check`・題名を入れる・版の書き換えを、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 版を記録する前の形式のワークスペース
+        description: '版のファイルを持たず、`mindmap.yaml` が `summary` を持たず、資料 A-1（`done: true`）・A-2（`done: false`）を持つワークスペース'
+        notes: YAML を直接書いて作る。聞かれる題名には `要件出しのスキルを設計する` と答える
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（upgrade）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:upgrade {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC->>SCR: 版を比べ、当てる手順を並べる
+        SCR->>WS: 版のファイルを読む（無い）
+        SCR-->>CC: 版を記録する前の形式 → プラグインの版の手順（破壊的な操作なし）
+        CC-->>U: 当てる手順の一覧を示す
+        CC->>SCR: 写しを取って手順を当てる
+        SCR->>WS: 写しを取る
+        SCR->>WS: 版の順に手順を当てる
+        SCR-->>CC: 当てた手順
+        CC->>SCR: check
+        SCR-->>CC: mindmap.yaml に summary が無い
+        CC-->>U: 題名を聞く
+        U->>CC: 題名
+        CC->>SCR: 題名を入れる
+        SCR->>WS: mindmap.yaml を書く
+        CC->>SCR: 版を書き換える
+        SCR->>WS: mindstella-version.ini を書く
+        CC-->>U: 移し替えた版を示し、/mindstella:session で続けるよう案内する
+      ```
+    expected:
+      - '`mindstella-version.ini` の 1 行目がプラグインの版である'
+      - '`docs.yaml` の A-1 が `status: 完成`、A-2 が `status: 下書き` で、どちらも `done` を持たず、`updated` が呼ぶ前と同じである'
+      - '`mindmap.yaml` の `summary` が答えた題名である'
+      - '`check` が問題を 0 件で返す'
+  - name: 正常シナリオ（版が同じ）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較を、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 今の版のワークスペース
+        description: '`init` で作り、資料 A-1（`status: 完成`）を足したワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（upgrade）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:upgrade {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC->>SCR: 版を比べ、当てる手順を並べる
+        SCR->>WS: 版のファイルを読む
+        SCR-->>CC: 版が同じ・当てる手順は無い
+        CC-->>U: 移し替えるものが無いことを示す
+      ```
+    expected:
+      - 版の比較が、版が同じで当てる手順が空だと返す
+      - ワークスペースの全てのファイルの中身と更新日時が、呼ぶ前と同じである
+  - name: 異常シナリオ（手順の途中で失敗する）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較と手順の一覧・手順を当てるを、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 移してもスキーマに合わないワークスペース
+        description: '版のファイルを持たず、資料 A-1（`done: true`）と、`status` を `完了` に直接書き換えた検討事項 D-1 を持つワークスペース'
+        notes: 移し替えの手順とは別の理由でスキーマに合わず、手順を当てるところで失敗する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（upgrade）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:upgrade {フォルダ}
+        CC->>SCR: 版を比べ、当てる手順を並べる
+        SCR-->>CC: 当てる手順
+        CC->>SCR: 写しを取って手順を当てる
+        SCR->>WS: 写しを取る
+        SCR->>SCR: 手順を当てる途中で失敗する
+        SCR->>WS: 写しから戻す
+        SCR-->>CC: エラー（失敗した版・手順・理由）
+        CC-->>U: どの版のどの手順で何が失敗したかを示して止まる
+      ```
+    expected:
+      - '手順を当てるコマンドが終了コード 1 で終わり、出力に失敗した版・手順と、`decisions.yaml: items[0].status:` で始まる理由がある'
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+      - '`mindstella-version.ini` が無いままである'
+  - name: 異常シナリオ（版が新しい）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較を、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 版が新しいワークスペース
+        description: '`init` で作り、版のファイルを `v99.0.0` に書き換えたワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（upgrade）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:upgrade {フォルダ}
+        CC->>SCR: 版を比べ、当てる手順を並べる
+        SCR->>WS: 版のファイルを読む
+        SCR-->>CC: ワークスペースの版が新しい
+        CC-->>U: プラグインを更新するよう案内して止まる
+      ```
+    expected:
+      - 版の比較が、ワークスペースの版がプラグインより新しいと返す
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+  - name: 異常シナリオ（話し合いを進めるスキルを版が古いワークスペースへ呼ぶ）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。`session` の準備が連ねる版の比較を、決めた引数で再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 版を記録する前の形式のワークスペース
+        description: '版のファイルを持たず、資料 A-1 が `done: true` のワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:session {フォルダ}
+        CC->>WS: mindmap.yaml を読む
+        CC->>SCR: 版を比べる
+        SCR-->>CC: ワークスペースの版が古い
+        CC-->>U: /mindstella:upgrade で移し替えるよう案内して止まる
+      ```
+    expected:
+      - 版の比較が、ワークスペースの版がプラグインより古いと返す
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+  - name: 異常シナリオ（話し合いを進めるスキルを版が新しいワークスペースへ呼ぶ）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。`session` の準備が連ねる版の比較を、決めた引数で再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 版が新しいワークスペース
+        description: '`init` で作り、版のファイルを `v99.0.0` に書き換えたワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:session {フォルダ}
+        CC->>WS: mindmap.yaml を読む
+        CC->>SCR: 版を比べる
+        SCR-->>CC: ワークスペースの版が新しい
+        CC-->>U: プラグインを更新するよう案内して止まる
+      ```
+    expected:
+      - 版の比較が、ワークスペースの版がプラグインより新しいと返す
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+lead: 利用者がプラグインを上げた後、移し替えのスキル `upgrade` を呼び、ワークスペースを記録した版からプラグインの版まで、版ごとの手順を順に当てて移し替える単一ユースケース。
+issue: 43
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: プラグインを上げても、作ったワークスペースを壊さずに今の版の形で話し合いを続けられる。失敗しても移し替える前の中身に戻る
+trigger: 利用者が `/mindstella:upgrade {ワークスペースのフォルダ}` を呼ぶ（`/mindstella:setup`・`/mindstella:session` が、版が古いときに案内する）
+preconditions:
+  - プラグイン mindstella がインストールされ、スクリプトの依存が揃っている
+success_guarantee: 記録した版より後でプラグインの版以下の版の手順が版の順に当たり、全ての YAML が今のスキーマに合い、`mindstella-version.ini` がプラグインの版になっている。
+minimal_guarantee: 手順の途中で失敗したときは、ワークスペースが移し替える前の中身に戻り、どの版のどの手順で何が失敗したかが示される。ワークスペースの版がプラグインより新しいときは、何も書かずに止まる。
+frequency: ワークスペースの形を変えた版へプラグインを上げた後、ワークスペースごとに 1 回
+priority: 高
+notes:
+  E2E の範囲: E2E はモデルを呼ばず、スキルの手順が連ねるコマンドの並びを再生してワークスペースの状態を確かめる。手順の一覧の示し方・破壊的な操作を当てる前の確認・案内の文面はモデルの応答で、確かめない。`v0.3.0` の手順は破壊的な操作を持たないため、破壊的な操作の印はインターフェース定義の結合テストが試しの手順で確かめる
+  スキルの呼び名: 移し替えのスキルは `upgrade`（`/mindstella:upgrade`）
+  対応テストファイル: '`tests/e2e/単一ユースケース/test_workspace_upgrade.py`。E2E テスト作成でファイルを作ったときに `test_file` と各シナリオの `test` へ移す'

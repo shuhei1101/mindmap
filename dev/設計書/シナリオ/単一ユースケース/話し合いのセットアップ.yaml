@@ -41,11 +41,11 @@ scenarios:
   - name: 正常シナリオ（既存のワークスペース）
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `check-env`・`status` を、決めた引数で順に再生する
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較・`status` を、決めた引数で順に再生する
       - name: 依存が揃った環境
         description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
       - name: 途中まで進んだワークスペース
-        description: 要見直しの検討事項 D-1・進行中のタスク T-1・保留で依存先が決定済みの検討事項 D-2・前提が揃った未決定 D-3 を持つ
+        description: 要見直しの検討事項 D-1・進行中のタスク T-1・保留で依存先が決定済みの検討事項 D-2・前提が揃った未決定 D-3 を持ち、版のファイルにプラグインと同じ版を持つ
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -58,6 +58,8 @@ scenarios:
         CC->>SCR: check-env
         SCR-->>CC: 依存が揃っている
         CC->>WS: mindmap.yaml の有無を見る
+        CC->>SCR: 版を比べる
+        SCR-->>CC: ワークスペースの版とプラグインの版が同じ
         CC->>SCR: status
         SCR->>WS: 全ての YAML を読む
         SCR-->>CC: 要見直し・進行中・再開可能・次の候補
@@ -120,6 +122,70 @@ scenarios:
       - ワークスペースのフォルダに何も書かれていない
     notes:
       E2E: 既存の『ワークスペースの作成』の『異常シナリオ（依存が足りない）』が確かめる
+  - name: 正常シナリオ（版が古いワークスペース）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較を、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 版を記録する前の形式のワークスペース
+        description: '版のファイルを持たず、資料 A-1 が `done: true` のワークスペース'
+        notes: YAML を直接書いて作る
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（setup）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:setup {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC->>WS: mindmap.yaml の有無を見る
+        CC->>SCR: 版を比べる
+        SCR->>WS: 版のファイルを読む（無い）
+        SCR-->>CC: ワークスペースの版が古い・当てる手順
+        CC-->>U: 版が古いことを示し、/mindstella:upgrade で移し替えるよう案内して止まる
+      ```
+    expected:
+      - 版の比較が、ワークスペースの版を「版を記録する前の形式」、プラグインより古いと返す
+      - '`status` が呼ばれない'
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+    notes:
+      E2E: 新設の『ワークスペースの移し替え』の『正常シナリオ』が、版の比較が古いと返すことを確かめる
+  - name: 異常シナリオ（版が新しいワークスペース）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `check-env`・版の比較を、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
+      - name: 版が新しいワークスペース
+        description: 版のファイルにプラグインより新しい版を持つワークスペース
+        notes: 版のファイルに `v99.0.0` を書く
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（setup）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:setup {フォルダ}
+        CC->>SCR: check-env
+        SCR-->>CC: 依存が揃っている
+        CC->>WS: mindmap.yaml の有無を見る
+        CC->>SCR: 版を比べる
+        SCR->>WS: 版のファイルを読む
+        SCR-->>CC: ワークスペースの版が新しい
+        CC-->>U: プラグインを更新するよう案内して止まる
+      ```
+    expected:
+      - 版の比較が、ワークスペースの版がプラグインより新しいと返す
+      - '`status` が呼ばれない'
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+    notes:
+      E2E: 新設の『ワークスペースの移し替え』の『異常シナリオ（版が新しい）』が、版の比較が新しいと返すことを確かめる
 lead: 利用者がセットアップのスキル `setup` を呼び、依存を確かめてから、新しいワークスペースを作るか、既存のワークスペースの状況を読んで続きを選ぶ単一ユースケース。
 issue: 4
 primary_actor: 利用者
@@ -129,8 +195,8 @@ stakeholders:
 trigger: 利用者が `/mindstella:setup` を呼ぶ（引数にワークスペースのフォルダを渡すか、何も渡さない）
 preconditions:
   - プラグイン mindstella がインストールされている
-success_guarantee: 新しいワークスペースは、進め方ガイドに沿った分野・最上位の軸の呼び名・フェーズ・カテゴリー・ゴールを持つ `mindmap.yaml` と `preview.html` を持つ。既存のワークスペースは、どのファイルも書き換えずに状況と続きの推奨が示される。どちらも最後に `/mindstella:session` で話し合いを続けるよう案内する。
-minimal_guarantee: 依存が足りないときと、ワークスペースのフォルダが決まらないときは、ワークスペースに何も書かずに止まる。
+success_guarantee: 新しいワークスペースは、進め方ガイドに沿った分野・最上位の軸の呼び名・フェーズ・カテゴリー・ゴールを持つ `mindmap.yaml` と `preview.html` を持つ。既存のワークスペースは、どのファイルも書き換えずに状況と続きの推奨が示される。どちらも最後に `/mindstella:session` で話し合いを続けるよう案内する。版がプラグインより古いワークスペースは `/mindstella:upgrade` を、新しいワークスペースはプラグインの更新を案内する。
+minimal_guarantee: 依存が足りないとき、ワークスペースのフォルダが決まらないとき、ワークスペースの版がプラグインと違うときは、ワークスペースに何も書かずに止まる。
 frequency: 話し合いを始めるとき・再開するときに 1 回
 priority: 高
 notes:
