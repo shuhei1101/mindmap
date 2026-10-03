@@ -48,10 +48,10 @@ states:
       - name: current
         value: table
   - name: Docs
-    description: 資料（カード・表）でカードを選んでいる
+    description: 資料（カード・ボード・表）でカードを選んでいる
     args:
       - name: views
-        value: '[{"key": "cards", "label": "カード"}, {"key": "table", "label": "表"}]'
+        value: '[{"key": "cards", "label": "カード"}, {"key": "board", "label": "ボード"}, {"key": "table", "label": "表"}]'
       - name: current
         value: cards
 accessibility:

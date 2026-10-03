@@ -23,7 +23,7 @@ var MindmapPreview;
     MindmapPreview.VIEWS_OF = {
         decisions: ["map", "board", "table"],
         tasks: ["board", "table"],
-        docs: ["cards", "table"],
+        docs: ["cards", "board", "table"],
     };
     /** 画面の既定の表示形式 */
     function defaultView(tab) {
