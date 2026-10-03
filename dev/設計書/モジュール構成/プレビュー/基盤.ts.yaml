@@ -380,6 +380,205 @@ functions:
         condition: '`parametrize`: `push` 真 / 偽'
         mock: なし
         expected: '`history.length` が 1 増える / 変わらず、`location.hash` が `toHash` の値'
+  - name: h
+    title: 要素を作る
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 要素を作り、属性とイベントのリスナーを付け、子を並べる
+    args:
+      - name: tag
+        type: keyof HTMLElementTagNameMap
+        required: true
+        passing: keyword
+        description: 要素の名前
+      - name: attrs
+        type: Record<string, string | number | boolean | null | undefined | EventListener>
+        required: false
+        passing: keyword
+        description: 属性。`on` で始まる名前の関数はそのイベントのリスナーとして付ける。`class` は `className`、`true` は値の無い属性にする。`null`・`undefined`・`false` は付けない
+      - name: children
+        type: (Node | string | number | null | undefined | false)[]
+        required: false
+        passing: keyword
+        description: 子。文字と数は文字として入れ、`null`・`undefined`・`false` は入れない
+    returns:
+      type: HTMLElementTagNameMap[tag]
+      description: 作った要素
+  - name: append
+    title: 子を足す
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 要素の中に子を足す
+    args:
+      - name: parent
+        type: Element
+        required: true
+        passing: keyword
+        description: 足す先
+      - name: children
+        type: (Node | string | number | null | undefined | false)[]
+        required: true
+        passing: keyword
+        description: '`h` の `children` と同じ扱い'
+    returns:
+      type: void
+      description: '-'
+  - name: icon
+    title: アイコン
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 24px の枠に描いた線のアイコン。読み上げ名は付けず、装飾として隠す
+    args:
+      - name: name
+        type: IconName（画面が使うアイコンの名前）
+        required: true
+        passing: positional
+        description: アイコンの名前
+    returns:
+      type: SVGSVGElement
+      description: '`class="icon"`・`viewBox="0 0 24 24"`・`aria-hidden="true"` の SVG'
+  - name: statusMark
+    title: 状態の印
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 状態ごとの印（色と形）を 10px の枠に描く。検討事項・タスク・資料の状態を持つ
+    args:
+      - name: status
+        type: string | undefined
+        required: true
+        passing: positional
+        description: 項目の状態
+    returns:
+      type: SVGSVGElement | null
+      description: '`class="mark"` の SVG。知らない状態・`undefined` は `null`'
+  - name: statusBadge
+    title: 状態の表示
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 状態の印と名前を並べる
+    args:
+      - name: status
+        type: string | undefined
+        required: true
+        passing: positional
+        description: 項目の状態
+    returns:
+      type: Node
+      description: '`span.st`（`data-st` に状態）。`undefined` は空の断片'
+  - name: impactBadge
+    title: 影響度の表示
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 影響度（大・中・小）を 3 本の目盛りと文字で表す
+    args:
+      - name: weight
+        type: string | undefined
+        required: true
+        passing: positional
+        description: 影響度
+    returns:
+      type: Node
+      description: '`span.impact`。大は 3 本・中は 2 本・小は 1 本の目盛りを `on` にする。大・中・小のどれでもない値と `undefined` は空の断片'
+  - name: tagList
+    title: タグの並び
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: タグを `span.tag` で並べる
+    args:
+      - name: values
+        type: readonly string[] | undefined
+        required: true
+        passing: positional
+        description: タグ
+    returns:
+      type: Node
+      description: タグごとの `span.tag` を持つ断片
+  - name: deliverableBadge
+    title: 成果物の印
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 成果物の資料に付ける印（箱のアイコンと「成果物」）
+    args: []
+    returns:
+      type: HTMLElement
+      description: '`span.deliv-badge`'
+  - name: emptyNote
+    title: 空のときの 1 行
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 一覧が空のときに出す 1 行（「該当なし」など）
+    args:
+      - name: text
+        type: string
+        required: true
+        passing: positional
+        description: 出す文
+    returns:
+      type: HTMLElement
+      description: '`p.empty`'
+  - name: enableDragScroll
+    title: 背景のドラッグで動かす
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: スクロールする要素を、押せるもの（button・a・input・label）の上でない所の左ボタンのドラッグで動かせるようにする
+    side_effects: 要素にポインターのリスナーを付ける。ドラッグの間は `dragging` のクラスを付ける
+    args:
+      - name: scroller
+        type: HTMLElement
+        required: true
+        passing: positional
+        description: スクロールする要素（ボード・マップ）
+    returns:
+      type: void
+      description: '-'
+  - name: markSelected
+    title: 選択中の印を付け替える
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 詳細パネルで開いている項目を持ち、描いてある行・カード・節（`main [data-id]`）の `selected` を付け替える
+    side_effects: 開いている項目の ID を持ち替え、`main [data-id]` のクラスを書き換える
+    args:
+      - name: id
+        type: string | null
+        required: true
+        passing: positional
+        description: 開いた項目の ID。閉じたときは `null`
+    returns:
+      type: void
+      description: '-'
+  - name: currentSelection
+    title: 開いている項目
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: '`markSelected` が最後に受けた ID を返す。描き直した行・カードに「選択中」の印を付けるのに使う'
+    args: []
+    returns:
+      type: string | null
+      description: 開いている項目の ID
 test_files:
   - tests/unit/preview/test_records.py
   - tests/unit/preview/test_libs.py
