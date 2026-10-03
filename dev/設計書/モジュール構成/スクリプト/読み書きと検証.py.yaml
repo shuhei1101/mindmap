@@ -954,7 +954,7 @@ functions:
     process: |-
       1. `root/mindmap.yaml` が無ければ `WorkspaceNotFoundError` を送る
       2. `root / RELEASE_DIR` を作る（あればそのまま）
-      3. 中の項目を名前の順に消す（ファイルは `Path.unlink`、フォルダは `shutil.rmtree`）。消したものを戻り値に足す
+      3. 中の項目を名前の順に消す（シンボリックリンクとファイルは `Path.unlink`、リンクでないフォルダは `shutil.rmtree`。リンク先は消さない）。消したものを戻り値に足す
          - `OSError` が起きた場合、そこで止めて `WriteFailedError` を送る（それまでに消したものは戻さない。次の呼び出しで片付く）
     exceptions:
       - name: WorkspaceNotFoundError
