@@ -1,0 +1,32 @@
+# 実行したコマンド
+pytest tests/integration/preview/test_decisions_screen.py tests/integration/preview/test_graph_screen.py -v
+# コミット: 710d5524a4a81a5daf0939f2d18bbd405d39fe94
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.0, pluggy-1.6.0 -- /tmp/claude-1000/-mnt-c-Users-shuhe-repo-mindmap/23902008-7594-40d0-95e5-7d13434f85a9/scratchpad/venv/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/design-preview-decision-map-status-toggle-all
+configfile: pytest.ini
+plugins: base-url-2.1.0, playwright-0.9.0
+collecting ... collected 18 items
+
+tests/integration/preview/test_decisions_screen.py::test_view_switch[chromium] PASSED [  5%]
+tests/integration/preview/test_decisions_screen.py::test_map[chromium] PASSED [ 11%]
+tests/integration/preview/test_decisions_screen.py::test_map_status_legend[chromium] PASSED [ 16%]
+tests/integration/preview/test_decisions_screen.py::test_map_keyword[chromium] PASSED [ 22%]
+tests/integration/preview/test_decisions_screen.py::test_map_zoom[chromium] PASSED [ 27%]
+tests/integration/preview/test_decisions_screen.py::test_map_when_narrow[chromium] PASSED [ 33%]
+tests/integration/preview/test_decisions_screen.py::test_board[chromium] PASSED [ 38%]
+tests/integration/preview/test_decisions_screen.py::test_table_ready_column[chromium] PASSED [ 44%]
+tests/integration/preview/test_decisions_screen.py::test_map_toggle_all_box[chromium] PASSED [ 50%]
+tests/integration/preview/test_decisions_screen.py::test_map_no_shown_status_note[chromium] PASSED [ 55%]
+tests/integration/preview/test_decisions_screen.py::test_map_status_chip_border[chromium] PASSED [ 61%]
+tests/integration/preview/test_decisions_screen.py::test_map_toggle_all_box_appearance[chromium] PASSED [ 66%]
+tests/integration/preview/test_graph_screen.py::test_canvas[chromium] PASSED [ 72%]
+tests/integration/preview/test_graph_screen.py::test_kind_toggles[chromium] PASSED [ 77%]
+tests/integration/preview/test_graph_screen.py::test_open_item_from_hash[chromium] PASSED [ 83%]
+tests/integration/preview/test_graph_screen.py::test_kind_toggle_all_box[chromium] PASSED [ 88%]
+tests/integration/preview/test_graph_screen.py::test_no_shown_kind_note[chromium] PASSED [ 94%]
+tests/integration/preview/test_graph_screen.py::test_kind_chip_style[chromium] PASSED [100%]
+
+============================= 18 passed in 20.59s ==============================
