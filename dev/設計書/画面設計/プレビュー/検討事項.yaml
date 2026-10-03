@@ -44,7 +44,7 @@ elements:
   - name: マップ
     id: decision-map
     kind: canvas
-    description: 対象 → カテゴリー → フェーズ → 検討事項の木を ELK で配置した直角の枝で描く（SVG）。項目を押すと根までの枝と前提・後続の依存の線を強調し、ほかを薄くし、依存の線に小さな玉を流して詳細パネルを開く。背景のドラッグで動かす
+    description: 対象 → カテゴリー → フェーズ → 検討事項の木を ELK で配置した直角の枝で描く（SVG）。項目は 2 行目に ID・状態・影響度を補足の下の段（12px）で出す。項目を押すと根までの枝と前提・後続の依存の線を強調し、ほかを薄くし、依存の線に小さな玉を流して詳細パネルを開く。背景のドラッグで動かす
     io: 表示
     source: プレビューを開く.mindmap-data.decisions・プレビューを開く.mindmap-data.settings
     visible_when: 表示形式がマップで幅 901px 以上。elkjs が読めないときは読めなかったライブラリの知らせ
@@ -61,7 +61,7 @@ elements:
     visible_when: 表示形式がマップで幅 900px 以下
   - name: ボード
     kind: board
-    description: 状態ごとの列にカードを並べる。横に送り、背景のドラッグで動かす。カードを押すと詳細を開く
+    description: 状態ごとの列にカードを並べる。列の左端とカードの間に余白を空け、カードの端はツールバーに揃える。横に送り、背景のドラッグで動かす。カードを押すと詳細を開く
     io: 表示
     source: プレビューを開く.mindmap-data.decisions
     visible_when: 表示形式がボード
