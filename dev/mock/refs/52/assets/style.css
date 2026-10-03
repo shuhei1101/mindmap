@@ -494,13 +494,13 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 .tab-special svg.icon { color: var(--accent); }
 .tab-special[aria-selected="true"], .tab-special[aria-current="page"] { border-color: var(--accent); background: var(--accent-weak); border-bottom-width: 1px; }
 
-/* ===== 成果物の印 ===== */
+/* ===== 納品物の印 ===== */
 .deliv-badge { display: inline-flex; align-items: center; gap: 4px; width: fit-content; padding: 1px 8px; border-radius: var(--radius); background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; }
 .deliv-badge svg.icon { width: 12px; height: 12px; }
 .deliv-card { border-color: var(--accent-line); }
 .d-title { margin-top: 10px; }
 
-/* ===== 成果物のチェックリスト ===== */
+/* ===== 納品物のチェックリスト ===== */
 .deliv { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--border-soft); }
 .deliv-head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: var(--fs-small); color: var(--text-2); }
 .deliv-head svg.icon { color: var(--accent); }
@@ -605,7 +605,7 @@ body:has(> .mockbar) { --mock-h: 32px; }
 table.grid td.no-match-cell { padding: 0; }
 table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--wrap-w, 100%); }
 
-/* 詳細パネルの成果物の印: タイトルの右に余白を空けて置く */
+/* 詳細パネルの納品物の印: タイトルの右に余白を空けて置く */
 .d-title .deliv-badge { margin-left: 12px; vertical-align: 4px; }
 /* 次に検討する項目: 横に並べる幅では、枠の高さを隣のゴールまでのタイルに合わせ、収まらない項目を隠す */
 @media (min-width: 1101px) { .t-next { contain: size; overflow: hidden; } }

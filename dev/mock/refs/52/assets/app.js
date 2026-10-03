@@ -203,7 +203,7 @@
     ],
     docs: [
       C.id, C.title(),
-      { key: "deliverable", label: "成果物", pri: 2, nowrap: true, filter: true, order: ["成果物", "成果物以外"], get: (r) => (r.deliverable ? "成果物" : "成果物以外"), cell: (r) => (r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : '<span class="muted">—</span>') },
+      { key: "deliverable", label: "納品物", pri: 2, nowrap: true, filter: true, order: ["納品物", "納品物以外"], get: (r) => (r.deliverable ? "納品物" : "納品物以外"), cell: (r) => (r.deliverable ? `<span class="deliv-badge">${icon("box")}納品物</span>` : '<span class="muted">—</span>') },
       { key: "status", label: "状態", pri: 1, nowrap: true, filter: true, order: DOC_STATUS, get: (r) => r.status, cell: (r) => status(r.status) },
       { key: "kind", label: "種類", pri: 2, nowrap: true, filter: true, get: (r) => r.kind, cell: (r) => esc(r.kind) },
       { key: "related", label: "関連", pri: 3, get: (r) => (r.related || []).join(" "), cell: (r) => idlinks(r.related) },
@@ -341,11 +341,11 @@
       }).join("");
       return rows ? `<tbody><tr class="tgt"><th colspan="${STAGES.length + 2}" scope="rowgroup">${esc(TARGET)}: ${esc(t.name)}</th></tr>${rows}</tbody>` : "";
     }).join("");
-    // 成果物は資料のうち印の付いたもの。できたものにチェックを付け、5 件を超えたら資料の一覧へ
+    // 納品物は資料のうち印の付いたもの。できたものにチェックを付け、5 件を超えたら資料の一覧へ
     const deliv = M.docs.filter((d) => d.deliverable).concat(W.goal.deliverables.filter((x) => !M.docs.some((d) => d.deliverable && d.title === x.title)));
     const isDone = (x) => x.status === "完成";
     const doneN = deliv.filter(isDone).length;
-    const deliverHtml = `<div class="deliv"><div class="deliv-head">${icon("box")}成果物<span class="mono">${doneN}/${deliv.length}</span>${deliv.length > 5 ? all(pageUrl("docs", { "f.deliverable": "成果物" }), deliv.length) : ""}</div>
+    const deliverHtml = `<div class="deliv"><div class="deliv-head">${icon("box")}納品物<span class="mono">${doneN}/${deliv.length}</span>${deliv.length > 5 ? all(pageUrl("docs", { "f.deliverable": "納品物" }), deliv.length) : ""}</div>
       <ul class="checklist">${deliv.slice(0, 5).map((x) => `<li class="${isDone(x) ? "done" : ""}">${icon(isDone(x) ? "checked" : "unchecked")}${x.id ? `<button data-act="open" data-id="${x.id}">${esc(x.title)}</button>` : `<span>${esc(x.title)}</span>`}</li>`).join("")}</ul></div>`;
     return `
       <header class="hero">
@@ -482,9 +482,9 @@
   };
 
   // ===== 資料のカード =====
-  // ===== 資料のボード: 状態の 3 列。列の中は成果物を先頭に連番の順。0 件の列も出す =====
+  // ===== 資料のボード: 状態の 3 列。列の中は納品物を先頭に連番の順。0 件の列も出す =====
   const orderDocs = (rows) => [...rows].sort((a, b) => (b.deliverable ? 1 : 0) - (a.deliverable ? 1 : 0) || a.id.localeCompare(b.id));
-  const docBoardCard = (r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}${state.panel === r.id ? " selected" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.tags || []).length ? `<span class="c-tags">${tags(r.tags)}</span>` : ""}</button>`;
+  const docBoardCard = (r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}${state.panel === r.id ? " selected" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}納品物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.tags || []).length ? `<span class="c-tags">${tags(r.tags)}</span>` : ""}</button>`;
   const renderDocBoard = () => {
     const rows = orderDocs(rowsFor("docs"));
     return `<div class="board doc-board" style="--cols:${DOC_STATUS.length}">${DOC_STATUS.map((st) => {
@@ -495,7 +495,7 @@
 
   const renderDocCards = () => {
     const rows = orderDocs(rowsFor("docs"));
-    return rows.length ? `<div class="doc-grid">${rows.map((r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span>${status(r.status)}<span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.related || []).length ? `<span class="c-for">${r.related.map((id) => `<span><span class="mono">${id}</span> ${esc(titleOf(id))}</span>`).join("")}</span>` : ""}</button>`).join("")}</div>`
+    return rows.length ? `<div class="doc-grid">${rows.map((r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}納品物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span>${status(r.status)}<span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.related || []).length ? `<span class="c-for">${r.related.map((id) => `<span><span class="mono">${id}</span> ${esc(titleOf(id))}</span>`).join("")}</span>` : ""}</button>`).join("")}</div>`
       : `<p class="no-match">該当する資料はありません。別の条件を試してください。</p>`;
   };
 
@@ -979,7 +979,7 @@
     if (it.related?.length) h += sec(kind === "logs" ? "更新した項目" : "関連", list(it.related));
     const back = referrers(id).filter((x) => !(it.related || []).includes(x) && !(dependents.get(id) || []).includes(x));
     if (back.length) h += sec("参照元", list(back));
-    return `${status(it.status)}<h2 class="d-title">${esc(it.title)}${it.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}</h2><dl class="d-meta">${meta}</dl>${h}`;
+    return `${status(it.status)}<h2 class="d-title">${esc(it.title)}${it.deliverable ? `<span class="deliv-badge">${icon("box")}納品物</span>` : ""}</h2><dl class="d-meta">${meta}</dl>${h}`;
   };
   const fullDlg = document.getElementById("full");
   const renderPanel = () => {
