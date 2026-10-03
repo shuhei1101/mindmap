@@ -2,8 +2,9 @@ title: "スクリプト / 入口"
 lead: コマンドの引数を解釈して各機能へ振り分け、結果を JSON・エラーを標準エラーと終了コードにする。依存の確認だけは PyYAML・jsonschema を読まずに済ませる。
 directory: |-
   ```
-  skills/mindmap/scripts/
-    mindmap.py    入口（引数の解釈・振り分け・出力。Python 3.8 で読める構文）
+  plugins/mindstella/skills/mindmap/scripts/
+    mindmap.py    入口（起動し直しの確認・引数の解釈・振り分け・出力。Python 3.8 で読める構文）
+    launcher.py   起動し直し（Python 3.8 で読める構文。『起動し直し』）
     check_env.py  依存の確認（Python 3.8 で読める構文）
     commands.py   コマンドごとの処理（標準入力の解釈 → 各機能 → 出力の辞書）
   ```
@@ -14,6 +15,7 @@ diagrams:
       classDiagram
         direction LR
         class 入口
+        class 起動し直し
         class 依存の確認
         class コマンドの処理
         class 読み書きと検証
@@ -21,6 +23,8 @@ diagrams:
         class 依存と影響
         class 点検
         class ビルド
+        入口 --> 起動し直し : 引数を解釈する前
+        起動し直し --> 依存の確認 : 下限・仮想環境の確認
         入口 --> 依存の確認 : check-env
         入口 --> コマンドの処理 : それ以外（遅延 import）
         コマンドの処理 --> 読み書きと検証
@@ -36,7 +40,7 @@ diagrams:
 classes:
   - name: PythonVersionError
     title: Python が古い
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: 仮想環境の Python の版が下限より古いか、版を引けない。依存の確認の結果を持ち、入口がそれを標準出力に出して終了コード 1 にする
     kind: クラス
@@ -47,7 +51,7 @@ classes:
         description: 依存の確認の結果
   - name: DependencyMissingError
     title: 依存が足りない
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: ライブラリが無いか下限より古い。依存の確認の結果を持つ
     kind: クラス
@@ -58,7 +62,7 @@ classes:
         description: 依存の確認の結果
   - name: VenvNotFoundError
     title: 仮想環境が無い
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: 仮想環境の Python が無い。依存の確認の結果を持つ
     kind: クラス
@@ -70,13 +74,13 @@ classes:
 constants:
   - name: MIN_PYTHON
     title: Python の版の下限
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: 非機能要件の「Python の版」
     value: (3, 12)
   - name: REQUIREMENTS
     title: ライブラリの版の下限
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: 配布名 → 版の下限（外部ライブラリの設計書の版）
     entries:
@@ -86,19 +90,19 @@ constants:
         value: 4.18.0
   - name: RESERVED_KEYS
     title: スクリプトが付けるキー
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の追加と更新
     summary: 標準入力で渡させないキー
     value: ("id", "created", "updated", "body")
   - name: BODY_INPUT_KEY
     title: 本文を渡すキー
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の追加と更新
     summary: 標準入力で本文の Markdown を渡すキー（YAML には残さない）
     value: '"body_markdown"'
   - name: PROBE_SCRIPT
     title: 仮想環境への問い合わせ
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     summary: 仮想環境の Python に `-c` で渡すコード。版と `REQUIREMENTS` の配布名ごとの版（`importlib.metadata.version`。無ければ `null`）を JSON で標準出力に出す。`importlib.metadata` を読めない版では全て `null`
     value: str
@@ -106,7 +110,7 @@ functions:
   - name: main
     title: 入口
     kind: 関数
-    container: skills/mindmap/scripts/mindmap.py
+    container: plugins/mindstella/skills/mindmap/scripts/mindmap.py
     usecase: 共通
     scope: public
     summary: 引数を解釈してコマンドを実行し、出力と終了コードを決める
@@ -123,12 +127,18 @@ functions:
       type: int
       description: 終了コード（0 正常 / 1 実行時のエラー・点検で問題あり / 2 引数の誤りは argparse が終える）
     process: |-
-      1. 引数を解釈する（`build_parser`）
-      2. コマンドで分ける
+      1. 引数を解釈する前に、起動した Python で動けるかを確かめる（`relaunch_if_needed`。`script` はこのファイル）
+         - 終了コードが返った場合、起動し直した子プロセスの終了コードをそのまま返す
+         - `VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` を捕まえた場合、標準エラーにエラーの行を出して 1 を返す（`format_relaunch_error`。標準出力には何も出さない）
+         - `None` の場合、このまま続ける
+      2. 引数を解釈する（`build_parser`）
+      3. コマンドで分ける
          - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
-         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（標準入力を使うコマンドは `sys.stdin.read()` を渡す）
-      3. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
-      4. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
+         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`、`migrate` は `run_migrate`、`clear-release` は `run_clear_release`、`export` は `run_export`）
+      4. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
+      5. `SummaryRequiredError`・`OutPathError` を捕まえたら、標準エラーに `エラー: {メッセージ}` を出して 2 を返す
+      6. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
+         - `SchemaMismatchError` で `legacy` が真の場合、最後に `LEGACY_HINT` の 1 行を続ける
     unit_tests:
       - name: test_main_when_check_env
         case: 正常
@@ -154,19 +164,44 @@ functions:
         condition: 作成済みのワークスペースで `attrs --workspace`
         mock: なし
         expected: '0 を返し、標準出力が `{"attrs": []}`'
+      - name: test_main_when_json_argument
+        case: 正常
+        summary: --json を渡したら標準入力を読まずにその中身で足す
+        condition: "作成済みのワークスペースで `add note --workspace {ws} --json {\"title\": \"利用者's メモ\", \"content\": \"メモの中身\"}`。`sys.stdin` を読むと失敗するものに差し替える"
+        mock: '`sys.stdin`'
+        expected: 0 を返し、標準出力の `id` が `N-1`。`notes.yaml` の N-1 の `title` が `利用者's メモ`
+      - name: test_main_when_legacy_format
+        case: 正常
+        summary: 前の版の形式のスキーマ違反には migrate を案内する
+        condition: 'A-1（`done: true`）を YAML で直接書いたワークスペースで `build --workspace`'
+        mock: なし
+        expected: 1 を返し、標準エラーの最後の行が `LEGACY_HINT`
+      - name: test_main_when_summary_required
+        case: 正常
+        summary: 題名が要る migrate は終了コード 2
+        condition: '`summary` を持たない設定のワークスペースで `migrate --workspace`'
+        mock: なし
+        expected: 2 を返し、標準エラーに `--summary`。標準出力が空
+      - name: test_main_when_out_invalid
+        case: 正常
+        summary: 書き出す先の誤りは終了コード 2
+        condition: 作成済みのワークスペースで `export --workspace {ws} --out {ws}/preview.html`
+        mock: なし
+        expected: 2 を返し、標準エラーに `--out`。標準出力が空
   - name: build_parser
     title: 引数の定義
     kind: 関数
-    container: skills/mindmap/scripts/mindmap.py
+    container: plugins/mindstella/skills/mindmap/scripts/mindmap.py
     usecase: 共通
     scope: public
-    summary: 13 のコマンドと引数を持つ `ArgumentParser` を作る
+    summary: コマンドと引数を持つ `ArgumentParser` を作る
     returns:
       type: argparse.ArgumentParser
       description: サブコマンドを持つ引数の定義（引数は各インターフェース定義のリクエストのとおり）
     process: |-
       1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
-      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる
+      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal`・`clear-release` は `--workspace` だけ。`migrate` は `--summary`（省略時 `None`）を持たせる。`export` は `--out`（必須）を持たせる
+      3. `init`・`add`・`update` に `--json`（中身の JSON の文字列。省略時 `None`）を持たせる
     unit_tests:
       - name: test_build_parser
         case: 正常
@@ -180,10 +215,16 @@ functions:
         condition: '`next --workspace w --limit 0`'
         mock: なし
         expected: '`SystemExit`（コード 2）'
+      - name: test_build_parser_when_json
+        case: 正常
+        summary: init・add・update の --json を解釈する
+        condition: '`parametrize`: `init --workspace w --json {...}` / `add note --workspace w --json {...}` / `update D-1 --workspace w --json {...}` / `--json` を省いた `add note --workspace w`'
+        mock: なし
+        expected: '`json` が渡した文字列。省いたときは `None`'
   - name: run_check_env
     title: 依存の確認
     kind: 関数
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
     summary: 仮想環境の Python の版とライブラリの版を確かめ、足りなければ結果を持った例外を送る
@@ -278,7 +319,7 @@ functions:
   - name: parse_version
     title: 版の解釈
     kind: 関数
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
     summary: 版の文字列を比べられる整数の組にする
@@ -302,7 +343,7 @@ functions:
   - name: build_install_command
     title: そろえるコマンド
     kind: 関数
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
     summary: 仮想環境とライブラリをそろえる 1 行のコマンドを作る
@@ -356,7 +397,7 @@ functions:
   - name: read_json_object
     title: 標準入力の解釈
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 共通
     scope: public
     summary: 標準入力を JSON のオブジェクトとして読む
@@ -395,7 +436,7 @@ functions:
   - name: validate_input_keys
     title: 渡せないキーの確認
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の追加と更新
     scope: public
     summary: スクリプトが付けるキーと、本文を持てない種類への `body_markdown` を弾く
@@ -442,7 +483,7 @@ functions:
   - name: merge_changes
     title: 変更の当てはめ
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の追加と更新
     scope: public
     summary: 渡したキーを値ごと置き換え、`null` のキーを消した新しい項目を返す
@@ -474,7 +515,7 @@ functions:
   - name: switch_adopted
     title: 採用する案の切り替え
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 採用する案の切り替え
     scope: public
     summary: 指定した記号の案だけを採用にした新しい項目を返す
@@ -523,7 +564,7 @@ functions:
   - name: run_init
     title: init の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: ワークスペースの作成
     scope: public
     summary: 標準入力の設定でワークスペースを作る
@@ -554,7 +595,7 @@ functions:
   - name: run_add
     title: add の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の追加と更新
     scope: public
     summary: ID・日時・本文を付けて 1 項目を足す
@@ -604,7 +645,7 @@ functions:
   - name: run_update
     title: update の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の追加と更新
     scope: public
     summary: 1 項目のキーを置き換え、更新日時を変える
@@ -649,7 +690,7 @@ functions:
   - name: run_adopt
     title: adopt の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 採用する案の切り替え
     scope: public
     summary: 検討事項の採用する案を切り替えて書き込む
@@ -704,7 +745,7 @@ functions:
   - name: run_check
     title: check の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: ワークスペースの点検
     scope: public
     summary: 点検して、問題があれば終了コード 1 を返す
@@ -719,7 +760,8 @@ functions:
       description: '`{ok, problems}` と、問題が無ければ 0・あれば 1'
     process: |-
       1. ワークスペースを読み、点検する（`load_workspace`、`check_workspace`）
-      2. 問題が無ければ `ok: true` と 0、あれば `ok: false` と 1 を返す
+      2. 前の版の形式の問題（`is_legacy_problem`）は、`detail` に続けて `（migrate で今の形式に移せます）` を足す
+      3. 問題が無ければ `ok: true` と 0、あれば `ok: false` と 1 を返す
     unit_tests:
       - name: test_run_check
         case: 正常
@@ -733,10 +775,16 @@ functions:
         condition: 'D-1 `depends_on: [D-9]`'
         mock: なし
         expected: '`ok: false`・`problems` が 1 件と 1'
+      - name: test_run_check_when_legacy_format
+        case: 正常
+        summary: 前の版の形式の問題に migrate を案内する
+        condition: 'A-1（`done: true`）を YAML で直接書いたワークスペース'
+        mock: なし
+        expected: '`ok: false`。A-1 の問題の `detail` が `（migrate で今の形式に移せます）` で終わると1'
   - name: run_build
     title: build の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: プレビューの書き出し
     scope: public
     summary: プレビューを書き出してそのパスを返す
@@ -766,7 +814,7 @@ functions:
   - name: run_impact
     title: impact の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 採用する案の切り替え
     scope: public
     summary: 影響を出力の形にする
@@ -797,7 +845,7 @@ functions:
   - name: run_next
     title: next の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 状況の確認
     scope: public
     summary: 次の候補を出力の形にする
@@ -828,7 +876,7 @@ functions:
   - name: run_status
     title: status の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 状況の確認
     scope: public
     summary: 再開時の状況を出力の形にする
@@ -854,7 +902,7 @@ functions:
   - name: run_find
     title: find の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の検索
     scope: public
     summary: 引数から条件を作り、検索結果を出力の形にする
@@ -883,7 +931,7 @@ functions:
   - name: run_show
     title: show の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の検索
     scope: public
     summary: 1 項目の表示を出力の形にする
@@ -912,7 +960,7 @@ functions:
   - name: run_attrs
     title: attrs の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: 記録の検索
     scope: public
     summary: 属性名の一覧を出力の形にする
@@ -936,7 +984,7 @@ functions:
   - name: default_venv_dir
     title: 仮想環境の既定の場所
     kind: 関数
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
     summary: スキル専用の仮想環境のフォルダ（`~/.mindmap/venv`）を返す
@@ -954,7 +1002,7 @@ functions:
   - name: venv_python_path
     title: 仮想環境の Python の場所
     kind: 関数
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
     summary: 仮想環境のフォルダから、その Python の場所を返す
@@ -984,7 +1032,7 @@ functions:
   - name: probe_venv
     title: 仮想環境への問い合わせ
     kind: 関数
-    container: skills/mindmap/scripts/check_env.py
+    container: plugins/mindstella/skills/mindmap/scripts/check_env.py
     usecase: ワークスペースの作成
     scope: public
     summary: 仮想環境の Python を子プロセスで起動し、版とライブラリの版を受け取る
@@ -1020,9 +1068,109 @@ functions:
         condition: '`parametrize`: `run` が `OSError` を送る / 終了コード 1 を返す / 標準出力 `x` を返す'
         mock: '`run`'
         expected: '`None`'
+  - name: run_migrate
+    title: migrate の処理
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 前の版の形式を移し、移したものを返す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: summary
+        type: str | None
+        required: true
+        passing: keyword
+        description: '`--summary`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{migrated}`（`MigrationEntry` を `asdict` した並び）と 0'
+    process: 1. ワークスペースを移す（記録の形式の移行。`migrate_workspace`）
+    unit_tests:
+      - name: test_run_migrate
+        case: 正常
+        summary: 移したものを返す
+        condition: 'A-1（`done: false`）を YAML で直接書いた、題名を持つワークスペース、`summary=None`'
+        mock: なし
+        expected: '`migrated` が A-1（`file: docs.yaml`、`change: done: false → status: 下書き`）の 1 件と 0'
+  - name: run_clear_release
+    title: clear-release の処理
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
+    usecase: リリースの片付け
+    scope: public
+    summary: '`release/` の中身を消し、消したものを返す'
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{removed}` と 0'
+    process: 1. `release/` を片付ける（リリースの片付け。`clear_release`）
+    unit_tests:
+      - name: test_run_clear_release
+        case: 正常
+        summary: release/ の中を消し、消したものを返す
+        condition: 作成済みのワークスペースの `release/` に `古い資料.md`
+        mock: なし
+        expected: '`{"removed": ["古い資料.md"]}` と 0'
+  - name: run_export
+    title: export の処理
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
+    usecase: 配る書き出し
+    scope: public
+    summary: 書き出す先を確かめて配る書き出しを書き、そのパスを返す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: out
+        type: Path
+        required: true
+        passing: positional
+        description: '`--out`'
+      - name: now
+        type: NowFn
+        required: false
+        default: now_utc
+        passing: positional
+        description: 書き出した日時を返す関数
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{path}` と 0'
+    process: |-
+      1. 書き出す先を確かめる（書き出す先の確かめ。`validate_export_out`）。ワークスペースを読む前に行い、`OutPathError` では何も書かない
+      2. ワークスペースを読んで配る書き出しを書く（`load_workspace`、配る書き出し。`export_preview`）
+    exceptions:
+      - name: OutPathError
+        condition: '`--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す'
+    unit_tests:
+      - name: test_run_export
+        case: 正常
+        summary: 配る書き出しを書いてそのパスを返す
+        condition: 作成済みのワークスペースと、ワークスペースの外の `tmp_path / "配る.html"`
+        mock: '`export_preview`（本物を、小さな雛形のフォルダと取る中身を返す `fetch` を渡して呼ぶものに差し替える。通信しない）'
+        expected: '`{"path": "{配る.html の絶対パス}"}` と 0。`配る.html` がある'
+      - name: test_run_export_when_out_is_preview
+        case: 異常
+        summary: preview.html を指す out はワークスペースを読む前に弾く
+        condition: '`mindmap.yaml` の無いフォルダで `out` が `{フォルダ}/preview.html`'
+        mock: なし
+        expected: '`OutPathError`（`WorkspaceNotFoundError` ではない）'
+        exception: html で終わらないか preview.html を指す
 notes:
-  モジュールの読み込み: スクリプトはパッケージとして入れず、`check-env` はシステムの `python3`、それ以外は仮想環境の Python（`check-env` が返す `python_path`）で `{スキルのフォルダ}/scripts/mindmap.py` を起動する。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
-  入口の構文: '`mindmap.py` と `check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、`check-env` を通った後にだけ読むので 3.12 の書き方を使ってよい。'
+  モジュールの読み込み: スクリプトはパッケージとして入れず、スキルは全てのコマンドをシステムの `python3` で `{スキルのフォルダ}/scripts/mindmap.py` を起動する（依存が揃っていなければ入口が仮想環境の Python で起動し直す。『起動し直し』）。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `plugins/mindstella/skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
+  入口の構文: '`mindmap.py`・`launcher.py`・`check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、起動した Python の依存が揃った後にだけ読むので 3.12 の書き方を使ってよい。'
 test_files:
   - tests/unit/scripts/test_mindmap.py
   - tests/unit/scripts/test_check_env.py

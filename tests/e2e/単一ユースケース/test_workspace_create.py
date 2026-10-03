@@ -11,6 +11,7 @@ from workspace_fixtures import MakeVenv, RunMindmap, SnapshotTree
 
 # スキルがセットアップのステップで決める設定
 SETTINGS: dict[str, Any] = {
+    "summary": "要件出しのスキル mindmap を設計する",
     "field": "システム開発",
     "target_label": "システム",
     "phases": ["目的", "要件", "構成"],
@@ -74,7 +75,7 @@ def test_normal(tmp_path: Path, make_venv: MakeVenv, run_mindmap: RunMindmap) ->
         "logs.yaml": {"items": []},
     }
     assert (root / "docs").is_dir()
-    assert (root / "handoff").is_dir()
+    assert (root / "release").is_dir()
     # 全ての YAML がスキーマに合う（点検がスキーマ違反を出さない）
     assert checked.returncode == 0
     assert json.loads(checked.stdout) == {"ok": True, "problems": []}

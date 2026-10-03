@@ -1,5 +1,5 @@
-title: mindmap
-summary: mindmap の開発ドキュメント全体の目次
+title: mindstella
+summary: mindstella の開発ドキュメント全体の目次
 items:
   - page: 設計書/
     summary: シナリオ / インターフェース定義 / モジュール構成 ほかの設計書と、外部 API・外部ライブラリ・テストの参照資料

@@ -32,7 +32,10 @@ overview:
       label: ブラウザ
       kind: external
     - id: CDN
-      label: CDN（銘柄未定）
+      label: jsDelivr
+      kind: external
+    - id: GF
+      label: Google Fonts
       kind: external
   edges:
     - from: U
@@ -68,9 +71,12 @@ overview:
     - from: BR
       to: CDN
       label: HTTPS
+    - from: BR
+      to: GF
+      label: HTTPS
   subgraphs:
     - id: SYS
-      label: mindmap
+      label: mindstella
       nodes:
         - PLG
         - SKL
@@ -80,9 +86,9 @@ overview:
 repository:
   style: モノレポ
   repositories:
-    - name: shuhei1101/mindmap
-  layout: '`.claude-plugin/`（マーケットプレイスとプラグインのマニフェスト）/ `skills/mindmap/`（スキル。配下に `schemas/`・`scripts/`）'
-  notes: リポジトリの直下がマーケットプレイスとプラグインの両方の直下を兼ねる（マーケットプレイスはプラグインを `./` で指す）。
+    - name: shuhei1101/mindstella
+  layout: '`.claude-plugin/`（マーケットプレイスのマニフェスト）/ `plugins/mindstella/.claude-plugin/`（プラグインのマニフェスト）/ `plugins/mindstella/skills/setup/`・`plugins/mindstella/skills/session/`（スキル。SKILL.md と `steps/`）/ `plugins/mindstella/skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・プレビューの `preview/`。SKILL.md は持たない）'
+  notes: マーケットプレイスはリポジトリの直下の `.claude-plugin/` に置き、プラグインを `./plugins/mindstella` で指す。プラグインは `plugins/mindstella/` の下に分け、利用者へ配るのはその中身だけにする。
 subsystems:
   - name: プラグイン
     scope: plugin
@@ -91,10 +97,10 @@ subsystems:
     runs_on: 利用者の端末の Claude Code
   - name: スキル
     scope: skill
-    role: 会話の進め方の手順。ワークスペースへの記録はスクリプトのコマンドで行う
+    role: 会話の進め方の手順（セットアップ `setup` と話し合いの進行 `session` の 2 つ）。ワークスペースへの記録はスクリプトのコマンドで行い、リサーチはサブエージェントに任せる
     runtime: Markdown（Claude Code が読む手順）
     runs_on: 利用者の端末の Claude Code
-    status: planned
+    status: implemented
   - name: スクリプト
     scope: scripts
     role: ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検と、プレビューの HTML の書き出し
@@ -104,9 +110,9 @@ subsystems:
   - name: プレビュー
     scope: preview
     role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面
-    runtime: JavaScript（ブラウザ）
+    runtime: TypeScript 7（tsc が生成した JavaScript をブラウザで動かす）
     runs_on: 利用者の端末のブラウザ（ファイルとして開く。サーバーは立てない）
-    status: planned
+    status: implemented
 external_systems:
   - name: Claude Code
     purpose: プラグインの読み込み・スキルの手順の実行・スクリプトのコマンドの起動
@@ -115,16 +121,28 @@ external_systems:
     notes:
       事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
     detail: dev/設計書/外部ライブラリ/claude-code#
-  - name: CDN（銘柄未定）
-    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得
+  - name: jsDelivr
+    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得。`build` の書き出しは開いたブラウザが読み、配る書き出し（`export`）は書き出すときに取って中に持つ
     direction: 受信のみ
     protocol: HTTPS
     notes:
-      事前確認: 要。プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。
-lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
+      事前確認: 要。`build` の書き出しは、プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。`export` は、書き出すときに `https://cdn.jsdelivr.net/npm/{package}@{version}/{path}` から配布ファイルとライセンスの本文を取る。1 回の要求で接続と 1 回の読み取りをそれぞれ 30 秒まで待ち、取れなければ何も書かずにエラーで終える。配る書き出しを開くときは通信しない。
+    refs:
+      - dev/設計書/外部ライブラリ/marked#
+      - dev/設計書/外部ライブラリ/DOMPurify#
+      - dev/設計書/外部ライブラリ/elkjs#
+      - dev/設計書/外部ライブラリ/mermaid#
+  - name: Google Fonts
+    purpose: プレビューの文字（Inter・Noto Sans JP・JetBrains Mono）の取得
+    direction: 受信のみ
+    protocol: HTTPS
+    detail: dev/設計書/外部API/GoogleFonts#
+    notes:
+      事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。配る書き出しは文字を読まず、常に端末の文字で描く。
+lead: mindstella のサブシステムと、Claude Code・ブラウザ・CDN との境界。
 constraints: |-
   - hooks・MCP サーバーを持たない
   - 他のスキル・外部の仕組みに依存しない
   - スキル・スクリプト・プレビューの中で、特定の開発基盤の名前を出さない
   - 常駐するサーバーを持たない（プレビューはファイルとして開く）
-  - ネットがある前提で、描画のライブラリは CDN から読む（埋め込む選択肢は持たない）
+  - ネットがある前提で、`build` の書き出しは描画のライブラリを CDN から、文字を Google Fonts から読み、配る書き出し（`export`）は書き出すときに取った描画のライブラリを中に持つ

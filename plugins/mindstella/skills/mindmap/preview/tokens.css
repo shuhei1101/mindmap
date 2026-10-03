@@ -1,0 +1,254 @@
+/* プレビューのデザイントークン（デザインスタイル: 開発者ツール × スイス、見本 dev-swiss-cards） */
+
+/* ===== プリミティブ: 生の値 ===== */
+/* 明暗どちらでも同じ値で持つ生の色・文字・寸法 */
+:root {
+  /* 無彩色（ライト側） */
+  --zinc-0: #ffffff;
+  --zinc-50: #fafafa;
+  --zinc-60: #f8f8f9;
+  --zinc-75: #f5f5f7;
+  --zinc-100: #f4f4f5;
+  --zinc-200: #e4e4e7;
+  --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa;
+  --zinc-450: #71717a;
+  --zinc-500: #6b6b74;
+  --zinc-600: #52525b;
+  --zinc-700: #3f3f46;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
+  /* 無彩色（ダーク側） */
+  --ink-0: #000000;
+  --ink-50: #0b0b0c;
+  --ink-100: #131316;
+  --ink-150: #16161a;
+  --ink-175: #18181c;
+  --ink-200: #1b1b1f;
+  --ink-250: #1d1d22;
+  --ink-300: #26262b;
+  --ink-400: #33333a;
+  --ink-600: #8f8f99;
+  --ink-700: #b4b4bc;
+  --ink-900: #ededef;
+  /* 印の色（青緑） */
+  --teal-50: #e6f3f1;
+  --teal-200: #99d0c8;
+  --teal-400: #2dd4bf;
+  --teal-700: #0f766e;
+  --teal-800: #1f5f57;
+  --teal-900: #10302c;
+  /* 状態の色（ライト / ダーク） */
+  --green-700: #15803d;
+  --green-300: #4ade80;
+  --blue-700: #1d4ed8;
+  --blue-300: #7aa2ff;
+  --red-700: #b91c1c;
+  --red-300: #f87171;
+  --amber-700: #b45309;
+  --amber-300: #fbbf24;
+  --violet-700: #6d28d9;
+  --violet-300: #c4a7ff;
+  /* 検索で当たった語の地 */
+  --yellow-200: #fde68a;
+  --yellow-900: #5c4a12;
+  /* つながりの種類の色（ライト / ダーク） */
+  --kind-dec-light: #3f8f7c;
+  --kind-dec-dark: #7ee0c3;
+  --kind-task-light: #5b7fc9;
+  --kind-task-dark: #8fb4ff;
+  --kind-res-light: #c08a3e;
+  --kind-res-dark: #f5c37a;
+  --kind-doc-light: #8a6fc4;
+  --kind-doc-dark: #c9b2ff;
+  --kind-term-light: #5f6873;
+  --kind-term-dark: #b6bfcc;
+  --kind-note-light: #a48466;
+  --kind-note-dark: #c7a98d;
+  --kind-log-light: #b9bec5;
+  --kind-log-dark: #6f7782;
+
+  /* 文字 */
+  --font-sans: "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --fs-body: .875rem;
+  --fs-small: .8125rem;
+  --fs-xs: .75rem;
+  --fs-h1: 2.125rem;
+  --fs-h2: .9375rem;
+  --fs-big: 2.75rem;
+  /* 寸法 */
+  --topbar-h: 52px;
+  --tab-h: 44px;
+  --control-h: 32px;
+  --cell-py: 9px;
+  --page-pad: 32px;
+  --content-max: 1320px;
+  --gap: 16px;
+  --tile-pad: 24px;
+  --radius: 4px;
+  --panel-w: 480px;
+}
+
+/* ===== セマンティック: ライト ===== */
+/* 明暗の既定は端末の設定に従う */
+:root {
+  color-scheme: light dark;
+  --bg: var(--zinc-75);
+  --surface: var(--zinc-0);
+  --surface-2: var(--zinc-100);
+  --thead-bg: var(--zinc-50);
+  --border: var(--zinc-300);
+  --border-soft: var(--zinc-200);
+  --text: var(--zinc-900);
+  --text-2: var(--zinc-600);
+  --text-3: var(--zinc-500);
+  --accent: var(--teal-700);
+  --accent-weak: var(--teal-50);
+  --accent-line: var(--teal-200);
+  --on-accent: var(--zinc-0);
+  --hover: color-mix(in oklab, var(--text) 9%, var(--surface));
+  --row-hover: var(--zinc-60);
+  --row-selected: var(--teal-50);
+  --st-done: var(--green-700);
+  --st-open: var(--blue-700);
+  --st-review: var(--red-700);
+  --st-hold: var(--amber-700);
+  --st-loose: var(--violet-700);
+  --st-off: var(--zinc-450);
+  --hit: var(--yellow-200);
+  --shadow-color: rgba(24, 24, 27, .14);
+  --scrim: rgba(24, 24, 27, .28);
+  --scrim-soft: rgba(24, 24, 27, .12);
+  --shadow-pop: 0 10px 30px rgba(24, 24, 27, .14), 0 1px 3px rgba(24, 24, 27, .08);
+  --shadow-panel: -14px 0 32px rgba(24, 24, 27, .10);
+  --topbar-bg: var(--zinc-900);
+  --topbar-fg: var(--zinc-50);
+  --topbar-fg-2: var(--zinc-400);
+  --topbar-line: var(--zinc-700);
+  --topbar-hover: var(--zinc-800);
+  --k-dec: var(--kind-dec-light);
+  --k-task: var(--kind-task-light);
+  --k-res: var(--kind-res-light);
+  --k-doc: var(--kind-doc-light);
+  --k-term: var(--kind-term-light);
+  --k-note: var(--kind-note-light);
+  --k-log: var(--kind-log-light);
+  /* つながりの地: 紙のような明るい地にざらつき */
+  --g-label: #2a2f36;
+  --g-line: rgba(30, 60, 55, .3);
+  --g-dot: #2f8a74;
+  --g-bg: #f1f1ee;
+  --g-bg-center: #fbfbf9;
+  --g-grain: rgba(60, 50, 30, .06);
+  --g-glow: rgba(255, 255, 255, 0);
+}
+
+/* ===== セマンティック: ダーク ===== */
+/* 端末の設定がダークで、ライトに固定していないとき */
+@media (prefers-color-scheme: dark) {
+  /* ダークの値 */
+  :root:not([data-theme="light"]) {
+    --bg: var(--ink-50);
+    --surface: var(--ink-100);
+    --surface-2: var(--ink-200);
+    --thead-bg: var(--ink-150);
+    --border: var(--ink-400);
+    --border-soft: var(--ink-300);
+    --text: var(--ink-900);
+    --text-2: var(--ink-700);
+    --text-3: var(--ink-600);
+    --accent: var(--teal-400);
+    --accent-weak: var(--teal-900);
+    --accent-line: var(--teal-800);
+    --on-accent: var(--ink-50);
+    --hover: color-mix(in oklab, var(--text) 9%, var(--surface));
+    --row-hover: var(--ink-175);
+    --row-selected: var(--teal-900);
+    --st-done: var(--green-300);
+    --st-open: var(--blue-300);
+    --st-review: var(--red-300);
+    --st-hold: var(--amber-300);
+    --st-loose: var(--violet-300);
+    --st-off: var(--ink-600);
+    --hit: var(--yellow-900);
+    --shadow-color: rgba(0, 0, 0, .6);
+    --scrim: rgba(0, 0, 0, .55);
+    --scrim-soft: rgba(0, 0, 0, .3);
+    --shadow-pop: 0 10px 30px rgba(0, 0, 0, .6);
+    --shadow-panel: -14px 0 32px rgba(0, 0, 0, .5);
+    --topbar-bg: var(--ink-0);
+    --topbar-fg: var(--ink-900);
+    --topbar-fg-2: var(--zinc-400);
+    --topbar-line: var(--ink-400);
+    --topbar-hover: var(--ink-250);
+    --k-dec: var(--kind-dec-dark);
+    --k-task: var(--kind-task-dark);
+    --k-res: var(--kind-res-dark);
+    --k-doc: var(--kind-doc-dark);
+    --k-term: var(--kind-term-dark);
+    --k-note: var(--kind-note-dark);
+    --k-log: var(--kind-log-dark);
+    /* つながりの地: 墨色に淡い光のにじみ */
+    --g-label: #e3e6ea;
+    --g-line: rgba(190, 230, 220, .3);
+    --g-dot: #a0f0d7;
+    --g-bg: #141417;
+    --g-bg-center: #1e1f24;
+    --g-grain: rgba(0, 0, 0, 0);
+    --g-glow: rgba(120, 220, 200, .10);
+  }
+}
+/* ダークに固定したとき */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: var(--ink-50);
+  --surface: var(--ink-100);
+  --surface-2: var(--ink-200);
+  --thead-bg: var(--ink-150);
+  --border: var(--ink-400);
+  --border-soft: var(--ink-300);
+  --text: var(--ink-900);
+  --text-2: var(--ink-700);
+  --text-3: var(--ink-600);
+  --accent: var(--teal-400);
+  --accent-weak: var(--teal-900);
+  --accent-line: var(--teal-800);
+  --on-accent: var(--ink-50);
+  --hover: color-mix(in oklab, var(--text) 9%, var(--surface));
+  --row-hover: var(--ink-175);
+  --row-selected: var(--teal-900);
+  --st-done: var(--green-300);
+  --st-open: var(--blue-300);
+  --st-review: var(--red-300);
+  --st-hold: var(--amber-300);
+  --st-loose: var(--violet-300);
+  --st-off: var(--ink-600);
+  --hit: var(--yellow-900);
+  --shadow-color: rgba(0, 0, 0, .6);
+  --scrim: rgba(0, 0, 0, .55);
+  --scrim-soft: rgba(0, 0, 0, .3);
+  --shadow-pop: 0 10px 30px rgba(0, 0, 0, .6);
+  --shadow-panel: -14px 0 32px rgba(0, 0, 0, .5);
+  --topbar-bg: var(--ink-0);
+  --topbar-fg: var(--ink-900);
+  --topbar-fg-2: var(--zinc-400);
+  --topbar-line: var(--ink-400);
+  --topbar-hover: var(--ink-250);
+  --k-dec: var(--kind-dec-dark);
+  --k-task: var(--kind-task-dark);
+  --k-res: var(--kind-res-dark);
+  --k-doc: var(--kind-doc-dark);
+  --k-term: var(--kind-term-dark);
+  --k-note: var(--kind-note-dark);
+  --k-log: var(--kind-log-dark);
+  --g-label: #e3e6ea;
+  --g-line: rgba(190, 230, 220, .3);
+  --g-dot: #a0f0d7;
+  --g-bg: #141417;
+  --g-bg-center: #1e1f24;
+  --g-grain: rgba(0, 0, 0, 0);
+  --g-glow: rgba(120, 220, 200, .10);
+}
+/* ライトに固定したとき */
+:root[data-theme="light"] { color-scheme: light; }

@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from conftest import RunClaude
 
-MARKETPLACE_NAME = "mindmap"
+MARKETPLACE_NAME = "mindstella"
 
 
 def _registered_marketplace_names(list_json: str) -> list[str]:
@@ -18,7 +18,7 @@ def _registered_marketplace_names(list_json: str) -> list[str]:
 
 
 def _available_plugin_names(list_json: str) -> list[str]:
-    """claude plugin list --available --json の出力から mindmap から入れられるプラグインの名前を取り出す。"""
+    """claude plugin list --available --json の出力から mindstella から入れられるプラグインの名前を取り出す。"""
     available = json.loads(list_json)["available"]
     return [
         plugin["name"] for plugin in available if plugin["marketplaceName"] == MARKETPLACE_NAME
@@ -26,7 +26,7 @@ def _available_plugin_names(list_json: str) -> list[str]:
 
 
 def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
-    """マニフェストが検証を通り、マーケットプレイス mindmap として登録される（正常系）。"""
+    """マニフェストが検証を通り、マーケットプレイス mindstella として登録される（正常系）。"""
     # 実行
     validate = run_claude("plugin", "validate", "--json", str(repo_root))
     run_claude("plugin", "marketplace", "add", str(repo_root))
@@ -41,7 +41,7 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert [warning["path"] for warning in report["manifest"]["warnings"]] == [
         "plugins[0] plugin.json → version"
     ]
-    # claude plugin marketplace add の後、登録済みのマーケットプレイスの一覧に mindmap が出る
+    # claude plugin marketplace add の後、登録済みのマーケットプレイスの一覧に mindstella が出る
     assert MARKETPLACE_NAME in _registered_marketplace_names(marketplace_list.stdout)
-    # マーケットプレイス mindmap から入れられるプラグインが mindmap の 1 件だけ
-    assert _available_plugin_names(plugin_list.stdout) == ["mindmap"]
+    # マーケットプレイス mindstella から入れられるプラグインが mindstella の 1 件だけ
+    assert _available_plugin_names(plugin_list.stdout) == ["mindstella"]

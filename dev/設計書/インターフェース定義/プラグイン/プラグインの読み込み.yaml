@@ -1,10 +1,10 @@
 title: "プラグインの読み込み"
 entry:
   kind: operation
-  value: '`.claude-plugin/plugin.json` と `skills/`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
+  value: '`plugins/mindstella/` の `.claude-plugin/plugin.json`・`skills/`・`LICENSE`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
 flows:
   - name: 正常系
-    summary: プラグイン mindmap がスキルのフォルダを持ち、hooks を持たずに読み込まれる
+    summary: プラグイン mindstella がスキルのフォルダを持ち、hooks を持たずに読み込まれる
     setup:
       - name: Mock
         description: なし（実際の Claude Code の CLI で実行する）
@@ -12,27 +12,29 @@ flows:
         description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにする
         notes: 環境変数 `CLAUDE_CONFIG_DIR`
       - name: マーケットプレイスの登録
-        description: リポジトリの直下をマーケットプレイス mindmap として登録しておく
+        description: リポジトリの直下をマーケットプレイス mindstella として登録しておく
     flow: |-
       ```mermaid
       sequenceDiagram
         participant C as Claude Code
-        participant IF as .claude-plugin/plugin.json と skills/
+        participant IF as plugins/mindstella/ の .claude-plugin/plugin.json・skills/・LICENSE
 
         C-->>IF: マニフェストとフォルダを取り込む
-        C->>C: プラグイン mindmap を有効にする
+        C->>C: プラグイン mindstella を有効にする
       ```
     expected:
-      - '`claude plugin list` で `mindmap@mindmap` が有効である'
-      - 取り込まれたプラグインのフォルダに `skills/mindmap/schemas/` と `skills/mindmap/scripts/` がある
+      - '`claude plugin list` で `mindstella@mindstella` が有効である'
+      - 取り込まれたプラグインのフォルダに `skills/setup/SKILL.md`・`skills/session/SKILL.md` と、`skills/mindmap/` の `references/`・`playbooks/`・`schemas/`・`scripts/` がある
+      - 取り込まれたプラグインのフォルダの直下に `LICENSE` があり、本文がリポジトリの直下の `LICENSE` と一致する
+      - 取り込まれたプラグインのフォルダに `dev/`・`docs/`・`tests/`・`.storybook/`・`package.json` が無い
       - '`claude plugin details` で hooks が 0 件である'
     test: test_normal
-lead: Claude Code がプラグイン mindmap をインストールして読み込むときの、プラグインのマニフェストとフォルダの形。
+lead: Claude Code がプラグイン mindstella をインストールして読み込むときの、プラグインのマニフェストとフォルダの形。
 callers:
   - dev/設計書/外部ライブラリ/claude-code#
 request:
   - name: name
-    type: '"mindmap"'
+    type: '"mindstella"'
     required: true
     description: プラグイン名。マーケットプレイスの `plugins[].name` と同じ値
   - name: description
@@ -44,17 +46,49 @@ request:
     type: '"shuhei1101"'
     required: true
     description: プラグインの作者
+  - name: author.url
+    type: '"https://github.com/shuhei1101"'
+    required: true
+    description: 作者の GitHub のページ
+  - name: license
+    type: '"MIT"'
+    required: true
+    description: プラグインのライセンス（SPDX の識別子）
+    notes: 本文はプラグインのフォルダの直下の `LICENSE`
+  - name: homepage
+    type: '"https://github.com/shuhei1101/mindstella"'
+    required: true
+    description: プラグインの紹介先。リポジトリの URL
+  - name: repository
+    type: '"https://github.com/shuhei1101/mindstella"'
+    required: true
+    description: プラグインのソースコードのリポジトリ
   - name: skills/mindmap/
     type: フォルダ
     required: true
-    description: 同梱するスキル mindmap のフォルダ。配下に `schemas/`・`scripts/` を持つ
-    notes: '中身を入れるまでは、両フォルダに `.gitkeep` を置く'
+    description: 2 つのスキルが共通で読む置き場所。`references/`・`playbooks/`・`schemas/`・`scripts/`・`preview/`・`README.md` を持ち、SKILL.md は持たない
+    notes: 'SKILL.md を持たないのでスキルとしては読み込まれない（PoC #22 で確かめた）'
+  - name: skills/setup/
+    type: フォルダ
+    required: true
+    description: スキル setup（`/mindstella:setup`）。形はインターフェース定義『セットアップ』
+  - name: skills/session/
+    type: フォルダ
+    required: true
+    description: スキル session（`/mindstella:session`）。形はインターフェース定義『話し合いの進行』
+  - name: LICENSE
+    type: ファイル
+    required: true
+    description: MIT ライセンスの本文と著作権の表記（`Copyright (c) 2026 shuhei1101`）
 request_example: |-
   ```json
   {
-    "name": "mindmap",
-    "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
-    "author": { "name": "shuhei1101" }
+    "name": "mindstella",
+    "description": "話し合いを記録しながら、要件・調査・資料作りで決めたことを形にしていく Claude Code のスキル",
+    "author": { "name": "shuhei1101", "url": "https://github.com/shuhei1101" },
+    "license": "MIT",
+    "homepage": "https://github.com/shuhei1101/mindstella",
+    "repository": "https://github.com/shuhei1101/mindstella"
   }
   ```
 constraints:
@@ -66,4 +100,7 @@ constraints:
   - item: Claude Code の版
     constraint: 2.1.287 以上
     notes: 非機能要件の「Claude Code の版」
+  - item: ライセンスの本文の置き方
+    constraint: リポジトリの直下とプラグインのフォルダの直下の 2 か所に、同じ本文の実体のファイルとして置く。シンボリックリンクにしない
+    notes: 'Claude Code は、ローカルのパスからインストールするとプラグインのフォルダの外を指すシンボリックリンクを飛ばす（公式ドキュメント『Host and maintain a marketplace』の Share files within a marketplace with symlinks）。Windows の clone ではリンクが本文を持たないファイルになる'
 test_file: tests/integration/plugin/test_plugin_loading.py

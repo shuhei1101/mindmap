@@ -2,13 +2,13 @@ title: "スクリプト / 検索"
 lead: 条件で項目を探し、1 件の中身と参照元、使っている属性名を出す。読み書きと検証だけに依存し、ファイルを書かない。
 directory: |-
   ```
-  skills/mindmap/scripts/
+  plugins/mindstella/skills/mindmap/scripts/
     query.py   検索・1 件の表示と参照元・属性名の一覧
   ```
 data_models:
   - name: SearchFilter
     title: 検索の条件
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     role: DTO
     summary: '`find` の引数をまとめた条件。`None` の条件は絞らない'
@@ -49,7 +49,7 @@ data_models:
 constants:
   - name: REFERENCE_KEYS
     title: 参照のキー
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     summary: 参照元として拾うキーとその並び
     value: ("depends_on", "parent", "for", "related", "sources")
@@ -57,7 +57,7 @@ functions:
   - name: search_items
     title: 項目の検索
     kind: 関数
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     scope: public
     summary: 条件の全てに合う項目を種類の順・連番の順に返す
@@ -108,7 +108,7 @@ functions:
   - name: _contains_text
     title: 文字の包含
     kind: 関数
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     scope: internal
     summary: 値の中の文字列（配列・辞書の値をたどる）に文字が含まれるか
@@ -140,7 +140,7 @@ functions:
   - name: parse_attr
     title: 属性の条件の解釈
     kind: 関数
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     scope: public
     summary: '`--attr` の `名前=値`・`名前` を名前と値に分ける'
@@ -164,7 +164,7 @@ functions:
   - name: show_item
     title: 項目の表示
     kind: 関数
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     scope: public
     summary: 1 項目の全てのキー・種類・本文・参照元をまとめる
@@ -205,7 +205,7 @@ functions:
   - name: list_referrers
     title: 参照元の一覧
     kind: 関数
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     scope: public
     summary: その ID を `REFERENCE_KEYS` のどれかで指す項目を、キーごとに 1 行で返す
@@ -236,7 +236,7 @@ functions:
   - name: list_attrs
     title: 属性名の一覧
     kind: 関数
-    container: skills/mindmap/scripts/query.py
+    container: plugins/mindstella/skills/mindmap/scripts/query.py
     usecase: 記録の検索
     scope: public
     summary: 全ての項目の `attrs` の名前ごとに、持つ項目の数と種類を数える

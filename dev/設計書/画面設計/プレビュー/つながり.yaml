@@ -1,0 +1,49 @@
+title: "つながり"
+elements:
+  - name: トップバー
+    kind: nav
+    component: dev/設計書/部品設計/プレビュー/トップバー.ts#
+    args:
+      - name: title
+        value: プレビューを開く.mindmap-data.settings.summary
+      - name: tabs
+        value: 概要と同じ
+      - name: current
+        value: graph
+      - name: theme
+        value: 概要と同じ
+    description: 全ての画面で共通の帯
+    visible_when: 常時
+  - name: 項目の種類
+    kind: checkbox
+    position: ツールバー
+    description: 種類ごと（検討事項・タスク・調査・資料・用語集・メモ・会話ログ）のチェックボックスで、表示 / 非表示を切り替える。枠と、表示中・非表示の見た目は検討事項の状態の印と同じにし、非表示は薄い色と点線の枠で出す（打ち消し線は付けない）
+    initial_value: 全て表示
+    visible_when: 常時
+    action: 外すとその種類の玉と線を消し、入れると出す。「すべての種類を表示」の箱を結果にそろえる
+  - name: 3D のキャンバス
+    id: graph-canvas
+    kind: canvas
+    description: 項目を平たい円、関連（依存・関連・根拠・進めるタスク）を線で、透視で描く。線の種類は実線・点線などの見た目で分ける。上下左右に回す・ホイールでマウスの位置へ寄る・背景のダブルクリックで戻る。向きは目標へ毎コマ少しずつ寄せ、離すと慣性でゆっくり止まり、操作が止まって少しすると、ごくゆっくり自動で回る。玉にカーソルを乗せるとつながる玉が距離の 1 割ほど寄り、押すとそこへ寄って詳細を開き、つながる線に小さな玉を流す
+    io: 表示
+    source: プレビューを開く.mindmap-data（7 種類の項目と `depends_on`・`related`・`sources`・`for`）
+    visible_when: 常時
+  - name: すべての種類を表示
+    kind: checkbox
+    position: ツールバー > 項目の種類の右端
+    description: 項目の種類をまとめて切り替える、文字を添えないチェックの箱。全ての種類を表示していればチェック、一部なら横棒（`indeterminate`）、全て隠していれば空。空か横棒のときに押すと全ての種類を表示し、チェックのときに押すと全て隠す。押した後、各種類のチェックを結果にそろえる。見た目は検討事項の「すべての状態を表示」と同じ（背景は透過、枠の色は印の枠と同じ、記号は箱の中心、横棒も枠線で描く）。読み上げの名前は `aria-label` の「すべての種類を表示」
+    io: 入力
+    type: 真偽値
+    visible_when: 常時
+    initial_value: チェック（全ての種類を表示するため）
+    action: 空か横棒のときに押すと全ての種類を表示し、チェックのときに押すと全て隠す。各種類のチェックを結果にそろえ、玉と線を作り直す
+  - name: 表示する種類の項目が無い旨
+    kind: label
+    position: 3D のキャンバスの枠の中央
+    description: 全ての種類を隠したときに、隠したせいで空だと伝える文（どの幅でも出す）
+    label: 表示する項目はありません。
+    io: 表示
+    visible_when: 表示する種類が 1 つも無いとき
+lead: 全種類の項目を関連でつないで 3D で描く画面。タブの帯の右端の入口から開く。
+mock: dev/mock/pages/graph/38/b-check/index.html
+test_file: tests/integration/preview/test_graph_screen.py

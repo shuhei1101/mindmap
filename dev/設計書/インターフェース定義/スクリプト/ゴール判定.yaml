@@ -1,0 +1,128 @@
+title: "ゴール判定"
+entry:
+  kind: operation
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py goal`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+flows:
+  - name: 正常系（届いた）
+    summary: ゴールのフェーズまでが決着し納品物が揃っていれば、届いたと返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '`phases` が 目的 → 要件 → 構成、`goal.phase` が 要件、`goal.deliverables` が A-1 を指すワークスペース'
+        notes: 'D-1 `目的`・`決定済み`／D-2 `要件`・`対象外`／D-3 `要件`・`取り下げ`／D-4 `構成`・`未決定`／A-1 `status: 完成`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py goal
+        participant WS as ワークスペース
+
+        クライアント->>IF: goal --workspace
+        IF-->>WS: mindmap.yaml と全ての YAML を読む
+        IF->>IF: ゴールのフェーズまでの検討事項と納品物を確かめる
+        IF-->>クライアント: JSON
+      ```
+    expected:
+      - 終了コードが 0
+      - '`reached` が真、`goal_phase` が `要件`、`phases` が `目的`・`要件`'
+      - '`remaining_decisions` と `remaining_deliverables` が空（ゴールより後ろの D-4 を含まない）'
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じ
+    test: test_normal_when_reached
+  - name: 正常系（届いていない）
+    summary: 決着していない検討事項と揃っていない納品物を残りとして返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '`phases` が 目的 → 要件 → 構成、`goal.phase` が 要件、`goal.deliverables` が「要件定義書」（`doc: A-1`）と「用語集」（`doc` なし）のワークスペース'
+        notes: 'D-1 `目的`・`未決定`／D-2 `要件`・`要見直し`／D-3 `要件`・`決定済み`／A-1 `status: 確認中`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py goal
+        participant WS as ワークスペース
+
+        クライアント->>IF: goal --workspace
+        IF-->>WS: mindmap.yaml と全ての YAML を読む
+        IF->>IF: 残りを集める
+        IF-->>クライアント: JSON
+      ```
+    expected:
+      - 終了コードが 0
+      - '`reached` が偽'
+      - '`remaining_decisions` が D-1・D-2 の順で、それぞれ `phase` と `status` を持つ'
+      - '`remaining_deliverables` が「要件定義書」（`doc: A-1`）と「用語集」（`doc: null`）の順'
+    test: test_normal_when_not_reached
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py goal
+        participant WS as フォルダ
+
+        クライアント->>IF: goal --workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーにフォルダのパスがある
+    test: test_error_when_workspace_not_found
+lead: ゴールのフェーズまでの検討事項が決着し、ゴールの納品物が揃ったかを判定し、届いたかと残りの項目を返す。
+idempotent: true
+side_effects: なし（読むだけ）
+request:
+  - name: --workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+response:
+  - name: reached
+    type: bool
+    description: ゴールに届いたか。`remaining_decisions` と `remaining_deliverables` がどちらも空のときだけ真
+  - name: goal_phase
+    type: str
+    description: '`mindmap.yaml` の `goal.phase`'
+  - name: phases
+    type: list[str]
+    description: 判定に入れたフェーズ（`phases` の先頭から `goal.phase` まで）
+  - name: remaining_decisions[]
+    type: list[{id, title, phase, status}]
+    description: 判定に入れたフェーズの検討事項のうち、決着していないもの
+  - name: remaining_deliverables[]
+    type: list[{title, doc}]
+    description: '`goal.deliverables` のうち、`doc` を持たないか、`doc` が指す資料が `status: 完成` でないもの。`doc` が無いときは `null`'
+exceptions:
+  - name: なし（正常終了）
+    condition: 判定できた（届いたかどうかによらない）
+    notes: 終了コード 0
+  - name: WorkspaceNotFoundError
+    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: 終了コード 1
+error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 出力の形
+    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
+  - item: 終了コード
+    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 決着
+    constraint: 検討事項の `決定済み`・`対象外`・`取り下げ`（再開時の状況と同じ）
+  - item: 判定に入れる検討事項
+    constraint: '`phase` が `phases` の先頭から `goal.phase` までのどれか。それより後ろのフェーズと、`phases` に無いフェーズの項目は入れない'
+  - item: 各一覧の並び
+    constraint: '`remaining_decisions` はフェーズの順、同じフェーズの中は連番の小さい順。`remaining_deliverables` は `goal.deliverables` の並び'
+  - item: 起動
+    constraint: 起動した Python に依存が無ければ、スキル専用の仮想環境の Python で起動し直す（『コマンドの起動』）
+notes: {}
+test_file: tests/integration/scripts/test_goal.py

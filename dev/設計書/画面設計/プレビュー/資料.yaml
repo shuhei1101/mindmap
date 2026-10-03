@@ -1,0 +1,62 @@
+title: "資料"
+elements:
+  - name: トップバー
+    kind: nav
+    component: dev/設計書/部品設計/プレビュー/トップバー.ts#
+    args:
+      - name: title
+        value: プレビューを開く.mindmap-data.settings.summary
+      - name: tabs
+        value: 概要と同じ
+      - name: current
+        value: docs
+      - name: theme
+        value: 概要と同じ
+    description: 全ての画面で共通の帯
+    visible_when: 常時
+  - name: 表示形式の切り替え
+    kind: segment
+    component: dev/設計書/部品設計/プレビュー/表示形式の切り替え.ts#
+    args:
+      - name: views
+        value: カード・ボード・表
+      - name: current
+        value: プレビューを開く.view（既定 cards）
+    position: ツールバーの左端
+    description: 表示形式を切り替える
+    visible_when: 常時
+  - name: 絞り込み
+    kind: button
+    position: ツールバー
+    description: ポップオーバーで納品物 → 納品物以外の順・状態・種類・カテゴリー・フェーズ・タグで絞る。かかっている条件はチップで出し、個別に解除するか「すべて解除」で全て解除する。カードとボードで同じ条件を使う
+    label: 絞り込み
+    visible_when: 表示形式がカードかボード
+  - name: 資料のカード
+    kind: list
+    description: 資料 1 件 = カード 1 枚。納品物を先頭に、タイトルの右に余白を空けて納品物の印を置く。種類・資料の状態（下書き / 確認中 / 完成）・カテゴリー・フェーズ・タグを出す。押すと詳細を開く
+    io: 表示
+    source: プレビューを開く.mindmap-data.docs
+    visible_when: 表示形式がカード
+  - name: 表
+    kind: table
+    component: dev/設計書/部品設計/プレビュー/表.ts#
+    args:
+      - name: kind
+        value: docs
+      - name: columns
+        value: ID・タイトル（外せない）・納品物（deliverable、絞れる）・状態（絞れる）・種類（絞れる）・対象（絞れる）・カテゴリー（絞れる）・フェーズ（絞れる）・タグ（絞れる）
+      - name: rows
+        value: プレビューを開く.mindmap-data.docs
+      - name: filters
+        value: プレビューを開く.f.{列}（開いたときだけ。カード・ボードの絞り込みも同じ条件で開く）
+    description: 資料の表
+    visible_when: 表示形式が表
+  - name: ボード
+    kind: board
+    description: 資料の状態（下書き・確認中・完成）ごとの列に、絞り込んだ資料をカードで並べる。0 件の列も出し、「資料はありません。」と書く。列の中は納品物を先頭に連番の順。カードに納品物の印・種類・タイトル・ID・カテゴリー・フェーズ・タグを出し、状態の印は出さない。横に送り、背景のドラッグで動かす（タスク・検討事項のボードと同じ）。カードを押すと詳細を開き、開いているカードは枠の全体と面の色で示す
+    io: 表示
+    source: プレビューを開く.mindmap-data.docs
+    visible_when: 表示形式がボード
+lead: 資料をカード（既定）・ボード・表で見る画面。納品物を先頭に印付きで並べる。
+mock: dev/mock/pages/docs/40/standard/index.html
+test_file: tests/integration/preview/test_docs_screen.py

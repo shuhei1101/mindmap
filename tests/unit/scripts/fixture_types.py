@@ -5,15 +5,25 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from workspace_fixtures import MakeItem, MakeWorkspace, SnapshotTree
+from workspace_fixtures import (
+    MakeItem,
+    MakeLegacyItem,
+    MakeLegacyWorkspace,
+    MakeWorkspace,
+    SnapshotTree,
+)
 
 __all__ = [
     "FailingReplace",
+    "FailingUnlink",
     "FailingWriteText",
     "MakeItem",
+    "MakeLegacyItem",
+    "MakeLegacyWorkspace",
     "MakeWorkspace",
     "SnapshotTree",
 ]
 
 type FailingReplace = Callable[[str], Callable[[Any, Any], None]]
+type FailingUnlink = Callable[[str], None]
 type FailingWriteText = Callable[[str], None]

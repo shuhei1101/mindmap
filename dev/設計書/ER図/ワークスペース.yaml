@@ -1,5 +1,5 @@
 title: "ER 図: ワークスペース"
-lead: 1 つの話し合いのフォルダ（ワークスペース）が持つ YAML の形。正本は `skills/mindmap/schemas/` の JSON Schema で、書き込む前に突き合わせる。
+lead: 1 つの話し合いのフォルダ（ワークスペース）が持つ YAML の形。正本は `plugins/mindstella/skills/mindmap/schemas/` の JSON Schema で、書き込む前に突き合わせる。
 er:
   entities:
     - name: 設定
@@ -89,7 +89,13 @@ tables:
         title: 関連する場所
         type: array
         description: 要素は `title`・`url`
-  - name: skills/mindmap/schemas/common.schema.json
+      - name: summary
+        title: 題名
+        type: string
+        not_null: true
+        description: 話し合いの題名（何についての話し合いかを 1 文で）。プレビューのトップバーに出す
+        example: 要件出しのスキル mindmap を設計する
+  - name: plugins/mindstella/skills/mindmap/schemas/common.schema.json
     title: 共通のキー
     datastore: JSON
     summary: 種類ごとの YAML の項目が共通で持つキー（各種類のスキーマが `$ref` で指す）
@@ -272,7 +278,7 @@ tables:
   - name: docs.yaml
     title: 資料
     datastore: YAML
-    summary: 会話の中で作った図・文書。成果物もこの中で印を付ける
+    summary: 会話の中で作った図・文書。納品物もこの中で印を付ける
     primary_key: id
     scale: ~100
     access: 全件
@@ -283,17 +289,18 @@ tables:
         not_null: true
         description: 図 / 文書 など（自由な文字列）
       - name: deliverable
-        title: 成果物か
+        title: 納品物か
         type: boolean
         not_null: true
         default: 'false'
-        description: ゴールで引き渡す成果物か
-      - name: done
-        title: できたか
-        type: boolean
+        description: ゴールでリリースする納品物か
+      - name: status
+        title: 状態
+        type: string
         not_null: true
-        default: 'false'
-        description: 成果物ができたか
+        default: 下書き
+        description: 資料の状態。納品物は `完成` でできたとみなす
+        enum_values: 下書き / 確認中 / 完成
       - name: body
         title: 本文
         type: string

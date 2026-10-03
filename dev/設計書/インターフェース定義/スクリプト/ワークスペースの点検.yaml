@@ -1,7 +1,7 @@
 title: "ワークスペースの点検"
 entry:
   kind: operation
-  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py check`（コマンドの引数・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py check`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系（問題が無い）
     summary: 整ったワークスペースで問題 0 件を返す
@@ -102,7 +102,7 @@ response:
     description: 問題のあるキーのパス（`items[0].status`・`depends_on` など）
   - name: problems[].detail
     type: str
-    description: 中身（参照先の ID・スキーマの理由など）
+    description: 中身（参照先の ID・スキーマの理由など）。前の版の形式（資料の `done`・`mindmap.yaml` の `summary` が無い）で合わない `schema` は、理由に続けて `migrate` で今の形式に移せることを書く
 response_notes: |-
   > [!NOTE]
   > 問題があるときも点検そのものは正常に終えているので、標準出力に同じ形の JSON を出し、終了コードだけを 1 にする。

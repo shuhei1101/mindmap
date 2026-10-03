@@ -23,14 +23,14 @@ scenarios:
         SCR-->>CC: 揃っている
         CC->>SCR: フォルダと設定を渡してワークスペースを作る
         SCR->>SCR: 設定をスキーマと突き合わせる
-        SCR->>WS: 設定・空の YAML・docs/・handoff/ を書く
+        SCR->>WS: 設定・空の YAML・docs/・release/ を書く
         SCR-->>CC: 作ったワークスペースのパス
       ```
     expected:
       - 依存の確認が終了コード 0 で終わる
       - ワークスペースに `mindmap.yaml` があり、渡した分野・最上位の軸の呼び名・フェーズ・対象・カテゴリー・ゴールを持つ
       - ワークスペースに `decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` があり、どれも項目を持たない
-      - ワークスペースに `docs/` と `handoff/` のフォルダがある
+      - ワークスペースに `docs/` と `release/` のフォルダがある
       - ワークスペースの全ての YAML がスキーマに合う
     test: test_normal
   - name: 異常シナリオ（依存が足りない）
@@ -84,7 +84,7 @@ stakeholders:
     interest: 話し合いの記録を始められる。既にある話し合いの記録を上書きされない
 trigger: 利用者が新しい話し合いを始め、スキルがセットアップのステップで分野・最上位の軸の呼び名・フェーズ・対象・カテゴリー・ゴールを決め終える
 preconditions:
-  - プラグイン mindmap がインストールされている
-success_guarantee: 指定したフォルダに、決めた設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` があり、全ての YAML がスキーマに合う。
+  - プラグイン mindstella がインストールされている
+success_guarantee: 指定したフォルダに、決めた設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`release/` があり、全ての YAML がスキーマに合う。
 minimal_guarantee: 依存が足りないとき・既にワークスペースがあるときは、フォルダの中身を書き換えない。
 test_file: tests/e2e/単一ユースケース/test_workspace_create.py

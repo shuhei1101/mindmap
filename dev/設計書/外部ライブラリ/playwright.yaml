@@ -1,0 +1,60 @@
+title: "playwright"
+kind: "ライブラリ"
+version:
+  current: 1.63.0
+  latest: 1.63.0
+  checked_on: '2026-10-03'
+  source: requirements-dev.txt
+  pinning: '`playwright==1.63.0`・`pytest-playwright==0.9.0` と完全一致で固定する'
+catalogs:
+  - name: API
+    version: 1.63.0
+    entries:
+      - name: page
+        kind: fixture
+        purpose: pytest-playwright が渡すページ（テストごとに新しい文脈）
+      - name: Page.add_script_tag
+        kind: 関数
+        purpose: プレビューの classic script をページに読む
+      - name: Page.evaluate
+        kind: 関数
+        purpose: 部品・画面の関数を引数付きで呼ぶ
+      - name: Page.route
+        kind: 関数
+        purpose: 描画のライブラリの配信元への要求を失敗させる・差し替える
+      - name: Page.goto
+        kind: 関数
+        purpose: file:// と URL のハッシュで `preview.html` を開く
+      - name: expect
+        kind: 関数
+        purpose: 要素の文字・属性・表示を待ちながら確かめる
+  - name: コマンド
+    version: 1.63.0
+    entries:
+      - name: python -m playwright install --only-shell chromium
+        kind: コマンド
+        purpose: テストで使うヘッドレスの Chromium を入れる
+lead: ブラウザ（Chromium ほか）を動かして画面を開き・操作し・確かめる Python のライブラリと、それを pytest から使うプラグイン（pytest-playwright）。
+purl: pkg:pypi/playwright
+dependency_scope: 開発のみ
+adoption: 採用
+used_in:
+  - tests/conftest.py
+upstream: microsoft/playwright-python
+verification:
+  state: 済
+  date: '2026-10-03'
+  detail: 'pytest-playwright 0.9.0・playwright 1.63.0 を仮想環境に入れ、`--only-shell chromium` でブラウザを入れて pytest で 3 件通した: `add_script_tag` で読んだ classic script の部品の関数を `evaluate` で呼び `aria-pressed` を確かめる単体、`page.route("https://cdn.jsdelivr.net/**", abort)` の下で file:// とハッシュの HTML を開き `onerror` の知らせとハッシュを確かめる結合、`storybook build` の出力を HTTP で配る fixture から `iframe.html?id=...` のストーリーを開き、押下で切り替わることを確かめる部品'
+license: Apache-2.0（playwright・pytest-playwright。開発用だけで配る物に入らない）
+official_url: https://playwright.dev/python/
+docs_url: https://playwright.dev/python/docs/api/class-page
+selection:
+  candidates: pytest-playwright・@playwright/test・@storybook/addon-vitest・@storybook/test-runner・vitest + happy-dom を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4169565472)）
+  decision: pytest-playwright にする。既存のテストは全て pytest で、`preview.html` を書き出す fixture をそのまま使え、単体・結合・E2E と部品のストーリーを 1 つの入口から本物のブラウザで確かめられる
+install: |-
+  ```bash
+  pip install -r requirements-dev.txt
+  python -m playwright install --only-shell chromium
+  ```
+
+  CI は `--with-deps` を付ける。

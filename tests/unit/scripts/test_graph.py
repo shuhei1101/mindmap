@@ -197,3 +197,101 @@ def test_summarize_status(make_workspace: MakeWorkspace, make_item: MakeItem) ->
     assert summary.on_hold == [{"id": "D-6", "title": "予算待ち", "reason": "予算が決まったら"}]
     assert len(summary.next) == 1
     assert summary.next[0].id == "D-5"
+
+
+def test_judge_goal(
+    make_workspace: MakeWorkspace, make_item: MakeItem, valid_settings: dict[str, Any]
+) -> None:
+    """ゴールより後ろのフェーズを入れずに届いたと判定する（正常系）。"""
+    # 準備
+    settings = {
+        **valid_settings,
+        "phases": ["目的", "要件", "構成"],
+        "goal": {
+            "phase": "要件",
+            "summary": "要件が決まる",
+            "deliverables": [{"title": "要件定義書", "doc": "A-1"}],
+        },
+    }
+    root = make_workspace(
+        make_item("D-1", phase="目的", status="決定済み"),
+        make_item("D-2", phase="要件", status="対象外"),
+        make_item("D-3", phase="要件", status="取り下げ"),
+        make_item("D-4", phase="構成", status="未決定"),
+        make_item("A-1", deliverable=True, status="完成"),
+        settings=settings,
+        bodies={"A-1.md": "要件定義書の本文"},
+    )
+    workspace = store.load_workspace(root)
+    # 実行
+    report = graph.judge_goal(workspace)
+    # 検証
+    assert report.reached is True
+    assert report.goal_phase == "要件"
+    assert report.phases == ["目的", "要件"]
+    assert report.remaining_decisions == []
+    assert report.remaining_deliverables == []
+
+
+def test_judge_goal_when_remaining(
+    make_workspace: MakeWorkspace, make_item: MakeItem, valid_settings: dict[str, Any]
+) -> None:
+    """決着していない検討事項と揃っていない納品物を集める（正常系）。"""
+    # 準備
+    settings = {
+        **valid_settings,
+        "phases": ["目的", "要件", "構成"],
+        "goal": {
+            "phase": "要件",
+            "summary": "要件が決まる",
+            "deliverables": [
+                {"title": "要件定義書", "doc": "A-1"},
+                {"title": "用語集"},
+                {"title": "図", "doc": "A-9"},
+            ],
+        },
+    }
+    root = make_workspace(
+        make_item("D-2", phase="要件", status="要見直し"),
+        make_item("D-1", phase="目的", status="未決定"),
+        make_item("D-3", phase="要件", status="決定済み"),
+        make_item("A-1", deliverable=True, status="確認中"),
+        settings=settings,
+        bodies={"A-1.md": "要件定義書の本文"},
+    )
+    workspace = store.load_workspace(root)
+    # 実行
+    report = graph.judge_goal(workspace)
+    # 検証
+    assert report.reached is False
+    assert report.remaining_decisions == [
+        {"id": "D-1", "title": "D-1の題", "phase": "目的", "status": "未決定"},
+        {"id": "D-2", "title": "D-2の題", "phase": "要件", "status": "要見直し"},
+    ]
+    assert report.remaining_deliverables == [
+        {"title": "要件定義書", "doc": "A-1"},
+        {"title": "用語集", "doc": None},
+        {"title": "図", "doc": "A-9"},
+    ]
+
+
+def test_judge_goal_when_goal_phase_unknown(
+    make_workspace: MakeWorkspace, make_item: MakeItem, valid_settings: dict[str, Any]
+) -> None:
+    """ゴールのフェーズが phases に無ければ全てのフェーズを判定に入れる（正常系）。"""
+    # 準備
+    settings = {
+        **valid_settings,
+        "phases": ["目的", "要件"],
+        "goal": {"phase": "実装", "summary": "実装まで", "deliverables": []},
+    }
+    root = make_workspace(
+        make_item("D-1", phase="要件", status="未決定"),
+        settings=settings,
+    )
+    workspace = store.load_workspace(root)
+    # 実行
+    report = graph.judge_goal(workspace)
+    # 検証
+    assert report.phases == ["目的", "要件"]
+    assert [decision["id"] for decision in report.remaining_decisions] == ["D-1"]

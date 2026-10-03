@@ -1,7 +1,7 @@
 summary: 単一ユースケースのシナリオ
 items:
   - page: プラグインのインストール.yaml
-    summary: マーケットプレイスを登録してプラグイン mindmap をインストールする
+    summary: マーケットプレイスを登録してプラグイン mindstella をインストールする
   - page: ワークスペースの作成.yaml
     summary: 依存を確かめ、新しいワークスペースを作る
   - page: 記録の追加と更新.yaml
@@ -16,3 +16,35 @@ items:
     summary: 参照切れと、YAML と本文の Markdown のずれを洗い出す
   - page: プレビューの書き出し.yaml
     summary: ワークスペースの記録をプレビューの HTML に書き出す
+  - page: 話し合いのセットアップ.yaml
+    summary: 依存を確かめ、新しいワークスペースを作るか既存の続きを選ぶ
+  - page: 発言の取り込み.yaml
+    summary: 発言を記録し、派生の検討事項・未整理・タスクを積む
+  - page: ヒアリング.yaml
+    summary: 前提が揃った未決定を 1 ラウンドにまとめて聞き、答えを記録する
+  - page: リサーチ.yaml
+    summary: 確認を取ってサブエージェントで調べ、調査を検討事項に繋ぐ
+  - page: 方針転換.yaml
+    summary: 採用する案を切り替え、影響を要見直しにして見直しのタスクを積む
+  - page: プレビューを開く.yaml
+    summary: 記録をプレビューの HTML に書き出し、開く場所を示す
+  - page: ゴール判定.yaml
+    summary: ゴールに届いたかを確かめ、確定した記録をリリースの資料に書き出す
+  - page: 概要を見る.yaml
+    summary: プレビューの概要のタイルを読み、その条件の一覧を開く
+  - page: 検討事項をマップで辿る.yaml
+    summary: 検討事項をマップで見て、枝と依存を辿る
+  - page: タスクをボードで見る.yaml
+    summary: タスクを状態ごとの列のボードで見る
+  - page: 項目を表で絞り込む.yaml
+    summary: 項目を表で並べ替え・絞り込み・ピン留めする
+  - page: 資料を読む.yaml
+    summary: 資料を納品物を先頭にしたカードと状態の列のボードで見て、本文を開く
+  - page: 項目の詳細を読む.yaml
+    summary: 詳細パネルで項目の案・関係・本文を読む
+  - page: 項目を検索する.yaml
+    summary: 全体の検索で項目を探し、詳細を開く
+  - page: つながりを辿る.yaml
+    summary: 3D のつながりを回し、玉を押して詳細を開く
+  - page: プレビューを配る.yaml
+    summary: 記録を見るだけの 1 枚の HTML に書き出し、ネットにつながらない端末で開いて読む

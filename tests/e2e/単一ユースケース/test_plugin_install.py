@@ -1,4 +1,4 @@
-"""プラグインのインストール（マーケットプレイスの登録からプラグイン mindmap のインストールまで）の E2E テスト。"""
+"""プラグインのインストール（マーケットプレイスの登録からプラグイン mindstella のインストールまで）の E2E テスト。"""
 
 from __future__ import annotations
 
@@ -10,8 +10,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from conftest import RunClaude
 
-MARKETPLACE_NAME = "mindmap"
-PLUGIN_ID = "mindmap@mindmap"
+MARKETPLACE_NAME = "mindstella"
+PLUGIN_ID = "mindstella@mindstella"
+
+# インストールしたプラグインのフォルダに無いこと（リポジトリの開発用のファイル）
+OUTSIDE_PLUGIN_NAMES = ["dev", "docs", "tests", ".storybook", "package.json"]
 
 
 def _registered_marketplace_names(list_json: str) -> list[str]:
@@ -20,7 +23,7 @@ def _registered_marketplace_names(list_json: str) -> list[str]:
 
 
 def _find_installed_plugin(list_json: str) -> dict[str, object]:
-    """claude plugin list --json の出力から mindmap@mindmap の行を取り出す。"""
+    """claude plugin list --json の出力から mindstella@mindstella の行を取り出す。"""
     return next(plugin for plugin in json.loads(list_json) if plugin["id"] == PLUGIN_ID)
 
 
@@ -33,7 +36,7 @@ def _count_hooks(details: str) -> int:
 
 
 def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
-    """利用者がマーケットプレイスを登録してプラグイン mindmap をインストールし、一覧で有効になる（正常系）。"""
+    """利用者がマーケットプレイスを登録してプラグイン mindstella をインストールし、一覧で有効になる（正常系）。"""
     # 実行
     run_claude("plugin", "marketplace", "add", str(repo_root))
     marketplace_list = run_claude("plugin", "marketplace", "list", "--json")
@@ -44,12 +47,20 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     # 検証
     installed = _find_installed_plugin(plugin_list.stdout)
     install_path = Path(str(installed["installPath"]))
-    # 登録済みのマーケットプレイスの一覧に mindmap がある
+    # 登録済みのマーケットプレイスの一覧に mindstella がある
     assert MARKETPLACE_NAME in _registered_marketplace_names(marketplace_list.stdout)
-    # インストール済みのプラグインの一覧に mindmap@mindmap が有効である
+    # インストール済みのプラグインの一覧に mindstella@mindstella が有効である
     assert installed["enabled"] is True
-    # インストールしたプラグインのフォルダに skills/mindmap/schemas/ と skills/mindmap/scripts/ がある
-    assert (install_path / "skills" / "mindmap" / "schemas").is_dir()
-    assert (install_path / "skills" / "mindmap" / "scripts").is_dir()
+    # インストールしたプラグインのフォルダに 2 つのスキルの SKILL.md と、共通の置き場所の 4 つのフォルダがある
+    assert (install_path / "skills" / "setup" / "SKILL.md").is_file()
+    assert (install_path / "skills" / "session" / "SKILL.md").is_file()
+    shared = install_path / "skills" / "mindmap"
+    assert (shared / "references").is_dir()
+    assert (shared / "playbooks").is_dir()
+    assert (shared / "schemas").is_dir()
+    assert (shared / "scripts").is_dir()
+    # インストールしたプラグインのフォルダに .claude-plugin/plugin.json があり、リポジトリの開発用のファイルが無い
+    assert (install_path / ".claude-plugin" / "plugin.json").is_file()
+    assert [name for name in OUTSIDE_PLUGIN_NAMES if (install_path / name).exists()] == []
     # インストールしたプラグインが hooks を持たない
     assert _count_hooks(details.stdout) == 0

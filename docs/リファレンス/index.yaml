@@ -1,6 +1,10 @@
-summary: コマンド・ワークスペースの書式
+summary: スキル・コマンド・ワークスペースの書式
 items:
+  - page: スキル.md
+    summary: スキルの呼び名・入力・ステップと、進め方ガイドの一覧
   - page: コマンド.md
     summary: スクリプトのコマンドの引数・標準入力・出力・終了コード
   - page: ワークスペースの書式.md
     summary: ワークスペースのファイル構成と各 YAML のキー
+  - page: 動作環境.md
+    summary: mindstella を使う端末に要る条件の一覧

@@ -1,0 +1,524 @@
+title: "プレビュー / 画面と部品"
+lead: 部品（表・トップバー・表示形式の切り替え）と画面。どれも「引数を受けて要素を返す関数」で、操作は引数のコールバックで入口に知らせる。
+directory: |-
+  ```
+  plugins/mindstella/skills/mindmap/preview/
+    components/
+      view-switch.ts      表示形式の切り替え（部品設計『表示形式の切り替え』）
+      topbar.ts           トップバー（部品設計『トップバー』）
+      table.ts            表と、並べ替え・絞り込みの計算（部品設計『表』）
+    screens/
+      overview.ts         概要
+      decisions.ts        検討事項（マップ・ボード・表）
+      tasks.ts            タスク（ボード・表）
+      docs.ts             資料（カード・ボード・表）
+      records.ts          調査・用語集・メモ・会話ログ（表）
+      detail.ts           詳細パネルと詳細の全画面
+      search.ts           全体の検索
+      diagram-viewer.ts   図の拡大
+    graph/
+      graph.ts            つながり（3D）。見本の作りを関数に分けて整える
+  ```
+
+  `.ts` の書き方と生成した `.js` の扱いは、モジュール構成『基盤』のディレクトリ構成と同じ。
+components:
+  - name: viewSwitch
+    title: 表示形式の切り替え
+    container: plugins/mindstella/skills/mindmap/preview/components/view-switch.ts
+    usecase: 共通
+    kind: コンポーネント
+    summary: 部品設計『表示形式の切り替え』の引数を受け、切り替えを `onChange(key)` で知らせる
+    props:
+      - name: views
+        type: '{key, label}[]'
+        required: true
+        description: 並べる表示形式
+      - name: current
+        type: string
+        required: true
+        description: 選んでいる表示形式
+      - name: onChange
+        type: '(key: string) => void'
+        required: true
+        description: 切り替えのイベント
+  - name: topbar
+    title: トップバー
+    container: plugins/mindstella/skills/mindmap/preview/components/topbar.ts
+    usecase: 共通
+    kind: コンポーネント
+    summary: 部品設計『トップバー』の引数を受け、画面を移る・検索を開く・テーマの切り替えをコールバックで知らせる
+    props:
+      - name: title
+        type: string
+        required: true
+        description: 題名
+      - name: tabs
+        type: '{key, label, icon, count?}[]'
+        required: true
+        description: タブ
+      - name: current
+        type: string
+        required: true
+        description: 開いている画面
+      - name: theme
+        type: "'light' | 'dark'"
+        required: true
+        description: 今のテーマ
+      - name: onNavigate
+        type: '(key: string) => void'
+        required: true
+        description: 画面を移る
+      - name: onSearch
+        type: () => void
+        required: true
+        description: 検索を開く
+      - name: onTheme
+        type: (theme) => void
+        required: true
+        description: テーマの切り替え
+  - name: table
+    title: 表
+    container: plugins/mindstella/skills/mindmap/preview/components/table.ts
+    usecase: 項目を表で絞り込む
+    kind: コンポーネント
+    summary: 部品設計『表』の引数を受け、並べ替え・絞り込み・ピン留め・表示する列・初期設定に戻す・詳細を開くをコールバックで知らせる。行の絞り込みと並べ替えは `filterRows`・`sortRows`
+    description: 描き直す前に表の入れ物の `scrollLeft`・`scrollTop` を控え、描いた後に戻す。
+    props:
+      - name: kind
+        type: string
+        required: true
+        description: 項目の種類
+      - name: columns
+        type: Column[]
+        required: true
+        description: 列の定義（`key`・`label`・`filterable`・`fixed`・`hidden`・値を取る `get`・セルを描く `cell`）
+      - name: rows
+        type: object[]
+        required: true
+        description: 行にする項目
+      - name: sort
+        type: '{key, dir} | null'
+        required: false
+        default: 'null'
+        description: 並べ替え
+      - name: filters
+        type: Record<string, string[]>
+        required: false
+        default: '{}'
+        description: 絞り込み
+      - name: pinTo
+        type: string | null
+        required: false
+        default: 'null'
+        description: この列まで固定
+      - name: hiddenColumns
+        type: string[]
+        required: false
+        description: 隠している列
+      - name: on
+        type: '{sort, filter, pin, columns, reset, open}'
+        required: true
+        description: 部品設計のイベントごとのコールバック
+  - name: overviewScreen
+    title: 概要
+    container: plugins/mindstella/skills/mindmap/preview/screens/overview.ts
+    usecase: 概要を見る
+    kind: 画面
+    summary: 画面設計『概要』のタイルを描く。次の候補・ゴールまでの進捗・カテゴリー別の進捗は埋め込みのデータの `derived` をそのまま並べる（画面で計算しない）
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: on
+        type: '{open, navigate}'
+        required: true
+        description: 項目を開く・絞った表へ移る（`Route`）
+  - name: decisionsScreen
+    title: 検討事項
+    container: plugins/mindstella/skills/mindmap/preview/screens/decisions.ts
+    usecase: 検討事項をマップで辿る
+    kind: 画面
+    summary: 画面設計『検討事項』を描く。マップは `buildDecisionTree` の木を `ELK.layout` で配置して SVG にし、幅 900px 以下では字下げの一覧にする。elkjs が読めないときは `libraryNotice`。状態の印の右端に `toggleAllBox` を置き、`shownStatuses` をまとめて入れ替えて描き直す。表示する状態の検討事項が 1 件も無いときは、マップの枠と字下げの一覧に空の旨を出す
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: route
+        type: Route
+        required: true
+        description: 表示形式と絞り込み
+      - name: on
+        type: '{open, view}'
+        required: true
+        description: 項目を開く・表示形式を切り替える
+    state:
+      - name: shownStatuses
+        type: Set<string>
+        initial: 要見直し・未決定・未整理・保留
+        description: マップで表示する状態
+      - name: keyword
+        type: string
+        initial: 空
+        description: マップのキーワード
+      - name: zoom
+        type: number
+        initial: 全体が収まる倍率
+        description: マップの倍率
+  - name: tasksScreen
+    title: タスク
+    container: plugins/mindstella/skills/mindmap/preview/screens/tasks.ts
+    usecase: タスクをボードで見る
+    kind: 画面
+    summary: 画面設計『タスク』を描く。ボードの列は `boardColumns`
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: route
+        type: Route
+        required: true
+        description: 表示形式と絞り込み
+      - name: on
+        type: '{open, view}'
+        required: true
+        description: 項目を開く・表示形式を切り替える
+  - name: docsScreen
+    title: 資料
+    container: plugins/mindstella/skills/mindmap/preview/screens/docs.ts
+    usecase: 資料を読む
+    kind: 画面
+    summary: 画面設計『資料』を描く。カードの並びは `orderDocs`、絞り込みは `filterRows`（カードとボードで同じ条件）。ボードは絞り込んだ資料を `boardColumns`（`DOC_STATUSES`）で列に分け、列ごとに `orderDocs` で並べ直して `board` に渡す。ボードのカードは資料のカードから状態の印を外したもの
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: route
+        type: Route
+        required: true
+        description: 表示形式と絞り込み
+      - name: on
+        type: '{open, view}'
+        required: true
+        description: 項目を開く・表示形式を切り替える
+  - name: recordsScreen
+    title: 記録の表
+    container: plugins/mindstella/skills/mindmap/preview/screens/records.ts
+    usecase: 項目を表で絞り込む
+    kind: 画面
+    summary: 画面設計『記録の表』を描く。調査・用語集・メモ・会話ログの列の定義を種類ごとに持ち、`table` に渡す
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: route
+        type: Route
+        required: true
+        description: 種類（`tab`）と絞り込み
+      - name: on
+        type: '{open}'
+        required: true
+        description: 項目を開く
+  - name: detailPanel
+    title: 詳細パネル
+    container: plugins/mindstella/skills/mindmap/preview/screens/detail.ts
+    usecase: 項目の詳細を読む
+    kind: 画面
+    summary: 画面設計『詳細パネル』『詳細の全画面』を描く。本文は `renderMarkdown`・`renderDiagrams`、関係する項目は `relatedItems`。`full` が真なら中央のモーダルで出し、図の拡大は中身を切り替える
+    props:
+      - name: id
+        type: string
+        required: true
+        description: 項目の ID
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: full
+        type: boolean
+        required: true
+        description: 全画面か
+      - name: on
+        type: '{open, close, full, back, forward, diagram}'
+        required: true
+        description: 項目へ移る・閉じる・全画面の切り替え・戻る進む・図を拡大する
+  - name: searchDialog
+    title: 全体の検索
+    container: plugins/mindstella/skills/mindmap/preview/screens/search.ts
+    usecase: 項目を検索する
+    kind: 画面
+    summary: 画面設計『全体の検索』を `dialog` 要素で描く。結果は `searchItems`
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: on
+        type: '{open, close}'
+        required: true
+        description: 結果の項目を開く・閉じる
+  - name: diagramViewer
+    title: 図の拡大
+    container: plugins/mindstella/skills/mindmap/preview/screens/diagram-viewer.ts
+    usecase: 項目の詳細を読む
+    kind: 画面
+    summary: 画面設計『図の拡大』を描く。ホイールで倍率、背景のドラッグで位置を変え、文字の上のドラッグは選択に任せる
+    props:
+      - name: svg
+        type: SVGElement
+        required: true
+        description: 描いた図
+      - name: on
+        type: '{close}'
+        required: true
+        description: 閉じる
+  - name: graphScreen
+    title: つながり
+    container: plugins/mindstella/skills/mindmap/preview/graph/graph.ts
+    usecase: つながりを辿る
+    kind: 画面
+    summary: 画面設計『つながり』をキャンバスに描く。玉と線は `buildGraph`、毎コマの描画は玉ごとに一度だけ画像にした文字を倍率をかけて置く（PoC の `opt-each-bitmap`）。画面の外は描かない。項目の種類の右端に `toggleAllBox` を置き、`shownKinds` をまとめて入れ替えて玉と線を作り直す。表示する種類が 1 つも無いときは、枠の中央に空の旨を出す
+    props:
+      - name: index
+        type: RecordIndex
+        required: true
+        description: 索引
+      - name: on
+        type: '{open}'
+        required: true
+        description: 玉を押して項目を開く
+    state:
+      - name: shownKinds
+        type: Set<string>
+        initial: 全ての種類
+        description: 表示する項目の種類
+      - name: camera
+        type: '{yaw, pitch, distance, target}'
+        initial: 全体が収まる向きと距離
+        description: 視点
+      - name: labelCache
+        type: Map<string, HTMLCanvasElement>
+        initial: 空
+        description: 玉・太さ・色ごとに描いた文字の画像
+functions:
+  - name: filterRows
+    title: 行の絞り込み
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/components/table.ts
+    usecase: 項目を表で絞り込む
+    scope: public
+    summary: 列ごとの条件に合う行を返す（列の中はどれかに当たればよく、列の間は全てに当たる）
+    args:
+      - name: rows
+        type: object[]
+        required: true
+        passing: keyword
+        description: 行
+      - name: columns
+        type: Column[]
+        required: true
+        passing: keyword
+        description: 列の定義
+      - name: filters
+        type: Record<string, string[]>
+        required: true
+        passing: keyword
+        description: 絞り込み
+    returns:
+      type: object[]
+      description: 合う行（元の順）。値が配列の列は、要素のどれかが条件にあれば合う
+    unit_tests:
+      - name: test_filter_rows
+        case: 正常
+        summary: 列の中はどれか、列の間は全て
+        condition: '`parametrize`: 状態 = 要見直し・保留 / 状態 = 未決定 かつ 着手可否 = 着手可能 / タグ（配列）= a / 条件なし'
+        mock: なし
+        expected: それぞれの条件に合う行だけが元の順で残る
+  - name: sortRows
+    title: 行の並べ替え
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/components/table.ts
+    usecase: 項目を表で絞り込む
+    scope: public
+    summary: 列の値で行を並べ替える（元の配列は変えない）
+    args:
+      - name: rows
+        type: object[]
+        required: true
+        passing: keyword
+        description: 行
+      - name: columns
+        type: Column[]
+        required: true
+        passing: keyword
+        description: 列の定義（`order` を持つ列はその並びの順）
+      - name: sort
+        type: '{key, dir} | null'
+        required: true
+        passing: keyword
+        description: 並べ替え。`null` なら元の順
+    returns:
+      type: object[]
+      description: 並べ替えた行。数値は数の順、文字は `localeCompare(…, "ja")`、同じ値は元の順
+    unit_tests:
+      - name: test_sort_rows
+        case: 正常
+        summary: 昇順・降順・解除
+        condition: '`parametrize`: タイトルで asc / 状態（`order` あり）で desc / `null`'
+        mock: なし
+        expected: あいうえお順 / `order` の逆順 / 元の順で、渡した配列が変わらない
+  - name: filterCounts
+    title: 絞り込みの値ごとの件数
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/components/table.ts
+    usecase: 項目を表で絞り込む
+    scope: public
+    summary: 絞り込みのポップオーバーに出す、列の値ごとの件数を返す（その列以外の条件で絞った行で数える）
+    args:
+      - name: rows
+        type: object[]
+        required: true
+        passing: keyword
+        description: 行
+      - name: columns
+        type: Column[]
+        required: true
+        passing: keyword
+        description: 列の定義
+      - name: filters
+        type: Record<string, string[]>
+        required: true
+        passing: keyword
+        description: 絞り込み
+      - name: key
+        type: string
+        required: true
+        passing: keyword
+        description: 数える列
+    returns:
+      type: '{value, count}[]'
+      description: 値ごとの件数（`order` を持つ列はその順、それ以外は値の順）
+    unit_tests:
+      - name: test_filter_counts
+        case: 正常
+        summary: ほかの列の条件だけを当てて数える
+        condition: 状態とカテゴリーの列。状態 = 未決定、カテゴリー = A で絞っているときの状態の列
+        mock: なし
+        expected: カテゴリー A の行の状態ごとの件数（状態の条件は当てない）
+  - name: boardColumns
+    title: ボードの列
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/screens/tasks.ts
+    usecase: タスクをボードで見る
+    scope: public
+    summary: 状態の並びの順に、状態ごとの項目を返す（検討事項・資料のボードも使う）
+    args:
+      - name: items
+        type: object[]
+        required: true
+        passing: keyword
+        description: 項目
+      - name: statuses
+        type: string[]
+        required: true
+        passing: keyword
+        description: 列にする状態の並び（スキーマの列挙の順。タスクは完了・中止も含む）
+    returns:
+      type: '{status, items}[]'
+      description: 状態ごとの項目（項目が 0 件の列も返す。列の中は連番の順）
+    unit_tests:
+      - name: test_board_columns
+        case: 正常
+        summary: 状態の並びの順に分ける
+        condition: 未着手の T-2・T-1、完了の T-3
+        mock: なし
+        expected: 未着手の列が T-1・T-2、進行中・保留・中止が空、完了が T-3
+  - name: orderDocs
+    title: 資料の並び
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/screens/docs.ts
+    usecase: 資料を読む
+    scope: public
+    summary: 納品物を先頭に、それぞれ連番の順に並べた資料を返す
+    args:
+      - name: docs
+        type: object[]
+        required: true
+        passing: positional
+        description: 資料
+    returns:
+      type: object[]
+      description: 並べた資料
+    unit_tests:
+      - name: test_order_docs
+        case: 正常
+        summary: 納品物が先
+        condition: A-1（納品物でない）・A-3（納品物）・A-2（納品物）
+        mock: なし
+        expected: A-2・A-3・A-1
+  - name: buildDecisionTree
+    title: 検討事項の木
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/screens/decisions.ts
+    usecase: 検討事項をマップで辿る
+    scope: public
+    summary: 対象 → カテゴリー → フェーズ → 検討事項の木を、表示する状態で絞って返す（ELK に渡す節と枝の形）
+    args:
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: keyword
+        description: 索引
+      - name: shownStatuses
+        type: Set<string>
+        required: true
+        passing: keyword
+        description: 表示する状態
+    returns:
+      type: '{children, edges}'
+      description: ELK のグラフ。検討事項が 1 つも残らない枝（カテゴリー・フェーズ）は含めない。対象・カテゴリー・フェーズの節の ID は項目の ID と重ならない形（`target:{名前}` など）
+    unit_tests:
+      - name: test_build_decision_tree
+        case: 正常
+        summary: 非表示の状態だけの枝を落とす
+        condition: カテゴリー A に未決定の D-1、カテゴリー B に決定済みの D-2 だけ。表示する状態は未決定だけ
+        mock: なし
+        expected: 節に D-1 とその対象・カテゴリー A・フェーズがあり、D-2 とカテゴリー B が無い
+  - name: buildGraph
+    title: つながりの玉と線
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/preview/graph/graph.ts
+    usecase: つながりを辿る
+    scope: public
+    summary: 表示する種類の項目を玉に、関連（依存・関連・根拠・進めるタスク）を線にして返す
+    args:
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: keyword
+        description: 索引
+      - name: shownKinds
+        type: Set<string>
+        required: true
+        passing: keyword
+        description: 表示する種類
+    returns:
+      type: '{nodes: {id, kind}[], links: {source, target, type}[]}'
+      description: '`type` は `depends`・`related`・`source`・`for`。両端のどちらかが非表示か記録に無い線は含めない'
+    unit_tests:
+      - name: test_build_graph
+        case: 正常
+        summary: 線の種類を分け、非表示の種類の線を落とす
+        condition: 'D-2（`depends_on: [D-1]`、`sources: [R-1]`）・T-1（`for: [D-1]`）・N-1（`related: [D-1]`）。表示する種類からメモを外す'
+        mock: なし
+        expected: 線が `depends`（D-2→D-1）・`source`（D-2→R-1）・`for`（T-1→D-1）の 3 本で、N-1 とその線が無い
+test_files:
+  - tests/unit/preview/test_table.py
+  - tests/unit/preview/test_tasks.py
+  - tests/unit/preview/test_docs.py
+  - tests/unit/preview/test_decisions.py
+  - tests/unit/preview/test_graph.py

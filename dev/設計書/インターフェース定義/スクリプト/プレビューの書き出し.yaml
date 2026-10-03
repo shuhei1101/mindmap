@@ -1,7 +1,7 @@
 title: "プレビューの書き出し"
 entry:
   kind: operation
-  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py build`（コマンドの引数・標準出力・終了コード・書き出す HTML）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py build`（コマンドの引数・標準出力・終了コード・書き出す HTML）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系
     summary: 全ての種類と本文を埋め込んだ preview.html を書き出す
@@ -27,6 +27,8 @@ flows:
       - 終了コードが 0
       - '`path` がワークスペースの `preview.html`'
       - '`preview.html` の `mindmap-data` の中身を JSON として読むと、`settings` と 7 つの種類の項目が YAML と同じで、`bodies` に `A-1.md` の本文がある'
+      - '`mindmap-data` の `settings.summary` が `mindmap.yaml` の題名'
+      - '`mindmap-data` の `derived.next` が同じワークスペースでの `next` の `candidates` と同じで、`derived.goal` の `reached`・残りが `goal` の出力と同じ'
       - '`preview.html` の中に `</script>` が雛形のぶんだけある（本文の `</script>` で要素が閉じていない）'
       - '`preview.html` が読み込む `src`・`href` にローカルのパスが無い'
     test: test_normal
@@ -128,6 +130,15 @@ response:
   - name: 埋め込みのデータ.built_at
     type: str
     description: 書き出した日時（UTC のタイムゾーン付き ISO 8601）
+  - name: 埋め込みのデータ.derived.next[]
+    type: list[{id, title, phase, weight, followers}]
+    description: 次に検討する項目。『次の候補』（`next`、上限なし）と同じ並びと中身。画面の「着手可否」が「着手可能」になるのはここにある ID
+  - name: 埋め込みのデータ.derived.goal
+    type: dict
+    description: 『ゴール判定』（`goal`）の出力と同じキーに、判定に入れたフェーズごとの決着した数と全体の数 `phase_progress[]`（`{phase, settled, total}`）を足したもの
+  - name: 埋め込みのデータ.derived.progress[]
+    type: 'list[{category, cells: list[{phase, settled, total}], settled, total}]'
+    description: カテゴリー別の進捗。`settings.categories` の順、セルは `settings.phases` の順。決着は『次の候補』『ゴール判定』と同じ（検討事項の決定済み・対象外・取り下げ）
 response_notes: |-
   > [!NOTE]
   > 埋め込みのデータは、雛形の `<script type="application/json" id="mindmap-data"></script>` の中身として入る。画面はこの要素の中身を `JSON.parse` して読む。
@@ -144,18 +155,18 @@ exceptions:
   - name: WriteFailedError
     condition: '`preview.html` の書き込みか置き換えに失敗した'
     notes: 終了コード 1。標準エラーに書けなかったパスと理由。前の `preview.html` を残す
-error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
+error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。合わない箇所に前の版の形式（資料の `done`・`mindmap.yaml` の `summary` が無い）があるときは、最後に `ヒント: 前の版の形式の記録は migrate で今の形式に移せます` の 1 行を続ける。'
 constraints:
   - item: 出力の形
     constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 雛形
-    constraint: '`skills/mindmap/preview/template.html`。`<script type="application/json" id="mindmap-data"></script>` をちょうど 1 つ持つ。画面の中身は #5 が持ち、この PR はデータの件数を出すだけの雛形を置く'
+    constraint: '`plugins/mindstella/skills/mindmap/preview/` の `template.html` と、画面の CSS・JavaScript のファイル。`build` は CSS を `<style>`、JavaScript を `<script>` の中身として `template.html` に差し込んでから、データを埋め込む。`template.html` は `<script type="application/json" id="mindmap-data"></script>` をちょうど 1 つ持つ'
   - item: 埋め込みの安全
-    constraint: 埋め込む JSON の `<`・`>`・`&` を、それぞれ JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える。`JSON.parse` で元の文字に戻り、本文に `</script>` があっても要素を閉じさせない。Python の `json.dumps` はこれらをエスケープしないので、書き出しの側で置き換える
+    constraint: 埋め込む JSON の `<`・`>`・`&` を、それぞれ JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える。`JSON.parse` で元の文字に戻り、本文に `</script>` があっても要素を閉じさせない。Python の `json.dumps` はこれらをエスケープしないので、書き出しの側で置き換える。差し込む CSS・JavaScript が `</style>`・`</script>` を含むときは、同梱の雛形の誤りとして書き出さずにエラーにする
   - item: 読み込むファイル
-    constraint: '`preview.html` はワークスペースの他のローカルのファイルを指さない。描画のライブラリは CDN から読む（雛形が持つ）'
+    constraint: '`preview.html` はワークスペースの他のローカルのファイルと、雛形の CSS・JavaScript のファイルを指さない。描画のライブラリは jsDelivr から、文字は Google Fonts から読む（雛形が持つ）'
   - item: 通信
     constraint: スクリプトは通信しない
 test_file: tests/integration/scripts/test_build.py

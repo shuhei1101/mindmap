@@ -1,12 +1,15 @@
 {
-  "name": "mindmap",
+  "name": "mindstella",
   "owner": { "name": "shuhei1101" },
-  "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
+  "description": "話し合いを記録しながら、要件・調査・資料作りで決めたことを形にしていく Claude Code のスキル",
   "plugins": [
     {
-      "name": "mindmap",
-      "source": "./",
-      "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル"
+      "name": "mindstella",
+      "source": "./plugins/mindstella",
+      "description": "話し合いを記録しながら、要件・調査・資料作りで決めたことを形にしていく Claude Code のスキル",
+      "license": "MIT",
+      "homepage": "https://github.com/shuhei1101/mindstella",
+      "repository": "https://github.com/shuhei1101/mindstella"
     }
   ]
 }

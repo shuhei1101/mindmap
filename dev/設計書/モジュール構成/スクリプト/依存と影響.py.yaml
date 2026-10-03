@@ -2,13 +2,13 @@ title: "スクリプト / 依存と影響"
 lead: 検討事項とタスクの依存をたどり、影響・次の候補・再開時の状況を出す。読み書きと検証だけに依存し、ファイルを書かない。
 directory: |-
   ```
-  skills/mindmap/scripts/
+  plugins/mindstella/skills/mindmap/scripts/
     graph.py   逆向きの参照・影響・後続の件数・次の候補・再開時の状況
   ```
 data_models:
   - name: Affected
     title: 影響を受ける項目
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 採用する案の切り替え
     role: DTO
     summary: 影響の洗い出しの出力の `affected[]` の 1 行
@@ -31,7 +31,7 @@ data_models:
         description: 直前の項目とつなぐキー
   - name: Candidate
     title: 次の候補
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     role: DTO
     summary: 次の候補の出力の `candidates[]` の 1 行
@@ -54,7 +54,7 @@ data_models:
         description: 後続の件数
   - name: Waiting
     title: 決定待ち
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     role: DTO
     summary: 再開時の状況の `waiting[]` の 1 行
@@ -71,7 +71,7 @@ data_models:
         description: 未完了の `depends_on` の ID
   - name: StatusSummary
     title: 再開時の状況
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     role: DTO
     summary: 再開時の状況の出力全体
@@ -98,13 +98,13 @@ data_models:
 constants:
   - name: STATUS_NEXT_LIMIT
     title: 再開時の状況の次の候補の件数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     summary: 再開時の状況に載せる次の候補の件数
     value: '3'
   - name: WEIGHT_ORDER
     title: 影響度の並び
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     summary: 影響度 → 並べる順。影響度が無いものは最後
     entries:
@@ -116,7 +116,7 @@ constants:
         value: '2'
   - name: IMPACT_KEYS
     title: 影響をたどるキー
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 共通
     summary: 種類 → 参照先から参照元へ逆向きにたどるキー
     entries:
@@ -128,7 +128,7 @@ functions:
   - name: build_reverse_edges
     title: 逆向きの参照
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 共通
     scope: public
     summary: 参照先の ID → それを参照する項目とキーの並びを作る
@@ -152,7 +152,7 @@ functions:
   - name: trace_impact
     title: 影響の洗い出し
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 採用する案の切り替え
     scope: public
     summary: 起点から逆向きの参照を幅優先でたどり、影響を受ける項目を近い順に返す
@@ -195,7 +195,7 @@ functions:
   - name: is_settled
     title: 決着の判定
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 共通
     scope: public
     summary: 項目の状態がその種類の決着に当たるか
@@ -232,7 +232,7 @@ functions:
   - name: count_followers
     title: 後続の件数
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     scope: public
     summary: 影響の洗い出しと同じたどり方で得た項目のうち、未完了のものを数える
@@ -263,7 +263,7 @@ functions:
   - name: list_next_candidates
     title: 次の候補
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     scope: public
     summary: 前提が揃った未決定の検討事項を、フェーズ → 影響度 → 後続の件数 → 連番の順に並べる
@@ -308,7 +308,7 @@ functions:
   - name: summarize_status
     title: 再開時の状況のまとめ
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: 状況の確認
     scope: public
     summary: 要見直し・進行中・再開可能・決定待ち・そのほかの保留・次の候補をまとめる

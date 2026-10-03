@@ -1,0 +1,10 @@
+$ pytest tests/integration/preview/test_detail_full_screen.py tests/integration/preview/test_detail_panel_screen.py tests/integration/skill
+============================= test session starts ==============================
+collected 15 items
+
+tests/integration/preview/test_detail_full_screen.py .....               [ 33%]
+tests/integration/preview/test_detail_panel_screen.py ........           [ 86%]
+tests/integration/skill/test_session.py .                                [ 93%]
+tests/integration/skill/test_setup.py .                                  [100%]
+
+============================= 15 passed in 30.61s ==============================

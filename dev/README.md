@@ -1,6 +1,6 @@
-# mindmap
+# mindstella
 
-mindmap の開発ドキュメント全体の目次
+mindstella の開発ドキュメント全体の目次
 
 ## 目次
 

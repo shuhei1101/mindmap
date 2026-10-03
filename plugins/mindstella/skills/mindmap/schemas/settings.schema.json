@@ -1,0 +1,159 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "設定",
+  "description": "`mindmap.yaml` の形。分野・最上位の軸の呼び名・フェーズ・対象とカテゴリー・ゴール・関連する場所を持つ。",
+  "type": "object",
+  "required": [
+    "field",
+    "target_label",
+    "phases",
+    "targets",
+    "categories",
+    "goal",
+    "summary"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "field": {
+      "type": "string",
+      "description": "進め方ガイドの分野（例 `システム開発`）",
+      "minLength": 1
+    },
+    "target_label": {
+      "type": "string",
+      "description": "最上位の軸（対象）を画面で何と呼ぶか（例 `システム`）",
+      "minLength": 1
+    },
+    "phases": {
+      "type": "array",
+      "description": "フェーズの名前を浅い順に並べる。`next` の並べ替えはこの順を使う",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "targets": {
+      "type": "array",
+      "description": "対象の一覧",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "summary"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "対象の名前",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "description": "対象の概要"
+          }
+        }
+      }
+    },
+    "categories": {
+      "type": "array",
+      "description": "カテゴリーの一覧",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "target",
+          "summary"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "カテゴリーの名前",
+            "minLength": 1
+          },
+          "target": {
+            "type": "string",
+            "description": "属する対象。`targets[].name` のどれか"
+          },
+          "summary": {
+            "type": "string",
+            "description": "カテゴリーの概要"
+          }
+        }
+      }
+    },
+    "goal": {
+      "type": "object",
+      "description": "ゴール",
+      "required": [
+        "phase",
+        "summary",
+        "deliverables"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "phase": {
+          "type": "string",
+          "description": "どのフェーズまでやるか。`phases` のどれか"
+        },
+        "summary": {
+          "type": "string",
+          "description": "ゴールの概要"
+        },
+        "deliverables": {
+          "type": "array",
+          "description": "リリースする納品物",
+          "items": {
+            "type": "object",
+            "required": [
+              "title"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "納品物のタイトル"
+              },
+              "doc": {
+                "type": "string",
+                "description": "できた資料の ID（`A-`）",
+                "pattern": "^A-[0-9]+$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "description": "関連する場所",
+      "items": {
+        "type": "object",
+        "description": "リンク 1 件",
+        "required": [
+          "title",
+          "url"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "リンクのタイトル"
+          },
+          "url": {
+            "type": "string",
+            "description": "リンク先の URL"
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "description": "話し合いのタイトル（何についての話し合いかを 1 文で）。プレビューのトップバーに出す",
+      "minLength": 1
+    }
+  }
+}

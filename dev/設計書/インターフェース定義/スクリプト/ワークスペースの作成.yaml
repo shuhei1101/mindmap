@@ -1,7 +1,7 @@
 title: "ワークスペースの作成"
 entry:
   kind: operation
-  value: '`{仮想環境の Python} {スキルのフォルダ}/scripts/mindmap.py init`（コマンドの引数・標準入力・標準出力・終了コード）。`{仮想環境の Python}` は依存の確認が返す `python_path`'
+  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py init`（コマンドの引数・標準入力・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系
     summary: 設定を渡して空のワークスペースを作る
@@ -21,14 +21,14 @@ flows:
 
         クライアント->>IF: init --workspace（標準入力に設定）
         IF->>IF: 設定をスキーマと突き合わせる
-        IF->>WS: mindmap.yaml・種類ごとの YAML・docs/・handoff/ を作る
+        IF->>WS: mindmap.yaml・種類ごとの YAML・docs/・release/ を作る
         IF-->>クライアント: JSON（workspace・files）
       ```
     expected:
       - 終了コードが 0
       - '`mindmap.yaml` を読むと、渡した設定と同じ中身である'
       - '`decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` が `items: []` である'
-      - '`docs/` と `handoff/` がある'
+      - '`docs/` と `release/` がある'
       - '`files` に作った 8 つの YAML と 2 つのフォルダがある'
     test: test_normal
   - name: 異常系（既にワークスペースがある・WorkspaceExistsError）
@@ -100,9 +100,9 @@ flows:
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
       - '`--workspace` のフォルダが無い'
     test: test_error_when_write_fails
-lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` を作る。
+lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`release/` を作る。
 idempotent: false
-side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`handoff/` を作る'
+side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`release/` を作る'
 request:
   - name: --workspace
     type: str
@@ -112,13 +112,21 @@ request:
     constraints: '`mindmap.yaml` がまだ無いフォルダ。フォルダが無ければ作る'
   - name: 標準入力
     type: JSON のオブジェクト
-    required: true
+    required: false
     location: body
-    description: 設定の中身（`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`）。キーと型は ER 図『ワークスペース』の `mindmap.yaml`
+    description: 設定の中身（`summary`・`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`）。キーと型は ER 図『ワークスペース』の `mindmap.yaml`
+    constraints: 設定のスキーマに合うこと
+  - name: --json
+    type: str
+    required: false
+    default: なし（標準入力を読む）
+    location: argument
+    description: 標準入力と同じ設定の JSON を 1 つの引数で渡す。渡したときは標準入力を読まない
     constraints: 設定のスキーマに合うこと
 request_example: |-
   ```json
   {
+    "summary": "要件出しのスキル mindmap を設計する",
     "field": "システム開発",
     "target_label": "システム",
     "phases": ["目的", "要件", "構成"],

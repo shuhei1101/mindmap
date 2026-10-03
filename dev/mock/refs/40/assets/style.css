@@ -1,0 +1,8 @@
+/* 資料のボード: 21 のスタイルに足す分だけを持つ */
+
+/* ボードの資料のカード: 列の中で縦に積む間を空ける */
+.doc-board .doc-card { margin-bottom: 10px; }
+/* ボードの資料のカードのタグ: 折り返して並べる */
+.doc-card .c-tags { display: flex; flex-wrap: wrap; }
+/* 詳細を開いている資料のカード: 枠の全体と面の色で示す */
+.card.selected { border-color: var(--accent); background: var(--row-selected); }

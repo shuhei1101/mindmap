@@ -20,7 +20,9 @@ REPO_ROOT_PARENT_DEPTH = 1
 REPO_ROOT = Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 
 # 起動するスクリプトの入口
-MINDMAP_SCRIPT = REPO_ROOT / "skills" / "mindmap" / "scripts" / "mindmap.py"
+MINDMAP_SCRIPT = (
+    REPO_ROOT / "plugins" / "mindstella" / "skills" / "mindmap" / "scripts" / "mindmap.py"
+)
 
 # 子プロセス 1 回を待つ上限秒数
 COMMAND_TIMEOUT_SEC = 120
@@ -44,7 +46,7 @@ KIND_DEFAULTS: dict[str, dict[str, Any]] = {
     "D": {"status": "未決定"},
     "T": {"kind": "作業", "status": "未着手"},
     "R": {"question": "何を調べたか"},
-    "A": {"kind": "図", "deliverable": False, "done": False},
+    "A": {"kind": "図", "deliverable": False, "status": "下書き"},
     "G": {"meaning": "用語の意味"},
     "N": {"content": "メモの中身"},
     "L": {"date": "2026-10-01"},
@@ -53,6 +55,8 @@ KIND_DEFAULTS: dict[str, dict[str, Any]] = {
 type RunMindmap = Callable[..., subprocess.CompletedProcess[str]]
 type MakeItem = Callable[..., dict[str, Any]]
 type MakeWorkspace = Callable[..., Path]
+type MakeLegacyItem = Callable[[str, bool], dict[str, Any]]
+type MakeLegacyWorkspace = Callable[..., Path]
 type SnapshotTree = Callable[[Path], dict[str, bytes]]
 type MakeVenv = Callable[..., Path]
 
@@ -64,13 +68,16 @@ def run_mindmap() -> RunMindmap:
     env = {**os.environ, "PYTHONUTF8": "1"}
 
     def _run(
-        *args: str, stdin: str | None = None, python: str = sys.executable
+        *args: str,
+        stdin: str | None = None,
+        python: str = sys.executable,
+        extra_env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
-        """引数と標準入力を渡して実行し、終了コードが 0 以外でも例外にせず返す。"""
+        """引数と標準入力を渡して実行し、終了コードが 0 以外でも例外にせず返す。extra_env は環境変数に足す。"""
         return subprocess.run(
             [python, str(MINDMAP_SCRIPT), *args],
             input=stdin,
-            env=env,
+            env={**env, **(extra_env or {})},
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -85,6 +92,7 @@ def run_mindmap() -> RunMindmap:
 def valid_settings() -> dict[str, Any]:
     """設定のスキーマに合う設定（mindmap.yaml の中身）を返す。"""
     return {
+        "summary": "要件出しのスキル mindmap を設計する",
         "field": "システム開発",
         "target_label": "システム",
         "phases": ["目的", "要件", "構成"],
@@ -132,7 +140,7 @@ def make_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> MakeWorksp
         """項目のある種類の YAML だけを置いたワークスペースを作り、そのフォルダを返す。"""
         root = tmp_path / name
         (root / "docs").mkdir(parents=True)
-        (root / "handoff").mkdir()
+        (root / "release").mkdir()
         write_yaml(root / "mindmap.yaml", valid_settings if settings is None else settings)
         # 項目のある種類だけ、渡した並びのまま 1 つの YAML にまとめる
         for prefix, file_name in KIND_FILES.items():
@@ -144,6 +152,58 @@ def make_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> MakeWorksp
             (root / file_name).write_text(text, encoding="utf-8")
         for body_name, text in (bodies or {}).items():
             (root / "docs" / body_name).write_text(text, encoding="utf-8")
+        return root
+
+    return _make
+
+
+@pytest.fixture
+def make_legacy_item(make_item: MakeItem) -> MakeLegacyItem:
+    """前の版の形式（状態の代わりに done を持つ）の資料を作る関数を返す。"""
+
+    def _make(item_id: str, done: bool) -> dict[str, Any]:
+        """status の位置に done を置いた資料を返す（キーの並びは今の形式のまま）。"""
+        item = make_item(item_id)
+        return {
+            ("done" if key == "status" else key): (done if key == "status" else value)
+            for key, value in item.items()
+        }
+
+    return _make
+
+
+@pytest.fixture
+def make_legacy_workspace(
+    tmp_path: Path, make_workspace: MakeWorkspace, make_legacy_item: MakeLegacyItem
+) -> MakeLegacyWorkspace:
+    """前の版の形式（資料の done・題名の無い設定）で書いたワークスペースを作る関数を返す。"""
+
+    def _make(
+        *items: dict[str, Any],
+        legacy_docs: dict[str, bool] | None = None,
+        without_summary: bool = False,
+    ) -> Path:
+        """items は今の形式の項目、legacy_docs は資料の ID → done。設定の題名は without_summary で外す。"""
+        legacy_items = [
+            make_legacy_item(doc_id, done) for doc_id, done in (legacy_docs or {}).items()
+        ]
+        root = make_workspace(
+            *items, bodies={f"{item['id']}.md": "資料の本文\n" for item in legacy_items}
+        )
+        # 前の形式の資料を docs.yaml に直接書く（今の形式の資料の後ろに並べる）
+        if legacy_items:
+            docs_path = root / "docs.yaml"
+            current = (
+                yaml.safe_load(docs_path.read_text(encoding="utf-8"))["items"]
+                if docs_path.exists()
+                else []
+            )
+            write_yaml(docs_path, {"items": [*current, *legacy_items]})
+        # 題名を持たない設定にする
+        if without_summary:
+            settings = yaml.safe_load((root / "mindmap.yaml").read_text(encoding="utf-8"))
+            del settings["summary"]
+            write_yaml(root / "mindmap.yaml", settings)
         return root
 
     return _make

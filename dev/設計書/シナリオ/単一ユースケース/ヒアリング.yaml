@@ -1,0 +1,49 @@
+title: "ヒアリング"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。手順が連ねる `next`・`update`・`add`（会話ログ）・`build` を、決めた引数で順に再生する
+      - name: 作成済みのワークスペース
+        description: 前提が揃った未決定 D-1・D-2 と、D-1 に `depends_on` で依存する未決定 D-3 を持つ
+      - name: 再生する答え
+        description: D-1・D-2 に `answer` を入れて決定済みにする
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SCR as スクリプト
+        participant WS as ワークスペース
+
+        CC->>SCR: next
+        SCR->>WS: 全ての YAML を読む
+        SCR-->>CC: 前提が揃った未決定（D-1・D-2）
+        CC-->>U: D-1・D-2 を 1 ラウンドにまとめて質問の書式で聞く
+        U->>CC: 答える
+        CC->>SCR: update（D-1・D-2 を決定済みにし、answer を入れる）
+        CC->>SCR: add（会話ログ）
+        CC->>SCR: build
+      ```
+    expected:
+      - '`next` の候補に D-1・D-2 があり、D-3 が無い'
+      - D-1・D-2 が決定済みで `answer` を持つ
+      - 書き込みの後の `next` の候補に D-3 がある
+      - 会話ログが 1 件足されている
+    test: test_normal
+lead: '`session` が、前提が揃った未決定の検討事項を選んで 1 ラウンドにまとめて利用者に聞き、答えを記録する単一ユースケース。'
+issue: 4
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: 答えが他の問いに左右される問いを先に聞かれない。事実で分かることを聞かれず、決めることだけを答えればよい
+trigger: 取り込みの後に前提が揃った未決定がある、または利用者が次に決めることを求める
+preconditions:
+  - ワークスペースが作成済みである
+  - 依存が揃っている
+success_guarantee: 1 ラウンドで聞くのは `next` が返した前提が揃った未決定だけで、質問の書式（タイトル → 冒頭の文 → 選択肢があるときだけ案の表と推奨）に従う。答えた検討事項は決定済みになる。
+frequency: 話し合いの中で何度も
+priority: 高
+notes:
+  E2E の範囲: モデルを呼ばず、手順が連ねるコマンドを再生する。質問の文面は確かめない
+test_file: tests/e2e/単一ユースケース/test_hearing.py

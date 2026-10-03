@@ -1,0 +1,6 @@
+$ pytest tests/integration/skill tests/integration/plugin tests/integration/scripts -rfs
+...........................s.s.......................................... [ 91%]
+.......                                                                  [100%]
+=========================== short test summary info ============================
+SKIPPED [2] tests/integration/scripts/conftest.py:53: 手元に 3.8〜3.11 の Python が無い
+77 passed, 2 skipped in 200.17s (0:03:20)

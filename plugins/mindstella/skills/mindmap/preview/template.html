@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport: スマホ幅でも等倍で開く（拡大は禁止しない） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- color-scheme: 既定は端末の明暗。切り替えは app.ts が data-theme に持つ -->
+  <meta name="color-scheme" content="light dark">
+  <title>プレビュー | mindstella</title>
+  <!-- CSS の差し込み口: build が tokens.css・style.css をここへ入れる。この要素は雛形にちょうど 1 つだけ置く -->
+  <style id="mindmap-style"></style>
+  <!-- 外の読み込み: export が、この印から印までを、取った描画のライブラリとライセンスの表示に置き換える。印は雛形にちょうど 1 つずつ置く -->
+  <!-- mindmap-external:start -->
+  <!-- 文字: 英数字は Inter、日本語は Noto Sans JP、ID は JetBrains Mono を Google Fonts から読む -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <!-- 描画のライブラリ: 版を固定して jsDelivr から読み、integrity でファイルの中身を確かめる。defer で、文書を読み終えて app が起動する前に読み終える -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.0.14/lib/marked.umd.js" integrity="sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js" integrity="sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.12.0/lib/elk.bundled.js" integrity="sha384-ww57TDqx4cGknIavPm0QKO+aygLUR1BLSn2Vhbnt1XdYKWcwLyWTFKX7aZMaKIi2" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.min.js" integrity="sha384-EbBpjO7rlR6eqZEcG7GaPpyk9H9WrMyPWX4d3KvPYltgt8Z8l0z6R56B1qP40pR4" crossorigin="anonymous" defer></script>
+  <!-- mindmap-external:end -->
+</head>
+<body>
+  <!-- 埋め込み先: build が記録の JSON をここへ入れる。この要素は雛形にちょうど 1 つだけ置く -->
+  <script type="application/json" id="mindmap-data"></script>
+
+  <!-- JavaScript の差し込み口: build が tsc の生成した .js をここへ入れる。埋め込み先より後ろに置く（app が先に記録の要素を探す） -->
+  <script id="mindmap-app"></script>
+</body>
+</html>

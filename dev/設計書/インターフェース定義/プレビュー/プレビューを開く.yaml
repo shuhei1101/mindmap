@@ -1,0 +1,240 @@
+title: "プレビューを開く"
+entry:
+  kind: screen
+  value: '`build` が書き出した `preview.html`（雛形は `plugins/mindstella/skills/mindmap/preview/`）。`export` が書き出した配る書き出しも同じ画面を開く'
+  api: なし（記録は `mindmap-data` の要素から読む。通信は描画のライブラリと文字の読み込みだけ）
+flows:
+  - name: 正常系
+    summary: ハッシュが指す画面・表示形式・項目を開く
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+      - name: make_workspace
+        description: 検討事項 D-1・D-3（D-3 は要見直しで、本文に見出しと mermaid の図を持つ）を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as preview.html
+        participant CDN as 描画のライブラリの配信元
+
+        ユーザー->>IF: #tab=decisions&view=table&id=D-3 で開く
+        IF-->>CDN: 描画のライブラリを読む
+        IF->>IF: mindmap-data を読む
+        IF-->>ユーザー: 検討事項の表と D-3 の詳細パネル
+      ```
+    expected:
+      - タブの帯で検討事項が選ばれ、表示形式は表
+      - 表に D-1・D-3 の行がある
+      - 詳細パネルに D-3 が開き、本文の見出しが見出しの要素で、図が SVG で描かれている
+      - 同じ URL を開き直すと同じ画面と項目が開く
+    test: test_normal
+  - name: 正常系（ハッシュが無い）
+    summary: ハッシュが無いと概要を開く
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+      - name: make_workspace
+        description: 検討事項 D-1 を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as preview.html
+
+        ユーザー->>IF: ハッシュ無しで開く
+        IF-->>ユーザー: 概要
+      ```
+    expected:
+      - タブの帯で概要が選ばれている
+      - 詳細パネルが開いていない
+      - URL にハッシュが付かない
+    test: test_normal_when_no_hash
+  - name: 正常系（絞り込みの条件がある）
+    summary: ハッシュの f.{列} で絞った表を条件のチップ付きで開く
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+      - name: make_workspace
+        description: 要見直しの D-3・保留の D-4・未決定の D-1 を書き出した `preview.html`
+        notes: ハッシュは `tab=decisions&view=table&f.status=要見直し|保留`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as preview.html
+
+        ユーザー->>IF: f.status=要見直し|保留 のハッシュで開く
+        IF-->>ユーザー: 条件のチップ付きの検討事項の表
+      ```
+    expected:
+      - 状態 = 要見直し・保留の条件のチップがある
+      - 表の行が D-3・D-4 だけ
+      - チップを外すと D-1 の行も出て、URL のハッシュに `f.` の引数が無い
+    test: test_normal_when_filter_in_hash
+  - name: 正常系（項目が記録に無い）
+    summary: 記録に無い ID を指すハッシュでは画面だけを開く
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+      - name: make_workspace
+        description: 検討事項 D-1 だけを書き出した `preview.html`
+        notes: ハッシュは `tab=decisions&id=D-99`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as preview.html
+
+        ユーザー->>IF: #tab=decisions&id=D-99 で開く
+        IF-->>ユーザー: 検討事項のマップ（詳細パネルなし）
+      ```
+    expected:
+      - タブの帯で検討事項が選ばれ、表示形式はマップ
+      - 詳細パネルが開いていない
+      - URL のハッシュに `id` が無い
+    test: test_normal_when_item_not_found
+  - name: 正常系（配る書き出しを通信なしで開く）
+    summary: 描画のライブラリを中に持つ配る書き出しは、通信が無くても本文・図・マップを描く
+    setup:
+      - name: Mock
+        description: ブラウザから `file:` 以外への要求を全て失敗させ、要求の数を数える
+      - name: exported_html
+        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を持つワークスペースから `export` で書き出した HTML
+        notes: ハッシュは `tab=decisions&id=D-3`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as 配る書き出し
+
+        ユーザー->>IF: #tab=decisions&id=D-3 で開く
+        IF->>IF: 中に持つ描画のライブラリと mindmap-data を読む
+        IF-->>ユーザー: 検討事項のマップと D-3 の詳細パネル
+      ```
+    expected:
+      - 外への要求が 0 件
+      - '`role="alert"` の読めなかったライブラリの知らせが無い'
+      - マップに D-3 が描かれている
+      - 詳細パネルに D-3 が開き、本文の見出しが見出しの要素で、図が SVG で描かれている
+    test: test_normal_when_exported_offline
+  - name: 異常系（描画のライブラリが読めない）
+    summary: 描画のライブラリの配信元に届かないと、使う箇所に読めなかったライブラリの名前を出す
+    setup:
+      - name: Mock
+        description: ブラウザから描画のライブラリの配信元への要求を全て失敗させる
+      - name: make_workspace
+        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を書き出した `preview.html`
+        notes: ハッシュは `tab=decisions&id=D-3`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as preview.html
+        participant CDN as 描画のライブラリの配信元
+
+        ユーザー->>IF: #tab=decisions&id=D-3 で開く
+        IF-->>CDN: 描画のライブラリを読む（届かない）
+        IF-->>ユーザー: 読めなかったライブラリの知らせと本文の原文
+      ```
+    expected:
+      - 'マップの箇所に、「読み込めなかったライブラリ: elkjs」が `role="alert"` で出る'
+      - 詳細パネルの本文の箇所に、marked・DOMPurify・mermaid の名前と本文の原文が出る
+      - 表示形式を表に切り替えると、D-3 の行がある
+    test: test_error_when_library_unavailable
+lead: 利用者が `preview.html` をブラウザで開くと、埋め込みのデータを読み、URL のハッシュが指す画面・表示形式・項目を開く。
+idempotent: true
+side_effects: 記録は書き換えない。端末の保存領域（`localStorage`）にライト / ダークと表の表示する列・ピン留めを書く
+callers:
+  - dev/設計書/シナリオ/複合ユースケース/プレビューで記録を読み返す#
+request:
+  - name: mindmap-data
+    type: JSON（`<script type="application/json" id="mindmap-data">` の中身）
+    required: true
+    description: '`build` が埋め込んだ記録。形はインターフェース定義『プレビューの書き出し』のレスポンスの埋め込みのデータ'
+  - name: tab
+    type: "'overview' | 'decisions' | 'tasks' | 'research' | 'docs' | 'terms' | 'notes' | 'logs' | 'graph'"
+    required: false
+    default: overview
+    description: 開く画面（タブとつながり）
+    constraints: 上の値のどれでもないときは既定の値で開く
+    notes: URL のハッシュの引数
+  - name: view
+    type: "'map' | 'board' | 'cards' | 'table'"
+    required: false
+    default: 画面ごとの既定（`decisions` は `map`、`tasks` は `board`、`docs` は `cards`、それ以外は `table`）
+    description: 表示形式。既定と違うときだけハッシュに書く
+    constraints: その画面が持たない形式のときは既定の形式で開く
+    notes: URL のハッシュの引数
+  - name: id
+    type: str
+    required: false
+    default: なし（詳細パネルを開かない）
+    description: 詳細パネルで開く項目の ID
+    constraints: '`D-`・`T-`・`R-`・`A-`・`G-`・`N-`・`L-` に数字。記録に無い ID のときは詳細パネルを開かない'
+    example: D-3
+    notes: URL のハッシュの引数
+  - name: full
+    type: "'1'"
+    required: false
+    default: なし（詳細パネルで開く）
+    description: 詳細を全画面で開く
+    constraints: '`id` があるときだけ効く'
+    notes: URL のハッシュの引数
+  - name: f.{列}
+    type: str
+    required: false
+    default: なし（絞り込まない）
+    description: 表・カードをその列の値で絞って開く。概要の「すべて表示」・セルが作る
+    constraints: 複数の値は `|` でつなぐ。開いたときに一度だけ読み、絞り込みを変えてもハッシュには書き戻さない
+    example: f.status=要見直し
+    notes: URL のハッシュの引数
+request_example: |-
+  ```text
+  preview.html#tab=decisions&view=table&id=D-3&f.status=%E8%A6%81%E8%A6%8B%E7%9B%B4%E3%81%97
+  ```
+response:
+  - name: 画面
+    type: DOM
+    description: '`tab` の画面。タブの帯でそのタブが選ばれている（`aria-current="page"`）'
+  - name: 表示形式
+    type: DOM
+    description: 表示形式の切り替えで `view` の形式が押されている（`aria-pressed="true"`）
+  - name: 詳細パネル
+    type: DOM
+    description: '`id` の項目の詳細。`full` のときは全画面のモーダル'
+  - name: 条件のチップ
+    type: DOM
+    description: '`f.{列}` の列と値ごとのチップ。表の行・カードはその条件に合うものだけ'
+  - name: 読めなかったライブラリの知らせ
+    type: DOM（`role="alert"`）
+    description: 描画のライブラリが読めなかったとき、そのライブラリを使う箇所（本文・図・マップ）に、読めなかったライブラリの名前を出す
+response_notes: |-
+  > [!NOTE]
+  > 開いた後の画面の移動・項目の移動も同じ形のハッシュに書き、同じ URL を開き直すと同じ画面と項目が開く。
+constraints:
+  - item: ハッシュの形
+    constraint: '`#` の後ろを `URLSearchParams` の形（`キー=値` を `&` でつなぐ）で読み書きする。既定の値は書かない'
+  - item: 履歴
+    constraint: 画面の移動と、詳細パネル・全画面の中の項目の移動は履歴に積む。表示形式の切り替え・詳細パネルの開閉・重ねる画面の開閉は積まずにハッシュを置き換える。幅 900px 以下の詳細パネルだけは開くときに積む
+  - item: 記録
+    constraint: '`mindmap-data` を `JSON.parse` して読むだけで、書き換えない'
+  - item: 描画のライブラリ
+    constraint: 描画のライブラリ（`refs` の外部ライブラリの設計書）を配信元から、版を固定し `integrity` と `crossorigin="anonymous"` を付けた script 要素で読む。読めなかったときは代わりの読み込みをせず、そのライブラリを使う箇所に名前を出す。本文は原文を出し、表・ボード・カード・つながりはそのまま使える。配る書き出しは描画のライブラリを中に持ち、配信元から読まない
+  - item: 本文の無害化
+    constraint: '本文の Markdown は HTML に描いた後、無害化してから差し込む。図はスクリプトを動かさない安全の設定で描く'
+  - item: 文字
+    constraint: 画面の文字（デザイン方針の書体）を文字の配信元から読む。読めないときは端末の文字で描く。配る書き出しは文字の配信元を読まず、端末の文字で描く
+  - item: 端末の保存領域
+    constraint: ライト / ダークと、表ごとの表示する列・ピン留めを `localStorage` の 1 つのキーに持つ。表の絞り込みの条件は保存しない。保存できない環境では開いている間だけ保つ
+  - item: 通信
+    constraint: 描画のライブラリと文字の配信元だけ。記録を外へ送らない。配る書き出しは通信しない
+refs:
+  - dev/設計書/インターフェース定義/スクリプト/プレビューの書き出し#
+  - dev/設計書/外部ライブラリ/marked#
+  - dev/設計書/外部ライブラリ/DOMPurify#
+  - dev/設計書/外部ライブラリ/elkjs#
+  - dev/設計書/外部ライブラリ/mermaid#
+  - dev/設計書/外部API/GoogleFonts#
+  - dev/設計書/インターフェース定義/スクリプト/配る書き出し#
+test_file: tests/integration/preview/test_open_preview.py

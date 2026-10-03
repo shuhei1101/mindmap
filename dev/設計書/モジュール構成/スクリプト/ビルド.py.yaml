@@ -1,37 +1,101 @@
 title: "スクリプト / ビルド"
-lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。読み書きと検証だけに依存する。
+lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。配る書き出しは、同じ雛形に jsDelivr から取った描画のライブラリとライセンスの表示を入れて書き出す。読み書きと検証と、依存と影響・ゴール判定（画面に出す値の計算）に依存する。
 directory: |-
   ```
-  skills/mindmap/
+  plugins/mindstella/skills/mindmap/
     preview/
-      template.html   プレビューの雛形（この PR は項目の件数を出すだけ。画面は #5）
+      template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み。読み込みは EXTERNAL_START と EXTERNAL_END の間に置く）
+      tokens.css・style.css・*.ts（と tsc が生成した *.js）  画面の中身（モジュール構成『プレビュー』）
+      licenses/
+        README.md  mermaid-bundled.txt を集め直す手順（使うコマンドと写すもの）
+        mermaid-bundled.txt  mermaid.min.js が中に束ねた依存（mermaid の本番の依存を node_modules から辿った全てのパッケージ）ごとの、名前・版と LICENSE の写。mermaid の版を上げたら集め直す
     scripts/
-      builder.py      データの収集・埋め込み・書き出し
+      builder.py      雛形の組み立て・データの収集・埋め込み・書き出しと、配る書き出し
   ```
 constants:
-  - name: TEMPLATE_PATH
-    title: 雛形のパス
-    container: skills/mindmap/scripts/builder.py
-    usecase: プレビューの書き出し
-    summary: このファイルから見た `skills/mindmap/preview/template.html`
-    value: Path(__file__).resolve().parent.parent / "preview" / "template.html"
   - name: DATA_ELEMENT
     title: 埋め込み先の要素
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: 雛形がちょうど 1 つ持つ、中身が空の要素
     value: "'<script type=\"application/json\" id=\"mindmap-data\"></script>'"
   - name: PREVIEW_FILE
     title: プレビューのファイル名
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: ワークスペースに書き出すファイル名
     value: '"preview.html"'
+  - name: PREVIEW_DIR
+    title: 雛形のフォルダ
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: このファイルから見た `plugins/mindstella/skills/mindmap/preview/`
+    value: Path(__file__).resolve().parent.parent / "preview"
+  - name: STYLE_FILES
+    title: 差し込む CSS
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: 雛形のフォルダからの相対パス。並びの順につなぐ
+    value: ("tokens.css", "style.css")
+  - name: SCRIPT_FILES
+    title: 差し込む JavaScript
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: 雛形のフォルダからの相対パス。tsc が `.ts` から生成した `.js` を並びの順につなぐ（起動する `app.js` が最後）。中身はモジュール構成『プレビュー』のディレクトリ構成
+    value: ("core/dom.js", "core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
+  - name: STYLE_SLOT
+    title: CSS の差し込み口
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、CSS を入れる空の要素'
+    value: "'<style id=\"mindmap-style\"></style>'"
+  - name: SCRIPT_SLOT
+    title: JavaScript の差し込み口
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、JavaScript を入れる空の要素（`DATA_ELEMENT` より後ろ）'
+    value: "'<script id=\"mindmap-app\"></script>'"
+  - name: VENDOR_LIBRARIES
+    title: 配る書き出しに入れるライブラリの一覧
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: 雛形の描画のライブラリの `<script src>` ごとの、ライセンスの表示に使う `VendorLibrary`。`package` で `<script src>` の URL のパッケージ名と結ぶ。版と URL と `integrity` は雛形が持ち、ここには持たない
+    value: (VendorLibrary(package="marked", name="marked", notice="Copyright (c) 2018+, MarkedJS / Copyright (c) 2011-2018, Christopher Jeffrey", license="MIT", license_path="LICENSE", bundled_license_file=None, repository="https://github.com/markedjs/marked", tag="v{version}"), VendorLibrary(package="dompurify", name="DOMPurify", notice="(c) Cure53 and other contributors", license="Apache-2.0", license_path="LICENSE", bundled_license_file=None, repository="https://github.com/cure53/DOMPurify", tag="{version}"), VendorLibrary(package="elkjs", name="elkjs", notice="(c) Kiel University and others", license="EPL-2.0", license_path="LICENSE.md", bundled_license_file=None, repository="https://github.com/kieler/elkjs", tag="{version}"), VendorLibrary(package="mermaid", name="mermaid", notice="Copyright (c) 2014 - 2022 Knut Sveidqvist", license="MIT", license_path="LICENSE", bundled_license_file="licenses/mermaid-bundled.txt", repository="https://github.com/mermaid-js/mermaid", tag="mermaid@{version}"))
+  - name: FETCH_TIMEOUT_SEC
+    title: 取るときの待ちの上限
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: jsDelivr への 1 回の要求で、接続と 1 回の読み取りをそれぞれ待つ秒数（`urllib.request.urlopen` の `timeout`）。実測は 1 件あたり最大 0.65 秒（2026-10-03）。読み取りごとに効くので遅い回線でも途切れなければ止めない
+    value: '30'
+  - name: CDN_PACKAGE_URL
+    title: パッケージのファイルの URL
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: jsDelivr の、版を固定したパッケージの中のファイルの URL の形。ライセンスの本文を取るのに使う
+    value: '"https://cdn.jsdelivr.net/npm/{package}@{version}/{path}"'
+  - name: EXTERNAL_START
+    title: 外の読み込みの始まり
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、描画のライブラリの `<script src>` と文字の `<link>` の前に置くコメント'
+    value: "'<!-- mindmap-external:start -->'"
+  - name: EXTERNAL_END
+    title: 外の読み込みの終わり
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、外の読み込みの後ろに置くコメント（`EXTERNAL_START` より後ろ）'
+    value: "'<!-- mindmap-external:end -->'"
+  - name: LICENSES_OPEN
+    title: ライセンスの表示の要素
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: 配る書き出しに置く、ライセンスの表示を中身に持つ要素の開きタグ（閉じタグは `</script>`）。画面には出ない
+    value: "'<script type=\"text/plain\" id=\"mindmap-licenses\">'"
 functions:
   - name: build_preview
     title: プレビューの書き出し
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 検証してからデータを雛形に埋め込み、`preview.html` を置き換える
@@ -47,20 +111,20 @@ functions:
         required: true
         passing: keyword
         description: 書き出した日時（`now_utc` の文字列）
-      - name: template_path
+      - name: preview_dir
         type: Path
         required: false
-        default: TEMPLATE_PATH
+        default: PREVIEW_DIR
         passing: keyword
-        description: 雛形のパス
+        description: 雛形のフォルダ
     returns:
       type: Path
       description: 書き出した `preview.html` の絶対パス
     process: |-
       1. ワークスペースを検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（書かない）
-      2. データを集めて雛形に埋め込む（`collect_preview_data`、`embed_data`）
-      3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える
+      2. 雛形を組み立て、データを集めて埋め込む（`assemble_template`、`collect_preview_data`、`embed_data`）
+      3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える（`replace_file`）
          - `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る（前の `preview.html` は残る）
     exceptions:
       - name: SchemaMismatchError
@@ -72,7 +136,7 @@ functions:
       - name: test_build_preview
         case: 正常
         summary: データを埋め込んだ preview.html を書く
-        condition: D-1 と資料 A-1（`docs/A-1.md` あり）を持つワークスペースと、`DATA_ELEMENT` だけを持つ雛形
+        condition: D-1 と資料 A-1（`docs/A-1.md` あり）を持つワークスペースと、差し込み口と `DATA_ELEMENT` を持つ `template.html` と空の CSS・JavaScript を置いた雛形のフォルダ
         mock: なし
         expected: 戻り値が `preview.html`。中の `mindmap-data` を JSON として読むと `decisions` に D-1、`bodies` に `A-1.md`、`built_at` が渡した日時
       - name: test_build_preview_when_schema_mismatch
@@ -92,7 +156,7 @@ functions:
   - name: collect_preview_data
     title: プレビューのデータの収集
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 設定・7 種類・本文・書き出した日時を 1 つの辞書にまとめる
@@ -109,21 +173,22 @@ functions:
         description: 書き出した日時
     returns:
       type: dict[str, Any]
-      description: '`settings`・`decisions` など種類ごと（ファイル名から `.yaml` を落としたキー）・`bodies`・`built_at`'
+      description: '`settings`・`decisions` など種類ごと（ファイル名から `.yaml` を落としたキー）・`bodies`・`derived`・`built_at`'
     process: |-
       1. 種類ごとの `items` をファイル名から `.yaml` を落としたキーで入れる
       2. 項目の `body` が指す本文を読んで `bodies` に入れる（本文の読み込み。`read_body`。読めないものは入れない）
+      3. 画面に出す値を計算して `derived` に入れる（`derive_preview_values`）
     unit_tests:
       - name: test_collect_preview_data
         case: 正常
         summary: 種類ごとのキーと、指された本文だけを集める
         condition: 'A-1（`body: A-1.md`、ファイルあり）・R-1（`body: R-1.md`、ファイル無し）・`docs/X-1.md`（指されない）'
         mock: なし
-        expected: キーが `settings`・`decisions`・`tasks`・`research`・`docs`・`terms`・`notes`・`logs`・`bodies`・`built_at`。`bodies` のキーが `A-1.md` だけ
+        expected: キーが `settings`・`decisions`・`tasks`・`research`・`docs`・`terms`・`notes`・`logs`・`bodies`・`derived`・`built_at`。`bodies` のキーが `A-1.md` だけ
   - name: escape_for_script
     title: 埋め込みのエスケープ
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: JSON の文字列の `<`・`>`・`&` を、JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える
@@ -147,7 +212,7 @@ functions:
   - name: embed_data
     title: 雛形への埋め込み
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 雛形の `DATA_ELEMENT` の中身にデータの JSON を入れた HTML を返す
@@ -187,5 +252,536 @@ functions:
         mock: なし
         expected: '`ValueError`（`match` に `0 個`・`2 個`）'
         exception: 雛形の要素が 0 個か 2 個以上
+  - name: assemble_template
+    title: 雛形の組み立て
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: '`template.html` に CSS・JavaScript を差し込んだ HTML を返す'
+    args:
+      - name: preview_dir
+        type: Path
+        required: false
+        default: PREVIEW_DIR
+        passing: keyword
+        description: 雛形のフォルダ
+    returns:
+      type: str
+      description: 差し込んだ HTML（`DATA_ELEMENT` は空のまま）
+    process: |-
+      1. `template.html` と、`STYLE_FILES`・`SCRIPT_FILES` を並びの順に UTF-8 で読む
+      2. CSS に `</style`、JavaScript に `</script` が無いことを確かめる（大文字・小文字を区別しない）
+         - ある場合、`ValueError` を送る（同梱の雛形の誤り）
+      3. `STYLE_SLOT`・`SCRIPT_SLOT` がそれぞれちょうど 1 つあることを確かめる
+         - 1 つでない場合、`ValueError` を送る
+      4. CSS を改行でつないで `STYLE_SLOT` の中身に、JavaScript を改行でつないで `SCRIPT_SLOT` の中身に入れる
+    exceptions:
+      - name: ValueError
+        condition: CSS が `</style`、JavaScript が `</script` を含むか、差し込み口が 0 個か 2 個以上
+        message: 雛形の {ファイル名} が {閉じタグ} を含みます / 雛形に差し込み口 {要素} が 1 つだけありません（{個数} 個）
+    unit_tests:
+      - name: test_assemble_template
+        case: 正常
+        summary: CSS と JavaScript を並びの順に差し込む
+        condition: '`tmp_path` に差し込み口と `DATA_ELEMENT` を持つ `template.html` と、`STYLE_FILES`・`SCRIPT_FILES` の名前のファイル（中身はファイル名のコメント）'
+        mock: なし
+        expected: '`<style id="mindmap-style">` の中に CSS が並びの順で、`<script id="mindmap-app">` の中に JavaScript が並びの順であり、`DATA_ELEMENT` は空のまま'
+      - name: test_assemble_template_when_closing_tag
+        case: 異常
+        summary: 閉じタグを含むファイルは差し込まない
+        condition: '`parametrize`: CSS に `</STYLE>` / JavaScript に `</script>`'
+        mock: なし
+        expected: '`ValueError`（`match` にそのファイル名）'
+        exception: 閉じタグを含むか差し込み口が 1 つでない
+      - name: test_assemble_template_when_slot_count_wrong
+        case: 異常
+        summary: 差し込み口が 1 つでない雛形
+        condition: '`parametrize`: `STYLE_SLOT` 0 個 / `SCRIPT_SLOT` 2 個'
+        mock: なし
+        expected: '`ValueError`（`match` に個数）'
+        exception: 閉じタグを含むか差し込み口が 1 つでない
+  - name: derive_preview_values
+    title: プレビューに出す値の計算
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: 概要と表に出す次の候補・ゴールまで・カテゴリー別の進み具合を、コマンドと同じ関数で計算して返す
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: 検証済みのワークスペース
+    returns:
+      type: dict[str, Any]
+      description: '`next`（`Candidate` を `asdict` した並び）・`goal`（`GoalReport` を `asdict` し、`phase_progress` を足した辞書）・`progress`（カテゴリーごとのセル）'
+    process: |-
+      1. 次の候補を全件並べる（`list_next_candidates`、`limit=None`）
+      2. ゴールを判定し（`judge_goal`）、判定に入れたフェーズごとに、そのフェーズの検討事項の決着した数と全体の数を `phase_progress`（`{phase, settled, total}` の並び）にする（`is_settled`）
+      3. `settings.categories` の順に、`settings.phases` の順のセルごとの決着した数と全体の数を `progress`（`{category, cells: [{phase, settled, total}], settled, total}` の並び）にする（`is_settled`）
+    unit_tests:
+      - name: test_derive_preview_values
+        case: 正常
+        summary: コマンドと同じ答えをまとめる
+        condition: '`phases` 目的・要件、`goal.phase` 要件、カテゴリー A・B。D-1（A・目的・決定済み）・D-2（A・要件・未決定・`depends_on: [D-1]`）・D-3（B・要件・対象外）'
+        mock: なし
+        expected: '`next` が `list_next_candidates` と同じ（D-2 だけ）。`goal.phase_progress` が 目的 1/1・要件 1/2。`progress` の A が 目的 1/1・要件 0/1、B が 目的 0/0・要件 1/1'
+  - name: replace_file
+    title: ファイルの置き換え
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 共通
+    scope: public
+    summary: 同じフォルダの一時ファイルに書いてから `os.replace` で置き換える。`build_preview` と `export_preview` が使う
+    side_effects: '`path` を置き換える'
+    args:
+      - name: path
+        type: Path
+        required: true
+        passing: positional
+        description: 置き換えるファイル
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: 書く中身（UTF-8）
+    returns:
+      type: None
+      description: '-'
+    process: |-
+      1. 一時ファイルに書く（一時ファイルへの書き込み。`write_temp`）
+      2. `os.replace` で `path` を置き換える
+         - 1・2 で `OSError` が起きた場合、残った一時ファイルを消して `WriteFailedError` を送る（`write_failed`。親のフォルダが無いときもここに入り、フォルダは作らない）
+    exceptions:
+      - name: WriteFailedError
+        condition: 一時ファイルの書き込みか置き換えで `OSError` が起きた（一時ファイルを消した後）
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_replace_file
+        case: 正常
+        summary: 中身を書いて置き換える
+        condition: '`tmp_path` に中身 `古い` の `a.html` を置き、`新しい` で呼ぶ'
+        mock: なし
+        expected: '`a.html` の中身が `新しい`。`.tmp` のファイルが無い'
+      - name: test_replace_file_when_parent_missing
+        case: 異常
+        summary: 親のフォルダが無ければフォルダを作らずに失敗する
+        condition: '`tmp_path / "無い" / "a.html"`'
+        mock: なし
+        expected: '`WriteFailedError`（`match` に `a.html`）。`無い/` が無い'
+        exception: 一時ファイルの書き込みか置き換えで OSError
+  - name: export_preview
+    title: 配る書き出し
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: 検証してから、描画のライブラリとライセンスの表示を中に持つ雛形にデータを埋め込み、`out` を置き換える
+    side_effects: '`out` を置き換える。ワークスペースは読むだけ。jsDelivr から配布ファイルとライセンスの本文を取る'
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: out
+        type: Path
+        required: true
+        passing: keyword
+        description: 書き出す先（`validate_export_out` を通した絶対パス）
+      - name: built_at
+        type: str
+        required: true
+        passing: keyword
+        description: 書き出した日時（`now_utc` の文字列）
+      - name: preview_dir
+        type: Path
+        required: false
+        default: PREVIEW_DIR
+        passing: keyword
+        description: 雛形のフォルダ
+      - name: fetch
+        type: FetchFn
+        required: false
+        default: fetch_url
+        passing: keyword
+        description: URL の中身を取る関数（単体テストで差し替える）
+    returns:
+      type: Path
+      description: 書き出した `out`
+    process: |-
+      1. ワークスペースを検証する（ワークスペースの検証。`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（取らず、書かない）
+      2. 配る書き出しの雛形を組み立て、データを集めて埋め込む（`assemble_standalone_template`、`collect_preview_data`、`embed_data`）
+         - 取れない場合、`DownloadFailedError` がそのまま上がる（書かない）
+      3. `out` を置き換える（`replace_file`）
+    exceptions:
+      - name: SchemaMismatchError
+        condition: ワークスペースに問題がある
+      - name: DownloadFailedError
+        condition: 配布ファイルかライセンスの本文を取れないか、配布ファイルが `integrity` と合わない
+      - name: WriteFailedError
+        condition: '`out` の親のフォルダが無い、または書き込み・置き換えで `OSError` が起きた'
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_export_preview
+        case: 正常
+        summary: 記録と取ったライブラリとライセンスの表示を持つ HTML を out に書き、preview.html は触らない
+        condition: D-1 と資料 A-1（`docs/A-1.md` あり）と前の `preview.html` を持つワークスペースと、外の読み込みの印の間に 1 つの `<script src integrity>` を持つ `template.html`・空の CSS・JavaScript を置いた雛形のフォルダ。`out` はワークスペースの外の `tmp_path / "配る.html"`
+        mock: '`fetch`（URL ごとに決めた中身を返す関数。配布ファイルの中身は `integrity` と合うもの）'
+        expected: 戻り値が `out`。`out` の `mindmap-data` を JSON として読むと `decisions` に D-1、`bodies` に `A-1.md`。`out` に `src=`・`href=` が無く、`mindmap-licenses` の要素がある。ワークスペースの `preview.html` が呼ぶ前と同じ
+      - name: test_export_preview_when_schema_mismatch
+        case: 異常
+        summary: 問題があれば取らずに前の out を残す
+        condition: 前の `out` を置き、D-1 の `status` を `完了` にする
+        mock: '`fetch`（呼ばれた回数を数える）'
+        expected: '`SchemaMismatchError`。`out` が呼ぶ前と同じで、`fetch` が呼ばれていない'
+        exception: ワークスペースに問題がある
+      - name: test_export_preview_when_download_fails
+        case: 異常
+        summary: 取れなければ前の out を残す
+        condition: 前の `out` を置く
+        mock: '`fetch`（`DownloadFailedError` を送る関数）'
+        expected: '`DownloadFailedError`。`out` が呼ぶ前と同じ'
+        exception: 取れないか integrity と合わない
+      - name: test_export_preview_when_out_dir_missing
+        case: 異常
+        summary: out の親のフォルダが無ければ書かない
+        condition: '`out` が `tmp_path / "無い" / "配る.html"`'
+        mock: '`fetch`（URL ごとに決めた中身を返す関数）'
+        expected: '`WriteFailedError`。`無い/` が無い'
+        exception: 親のフォルダが無いか OSError
+  - name: validate_export_out
+    title: 書き出す先の確かめ
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: '`--out` が `.html` で終わり、ワークスペースの `preview.html` を指さないことを確かめ、絶対パスにして返す'
+    args:
+      - name: out
+        type: Path
+        required: true
+        passing: positional
+        description: '`--out` の値（相対パスは起動した場所から）'
+      - name: root
+        type: Path
+        required: true
+        passing: keyword
+        description: ワークスペースのフォルダ
+    returns:
+      type: Path
+      description: '`out` を `resolve()` した絶対パス'
+    process: |-
+      1. `out` の拡張子を確かめる（大文字・小文字を区別しない）
+         - `.html` でない場合、`OutPathError` を送る
+      2. `out` と `root / PREVIEW_FILE` を `resolve()` して比べる
+         - 同じ場合、`OutPathError` を送る
+      3. `resolve()` した `out` を返す
+    exceptions:
+      - name: OutPathError
+        condition: '`out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す'
+        message: '--out は .html のファイルを指してください: {パス} / --out にワークスペースの preview.html は指せません: {パス}'
+    unit_tests:
+      - name: test_validate_export_out
+        case: 正常
+        summary: 相対パスを起動した場所から読んで絶対パスにする
+        condition: '`monkeypatch.chdir(tmp_path)` で `Path("配る.HTML")`（大文字の拡張子）、`root` は `tmp_path / "ws"`'
+        mock: なし
+        expected: '`tmp_path / "配る.HTML"` を返す'
+      - name: test_validate_export_out_when_invalid
+        case: 異常
+        summary: html でないか preview.html を指す out を弾く
+        condition: '`parametrize`: `tmp_path / "配る.txt"` / `root / "sub" / ".." / "preview.html"`'
+        mock: なし
+        expected: '`OutPathError`（`match` に `.html` / `preview.html`）'
+        exception: html で終わらないか preview.html を指す
+  - name: list_external_scripts
+    title: 外の読み込みの一覧
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: 雛形の `EXTERNAL_START` と `EXTERNAL_END` の間の `<script src integrity>` を、並びの順に `ExternalScript` にして返す
+    args:
+      - name: template
+        type: str
+        required: true
+        passing: positional
+        description: 雛形の HTML
+    returns:
+      type: list[ExternalScript]
+      description: '`<script src>` の並びの順'
+    process: |-
+      1. `EXTERNAL_START`・`EXTERNAL_END` がそれぞれちょうど 1 つあり、`EXTERNAL_START` が前にあることを確かめる
+         - そうでない場合、`ValueError` を送る（同梱の雛形の誤り）
+      2. 間の `<script>` 要素から `src` と `integrity` を読む（`html.parser.HTMLParser`）
+      3. `src` を `https://cdn.jsdelivr.net/npm/{package}@{version}/{path}` の形で分ける
+         - `integrity` が無いか、`src` がこの形でない場合、`ValueError` を送る
+    exceptions:
+      - name: ValueError
+        condition: 外の読み込みの印が 1 つずつでないか順が逆、または `<script src>` が `integrity` を持たないか jsDelivr の版を固定した URL でない
+        message: '雛形に外の読み込みの印が 1 つずつありません / 雛形の外の読み込みが版を固定した jsDelivr の URL と integrity を持ちません: {src}'
+    unit_tests:
+      - name: test_list_external_scripts
+        case: 正常
+        summary: 印の間の script を並びの順に読み、印の外と link は読まない
+        condition: 印の外に `<script src="a.js">`、印の間に 2 つの `<script src="https://cdn.jsdelivr.net/npm/x@1.0.0/x.js" integrity="sha384-...">` と `<link href>` を持つ雛形
+        mock: なし
+        expected: 2 つの `ExternalScript` が並びの順で、`package`・`version`・`url`・`integrity` が `src` と合う
+      - name: test_list_external_scripts_when_invalid
+        case: 異常
+        summary: 印や script の形が違う雛形
+        condition: '`parametrize`: `EXTERNAL_START` 0 個 / `EXTERNAL_END` 2 個 / `EXTERNAL_END` が前 / `integrity` が無い / 版を持たない URL'
+        mock: なし
+        expected: '`ValueError`'
+        exception: 印が 1 つずつでないか script の形が違う
+      - name: test_template_matches_vendor_libraries
+        case: 正常
+        summary: 本物の雛形の外の読み込みと VENDOR_LIBRARIES が 1 対 1 で結べる
+        condition: 本物の `PREVIEW_DIR` の `template.html` と `VENDOR_LIBRARIES`
+        mock: なし
+        expected: '`list_external_scripts` の `package` の並びが `VENDOR_LIBRARIES` の `package` の並びと一致する。`bundled_license_file` が `None` 以外のものはファイルがある'
+  - name: fetch_url
+    title: URL の中身を取る
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: URL を GET して本文のバイト列を返す。`FetchFn` の本物
+    side_effects: HTTPS で外へ要求を送る
+    args:
+      - name: url
+        type: str
+        required: true
+        passing: positional
+        description: 取る URL
+      - name: timeout
+        type: float
+        required: false
+        default: FETCH_TIMEOUT_SEC
+        passing: keyword
+        description: 接続と 1 回の読み取りの待ちの上限（秒）
+    returns:
+      type: bytes
+      description: 本文
+    process: |-
+      1. `urllib.request.urlopen(url, timeout=timeout)` で取る（環境変数のプロキシに従う）
+         - `URLError`・`OSError`（`TimeoutError` を含む）か、200 以外が返った場合、`DownloadFailedError` を送る（取り直さない）
+      2. 本文を全て読んで返す
+    exceptions:
+      - name: DownloadFailedError
+        condition: 届かない・待ちの上限を超えた・200 以外が返った
+        message: '取れませんでした: {URL}（{理由}）'
+    unit_tests:
+      - name: test_fetch_url
+        case: 正常
+        summary: 本文を返す
+        condition: '`http.server` を `127.0.0.1` の空きポートで立て、`/a.js` に `abc` を返す'
+        mock: なし（手元の HTTP サーバー）
+        expected: '`b"abc"` を返す'
+      - name: test_fetch_url_when_unreachable
+        case: 異常
+        summary: 届かないか 200 以外なら DownloadFailedError
+        condition: '`parametrize`: 閉じたポートの URL / 手元の HTTP サーバーが 404 を返す URL / 手元の HTTP サーバーが 204 を返す URL'
+        mock: なし
+        expected: '`DownloadFailedError`（`match` にその URL）'
+        exception: 届かないか 200 以外
+  - name: assemble_standalone_template
+    title: 配る書き出しの雛形の組み立て
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: '`assemble_template` の HTML の外の読み込みを、取った描画のライブラリの `<script>` とライセンスの表示の要素に置き換えた HTML を返す'
+    args:
+      - name: preview_dir
+        type: Path
+        required: false
+        default: PREVIEW_DIR
+        passing: keyword
+        description: 雛形のフォルダ
+      - name: libraries
+        type: tuple[VendorLibrary, ...]
+        required: false
+        default: VENDOR_LIBRARIES
+        passing: keyword
+        description: ライセンスの表示に使うライブラリ
+      - name: fetch
+        type: FetchFn
+        required: false
+        default: fetch_url
+        passing: keyword
+        description: URL の中身を取る関数
+    returns:
+      type: str
+      description: 外のファイルも URL も指さない HTML（`DATA_ELEMENT` は空のまま）
+    process: |-
+      1. 雛形を組み立て、外の読み込みを並べる（`assemble_template`、`list_external_scripts`）
+      2. 外の読み込みごとに、`package` が同じ `VendorLibrary` を引く
+         - 無い場合、`ValueError` を送る（同梱の誤り）
+      3. 外の読み込みごとに配布ファイルを取り（`fetch`）、sha384 を Base64 にした `sha384-{値}` が `integrity` と同じことを確かめる
+         - 違う場合、`DownloadFailedError` を送る
+      4. ライブラリごとにライセンスの本文を `CDN_PACKAGE_URL`（`path` は `license_path`、`version` は外の読み込みの版）から取り、`bundled_license_file` があれば雛形のフォルダから読む
+      5. 配布ファイル・ライセンスの本文・束ねた依存のライセンスを UTF-8 で読み、`</script` と `<script` を含まないことを確かめる（大文字・小文字を区別しない。`<!--` の後の `<script` は script 要素を閉じさせなくする）
+         - 含む場合、`ValueError` を送る（取った中身の誤り）
+      6. `EXTERNAL_START` から `EXTERNAL_END` まで（両方を含む）を、外の読み込みごとの `<script>{配布ファイルの中身}</script>` を並びの順につないだものと、`LICENSES_OPEN` + ライセンスの表示（`format_licenses`）+ `</script>` に置き換える
+    exceptions:
+      - name: ValueError
+        condition: 外の読み込みに `VendorLibrary` が無いか、取った中身が `</script` か `<script` を含む
+        message: 'ライセンスの表示が無い外の読み込み: {package} / 取った {URL} が {タグ} を含みます'
+      - name: DownloadFailedError
+        condition: 取れないか、配布ファイルが `integrity` と合わない
+        message: '取れませんでした: {URL}（{理由}） / integrity が合いません: {URL}'
+    unit_tests:
+      - name: test_assemble_standalone_template
+        case: 正常
+        summary: 外の読み込みを取った配布ファイルとライセンスの表示に置き換える
+        condition: '`tmp_path` に、外の読み込みの印の間に 2 つの `<script src integrity>`（パッケージ `a`・`b`）を持つ `template.html` と、`a`・`b` の `VendorLibrary`（入手先の `repository` は `https://` を持たない値）'
+        mock: '`fetch`（配布ファイルは `/* a */`・`/* b */` で、`integrity` はその sha384。ライセンスの URL には `本文 a`・`本文 b`）'
+        expected: '`https://` と外の読み込みの印が無い。`/* a */`・`/* b */` がこの順で、どちらも `<script id="mindmap-app">` より前にある。`mindmap-licenses` の要素の中に `本文 a`・`本文 b` がある。`fetch` に渡った URL が配布ファイル 2 つとライセンスの本文 2 つ'
+      - name: test_assemble_standalone_template_when_integrity_mismatch
+        case: 異常
+        summary: integrity と合わない配布ファイルは差し込まない
+        condition: '`fetch` が `integrity` と違う中身を返す'
+        mock: '`fetch`'
+        expected: '`DownloadFailedError`（`match` にその URL）'
+        exception: 取れないか integrity と合わない
+      - name: test_assemble_standalone_template_when_tag_inside
+        case: 異常
+        summary: 閉じタグか開きタグを含む中身は差し込まない
+        condition: '`parametrize`: 配布ファイルに `</SCRIPT>` / 配布ファイルに `<!--<script` / ライセンスの本文に `</script>` / 束ねた依存のライセンスに `<Script`（配布ファイルの `integrity` は中身に合わせる）'
+        mock: '`fetch`'
+        expected: '`ValueError`（`match` にその URL かファイル名）'
+        exception: VendorLibrary が無いか中身がタグを含む
+      - name: test_assemble_standalone_template_when_library_unknown
+        case: 異常
+        summary: VENDOR_LIBRARIES に無いパッケージの外の読み込み
+        condition: 雛形の外の読み込みのパッケージ `c` に `VendorLibrary` が無い
+        mock: '`fetch`（呼ばれた回数を数える）'
+        expected: '`ValueError`（`match` に `c`）。`fetch` が呼ばれていない'
+        exception: VendorLibrary が無いか中身がタグを含む
+  - name: format_licenses
+    title: ライセンスの表示の組み立て
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: ライブラリごとの名前・版・著作権の表示・ライセンスの名前・ソースコードの入手先・ライセンスの本文・束ねた依存のライセンスを並べた文字列を返す
+    args:
+      - name: blocks
+        type: list[LicenseBlock]
+        required: true
+        passing: positional
+        description: 外の読み込みの順のライセンスの表示の材料
+    returns:
+      type: str
+      description: ライブラリごとの塊を空行で区切った文字列
+    process: |-
+      1. 塊ごとに、`{name} {version}`・`notice`・`License: {license}`・`Source: {repository}/tree/{tag}`（`tag` の `{version}` に版を入れる）の行と、`license_text`、`bundled_text` があればその見出しの行 `{name} が中に持つライブラリ` と本文をこの順に並べる
+      2. 塊を並びの順に空行でつなぐ
+    unit_tests:
+      - name: test_format_licenses
+        case: 正常
+        summary: ライブラリごとに名前・版・著作権・ライセンス・入手先・本文を並べる
+        condition: '2 つの `LicenseBlock`（`license_text` は `本文 A`・`本文 B`。2 つ目だけ `bundled_text` が `束ねた本文`。1 つ目の `tag` は `v{version}`・版 `1.2.3`）'
+        mock: なし
+        expected: '1 つ目の名前と版・`notice`・`License:`・`Source: {repository}/tree/v1.2.3`・`本文 A` がこの順にあり、その後に 2 つ目の塊が空行を挟んで続き、2 つ目の `本文 B` の後に見出しの行と `束ねた本文` がある。1 つ目の塊には見出しの行が無い'
 test_files:
   - tests/unit/scripts/test_builder.py
+data_models:
+  - name: VendorLibrary
+    title: 配る書き出しに入れるライブラリ
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    role: DTO
+    summary: 雛形の描画のライブラリ 1 つの、ライセンスの表示に使う値。`@dataclass(frozen=True, slots=True, kw_only=True)`
+    properties:
+      - name: package
+        type: str
+        description: npm のパッケージ名。雛形の `<script src>` の URL のパッケージ名と結ぶ
+        example: elkjs
+      - name: name
+        type: str
+        description: 表示する名前
+        example: elkjs
+      - name: notice
+        type: str
+        description: 著作権の表示
+        example: (c) Kiel University and others
+      - name: license
+        type: str
+        description: 配るときのライセンスの名前（SPDX）。選べるライセンスを持つときは選んだもの
+        example: EPL-2.0
+      - name: license_path
+        type: str
+        description: パッケージの中のライセンスの本文のファイル（`CDN_PACKAGE_URL` の `path`）
+        example: LICENSE.md
+      - name: bundled_license_file
+        type: str | None
+        description: 配布ファイルが中に束ねた依存の、名前・版とライセンスの本文を並べたファイルの、雛形のフォルダからの相対パス。束ねた依存が無いライブラリは `None`
+        example: licenses/mermaid-bundled.txt
+      - name: repository
+        type: str
+        description: ソースコードのリポジトリの URL
+        example: https://github.com/kieler/elkjs
+      - name: tag
+        type: str
+        description: 版のタグの形（`{version}` に外の読み込みの版を入れる）。入手先は `{repository}/tree/{tag}`
+        example: '{version}'
+  - name: ExternalScript
+    title: 外の読み込み
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    role: DTO
+    summary: 雛形の外の読み込みの `<script src integrity>` 1 つ。`@dataclass(frozen=True, slots=True, kw_only=True)`
+    properties:
+      - name: url
+        type: str
+        description: '`src`'
+        example: https://cdn.jsdelivr.net/npm/elkjs@0.12.0/lib/elk.bundled.js
+      - name: integrity
+        type: str
+        description: '`integrity`（`sha384-{Base64}`）'
+      - name: package
+        type: str
+        description: URL のパッケージ名
+        example: elkjs
+      - name: version
+        type: str
+        description: URL の版
+        example: 0.12.0
+  - name: LicenseBlock
+    title: ライセンスの表示の材料
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    role: DTO
+    summary: ライブラリ 1 つのライセンスの表示を組み立てる材料。`@dataclass(frozen=True, slots=True, kw_only=True)`
+    properties:
+      - name: library
+        type: VendorLibrary
+        description: ライブラリ
+      - name: version
+        type: str
+        description: 外の読み込みの版
+      - name: license_text
+        type: str
+        description: 取ったライセンスの本文
+      - name: bundled_text
+        type: str | None
+        description: 束ねた依存のライセンス（`bundled_license_file` の中身）。無ければ `None`
+function_types:
+  - name: FetchFn
+    title: URL の中身を取る関数
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: URL を受けて本文のバイト列を返す。取れなければ `DownloadFailedError` を送る（`type FetchFn = Callable[[str], bytes]`）
+    args:
+      - name: url
+        type: str
+        description: 取る URL
+    returns:
+      type: bytes
+      description: 本文
