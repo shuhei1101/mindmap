@@ -60,7 +60,7 @@ namespace MindmapPreview {
       }
       const hits = searchItems({ query, index });
       if (hits.length === 0) {
-        results.replaceChildren(h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する項目はありません。"] }));
+        results.replaceChildren(h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する項目はありません。別の条件を試してください。"] }));
         return;
       }
       const groups = KIND_KEYS.flatMap((kind) => {

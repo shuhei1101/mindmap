@@ -559,6 +559,14 @@ namespace MindmapPreview {
     // ===== 配置: 固定した列の左端の位置・該当なしの文言の幅・控えたスクロールの位置 =====
     let saved = pendingScroll.get(kind);
     pendingScroll.delete(kind);
+    /** 控えたスクロールの位置を表に戻す */
+    const restoreScroll = (): void => {
+      if (saved === undefined) return;
+      wrap.scrollLeft = saved.left;
+      wrap.scrollTop = saved.top;
+    };
+    // 表が文書に入った直後に戻し、描いた最初のコマで先頭へ戻って見えないようにする
+    queueMicrotask(restoreScroll);
     new ResizeObserver(() => {
       wrap.style.setProperty("--wrap-w", `${wrap.clientWidth}px`);
       let left = 0;
@@ -570,12 +578,9 @@ namespace MindmapPreview {
         }
         left += header.getBoundingClientRect().width;
       });
-      // 控えたスクロールの位置は、描いた後の最初の 1 回だけ戻す
-      if (saved !== undefined) {
-        wrap.scrollLeft = saved.left;
-        wrap.scrollTop = saved.top;
-        saved = undefined;
-      }
+      // 列の位置を整えた後にも、最初の 1 回だけ戻す
+      restoreScroll();
+      saved = undefined;
     }).observe(wrap);
 
     // 開いたままにするポップオーバーを、表が文書に入った後に開く
