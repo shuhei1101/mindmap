@@ -60,8 +60,8 @@ flows:
       - name: Mock
         description: なし（実際の Python と git で起動する）
       - name: git の作業ツリー
-        description: テストごとの一時フォルダで `git init` し、その下に版を記録する前の形式のワークスペースと、ワークスペースの外のファイル `other.txt` を置く
-        notes: どちらもコミットしない
+        description: テストごとの一時フォルダで `git init` し、その下に版を記録する前の形式のワークスペースと、ワークスペースの外のファイル `other.txt`・`staged.txt` を置く
+        notes: どれもコミットしない。`staged.txt` だけ `git add` しておく
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -77,7 +77,8 @@ flows:
     expected:
       - 終了コード 0
       - '`backup.kind` が `git`、`backup.ref` が新しいコミットの ID'
-      - そのコミットがワークスペースのパスのファイルだけを持ち、`other.txt` を持たない
+      - そのコミットがワークスペースのパスのファイルだけを持ち、`other.txt`・`staged.txt` を持たない
+      - '`staged.txt` がステージされたままである'
   - name: 正常系（値を入れる）
     summary: --set で値が要るキーに値を入れる
     setup:
@@ -168,6 +169,56 @@ flows:
     expected:
       - 終了コード 0
       - '`workspace_version` が `v99.0.0`、`relation` が `newer`、`steps` が空'
+  - name: 正常系（ignore されたワークスペースは複製で写しを取る）
+    summary: git の作業ツリーの中でも、ignore されたファイルを持つワークスペースは隣のフォルダへ複製して写しにする
+    setup:
+      - name: Mock
+        description: なし（実際の Python と git で起動する）
+      - name: ignore されたワークスペース
+        description: テストごとの一時フォルダで `git init` し、`tmp/.gitignore` に `*` を書いて、`tmp/` の下に版を記録する前の形式のワークスペースを置く
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant G as git
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF->>G: ignore されたファイルがあるかを引く
+        G-->>IF: ある
+        IF->>WS: 隣のフォルダへ複製する
+        IF->>WS: 手順を当てる
+        IF-->>クライアント: JSON（backup.kind: copy）
+      ```
+    expected:
+      - 終了コード 0
+      - '`backup.kind` が `copy` で、`backup.ref` のフォルダに呼ぶ前の `docs.yaml` がある'
+      - 作業ツリーにコミットが増えていない
+  - name: 正常系（既に今の形のワークスペースに当てる）
+    summary: v0.2.0 で作った形（版のファイルが無く、資料が status、題名がある）に当てても何も変えずに成功する
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '版のファイルを持たず、`summary` を持つ `mindmap.yaml` と、資料 A-1（`status: 完成`）を持つ、git の作業ツリーではないワークスペース'
+        notes: 当て直し（手順を当てた後、版を書く前に止めたワークスペース）も同じ形になる
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF->>WS: 写しを取る
+        IF->>IF: 対象のキーが無い項目を飛ばして手順を当てる
+        IF-->>クライアント: JSON（needs_values は空）
+      ```
+    expected:
+      - 終了コード 0
+      - '`needs_values` が空'
+      - '`mindmap.yaml`・`docs.yaml` の中身と更新日時が呼ぶ前と同じ'
   - name: 異常系（版が新しい・WorkspaceNewerError）
     summary: 版が新しいワークスペースには手順を当てない
     setup:
@@ -392,13 +443,15 @@ constraints:
   - item: 手順を当てるときの検証
     constraint: ワークスペース全体をスキーマと突き合わせない（突き合わせは `check` と `--record` が担う）。手順そのものが失敗したときだけエラーで終わる
   - item: 写し
-    constraint: ワークスペースが git の作業ツリーの中なら、ワークスペースのパスだけを `git add -A` してコミットする（変更が無ければ今の HEAD を写しにする）。そうでなければ、ワークスペースの隣の `{フォルダ名}.before-{--to の版}`（あれば末尾に `-{日時}`）へ複製する。写しは成功しても消さない
+    constraint: ワークスペースが git の作業ツリーの中にあり、ワークスペースの中に ignore されたファイル（`git ls-files --others --ignored --exclude-standard -- {ワークスペース}`）が 1 つも無いときだけ、ワークスペースのパスだけを `git add -A -- {ワークスペース}` して `git commit -- {ワークスペース}` でコミットする（変更が無ければ今の HEAD を写しにする。ワークスペースの外のステージされた変更はコミットに入れず、ステージされたまま残す）。そうでなければ、ワークスペースの隣の `{フォルダ名}.before-{--to の版}`（あれば末尾に `-{日時}`）へ複製する。写しは成功しても消さない
   - item: 戻し方
     constraint: git の写しは、ワークスペースのパスをコミットの中身に戻し、コミットに無いファイルを消す。複製の写しは、ワークスペースの中身を消して複製から書き戻す
   - item: 版のファイルの書き換え
     constraint: '`--record` だけが書く。手順を当てる・`--set` は書かない'
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない。手順が触らない項目の `updated` は変えない'
+  - item: 対象が無い・既にあるとき
+    constraint: どの操作も、同じ手順を 2 度当てても結果が変わらないように振る舞う。`rename_key` は `from` が無い項目を飛ばし、`from` と `to` が両方ある項目は StepFailedError。`map_values` は `key` が無い項目と `map` に無い値を変えない。`set_default` は `key` を既に持つ項目を変えず、`ask` でも `needs_values` に返さない。`rename_file`・`move_dir` は `from` が無ければ飛ばし、`to` が既にあれば StepFailedError。`delete` は `path` が無ければ飛ばす。`call` の変換も同じ振る舞いで書く。手順が何も変えなかったファイルは書かない
 refs:
   - dev/設計書/ER図/ワークスペース#tables[docs.yaml]
   - dev/設計書/ER図/ワークスペース#tables[mindstella-version.ini]
