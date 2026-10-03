@@ -7,7 +7,7 @@ directory: |-
     core/
       globals.d.ts   描画のライブラリ（marked・DOMPurify・ELK・mermaid）のグローバルに npm の型を割り当てる（出力しない）
       dom.ts         要素の組み立て（`h`）・アイコン・状態の印など、画面が共通で使う DOM の部品
-      records.ts     記録の索引・関係する項目・検索（次の候補・ゴールまで・進み具合は build が計算した `derived` を使う）
+      records.ts     記録の索引・関係する項目・検索（次の候補・ゴールまでの進捗・カテゴリー別の進捗は build が計算した `derived` を使う）
       libs.ts        描画のライブラリの有無と呼び出し（Markdown・図・配置）
       router.ts      URL のハッシュの読み書きと履歴
   ```
@@ -23,7 +23,7 @@ data_models:
     properties:
       - name: data
         type: object
-        description: 埋め込みのデータ（`settings`・7 種類・`bodies`・`derived`・`built_at`）そのもの。次の候補・ゴールまで・進み具合は `derived` をそのまま使い、画面で計算し直さない
+        description: 埋め込みのデータ（`settings`・7 種類・`bodies`・`derived`・`built_at`）そのもの。次の候補・ゴールまでの進捗・カテゴリー別の進捗は `derived` をそのまま使い、画面で計算し直さない
       - name: byId
         type: Map<string, {kind, item}>
         description: ID → 種類と項目
@@ -32,7 +32,7 @@ data_models:
         description: ID → その項目を `depends_on`・`for`・`related`・`sources` で指す項目の ID（ID の順）
       - name: readyIds
         type: Set<string>
-        description: 着手できる検討事項の ID（`data.derived.next` の ID。表の「着手できる」の列が使う）
+        description: 着手可能な検討事項の ID（`data.derived.next` の ID）。表の「着手可否」の列は、ここにある未決定を「着手可能」、ほかの未決定を「前提待ち」、未決定以外を「なし」にする
   - name: Route
     title: 画面の場所
     container: plugins/mindstella/skills/mindmap/preview/core/router.ts
@@ -224,14 +224,14 @@ functions:
         description: 表示できないもの（本文・図・マップ）
     returns:
       type: HTMLElement
-      description: '`{what}を表示できません。読めなかったライブラリ: {名前を「・」でつなぐ}` と、通信を確かめて読み込み直すよう促す文を持つ要素（文字は `textContent` で入れる）'
+      description: '`{what}を表示できません。読み込めなかったライブラリ: {名前を「・」でつなぐ}` と、「通信を確認して、ページを再読み込みしてください。」を持つ要素（文字は `textContent` で入れる）'
     unit_tests:
       - name: test_library_notice
         case: 正常
         summary: 名前を並べた知らせを返す
         condition: '`{names: ["marked", "DOMPurify"], what: "本文"}`'
         mock: なし
-        expected: '`role` が `alert` で、文字に `読めなかったライブラリ: marked・DOMPurify`'
+        expected: '`role` が `alert` で、文字に `読み込めなかったライブラリ: marked・DOMPurify` と `通信を確認して、ページを再読み込みしてください。`'
   - name: renderMarkdown
     title: 本文を描く
     kind: 関数
@@ -287,14 +287,14 @@ functions:
       1. mermaid が読めていない場合、各入れ物に知らせ（`libraryNotice({names: ["mermaid"], what: "図"})`）と原文を入れる
       2. 初めて描くときに `mermaid.initialize({startOnLoad: false, securityLevel: "strict", theme: "base"})` を呼ぶ
       3. 入れ物ごとに `mermaid.render` した SVG を入れる
-         - 描けなかった場合、その入れ物に描けなかったことと原文を入れる（ほかの図は続ける）
+         - 描けなかった場合、その入れ物に「この図は表示できませんでした。原文を表示します。」と原文を入れる（ほかの図は続ける）
     unit_tests:
       - name: test_render_diagrams
         case: 正常
         summary: 図を SVG に描き、描けない図は原文を残す
         condition: 正しいフローチャートと、構文の誤った図の入れ物。mermaid は `page.route` で返す
         mock: 描画のライブラリの配信元（`page.route`）
-        expected: 1 つ目に `svg`、2 つ目に描けなかったことと原文
+        expected: 1 つ目に `svg`、2 つ目に「この図は表示できませんでした。原文を表示します。」と原文
   - name: parseHash
     title: ハッシュを読む
     kind: 関数
@@ -523,16 +523,22 @@ functions:
         required: true
         passing: positional
         description: 影響度
+      - name: labeled
+        type: boolean
+        required: false
+        default: 'false'
+        passing: positional
+        description: 目盛りの横の文字に軸の名前を添えて「影響度 大」にするか。列名「影響度」の下に出す表は `false`、概要の次に検討する項目は `true`
     returns:
       type: Node
-      description: '`span.impact`。大は 3 本・中は 2 本・小は 1 本の目盛りを `on` にする。大・中・小のどれでもない値と `undefined` は空の断片'
+      description: '`span.impact`。大は 3 本・中は 2 本・小は 1 本の目盛りを `on` にする。文字は `labeled` が真なら「影響度 {値}」、偽なら「{値}」。大・中・小のどれでもない値と `undefined` は空の断片'
     unit_tests:
       - name: test_impact_badge
         case: 正常
         summary: 影響度ごとの目盛りの数
-        condition: '`parametrize`: `大` / `中` / `小` / `知らない` / `undefined`'
+        condition: '`parametrize`: `大` / `中` / `小` / `知らない` / `undefined`（いずれも `labeled` なし）と、`大` で `labeled = true`'
         mock: なし
-        expected: '`on` の目盛りが 3 / 2 / 1 本 / 空の断片 / 空の断片'
+        expected: '`on` の目盛りが 3 / 2 / 1 本（文字は `大` / `中` / `小`）/ 空の断片 / 空の断片。`labeled = true` は目盛り 3 本で文字が `影響度 大`'
   - name: tagList
     title: タグの並び
     kind: 関数

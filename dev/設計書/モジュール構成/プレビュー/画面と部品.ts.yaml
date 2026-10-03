@@ -124,7 +124,7 @@ components:
     container: plugins/mindstella/skills/mindmap/preview/screens/overview.ts
     usecase: 概要を見る
     kind: 画面
-    summary: 画面設計『概要』のタイルを描く。次の候補・ゴールまで・カテゴリー別の進み具合は埋め込みのデータの `derived` をそのまま並べる（画面で計算しない）
+    summary: 画面設計『概要』のタイルを描く。次の候補・ゴールまでの進捗・カテゴリー別の進捗は埋め込みのデータの `derived` をそのまま並べる（画面で計算しない）
     props:
       - name: index
         type: RecordIndex
@@ -335,7 +335,7 @@ functions:
       - name: test_filter_rows
         case: 正常
         summary: 列の中はどれか、列の間は全て
-        condition: '`parametrize`: 状態 = 要見直し・保留 / 状態 = 未決定 かつ 着手できる = はい / タグ（配列）= a / 条件なし'
+        condition: '`parametrize`: 状態 = 要見直し・保留 / 状態 = 未決定 かつ 着手可否 = 着手可能 / タグ（配列）= a / 条件なし'
         mock: なし
         expected: それぞれの条件に合う行だけが元の順で残る
   - name: sortRows
