@@ -17,10 +17,11 @@ layers:
         pytest {テストファイルパス}
         ```
   - name: 単体テスト（フロント）
-    description: pytest-playwright で、プレビューの部品・画面の JavaScript を `page.add_script_tag` で読み、`page.evaluate` で関数を引数付きで呼んで、返った DOM と計算した値を本物のブラウザ（Chromium）で確かめる。描画のライブラリは `page.route` で差し替える
+    description: pytest-playwright で、プレビューの部品・画面の `.ts` から tsc が生成した `.js` を `page.add_script_tag` で読み、`page.evaluate` で関数を引数付きで呼んで、返った DOM と計算した値を本物のブラウザ（Chromium）で確かめる。描画のライブラリは `page.route` で差し替える
     prerequisites:
       - Python 3.12 以上と、`requirements-dev.txt` の開発用の依存（pytest・pytest-playwright・playwright ほか）
       - '`python -m playwright install --only-shell chromium` でブラウザを入れてある（CI は `--with-deps` を付ける）'
+      - Node 20.19 以上で `npm ci` を済ませ、`npx tsc -p .` で `.ts` から `.js` を生成してある（テストは生成した `.js` を読む）
       - 実行はリポジトリの直下で行う
     run_all: |-
       ```bash

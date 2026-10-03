@@ -6,12 +6,14 @@ directory: |-
     template.html   雛形（描画のライブラリ・文字の読み込みと、CSS・JavaScript・データの差し込み口）
     tokens.css      デザイン方針のトークン（ライト / ダーク）
     style.css       画面と部品のスタイル
-    app.js          起動・画面の振り分け・端末の保存領域（差し込む順の最後）
+    app.ts          起動・画面の振り分け・端末の保存領域（差し込む順の最後）
   ```
+
+  `.ts` の書き方と生成した `.js` の扱いは、モジュール構成『基盤』のディレクトリ構成と同じ。
 data_models:
   - name: Prefs
     title: 端末に残す設定
-    container: skills/mindmap/preview/app.js
+    container: skills/mindmap/preview/app.ts
     usecase: 共通
     summary: '`localStorage` の 1 つのキーに JSON で残す値'
     properties:
@@ -24,7 +26,7 @@ data_models:
 constants:
   - name: PREFS_KEY
     title: 端末の保存領域のキー
-    container: skills/mindmap/preview/app.js
+    container: skills/mindmap/preview/app.ts
     usecase: 共通
     summary: '`Prefs` を残す `localStorage` のキー'
     value: '"mindmap-preview"'
@@ -32,7 +34,7 @@ functions:
   - name: readEmbeddedData
     title: 埋め込みのデータを読む
     kind: 関数
-    container: skills/mindmap/preview/app.js
+    container: skills/mindmap/preview/app.ts
     usecase: 共通
     scope: public
     summary: '`mindmap-data` の要素の中身を `JSON.parse` して返す'
@@ -66,7 +68,7 @@ functions:
   - name: loadPrefs
     title: 端末の設定を読む
     kind: 関数
-    container: skills/mindmap/preview/app.js
+    container: skills/mindmap/preview/app.ts
     usecase: 共通
     scope: public
     summary: '`localStorage` から `Prefs` を読む。読めないときは既定（`theme: null`、`columns: {}`）を返す'
@@ -90,7 +92,7 @@ functions:
   - name: savePrefs
     title: 端末の設定を残す
     kind: 関数
-    container: skills/mindmap/preview/app.js
+    container: skills/mindmap/preview/app.ts
     usecase: 共通
     scope: public
     summary: '`Prefs` を `localStorage` に残す。保存領域が例外を送るときは何もしない'
@@ -99,12 +101,12 @@ functions:
       - name: storage
         type: Storage
         required: true
-        passing: positional
+        passing: keyword
         description: '`localStorage`'
       - name: prefs
         type: Prefs
         required: true
-        passing: positional
+        passing: keyword
         description: 設定
     returns:
       type: void
@@ -119,7 +121,7 @@ functions:
   - name: start
     title: 起動
     kind: 関数
-    container: skills/mindmap/preview/app.js
+    container: skills/mindmap/preview/app.ts
     usecase: 共通
     scope: public
     summary: 記録を読み、ハッシュが指す画面を描き、操作と履歴をつなぐ

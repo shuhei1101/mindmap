@@ -5,7 +5,7 @@ directory: |-
   skills/mindmap/
     preview/
       template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み）
-      tokens.css・style.css・*.js  画面の中身（モジュール構成『プレビュー』）
+      tokens.css・style.css・*.ts（と tsc が生成した *.js）  画面の中身（モジュール構成『プレビュー』）
     scripts/
       builder.py      雛形の組み立て・データの収集・埋め込み・書き出し
   ```
@@ -38,8 +38,8 @@ constants:
     title: 差し込む JavaScript
     container: skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
-    summary: 雛形のフォルダからの相対パス。並びの順につなぐ（名前空間を作る `core/namespace.js` が先、起動する `app.js` が最後）。中身はモジュール構成『プレビュー』のディレクトリ構成
-    value: ("core/namespace.js", "core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
+    summary: 雛形のフォルダからの相対パス。tsc が `.ts` から生成した `.js` を並びの順につなぐ（起動する `app.js` が最後）。中身はモジュール構成『プレビュー』のディレクトリ構成
+    value: ("core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
   - name: STYLE_SLOT
     title: CSS の差し込み口
     container: skills/mindmap/scripts/builder.py

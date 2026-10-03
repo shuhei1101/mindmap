@@ -3,4 +3,4 @@ items:
   - page: スクリプト/
     summary: ワークスペースを読み書きするスクリプトのモジュール
   - page: プレビュー/
-    summary: build が書き出す preview.html の画面と部品の JavaScript
+    summary: build が書き出す preview.html の画面と部品の TypeScript

@@ -2,19 +2,21 @@ title: "プレビュー / 基盤"
 lead: 画面が共通で使う土台。記録の索引と画面に出す値の計算、描画のライブラリの呼び出しと読めないときの知らせ、URL のハッシュと履歴を持つ。
 directory: |-
   ```
+  tsconfig.json      tsc の設定（リポジトリの直下。外部ライブラリ『typescript』）
   skills/mindmap/preview/
     core/
-      namespace.js   名前空間 window.MindmapPreview を作る（差し込む順の先頭）
-      records.js     記録の索引・関係する項目・検索（次の候補・ゴールまで・進み具合は build が計算した `derived` を使う）
-      libs.js        描画のライブラリの有無と呼び出し（Markdown・図・配置）
-      router.js      URL のハッシュの読み書きと履歴
+      globals.d.ts   描画のライブラリ（marked・DOMPurify・ELK・mermaid）のグローバルに npm の型を割り当てる（出力しない）
+      records.ts     記録の索引・関係する項目・検索（次の候補・ゴールまで・進み具合は build が計算した `derived` を使う）
+      libs.ts        描画のライブラリの有無と呼び出し（Markdown・図・配置）
+      router.ts      URL のハッシュの読み書きと履歴
   ```
 
-  全てのファイルは ES モジュールではない classic script で、即時実行関数の中で `window.MindmapPreview` の下に関数を置く。読んだだけでは DOM に触らない。
+  全ての `.ts` は import / export を持たない script で、`namespace MindmapPreview` の下に関数を置く。読んだだけでは DOM に触らない。
+  `tsc -p .` が `.ts` と同じ階層に即時実行関数の形の `.js` を出し、その `.js` を commit する。各 `.js` が名前空間を無ければ作り、あれば足すので、名前空間を作るだけのファイルは要らない。build はこの `.js` をつないで雛形に差し込む（モジュール構成『ビルド』の `SCRIPT_FILES`）。
 data_models:
   - name: RecordIndex
     title: 記録の索引
-    container: skills/mindmap/preview/core/records.js
+    container: skills/mindmap/preview/core/records.ts
     usecase: 共通
     summary: 埋め込みのデータを ID で引けるようにし、参照の逆向きを持つ
     properties:
@@ -32,7 +34,7 @@ data_models:
         description: 着手できる検討事項の ID（`data.derived.next` の ID。表の「着手できる」の列が使う）
   - name: Route
     title: 画面の場所
-    container: skills/mindmap/preview/core/router.js
+    container: skills/mindmap/preview/core/router.ts
     usecase: 共通
     summary: URL のハッシュが指す画面・表示形式・項目・絞り込み（インターフェース定義『プレビューを開く』のリクエスト）
     properties:
@@ -54,7 +56,7 @@ data_models:
 constants:
   - name: DEFAULT_VIEW
     title: 画面ごとの既定の表示形式
-    container: skills/mindmap/preview/core/router.js
+    container: skills/mindmap/preview/core/router.ts
     usecase: 共通
     summary: '`tab` → 既定の `view`'
     entries:
@@ -68,7 +70,7 @@ constants:
         value: table
   - name: VIEWS_OF
     title: 画面が持つ表示形式
-    container: skills/mindmap/preview/core/router.js
+    container: skills/mindmap/preview/core/router.ts
     usecase: 共通
     summary: '`tab` → 切り替えられる `view` の並び'
     entries:
@@ -82,7 +84,7 @@ constants:
         value: '["table"]'
   - name: LIBRARIES
     title: 描画のライブラリ
-    container: skills/mindmap/preview/core/libs.js
+    container: skills/mindmap/preview/core/libs.ts
     usecase: 共通
     summary: ライブラリの名前 → 読めたときに置かれるグローバル
     entries:
@@ -98,7 +100,7 @@ functions:
   - name: buildIndex
     title: 記録の索引を作る
     kind: 関数
-    container: skills/mindmap/preview/core/records.js
+    container: skills/mindmap/preview/core/records.ts
     usecase: 共通
     scope: public
     summary: 埋め込みのデータから `RecordIndex` を作る
@@ -125,7 +127,7 @@ functions:
   - name: relatedItems
     title: 関係する項目
     kind: 関数
-    container: skills/mindmap/preview/core/records.js
+    container: skills/mindmap/preview/core/records.ts
     usecase: 項目の詳細を読む
     scope: public
     summary: 詳細パネルに出す前提・後続・関連タスク・経緯・関連・参照している項目を返す
@@ -133,12 +135,12 @@ functions:
       - name: id
         type: string
         required: true
-        passing: positional
+        passing: keyword
         description: 項目の ID
       - name: index
         type: RecordIndex
         required: true
-        passing: positional
+        passing: keyword
         description: 索引
     returns:
       type: '{prerequisites, successors, tasks, logs, related, referencedBy}'
@@ -153,7 +155,7 @@ functions:
   - name: searchItems
     title: 全体の検索
     kind: 関数
-    container: skills/mindmap/preview/core/records.js
+    container: skills/mindmap/preview/core/records.ts
     usecase: 項目を検索する
     scope: public
     summary: 空白で区切った語を全て含む項目を返す
@@ -161,12 +163,12 @@ functions:
       - name: query
         type: string
         required: true
-        passing: positional
+        passing: keyword
         description: 検索の言葉
       - name: index
         type: RecordIndex
         required: true
-        passing: positional
+        passing: keyword
         description: 索引
     returns:
       type: '{id, kind, title}[]'
@@ -181,7 +183,7 @@ functions:
   - name: missingLibraries
     title: 読めなかったライブラリ
     kind: 関数
-    container: skills/mindmap/preview/core/libs.js
+    container: skills/mindmap/preview/core/libs.ts
     usecase: 共通
     scope: public
     summary: 渡したライブラリのうち、グローバルが無いものの名前を返す
@@ -204,7 +206,7 @@ functions:
   - name: libraryNotice
     title: 読めなかったライブラリの知らせ
     kind: 関数
-    container: skills/mindmap/preview/core/libs.js
+    container: skills/mindmap/preview/core/libs.ts
     usecase: 共通
     scope: public
     summary: 読めなかったライブラリの名前を出す `role="alert"` の要素を返す
@@ -212,12 +214,12 @@ functions:
       - name: names
         type: string[]
         required: true
-        passing: positional
+        passing: keyword
         description: 読めなかったライブラリの名前
       - name: what
         type: string
         required: true
-        passing: positional
+        passing: keyword
         description: 表示できないもの（本文・図・マップ）
     returns:
       type: HTMLElement
@@ -232,7 +234,7 @@ functions:
   - name: renderMarkdown
     title: 本文を描く
     kind: 関数
-    container: skills/mindmap/preview/core/libs.js
+    container: skills/mindmap/preview/core/libs.ts
     usecase: 項目の詳細を読む
     scope: public
     summary: 本文の Markdown を無害化した要素にする。mermaid のコードブロックは図の入れ物に置き換える
@@ -266,7 +268,7 @@ functions:
   - name: renderDiagrams
     title: 図を描く
     kind: 関数
-    container: skills/mindmap/preview/core/libs.js
+    container: skills/mindmap/preview/core/libs.ts
     usecase: 項目の詳細を読む
     scope: public
     is_async: true
@@ -295,7 +297,7 @@ functions:
   - name: parseHash
     title: ハッシュを読む
     kind: 関数
-    container: skills/mindmap/preview/core/router.js
+    container: skills/mindmap/preview/core/router.ts
     usecase: 共通
     scope: public
     summary: URL のハッシュを `Route` にする
@@ -303,12 +305,12 @@ functions:
       - name: hash
         type: string
         required: true
-        passing: positional
+        passing: keyword
         description: '`location.hash`'
       - name: index
         type: RecordIndex
         required: true
-        passing: positional
+        passing: keyword
         description: 索引（`id` が記録にあるかを見る）
     returns:
       type: Route
@@ -328,7 +330,7 @@ functions:
   - name: toHash
     title: ハッシュを作る
     kind: 関数
-    container: skills/mindmap/preview/core/router.js
+    container: skills/mindmap/preview/core/router.ts
     usecase: 共通
     scope: public
     summary: '`Route` を URL のハッシュにする（既定の値と `filters` は書かない）'
@@ -351,7 +353,7 @@ functions:
   - name: navigate
     title: 画面を移る
     kind: 関数
-    container: skills/mindmap/preview/core/router.js
+    container: skills/mindmap/preview/core/router.ts
     usecase: 共通
     scope: public
     summary: ハッシュを書き換え、履歴に積むか置き換える
@@ -360,7 +362,7 @@ functions:
       - name: route
         type: Route
         required: true
-        passing: positional
+        passing: keyword
         description: 移る先
       - name: push
         type: boolean

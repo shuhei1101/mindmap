@@ -1,9 +1,9 @@
-summary: "build が書き出す preview.html の画面と部品の JavaScript"
+summary: "build が書き出す preview.html の画面と部品の TypeScript"
 docs_index: true
 items:
-  - page: 入口.js.yaml
+  - page: 入口.ts.yaml
     summary: 起動・画面の振り分け・端末の保存領域
-  - page: 基盤.js.yaml
+  - page: 基盤.ts.yaml
     summary: 記録の索引と画面に出す値・描画のライブラリ・URL のハッシュと履歴
-  - page: 画面と部品.js.yaml
+  - page: 画面と部品.ts.yaml
     summary: 表・トップバー・表示形式の切り替えと、概要からつながりまでの画面

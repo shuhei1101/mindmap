@@ -4,25 +4,27 @@ directory: |-
   ```
   skills/mindmap/preview/
     components/
-      view-switch.js      表示形式の切り替え（部品設計『表示形式の切り替え』）
-      topbar.js           トップバー（部品設計『トップバー』）
-      table.js            表と、並べ替え・絞り込みの計算（部品設計『表』）
+      view-switch.ts      表示形式の切り替え（部品設計『表示形式の切り替え』）
+      topbar.ts           トップバー（部品設計『トップバー』）
+      table.ts            表と、並べ替え・絞り込みの計算（部品設計『表』）
     screens/
-      overview.js         概要
-      decisions.js        検討事項（マップ・ボード・表）
-      tasks.js            タスク（ボード・表）
-      docs.js             資料（カード・表）
-      records.js          調査・用語集・メモ・会話ログ（表）
-      detail.js           詳細パネルと詳細の全画面
-      search.js           全体の検索
-      diagram-viewer.js   図の拡大
+      overview.ts         概要
+      decisions.ts        検討事項（マップ・ボード・表）
+      tasks.ts            タスク（ボード・表）
+      docs.ts             資料（カード・表）
+      records.ts          調査・用語集・メモ・会話ログ（表）
+      detail.ts           詳細パネルと詳細の全画面
+      search.ts           全体の検索
+      diagram-viewer.ts   図の拡大
     graph/
-      graph.js            つながり（3D）。見本の作りを関数に分けて整える
+      graph.ts            つながり（3D）。見本の作りを関数に分けて整える
   ```
+
+  `.ts` の書き方と生成した `.js` の扱いは、モジュール構成『基盤』のディレクトリ構成と同じ。
 components:
   - name: viewSwitch
     title: 表示形式の切り替え
-    container: skills/mindmap/preview/components/view-switch.js
+    container: skills/mindmap/preview/components/view-switch.ts
     usecase: 共通
     kind: コンポーネント
     summary: 部品設計『表示形式の切り替え』の引数を受け、切り替えを `onChange(key)` で知らせる
@@ -41,7 +43,7 @@ components:
         description: 切り替えのイベント
   - name: topbar
     title: トップバー
-    container: skills/mindmap/preview/components/topbar.js
+    container: skills/mindmap/preview/components/topbar.ts
     usecase: 共通
     kind: コンポーネント
     summary: 部品設計『トップバー』の引数を受け、画面を移る・検索を開く・テーマの切り替えをコールバックで知らせる
@@ -76,7 +78,7 @@ components:
         description: テーマの切り替え
   - name: table
     title: 表
-    container: skills/mindmap/preview/components/table.js
+    container: skills/mindmap/preview/components/table.ts
     usecase: 項目を表で絞り込む
     kind: コンポーネント
     summary: 部品設計『表』の引数を受け、並べ替え・絞り込み・ピン留め・表示する列・初期設定に戻す・詳細を開くをコールバックで知らせる。行の絞り込みと並べ替えは `filterRows`・`sortRows`
@@ -119,7 +121,7 @@ components:
         description: 部品設計のイベントごとのコールバック
   - name: overviewScreen
     title: 概要
-    container: skills/mindmap/preview/screens/overview.js
+    container: skills/mindmap/preview/screens/overview.ts
     usecase: 概要を見る
     kind: 画面
     summary: 画面設計『概要』のタイルを描く。次の候補・ゴールまで・カテゴリー別の進み具合は埋め込みのデータの `derived` をそのまま並べる（画面で計算しない）
@@ -134,7 +136,7 @@ components:
         description: 項目を開く・絞った表へ移る（`Route`）
   - name: decisionsScreen
     title: 検討事項
-    container: skills/mindmap/preview/screens/decisions.js
+    container: skills/mindmap/preview/screens/decisions.ts
     usecase: 検討事項をマップで辿る
     kind: 画面
     summary: 画面設計『検討事項』を描く。マップは `buildDecisionTree` の木を `ELK.layout` で配置して SVG にし、幅 900px 以下では字下げの一覧にする。elkjs が読めないときは `libraryNotice`
@@ -166,7 +168,7 @@ components:
         description: マップの倍率
   - name: tasksScreen
     title: タスク
-    container: skills/mindmap/preview/screens/tasks.js
+    container: skills/mindmap/preview/screens/tasks.ts
     usecase: タスクをボードで見る
     kind: 画面
     summary: 画面設計『タスク』を描く。ボードの列は `boardColumns`
@@ -185,7 +187,7 @@ components:
         description: 項目を開く・表示形式を切り替える
   - name: docsScreen
     title: 資料
-    container: skills/mindmap/preview/screens/docs.js
+    container: skills/mindmap/preview/screens/docs.ts
     usecase: 資料を読む
     kind: 画面
     summary: 画面設計『資料』を描く。カードの並びは `orderDocs`、絞り込みは `filterRows`
@@ -204,7 +206,7 @@ components:
         description: 項目を開く・表示形式を切り替える
   - name: recordsScreen
     title: 記録の表
-    container: skills/mindmap/preview/screens/records.js
+    container: skills/mindmap/preview/screens/records.ts
     usecase: 項目を表で絞り込む
     kind: 画面
     summary: 画面設計『記録の表』を描く。調査・用語集・メモ・会話ログの列の定義を種類ごとに持ち、`table` に渡す
@@ -223,7 +225,7 @@ components:
         description: 項目を開く
   - name: detailPanel
     title: 詳細パネル
-    container: skills/mindmap/preview/screens/detail.js
+    container: skills/mindmap/preview/screens/detail.ts
     usecase: 項目の詳細を読む
     kind: 画面
     summary: 画面設計『詳細パネル』『詳細の全画面』を描く。本文は `renderMarkdown`・`renderDiagrams`、関係する項目は `relatedItems`。`full` が真なら中央のモーダルで出し、図の拡大は中身を切り替える
@@ -246,7 +248,7 @@ components:
         description: 項目へ移る・閉じる・全画面の切り替え・戻る進む・図を拡大する
   - name: searchDialog
     title: 全体の検索
-    container: skills/mindmap/preview/screens/search.js
+    container: skills/mindmap/preview/screens/search.ts
     usecase: 項目を検索する
     kind: 画面
     summary: 画面設計『全体の検索』を `dialog` 要素で描く。結果は `searchItems`
@@ -261,7 +263,7 @@ components:
         description: 結果の項目を開く・閉じる
   - name: diagramViewer
     title: 図の拡大
-    container: skills/mindmap/preview/screens/diagram-viewer.js
+    container: skills/mindmap/preview/screens/diagram-viewer.ts
     usecase: 項目の詳細を読む
     kind: 画面
     summary: 画面設計『図の拡大』を描く。ホイールで倍率、背景のドラッグで位置を変え、文字の上のドラッグは選択に任せる
@@ -276,7 +278,7 @@ components:
         description: 閉じる
   - name: graphScreen
     title: つながり
-    container: skills/mindmap/preview/graph/graph.js
+    container: skills/mindmap/preview/graph/graph.ts
     usecase: つながりを辿る
     kind: 画面
     summary: 画面設計『つながり』をキャンバスに描く。玉と線は `buildGraph`、毎コマの描画は玉ごとに一度だけ画像にした文字を倍率をかけて置く（PoC の `opt-each-bitmap`）。画面の外は描かない
@@ -306,7 +308,7 @@ functions:
   - name: filterRows
     title: 行の絞り込み
     kind: 関数
-    container: skills/mindmap/preview/components/table.js
+    container: skills/mindmap/preview/components/table.ts
     usecase: 項目を表で絞り込む
     scope: public
     summary: 列ごとの条件に合う行を返す（列の中はどれかに当たればよく、列の間は全てに当たる）
@@ -314,17 +316,17 @@ functions:
       - name: rows
         type: object[]
         required: true
-        passing: positional
+        passing: keyword
         description: 行
       - name: columns
         type: Column[]
         required: true
-        passing: positional
+        passing: keyword
         description: 列の定義
       - name: filters
         type: Record<string, string[]>
         required: true
-        passing: positional
+        passing: keyword
         description: 絞り込み
     returns:
       type: object[]
@@ -339,7 +341,7 @@ functions:
   - name: sortRows
     title: 行の並べ替え
     kind: 関数
-    container: skills/mindmap/preview/components/table.js
+    container: skills/mindmap/preview/components/table.ts
     usecase: 項目を表で絞り込む
     scope: public
     summary: 列の値で行を並べ替える（元の配列は変えない）
@@ -347,17 +349,17 @@ functions:
       - name: rows
         type: object[]
         required: true
-        passing: positional
+        passing: keyword
         description: 行
       - name: columns
         type: Column[]
         required: true
-        passing: positional
+        passing: keyword
         description: 列の定義（`order` を持つ列はその並びの順）
       - name: sort
         type: '{key, dir} | null'
         required: true
-        passing: positional
+        passing: keyword
         description: 並べ替え。`null` なら元の順
     returns:
       type: object[]
@@ -372,7 +374,7 @@ functions:
   - name: filterCounts
     title: 絞り込みの値ごとの件数
     kind: 関数
-    container: skills/mindmap/preview/components/table.js
+    container: skills/mindmap/preview/components/table.ts
     usecase: 項目を表で絞り込む
     scope: public
     summary: 絞り込みのポップオーバーに出す、列の値ごとの件数を返す（その列以外の条件で絞った行で数える）
@@ -380,22 +382,22 @@ functions:
       - name: rows
         type: object[]
         required: true
-        passing: positional
+        passing: keyword
         description: 行
       - name: columns
         type: Column[]
         required: true
-        passing: positional
+        passing: keyword
         description: 列の定義
       - name: filters
         type: Record<string, string[]>
         required: true
-        passing: positional
+        passing: keyword
         description: 絞り込み
       - name: key
         type: string
         required: true
-        passing: positional
+        passing: keyword
         description: 数える列
     returns:
       type: '{value, count}[]'
@@ -410,7 +412,7 @@ functions:
   - name: boardColumns
     title: ボードの列
     kind: 関数
-    container: skills/mindmap/preview/screens/tasks.js
+    container: skills/mindmap/preview/screens/tasks.ts
     usecase: タスクをボードで見る
     scope: public
     summary: 状態の並びの順に、状態ごとの項目を返す（検討事項のボードも使う）
@@ -418,12 +420,12 @@ functions:
       - name: items
         type: object[]
         required: true
-        passing: positional
+        passing: keyword
         description: 項目
       - name: statuses
         type: string[]
         required: true
-        passing: positional
+        passing: keyword
         description: 列にする状態の並び（スキーマの列挙の順。タスクは完了・中止も含む）
     returns:
       type: '{status, items}[]'
@@ -438,7 +440,7 @@ functions:
   - name: orderDocs
     title: 資料の並び
     kind: 関数
-    container: skills/mindmap/preview/screens/docs.js
+    container: skills/mindmap/preview/screens/docs.ts
     usecase: 資料を読む
     scope: public
     summary: 成果物を先頭に、それぞれ連番の順に並べた資料を返す
@@ -461,7 +463,7 @@ functions:
   - name: buildDecisionTree
     title: 検討事項の木
     kind: 関数
-    container: skills/mindmap/preview/screens/decisions.js
+    container: skills/mindmap/preview/screens/decisions.ts
     usecase: 検討事項をマップで辿る
     scope: public
     summary: 対象 → カテゴリー → フェーズ → 検討事項の木を、表示する状態で絞って返す（ELK に渡す節と枝の形）
@@ -469,12 +471,12 @@ functions:
       - name: index
         type: RecordIndex
         required: true
-        passing: positional
+        passing: keyword
         description: 索引
       - name: shownStatuses
         type: Set<string>
         required: true
-        passing: positional
+        passing: keyword
         description: 表示する状態
     returns:
       type: '{children, edges}'
@@ -489,7 +491,7 @@ functions:
   - name: buildGraph
     title: つながりの玉と線
     kind: 関数
-    container: skills/mindmap/preview/graph/graph.js
+    container: skills/mindmap/preview/graph/graph.ts
     usecase: つながりを辿る
     scope: public
     summary: 表示する種類の項目を玉に、関連（依存・関連・根拠・進めるタスク）を線にして返す
@@ -497,12 +499,12 @@ functions:
       - name: index
         type: RecordIndex
         required: true
-        passing: positional
+        passing: keyword
         description: 索引
       - name: shownKinds
         type: Set<string>
         required: true
-        passing: positional
+        passing: keyword
         description: 表示する種類
     returns:
       type: '{nodes: {id, kind}[], links: {source, target, type}[]}'

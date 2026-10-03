@@ -110,7 +110,7 @@ subsystems:
   - name: プレビュー
     scope: preview
     role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面
-    runtime: JavaScript（ブラウザ）
+    runtime: TypeScript 7（tsc が生成した JavaScript をブラウザで動かす）
     runs_on: 利用者の端末のブラウザ（ファイルとして開く。サーバーは立てない）
     status: planned
 external_systems:
