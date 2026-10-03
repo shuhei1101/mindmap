@@ -1,0 +1,31 @@
+$ python3 -m pytest tests/integration/preview tests/integration/storybook
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/design-preview-narrow-board-columns
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 115 items
+
+tests/integration/preview/test_decisions_screen.py ...................   [ 16%]
+tests/integration/preview/test_detail_full_screen.py ......              [ 21%]
+tests/integration/preview/test_detail_panel_screen.py ............       [ 32%]
+tests/integration/preview/test_diagram_viewer_screen.py ....             [ 35%]
+tests/integration/preview/test_docs_screen.py ..............             [ 47%]
+tests/integration/preview/test_graph_screen.py ......                    [ 53%]
+tests/integration/preview/test_open_preview.py ......                    [ 58%]
+tests/integration/preview/test_overview_screen.py ..........             [ 66%]
+tests/integration/preview/test_records_screen.py ..                      [ 68%]
+tests/integration/preview/test_search_screen.py .....                    [ 73%]
+tests/integration/preview/test_tasks_screen.py ........                  [ 80%]
+tests/integration/preview/test_topbar_screen.py ...                      [ 82%]
+tests/integration/storybook/test_table_stories.py ........               [ 89%]
+tests/integration/storybook/test_topbar_stories.py .....                 [ 93%]
+tests/integration/storybook/test_view_switch_stories.py ..               [ 95%]
+tests/integration/preview/test_records_screen.py .                       [ 96%]
+tests/integration/storybook/test_view_switch_stories.py .                [ 97%]
+tests/integration/preview/test_records_screen.py .                       [ 98%]
+tests/integration/storybook/test_view_switch_stories.py .                [ 99%]
+tests/integration/preview/test_records_screen.py .                       [100%]
+
+======================= 115 passed in 234.16s (0:03:54) ========================
