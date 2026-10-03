@@ -583,3 +583,4 @@ test_files:
   - tests/unit/preview/test_records.py
   - tests/unit/preview/test_libs.py
   - tests/unit/preview/test_router.py
+  - tests/unit/preview/test_dom.py
