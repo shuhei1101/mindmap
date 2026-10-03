@@ -15,7 +15,12 @@ from fixture_types import FailingReplace, FailingUnlink, FailingWriteText
 # このファイルから見たリポジトリの直下（tests/unit/scripts の 3 つ上）
 REPO_ROOT_PARENT_DEPTH = 3
 SCRIPTS_DIR = (
-    Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH] / "skills" / "mindmap" / "scripts"
+    Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
+    / "plugins"
+    / "mindstella"
+    / "skills"
+    / "mindmap"
+    / "scripts"
 )
 
 # スクリプトはパッケージとして入れず、同じフォルダの名前（import store など）で読む
@@ -24,7 +29,7 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 @pytest.fixture
 def scripts_dir() -> Path:
-    """スクリプトのフォルダ（skills/mindmap/scripts）を返す。"""
+    """スクリプトのフォルダ（plugins/mindstella/skills/mindmap/scripts）を返す。"""
     return SCRIPTS_DIR
 
 
