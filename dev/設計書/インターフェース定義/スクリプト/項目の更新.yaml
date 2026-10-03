@@ -129,6 +129,34 @@ flows:
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
     test: test_error_when_write_fails
+  - name: 異常系（前の形式の資料がある・SchemaMismatchError）
+    summary: 資料の done が残るワークスペースでは何も書かず、migrate を案内して終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '検討事項 D-1 と、`done: true` を持つ資料 A-1 を持つワークスペース'
+        notes: A-1 は YAML を直接書いて作る
+      - name: 標準入力
+        description: D-1 の `answer` を変える
+        notes: '`{"answer": "種類ごとに分ける"}`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py update
+        participant WS as ワークスペース
+
+        クライアント->>IF: update --workspace D-1（標準入力）
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: スキーマと突き合わせて、資料の done が合わない
+        IF-->>クライアント: エラーと migrate の案内、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーに `docs.yaml: items[0]` で始まる行があり、最後の行が `ヒント: 前の版の形式の記録は migrate で今の形式に移せます`'
+      - '`decisions.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
+    test: test_error_when_legacy_format
 lead: ID で指した 1 項目のキーを、標準入力で渡した値に置き換えて更新日時を変える。
 idempotent: false
 side_effects: その項目の種類の YAML を書き換える。`body_markdown` を渡したときは `docs/{ID}.md` を書き換え、`body` を `{ID}.md` にする。本文と YAML の一時ファイルを両方書き終えてから、本文 → YAML の順に `os.replace` で置き換える
@@ -191,7 +219,7 @@ exceptions:
   - name: WriteFailedError
     condition: 一時ファイルの書き込みか置き換えに失敗した（権限が無い・ほかのプロセスが開いている など）
     notes: 終了コード 1。標準エラーに書けなかったパスと理由。本文は前の中身に戻し、どのファイルも書き換えない
-error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
+error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。合わない箇所に前の版の形式（資料の `done`・`mindmap.yaml` の `summary` が無い）があるときは、最後に `ヒント: 前の版の形式の記録は migrate で今の形式に移せます` の 1 行を続ける。'
 constraints:
   - item: 出力の形
     constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）

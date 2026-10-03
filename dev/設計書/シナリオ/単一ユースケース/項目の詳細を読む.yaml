@@ -1,0 +1,96 @@
+title: "項目の詳細を読む"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 検討事項 D-3（案 A を採用・案 B を不採用と理由、前提 D-1・後続 D-5、進めるタスク T-2、関連 R-1、本文の Markdown に mermaid の図を 1 つ）。メモ N-1 が D-3 を `related` で指す
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`。表示の幅は 1920px
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 検討事項の表で D-3 を押す
+        P-->>U: D-3 の詳細パネル（本文を寄せて並べる）
+        U->>P: 全画面に切り替える
+        P-->>U: 周りに余白を空けたモーダル
+        U->>P: 図の「拡大して見る」を押す
+        P-->>U: 全画面の中身を図の拡大に切り替える
+        U->>P: 図の拡大を閉じ、モーダルの外側を押す
+        P-->>U: 元の大きさ（D-3 の詳細パネル）
+        U->>P: 前提の D-1 を押す
+        P-->>U: D-1 の詳細パネル
+        U->>P: ブラウザの戻る操作
+        P-->>U: D-3 の詳細パネル
+      ```
+    expected:
+      - D-3 の詳細パネルに、案 A（採用）と案 B（不採用と理由）のカードが縦に並ぶ
+      - 前提に D-1、後続に D-5、関連タスクに T-2、関連に R-1、この項目を参照している項目に N-1 が出る
+      - 本文の Markdown が描かれ、mermaid の図が図として出て、図に「拡大して見る」「Raw」「コピー」がある
+      - 幅 1920px では、パネルを開いている間、本文がパネルの分だけ寄る
+      - 図の拡大は全画面の中身の切り替えで、モーダルが 2 枚重ならない
+      - 全画面に全てを閉じるボタンが無く、外側を押すと D-3 の詳細パネルに戻る
+      - D-1 を押した後、詳細パネルに D-1 が開き、URL のハッシュが D-1 を指す
+      - 最後に戻る操作で D-3 の詳細パネルに戻り、URL のハッシュが D-3 を指す
+    test: test_normal
+  - name: 異常シナリオ（本文にスクリプトを含む）
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 本文に `<script>` と `onerror` 属性を持つ `<img>` を含む資料 A-1
+        notes: どちらも実行されるとページの変数に印を残す中身にする
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: A-1 の詳細パネルを開く
+        P-->>U: 無害化した本文
+      ```
+    expected:
+      - ページの変数に印が残らない（本文のスクリプトが実行されていない）
+      - 詳細パネルの中に `<script>` 要素と `onerror` 属性が無い
+    test: test_error_when_body_has_script
+  - name: 異常シナリオ（本文の描画のライブラリが読めない）
+    setup:
+      - name: Mock
+        description: CDN への marked・mermaid の要求をブラウザの通信の差し替えで失敗させる
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 本文に見出しと mermaid の図を持つ資料 A-1
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: A-1 の詳細パネルを開く
+        P-->>U: 読めなかったライブラリの名前と、描画しない本文
+      ```
+    expected:
+      - 読めなかったライブラリとして marked と mermaid の名前が出る
+      - 本文の Markdown が、描画されないままの文字として読める
+    test: test_error_when_render_library_unavailable
+lead: 利用者が、詳細パネルで 1 件の項目の案・関係・本文を読み、関係する項目へ移り、全画面と図の拡大で読む単一ユースケース。
+issue: 5
+primary_actor: 利用者
+trigger: 利用者がどれかの画面で項目を押すか、項目を指す URL を開く
+preconditions:
+  - ワークスペースに記録があり、プレビューを書き出してある
+minimal_guarantee: 本文に書かれた HTML やスクリプトは実行しない。描画のライブラリが読めないときも、本文の文字は読める。
+test_file: tests/e2e/単一ユースケース/test_item_detail_view.py

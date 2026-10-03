@@ -6,3 +6,5 @@ items:
     summary: スクリプトのコマンドの引数・標準入力・出力・終了コード
   - page: ワークスペースの書式.md
     summary: ワークスペースのファイル構成と各 YAML のキー
+  - page: 動作環境.md
+    summary: mindmap を使う端末に要る条件の一覧

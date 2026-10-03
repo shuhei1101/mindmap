@@ -1,0 +1,41 @@
+title: "つながりを辿る"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開く）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 7 種類の項目を 1 件以上ずつ。検討事項 D-3 は前提 D-1・進めるタスク T-2・関連 R-1 とつながる
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: つながりを開く
+        P-->>U: 全種類の項目の玉と線
+        U->>P: ドラッグで回し、ホイールで寄る
+        U->>P: D-3 の玉を押す
+        P-->>U: D-3 へ寄り、D-3 の詳細パネルを開く
+        U->>P: 項目の種類のうち「会話ログ」を非表示にする
+        P-->>U: 会話ログの玉とその線を消す
+      ```
+    expected:
+      - つながりに 7 種類の項目が、種類ごとの色で出る
+      - D-3 を押した後、詳細パネルに D-3 が開き、URL のハッシュがつながりと D-3 を指す
+      - 「会話ログ」を非表示にした後、会話ログの玉とその線が消え、「会話ログ」の切り替えが非表示の見た目に変わり、チェックボックスの選択も外れる
+    test: test_normal
+    notes:
+      この PR の範囲: つながりは見本の作りを整える（リファクタ）にとどめる。大幅な改善は後続の Issue で扱う
+      性能: 描画の速さは E2E では確かめず、非機能要件の行の「確かめる時点」で、GPU の効いた端末で PoC と同じ計測を流して確かめる
+lead: 利用者が、全種類の項目を関係でつないだ 3D のつながりを回し、寄り、玉を押して詳細を開く単一ユースケース。
+issue: 5
+primary_actor: 利用者
+trigger: 利用者がタブの帯の右端のつながりを押す
+preconditions:
+  - ワークスペースに記録があり、プレビューを書き出してある
+test_file: tests/e2e/単一ユースケース/test_graph_trace_view.py

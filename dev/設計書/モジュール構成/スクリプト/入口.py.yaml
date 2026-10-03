@@ -134,9 +134,11 @@ functions:
       2. 引数を解釈する（`build_parser`）
       3. コマンドで分ける
          - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
-         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`）
+         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`、`migrate` は `run_migrate`）
       4. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
-      5. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
+      5. `SummaryRequiredError` を捕まえたら、標準エラーに `エラー: {メッセージ}` を出して 2 を返す
+      6. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
+         - `SchemaMismatchError` で `legacy` が真の場合、最後に `LEGACY_HINT` の 1 行を続ける
     unit_tests:
       - name: test_main_when_check_env
         case: 正常
@@ -168,6 +170,18 @@ functions:
         condition: "作成済みのワークスペースで `add note --workspace {ws} --json {\"title\": \"利用者's メモ\", \"content\": \"メモの中身\"}`。`sys.stdin` を読むと失敗するものに差し替える"
         mock: '`sys.stdin`'
         expected: 0 を返し、標準出力の `id` が `N-1`。`notes.yaml` の N-1 の `title` が `利用者's メモ`
+      - name: test_main_when_legacy_format
+        case: 正常
+        summary: 前の版の形式のスキーマ違反には migrate を案内する
+        condition: 'A-1（`done: true`）を YAML で直接書いたワークスペースで `build --workspace`'
+        mock: なし
+        expected: 1 を返し、標準エラーの最後の行が `LEGACY_HINT`
+      - name: test_main_when_summary_required
+        case: 正常
+        summary: 題名が要る migrate は終了コード 2
+        condition: '`summary` を持たない設定のワークスペースで `migrate --workspace`'
+        mock: なし
+        expected: 2 を返し、標準エラーに `--summary`。標準出力が空
   - name: build_parser
     title: 引数の定義
     kind: 関数
@@ -180,7 +194,7 @@ functions:
       description: サブコマンドを持つ引数の定義（引数は各インターフェース定義のリクエストのとおり）
     process: |-
       1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
-      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal` は `--workspace` だけ
+      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal` は `--workspace` だけ。`migrate` は `--summary`（省略時 `None`）を持たせる
       3. `init`・`add`・`update` に `--json`（中身の JSON の文字列。省略時 `None`）を持たせる
     unit_tests:
       - name: test_build_parser
@@ -740,7 +754,8 @@ functions:
       description: '`{ok, problems}` と、問題が無ければ 0・あれば 1'
     process: |-
       1. ワークスペースを読み、点検する（`load_workspace`、`check_workspace`）
-      2. 問題が無ければ `ok: true` と 0、あれば `ok: false` と 1 を返す
+      2. 前の版の形式の問題（`is_legacy_problem`）は、`detail` に続けて `（migrate で今の形式に移せます）` を足す
+      3. 問題が無ければ `ok: true` と 0、あれば `ok: false` と 1 を返す
     unit_tests:
       - name: test_run_check
         case: 正常
@@ -754,6 +769,12 @@ functions:
         condition: 'D-1 `depends_on: [D-9]`'
         mock: なし
         expected: '`ok: false`・`problems` が 1 件と 1'
+      - name: test_run_check_when_legacy_format
+        case: 正常
+        summary: 前の版の形式の問題に migrate を案内する
+        condition: 'A-1（`done: true`）を YAML で直接書いたワークスペース'
+        mock: なし
+        expected: '`ok: false`。A-1 の問題の `detail` が `（migrate で今の形式に移せます）` で終わると1'
   - name: run_build
     title: build の処理
     kind: 関数
@@ -1041,6 +1062,35 @@ functions:
         condition: '`parametrize`: `run` が `OSError` を送る / 終了コード 1 を返す / 標準出力 `x` を返す'
         mock: '`run`'
         expected: '`None`'
+  - name: run_migrate
+    title: migrate の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 前の版の形式を移し、移したものを返す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: summary
+        type: str | None
+        required: true
+        passing: keyword
+        description: '`--summary`'
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{migrated}`（`MigrationEntry` を `asdict` した並び）と 0'
+    process: 1. ワークスペースを移す（記録の形式の移行。`migrate_workspace`）
+    unit_tests:
+      - name: test_run_migrate
+        case: 正常
+        summary: 移したものを返す
+        condition: 'A-1（`done: false`）を YAML で直接書いた、題名を持つワークスペース、`summary=None`'
+        mock: なし
+        expected: '`migrated` が A-1（`file: docs.yaml`、`change: done: false → status: 下書き`）の 1 件と 0'
 notes:
   モジュールの読み込み: スクリプトはパッケージとして入れず、スキルは全てのコマンドをシステムの `python3` で `{スキルのフォルダ}/scripts/mindmap.py` を起動する（依存が揃っていなければ入口が仮想環境の Python で起動し直す。『起動し直し』）。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
   入口の構文: '`mindmap.py`・`launcher.py`・`check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、起動した Python の依存が揃った後にだけ読むので 3.12 の書き方を使ってよい。'

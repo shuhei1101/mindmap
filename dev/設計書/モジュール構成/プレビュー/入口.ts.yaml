@@ -1,0 +1,144 @@
+title: "プレビュー / 入口"
+lead: '`preview.html` を開いたときに記録を読み、URL のハッシュが指す画面を描き、操作を画面の移動と端末の保存領域につなぐ。'
+directory: |-
+  ```
+  skills/mindmap/preview/
+    template.html   雛形（描画のライブラリ・文字の読み込みと、CSS・JavaScript・データの差し込み口）
+    tokens.css      デザイン方針のトークン（ライト / ダーク）
+    style.css       画面と部品のスタイル
+    app.ts          起動・画面の振り分け・端末の保存領域（差し込む順の最後）
+  ```
+
+  `.ts` の書き方と生成した `.js` の扱いは、モジュール構成『基盤』のディレクトリ構成と同じ。
+data_models:
+  - name: Prefs
+    title: 端末に残す設定
+    container: skills/mindmap/preview/app.ts
+    usecase: 共通
+    summary: '`localStorage` の 1 つのキーに JSON で残す値'
+    properties:
+      - name: theme
+        type: "'light' | 'dark' | null"
+        description: ライト / ダーク。`null` は OS の設定に従う
+      - name: columns
+        type: 'Record<string, {hidden: string[], pinTo: string | null}>'
+        description: 種類ごとの表示する列とピン留め
+constants:
+  - name: PREFS_KEY
+    title: 端末の保存領域のキー
+    container: skills/mindmap/preview/app.ts
+    usecase: 共通
+    summary: '`Prefs` を残す `localStorage` のキー'
+    value: '"mindmap-preview"'
+functions:
+  - name: readEmbeddedData
+    title: 埋め込みのデータを読む
+    kind: 関数
+    container: skills/mindmap/preview/app.ts
+    usecase: 共通
+    scope: public
+    summary: '`mindmap-data` の要素の中身を `JSON.parse` して返す'
+    args:
+      - name: doc
+        type: Document
+        required: true
+        passing: positional
+        description: 文書
+    returns:
+      type: object
+      description: 埋め込みのデータ
+    exceptions:
+      - name: Error
+        condition: 要素が無いか JSON として読めない（同梱の雛形か書き出しの誤り）
+        message: 記録を読めませんでした。preview.html を書き出し直してください
+    unit_tests:
+      - name: test_read_embedded_data
+        case: 正常
+        summary: 要素の JSON を読む
+        condition: '`</script>` を `</script>` で持つ JSON を入れた要素'
+        mock: なし
+        expected: 元の文字（`</script>`）に戻った値
+      - name: test_read_embedded_data_when_missing
+        case: 異常
+        summary: 要素が無ければ送る
+        condition: '`mindmap-data` を持たない文書'
+        mock: なし
+        expected: '`Error`（書き出し直すよう促す文）'
+        exception: 要素が無いか読めない
+  - name: loadPrefs
+    title: 端末の設定を読む
+    kind: 関数
+    container: skills/mindmap/preview/app.ts
+    usecase: 共通
+    scope: public
+    summary: '`localStorage` から `Prefs` を読む。読めないときは既定（`theme: null`、`columns: {}`）を返す'
+    description: 保存領域が使えない環境（例外を送る）では、開いている間だけ設定を保つ（インターフェース定義『プレビューを開く』の端末の保存領域）。
+    args:
+      - name: storage
+        type: Storage
+        required: true
+        passing: positional
+        description: '`localStorage`'
+    returns:
+      type: Prefs
+      description: 設定
+    unit_tests:
+      - name: test_load_prefs
+        case: 正常
+        summary: 残した設定を読み、読めなければ既定
+        condition: '`parametrize`: `theme: dark` を残した / 値が壊れた JSON / `getItem` が例外を送る保存領域'
+        mock: 保存領域（引数で渡す）
+        expected: '`dark` / 既定 / 既定'
+  - name: savePrefs
+    title: 端末の設定を残す
+    kind: 関数
+    container: skills/mindmap/preview/app.ts
+    usecase: 共通
+    scope: public
+    summary: '`Prefs` を `localStorage` に残す。保存領域が例外を送るときは何もしない'
+    side_effects: '`localStorage` の `PREFS_KEY` を書き換える'
+    args:
+      - name: storage
+        type: Storage
+        required: true
+        passing: keyword
+        description: '`localStorage`'
+      - name: prefs
+        type: Prefs
+        required: true
+        passing: keyword
+        description: 設定
+    returns:
+      type: void
+      description: '-'
+    unit_tests:
+      - name: test_save_prefs
+        case: 正常
+        summary: 残した設定を読める
+        condition: '`parametrize`: 使える保存領域 / `setItem` が例外を送る保存領域'
+        mock: 保存領域（引数で渡す）
+        expected: '`loadPrefs` で同じ値が読める / 例外を送らない'
+  - name: start
+    title: 起動
+    kind: 関数
+    container: skills/mindmap/preview/app.ts
+    usecase: 共通
+    scope: public
+    summary: 記録を読み、ハッシュが指す画面を描き、操作と履歴をつなぐ
+    side_effects: '`document.body` に画面を描く。`hashchange`・`popstate`・`keydown`（`/` で検索・Esc）を受ける'
+    args: []
+    returns:
+      type: void
+      description: '-'
+    process: |-
+      1. 埋め込みのデータを読み、索引を作る（`readEmbeddedData`、`buildIndex`）
+         - 読めない場合、本文にそのメッセージを出して終える
+      2. 端末の設定を読み、テーマを当てる（`loadPrefs`）
+      3. ハッシュを読み（`parseHash`）、記録に無い `id` だった場合は `id` の無いハッシュに置き換える（`navigate`、`push: false`）
+      4. トップバーと画面を描き、`id` があれば詳細パネルを開く。絞り込みは画面に渡した後、ハッシュから消す（`navigate`、`push: false`）
+      5. 画面・部品のコールバックを、`navigate` と描き直し、`savePrefs` につなぐ
+      6. `hashchange`・`popstate` で 3・4 を繰り返す
+    notes:
+      確かめ方: 単体テストは持たない。インターフェース定義『プレビューを開く』の結合テストがこの流れを確かめる
+test_files:
+  - tests/unit/preview/test_app.py

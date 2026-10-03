@@ -1,0 +1,504 @@
+/* デザインスタイルの候補「dev-swiss-compact」のサンプル画面 */
+
+/* ===== トークン ===== */
+/* ライト: 明暗の既定は端末の設定に従う */
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --thead-bg: #fafafa;
+  --border: #d4d4d8;
+  --border-soft: #e4e4e7;
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #71717a;
+  --accent: #0f766e;
+  --accent-weak: #e6f3f1;
+  --accent-line: #99d0c8;
+  --on-accent: #ffffff;
+  --hover: #f4f4f5;
+  --row-hover: #f8f8f9;
+  --row-selected: #e6f3f1;
+  --st-done: #15803d;
+  --st-open: #1d4ed8;
+  --st-review: #b91c1c;
+  --st-hold: #b45309;
+  --st-loose: #6d28d9;
+  --st-off: #71717a;
+  --hit: #fde68a;
+  --shadow-color: rgba(24, 24, 27, .14);
+  --scrim: rgba(24, 24, 27, .28);
+  --topbar-bg: #18181b;
+  --topbar-fg: #fafafa;
+  --topbar-fg-2: #a1a1aa;
+  --topbar-line: #3f3f46;
+  --topbar-hover: #27272a;
+  --k-dec: #3f8f7c;
+  --k-task: #5b7fc9;
+  --k-res: #c08a3e;
+  --k-doc: #8a6fc4;
+  --k-term: #5f6873;
+  --k-note: #a48466;
+  --k-log: #b9bec5;
+  --g-label: #2a2f36;
+  --g-line: rgba(30, 60, 55, .3);
+  --g-bg: #f1f1ee;
+  --g-bg-center: #fbfbf9;
+  --g-grain: rgba(60, 50, 30, .06);
+  --g-glow: rgba(255, 255, 255, 0);
+  --mockbar-bg: #fff7d6;
+  --mockbar-fg: #5c4a00;
+  --fs-body: .8125rem;
+  --fs-small: .75rem;
+  --fs-xs: .6875rem;
+  --fs-h1: 2rem;
+  --fs-h2: .8125rem;
+  --fs-big: 2.25rem;
+  --topbar-h: 44px;
+  --tab-h: 38px;
+  --control-h: 28px;
+  --cell-py: 5px;
+  --page-pad: 20px;
+  --content-max: 1440px;
+  --gap: 12px;
+  --tile-pad: 16px;
+  --radius: 4px;
+  --font-sans: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic UI", Meiryo, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
+}
+/* 端末の設定がダークで、ライトに固定していないとき */
+@media (prefers-color-scheme: dark) {
+  /* ダークの値 */
+  :root:not([data-theme="light"]) {
+    --bg: #0d1012;
+    --surface: #0d1012;
+    --surface-2: #161a1d;
+    --thead-bg: #12161a;
+    --border: #30363d;
+    --border-soft: #21262d;
+    --text: #ededef;
+    --text-2: #b4b4bc;
+    --text-3: #8f8f99;
+    --accent: #2dd4bf;
+    --accent-weak: #10302c;
+    --accent-line: #1f5f57;
+    --on-accent: #0b0b0c;
+    --hover: #1d1d22;
+    --row-hover: #18181c;
+    --row-selected: #10302c;
+    --st-done: #4ade80;
+    --st-open: #7aa2ff;
+    --st-review: #f87171;
+    --st-hold: #fbbf24;
+    --st-loose: #c4a7ff;
+    --st-off: #8f8f99;
+    --hit: #5c4a12;
+    --shadow-color: rgba(0, 0, 0, .6);
+    --scrim: rgba(0, 0, 0, .55);
+    --topbar-bg: #010409;
+    --topbar-fg: #ededef;
+    --topbar-fg-2: #a1a1aa;
+    --topbar-line: #33333a;
+    --topbar-hover: #1d1d22;
+    --k-dec: #7ee0c3;
+    --k-task: #8fb4ff;
+    --k-res: #f5c37a;
+    --k-doc: #c9b2ff;
+    --k-term: #b6bfcc;
+    --k-note: #c7a98d;
+    --k-log: #6f7782;
+    --g-label: #e3e6ea;
+    --g-line: rgba(190, 230, 220, .3);
+    --g-bg: #141417;
+    --g-bg-center: #1e1f24;
+    --g-grain: rgba(0, 0, 0, 0);
+    --g-glow: rgba(120, 220, 200, .10);
+    --mockbar-bg: #2a2410;
+    --mockbar-fg: #f5e3a3;
+  }
+}
+/* ダークに固定したとき */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0d1012;
+  --surface: #0d1012;
+  --surface-2: #161a1d;
+  --thead-bg: #12161a;
+  --border: #30363d;
+  --border-soft: #21262d;
+  --text: #ededef;
+  --text-2: #b4b4bc;
+  --text-3: #8f8f99;
+  --accent: #2dd4bf;
+  --accent-weak: #10302c;
+  --accent-line: #1f5f57;
+  --on-accent: #0b0b0c;
+  --hover: #1d1d22;
+  --row-hover: #18181c;
+  --row-selected: #10302c;
+  --st-done: #4ade80;
+  --st-open: #7aa2ff;
+  --st-review: #f87171;
+  --st-hold: #fbbf24;
+  --st-loose: #c4a7ff;
+  --st-off: #8f8f99;
+  --hit: #5c4a12;
+  --shadow-color: rgba(0, 0, 0, .6);
+  --scrim: rgba(0, 0, 0, .55);
+  --topbar-bg: #010409;
+  --topbar-fg: #ededef;
+  --topbar-fg-2: #a1a1aa;
+  --topbar-line: #33333a;
+  --topbar-hover: #1d1d22;
+  --k-dec: #7ee0c3;
+  --k-task: #8fb4ff;
+  --k-res: #f5c37a;
+  --k-doc: #c9b2ff;
+  --k-term: #b6bfcc;
+  --k-note: #c7a98d;
+  --k-log: #6f7782;
+  --g-label: #e3e6ea;
+  --g-line: rgba(190, 230, 220, .3);
+  --g-bg: #141417;
+  --g-bg-center: #1e1f24;
+  --g-grain: rgba(0, 0, 0, 0);
+  --g-glow: rgba(120, 220, 200, .10);
+  --mockbar-bg: #2a2410;
+  --mockbar-fg: #f5e3a3;
+}
+/* ライトに固定したとき */
+:root[data-theme="light"] { color-scheme: light; }
+
+/* ===== 土台 ===== */
+/* 全要素: 幅に枠と余白を含める */
+*, *::before, *::after { box-sizing: border-box; }
+/* 本文: 地の色・文字・行の高さ */
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: var(--fs-body); line-height: 1.6; font-feature-settings: "palt" 1; -webkit-font-smoothing: antialiased; accent-color: var(--accent); }
+/* 部品の文字: 本文と同じ書体 */
+button, input { font: inherit; color: inherit; }
+/* ボタン: 押せる見た目のカーソル */
+button { cursor: pointer; }
+/* リンク: 印の色 */
+a { color: var(--accent); }
+/* キーボードのフォーカス: 印の色の 2px の輪。ホバー・選択中とは別の見た目 */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 等幅: ID と数値 */
+.mono { font-family: var(--font-mono); font-size: .92em; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+/* 読み上げだけに出す文字 */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* 線のアイコン: 1 つのセットで線の太さを揃える */
+svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+/* 状態の印: 色に加えて形でも分ける */
+.mark { width: 10px; height: 10px; flex: none; overflow: visible; }
+/* 状態: 印と名前 */
+.st { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: var(--fs-small); }
+
+/* ===== モック専用の操作列 ===== */
+/* 候補の切り替え: 実画面と見分けるため地の色を変える */
+.mockbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 6px 20px; background: var(--mockbar-bg); color: var(--mockbar-fg); font-size: var(--fs-xs); }
+/* 候補へのリンク */
+.mockbar a { color: inherit; padding: 2px 6px; border-radius: 3px; }
+/* 開いている候補 */
+.mockbar a[aria-current="page"] { font-weight: 700; text-decoration: none; outline: 1px solid currentColor; }
+
+/* ===== トップバー ===== */
+/* トップバー: 追従する帯 */
+.topbar { position: sticky; top: 0; z-index: 30; height: var(--topbar-h); display: flex; align-items: center; gap: 16px; padding: 0 20px; background: var(--topbar-bg); color: var(--topbar-fg); }
+/* サイト名: モック索引へ戻る */
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 700; letter-spacing: -.01em; }
+/* サイトの印: 枝分かれの図形を印の色で */
+.brand-mark { width: 22px; height: 22px; color: var(--accent); }
+/* 話し合いの題名 */
+.brand-sub { color: var(--topbar-fg-2); font-size: var(--fs-small); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* 右寄せの詰め物 */
+.spacer { flex: 1; }
+/* 全体の検索の入口 */
+.search-trigger { display: flex; align-items: center; gap: 8px; height: var(--control-h); min-width: 240px; padding: 0 10px; background: transparent; border: 1px solid var(--topbar-line); border-radius: var(--radius); color: var(--topbar-fg-2); }
+/* 検索のキー */
+.search-trigger kbd { margin-left: auto; font-family: var(--font-mono); font-size: 11px; padding: 0 5px; border: 1px solid var(--topbar-line); border-radius: 3px; }
+/* トップバーのアイコンボタン */
+.top-btn { display: inline-grid; place-items: center; width: var(--control-h); height: var(--control-h); border: 0; background: none; border-radius: var(--radius); color: var(--topbar-fg-2); }
+.top-btn:hover, .search-trigger:hover { color: var(--topbar-fg); background: var(--topbar-hover); }
+
+/* ===== タブ ===== */
+/* タブの帯: トップバーの直下に追従し、収まらないときは帯の中で横に送る */
+.tabbar { position: sticky; top: var(--topbar-h); z-index: 25; display: flex; gap: 4px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+/* タブ: アイコンと名前と件数 */
+.tab { display: flex; align-items: center; gap: 8px; height: var(--tab-h); padding: 0 10px; border-bottom: 2px solid transparent; color: var(--text-2); white-space: nowrap; text-decoration: none; }
+.tab:hover { color: var(--text); background: var(--hover); }
+/* 開いているタブ: 印の色の下線。太さは変えない */
+.tab[aria-current="page"] { color: var(--text); border-bottom-color: var(--accent); }
+/* タブの件数 */
+.tab .count { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-3); }
+/* つながりの入口: 帯の右端に分けて置く */
+.tab-graph { margin-left: auto; }
+
+/* ===== 本文 ===== */
+/* 本文の幅と余白 */
+.content { padding: 20px var(--page-pad) 64px; max-width: var(--content-max); margin: 0 auto; }
+/* パンくず */
+.crumbs { font-size: var(--fs-xs); color: var(--text-3); margin-bottom: 20px; }
+/* パンくずのリンク */
+.crumbs a { color: var(--text-2); }
+/* 節: 見出しの上を広く空ける */
+.block { margin-top: 56px; }
+/* 節の見出し */
+.block > h2 { margin: 0 0 14px; font-size: 1.25rem; letter-spacing: -.01em; }
+
+/* ===== 概要 ===== */
+/* 題名の帯 */
+.ov-hero { padding-bottom: 24px; }
+/* 題名の上の分類 */
+.ov-meta { margin: 0 0 6px; color: var(--text-2); font-size: var(--fs-small); }
+/* 題名: 本文との大きさの差を大きく取る */
+.ov-hero h1 { margin: 0; font-size: var(--fs-h1); line-height: 1.2; letter-spacing: -.02em; }
+/* タイルの並び: 左を広く取る非対称の格子 */
+.ov-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); }
+/* 下段の小さなタイルを 3 つ並べる */
+.ov-row { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--gap); }
+/* タイルの見出し */
+.tile h2 { margin: 0 0 12px; display: flex; align-items: center; gap: 8px; font-size: var(--fs-h2); }
+/* タイルの見出しの件数 */
+.tile h2 .n { color: var(--text-3); font-weight: 400; }
+/* タイルの見出しの右に置く「すべて表示」 */
+.tile h2 .more { margin-left: auto; font-size: var(--fs-xs); font-weight: 600; text-decoration: none; }
+.tile h2 .more:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* 次に検討する項目の一覧 */
+.next-list { list-style: none; margin: 0; padding: 0; }
+/* 次に検討する項目: 行ごとのボタン */
+.next-list button { width: calc(100% + 16px); display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 2px 8px; padding: 10px 8px; margin: 0 -8px; background: none; border: 0; border-radius: var(--radius); text-align: left; }
+.next-list button:hover { background: var(--hover); }
+/* 順位: 印の色の数字 */
+.next-list .rank { grid-row: 1 / 3; font-size: 1.25rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+/* 項目名 */
+.next-list .ttl { font-size: 1.0625rem; font-weight: 700; }
+/* 項目の補足 */
+.next-list .sub { grid-column: 2; display: flex; align-items: center; gap: 12px; color: var(--text-2); font-size: var(--fs-xs); }
+/* 行の右端の矢印 */
+.next-list .go { grid-row: 1 / 3; grid-column: 3; color: var(--text-3); }
+/* 大きな数字 */
+.big { font-size: var(--fs-big); font-weight: 700; line-height: 1; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+/* 大きな数字の分母 */
+.big small { font-size: 1.25rem; color: var(--text-3); font-weight: 500; }
+/* 大きな数字の下の説明 */
+.big-sub { margin: 6px 0 16px; color: var(--text-2); font-size: var(--fs-small); }
+/* フェーズごとの棒 */
+.bars { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 12px; font-size: var(--fs-small); }
+/* 棒の地 */
+.bars i { display: block; height: 4px; background: var(--border-soft); }
+/* 棒の進み具合: 印の色 */
+.bars i b { display: block; height: 100%; background: var(--accent); }
+/* 棒の分数 */
+.bars .frac { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-2); }
+/* 成果物への入口 */
+.deliv { display: inline-flex; align-items: center; gap: 6px; margin-top: 16px; font-weight: 600; font-size: var(--fs-small); text-decoration: none; }
+/* 小さなタイルの一覧 */
+.mini { list-style: none; margin: 8px 0 0; padding: 0; }
+/* 小さなタイルの行 */
+.mini button { width: calc(100% + 16px); display: flex; align-items: center; gap: 8px; padding: 6px 8px; margin: 0 -8px; background: none; border: 0; border-radius: var(--radius); text-align: left; font-weight: 600; }
+.mini button:hover { background: var(--hover); }
+/* 行の右端の矢印 */
+.mini .go { margin-left: auto; color: var(--text-3); }
+
+/* ===== 部品と状態 ===== */
+/* 部品の並び */
+.parts { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+/* ボタン: 枠つき */
+.btn { display: inline-flex; align-items: center; gap: 6px; height: var(--control-h); padding: 0 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.btn:hover { background: var(--hover); }
+/* 主なボタン: 文字色で塗る（印の色は選択と進み具合に取っておく） */
+.btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+.btn.primary:hover { opacity: .88; }
+/* 枠なしのボタン */
+.btn.ghost { background: none; border-color: transparent; color: var(--text-2); }
+.btn.ghost:hover { color: var(--text); background: var(--hover); }
+/* アイコンだけのボタン */
+.icon-btn { display: inline-grid; place-items: center; width: var(--control-h); height: var(--control-h); border: 1px solid transparent; background: none; border-radius: var(--radius); color: var(--text-2); }
+.icon-btn:hover { background: var(--hover); color: var(--text); }
+/* 表示形式の切り替え: どのタブでも同じ幅 */
+.segment { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+/* 切り替えの 1 つ */
+.segment button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 84px; height: calc(var(--control-h) - 2px); border: 0; background: var(--surface); color: var(--text-2); }
+.segment button + button { border-left: 1px solid var(--border); }
+.segment button:hover { background: var(--hover); color: var(--text); }
+/* 選んでいる表示形式: 文字色で塗る */
+.segment button[aria-pressed="true"] { background: var(--text); color: var(--bg); }
+/* 状態の見本の並び */
+.states { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 20px; }
+/* 状態の見本の 1 つ */
+.states figure { margin: 0; }
+/* 状態の見本の説明 */
+.states figcaption { margin-top: 6px; font-size: var(--fs-xs); color: var(--text-3); }
+/* 見本の項目: 押せる行 */
+.demo { display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; padding: 0 10px; background: none; border: 1px solid transparent; border-radius: var(--radius); text-align: left; }
+/* ホバー: 面だけを薄く変える */
+.demo.is-hover, .demo:hover { background: var(--hover); }
+/* フォーカス: 輪を付ける */
+.demo.is-focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* 選択中: 印の色の薄い面と細い枠 */
+.demo.is-selected { background: var(--row-selected); border-color: var(--accent-line); }
+/* 押せない文字: 枠も面も持たない */
+.demo-static { display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 10px; color: var(--text-2); }
+/* 状態の印の一覧 */
+.marks { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 20px 0 0; padding: 0; }
+
+/* ===== 表 ===== */
+/* 表と詳細パネルを並べる */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: var(--gap); align-items: start; }
+/* 表の道具の帯 */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-bottom: 8px; }
+/* 表の中の絞り込み */
+.field { display: flex; align-items: center; gap: 8px; height: var(--control-h); padding: 0 10px; min-width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-3); }
+.field:focus-within { border-color: var(--accent); outline: 2px solid var(--accent-weak); }
+/* 絞り込みの入力 */
+.field input { flex: 1; min-width: 0; border: 0; background: none; outline: none; color: var(--text); }
+/* 条件のチップの行: 無いときも高さを取る */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 28px; margin-bottom: 8px; }
+/* 条件のチップ */
+.chip { display: inline-flex; align-items: center; gap: 2px; height: 24px; padding: 0 2px 0 8px; border: 1px solid var(--accent-line); border-radius: 3px; background: var(--accent-weak); font-size: var(--fs-xs); }
+/* チップを外すボタン */
+.chip button { display: inline-grid; place-items: center; width: 20px; height: 20px; border: 0; background: none; color: var(--text-2); border-radius: 2px; }
+.chip button:hover { color: var(--text); background: var(--accent-line); }
+/* チップの中のアイコン */
+.chip svg.icon { width: 13px; height: 13px; }
+/* 全部の条件を外す */
+.chips .clear { border: 0; background: none; color: var(--text-2); font-size: var(--fs-xs); text-decoration: underline; text-underline-offset: 3px; }
+/* 表の枠: 横に送れる */
+.table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+/* 表 */
+table.grid { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--fs-small); }
+/* 表のセル */
+table.grid th, table.grid td { padding: var(--cell-py) 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: middle; background: var(--surface); white-space: nowrap; }
+/* 表の最後の行 */
+table.grid tbody tr:last-child td { border-bottom: 0; }
+/* 見出し行: 上端に留める */
+table.grid thead th { position: sticky; top: 0; z-index: 3; background: var(--thead-bg); color: var(--text-2); font-size: var(--fs-xs); font-weight: 600; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+/* ピン留めした列 */
+table.grid .pinned { position: sticky; left: 0; z-index: 2; }
+/* ピン留めした列の見出し: 見出し行と列の両方で留める */
+table.grid thead th.pinned { z-index: 4; }
+/* ピン留めの境の影 */
+table.grid .pin-edge { box-shadow: 6px 0 8px -6px var(--shadow-color); }
+/* 行のホバー */
+table.grid tbody tr:hover td { background: var(--row-hover); }
+/* 選んでいる行 */
+table.grid tbody tr.selected td { background: var(--row-selected); }
+/* 数値の列: 右揃え */
+table.grid .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* 見出しの中身 */
+.th-in { display: flex; align-items: center; gap: 2px; }
+/* 見出しの並べ替え */
+.th-sort { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; margin-left: -4px; border: 0; background: none; border-radius: 3px; color: inherit; font-weight: inherit; }
+.th-sort:hover { color: var(--text); background: var(--hover); }
+/* 並べ替え中の列 */
+th[aria-sort] .th-sort { color: var(--text); }
+/* 見出しのアイコン */
+.th-sort svg.icon, .th-tool svg.icon { width: 13px; height: 13px; }
+/* 見出しの道具（絞り込み・ピン留め） */
+.th-tool { display: inline-grid; place-items: center; width: 22px; height: 22px; border: 1px solid transparent; background: none; border-radius: 3px; color: var(--text-3); }
+.th-tool:hover { color: var(--text); background: var(--hover); }
+/* 押されている道具: 印の色 */
+.th-tool[aria-pressed="true"] { color: var(--accent); border-color: var(--accent-line); background: var(--accent-weak); }
+/* 行の項目を開く */
+.row-open { padding: 0; border: 0; background: none; text-align: left; font-weight: 600; }
+.row-open:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+/* 影響度の目盛り */
+.impact { display: inline-flex; gap: 2px; }
+/* 影響度の 1 目盛り */
+.impact i { display: inline-block; width: 4px; height: 10px; background: var(--border); }
+/* 満たした目盛り */
+.impact i.on { background: var(--text-2); }
+
+/* ===== 詳細パネル ===== */
+/* 詳細パネル（見本は本文の中に置く） */
+.panel { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+/* 詳細パネルの頭 */
+.panel-head { display: flex; align-items: center; gap: 4px; height: 44px; padding: 0 6px 0 8px; border-bottom: 1px solid var(--border-soft); }
+/* 項目の種類と ID */
+.panel-kind { font-size: var(--fs-small); color: var(--text-2); }
+/* 詳細パネルの中身 */
+.panel-body { padding: 18px 20px 24px; }
+/* 項目名 */
+.panel-body h3 { margin: 6px 0 8px; font-size: 1.375rem; line-height: 1.3; letter-spacing: -.01em; }
+/* 項目の補足 */
+.p-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--text-2); font-size: var(--fs-xs); }
+/* 詳細の小見出し */
+.panel-body h4 { margin: 22px 0 8px; font-size: var(--fs-small); }
+/* 案のカード */
+.opt { padding: 10px 12px; border: 1px solid var(--border-soft); border-radius: var(--radius); }
+.opt + .opt { margin-top: 8px; }
+/* 採用した案: 印の色の細い枠 */
+.opt.adopted { border-color: var(--accent-line); background: var(--accent-weak); }
+/* 案の頭 */
+.opt-head { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+/* 案の理由 */
+.opt p { margin: 4px 0 0; color: var(--text-2); font-size: var(--fs-small); }
+/* 採用・不採用のバッジ */
+.badge { display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 3px; font-size: var(--fs-xs); font-weight: 600; border: 1px solid var(--border); color: var(--text-2); }
+/* 採用のバッジ */
+.badge.ok { border-color: var(--accent); color: var(--accent); }
+/* ID のリンク */
+.idlink { display: inline-flex; align-items: center; gap: 6px; padding: 1px 6px; margin: 0 4px 4px 0; border: 1px solid var(--border-soft); border-radius: 3px; background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: var(--fs-xs); text-decoration: none; }
+.idlink:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ===== つながり ===== */
+/* 種類ごとの表示 / 非表示 */
+.legend { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+/* 種類の切り替え: 表示中は実線の枠と色の点 */
+.legend button { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); font-size: var(--fs-small); }
+.legend button:hover { background: var(--hover); }
+/* 種類の色の点 */
+.legend i { width: 9px; height: 9px; border-radius: 50%; }
+/* 非表示の種類: 点を輪にし、枠を破線、文字に取り消し線 */
+.legend button[aria-pressed="false"] { color: var(--text-3); border-style: dashed; text-decoration: line-through; }
+.legend button[aria-pressed="false"] i { background: none !important; box-shadow: inset 0 0 0 1.5px var(--text-3); }
+/* つながりの枠 */
+.graph-wrap { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+/* つながりの描画面 */
+#graph { display: block; width: 100%; height: 380px; }
+
+/* ===== 検索 ===== */
+/* 全体の検索: 外側の押下と Esc で閉じる */
+.search { width: min(640px, calc(100% - 32px)); margin-top: 12vh; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); }
+.search::backdrop { background: var(--scrim); }
+/* 検索の入力の帯 */
+.search-head { display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-bottom: 1px solid var(--border-soft); }
+/* 検索の入力 */
+.search-head input { flex: 1; height: 36px; border: 0; background: none; outline: none; font-size: 1rem; }
+/* 検索の結果 */
+.search-results { list-style: none; margin: 0; padding: 6px; }
+/* 検索の結果の行 */
+.search-results button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px; border: 0; background: none; border-radius: var(--radius); text-align: left; }
+.search-results button:hover { background: var(--hover); }
+/* 当たった語 */
+mark { background: var(--hit); color: inherit; padding: 0 1px; }
+
+/* ===== 狭い幅 ===== */
+/* 960px 以下: 段を縦に積む */
+@media (max-width: 960px) {
+  /* タイルと表を縦に積む */
+  .ov-grid, .ov-row, .split { grid-template-columns: minmax(0, 1fr); }
+  /* 検索の入口を虫眼鏡だけにする */
+  .search-trigger { min-width: 0; }
+  /* 検索の入口の文字とキー、題名を隠す */
+  .search-trigger .label, .search-trigger kbd, .brand-sub { display: none; }
+}
+/* 600px 以下: 本文の左右の余白を詰める */
+@media (max-width: 600px) {
+  /* 本文の余白 */
+  .content { padding-left: 16px; padding-right: 16px; }
+  /* 表の中の絞り込みを 1 行に広げる */
+  .field { min-width: 0; width: 100%; }
+}
+/* 動きを減らす設定 */
+@media (prefers-reduced-motion: reduce) {
+  /* 全ての動きを止める */
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ===== この候補の見せ方: 白い地に 1px の枠で区切り、数値と ID に等幅を多く使う ===== */
+/* タイル: 1px の枠だけで区切る */
+.tile { border: 1px solid var(--border); border-radius: var(--radius); padding: var(--tile-pad); }
+/* 件数・分数・大きな数字: 等幅で桁を揃える */
+.tile .n, .bars .frac, .big { font-family: var(--font-mono); }

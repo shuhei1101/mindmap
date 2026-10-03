@@ -1,0 +1,185 @@
+title: "スクリプト / 移行"
+lead: 前の版の形式のワークスペース（資料の `done`・題名の無い設定）を今の形式に書き換える。読み書きと検証だけに依存する。
+directory: |-
+  ```
+  skills/mindmap/scripts/
+    migrator.py   移す中身の組み立て・検証・2 ファイルの置き換え
+  ```
+data_models:
+  - name: MigrationEntry
+    title: 移したもの
+    container: skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    role: DTO
+    summary: 書き換えた 1 件。`migrate` の出力の `migrated[]` と同じキー
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。`dataclasses.asdict` で JSON にする。'
+    properties:
+      - name: id
+        type: str | None
+        description: 書き換えた項目の ID。`mindmap.yaml` は `None`
+      - name: file
+        type: str
+        description: ワークスペースからの相対パス
+      - name: change
+        type: str
+        description: 書き換えの中身
+        example: 'done: true → status: 完成'
+constants:
+  - name: DONE_TO_STATUS
+    title: done から状態への対応
+    container: skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    summary: 資料の `done` の値 → `status`
+    value: '{True: "完成", False: "下書き"}'
+functions:
+  - name: migrate_settings
+    title: 設定の移行
+    kind: 関数
+    container: skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 題名を持たない設定に題名を足した設定を返す
+    args:
+      - name: settings
+        type: dict[str, Any]
+        required: true
+        passing: positional
+        description: '`mindmap.yaml` の値'
+      - name: summary
+        type: str | None
+        required: true
+        passing: keyword
+        description: '`--summary`'
+    returns:
+      type: tuple[dict[str, Any], MigrationEntry | None]
+      description: 移した後の設定と、移したときの 1 件（移さないときは `None`）
+    process: |-
+      1. `settings` が `summary` を持つ場合、`settings` をそのままと `None` を返す（`summary` 引数は使わない）
+      2. `summary` 引数の前後の空白を落とす
+         - `None` か空の場合、`SummaryRequiredError` を送る
+      3. 先頭に `summary` を置き、残りのキーを元の順に続けた辞書と、`MigrationEntry(id=None, file="mindmap.yaml", change="summary を足した")` を返す
+    exceptions:
+      - name: SummaryRequiredError
+        condition: 設定が `summary` を持たず、`summary` 引数が `None` か空
+        message: ワークスペースに題名がありません。--summary で題名を渡してください
+    unit_tests:
+      - name: test_migrate_settings
+        case: 正常
+        summary: 題名を先頭に足す
+        condition: '`summary` を持たない設定（`field`・`phases` など）と `summary=" 題名 "`'
+        mock: なし
+        expected: 返った設定の最初のキーが `summary`（値は `題名`）で、残りのキーが元の順。`MigrationEntry` の `id` が `None`、`file` が `mindmap.yaml`
+      - name: test_migrate_settings_when_summary_present
+        case: 正常
+        summary: 題名を持つ設定は変えない
+        condition: '`summary` を持つ設定と `summary="別の題名"`'
+        mock: なし
+        expected: 設定がそのままと `None`
+      - name: test_migrate_settings_when_summary_missing
+        case: 異常
+        summary: 題名が無く引数も無ければ送る
+        condition: '`summary` を持たない設定。`parametrize`: `summary=None` / `summary="  "`'
+        mock: なし
+        expected: '`SummaryRequiredError`（`match` に `--summary`）'
+        exception: 題名が無く引数も空
+  - name: migrate_docs_items
+    title: 資料の移行
+    kind: 関数
+    container: skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 資料の `done` を `status` に置き換えた並びを返す
+    args:
+      - name: items
+        type: list[dict[str, Any]]
+        required: true
+        passing: positional
+        description: '`docs.yaml` の `items`'
+    returns:
+      type: tuple[list[dict[str, Any]], list[MigrationEntry]]
+      description: 移した後の並びと、移した項目（並びの順）
+    process: |-
+      1. 項目を並びのまま見る
+         - `done` を持たないか、`status` を既に持つ場合、そのままにする（`status` を持つ項目の `done` は残し、検証が止める）
+         - `done` が真偽値でない場合、そのままにする（検証が止める）
+         - それ以外の場合、`done` の位置に `status`（`DONE_TO_STATUS`）を置いた辞書にし、`MigrationEntry(id, "docs.yaml", "done: {true|false} → status: {状態}")` を足す。`updated` は変えない
+    unit_tests:
+      - name: test_migrate_docs_items
+        case: 正常
+        summary: done を状態に置き換える
+        condition: 'A-1（`done: true`）・A-2（`done: false`）・A-3（`status: 確認中`）'
+        mock: なし
+        expected: 'A-1 が `status: 完成`、A-2 が `status: 下書き` で `done` を持たず、キーの位置と `updated` が元のまま。A-3 がそのまま。`MigrationEntry` が A-1・A-2 の 2 件'
+      - name: test_migrate_docs_items_when_not_bool
+        case: 正常
+        summary: 真偽値でない done は移さない
+        condition: 'A-1（`done: "yes"`）'
+        mock: なし
+        expected: A-1 がそのままで、`MigrationEntry` が空
+  - name: migrate_workspace
+    title: ワークスペースの移行
+    kind: 関数
+    container: skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 設定と資料を移し、検証してから 2 ファイルを置き換える
+    side_effects: 移すものがあるときだけ `docs.yaml`・`mindmap.yaml` を置き換える
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: summary
+        type: str | None
+        required: true
+        passing: keyword
+        description: '`--summary`'
+    returns:
+      type: list[MigrationEntry]
+      description: 移したもの（`mindmap.yaml` が先、資料は並びの順）。移すものが無いときは空
+    process: |-
+      1. ワークスペースを検証せずに読む（`load_workspace`）
+      2. 設定と資料を移す（`migrate_settings`、`migrate_docs_items`）
+         - 移したものが無い場合、何も書かずに空を返す
+      3. `raw` の `mindmap.yaml`・`docs.yaml` を移した後の値に差し替えたワークスペースを検証する（`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（何も書かない）
+      4. 書き換えるファイルの一時ファイルを全て書く（`dump_yaml`、`_write_temp`）
+         - `OSError` が起きた場合、書いた一時ファイルを消して `WriteFailedError` を送る
+      5. `docs.yaml` を置き換える前に前の中身を控え、`docs.yaml` → `mindmap.yaml` の順に `os.replace` で置き換える
+         - `mindmap.yaml` の置き換えで `OSError` が起きた場合、`docs.yaml` を控えに戻し、残った一時ファイルを消して `WriteFailedError` を送る
+    exceptions:
+      - name: SchemaMismatchError
+        condition: 移した後のワークスペースに問題がある
+      - name: WriteFailedError
+        condition: 一時ファイルの書き込みか置き換えで `OSError` が起きた（後始末をした後）
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_migrate_workspace
+        case: 正常
+        summary: 題名を足し、資料の done を移す
+        condition: '`summary` を持たない設定と、A-1（`done: true`）を YAML で直接書いたワークスペース、`summary="題名"`'
+        mock: なし
+        expected: '`mindmap.yaml`・A-1 の 2 件。`mindmap.yaml` に `summary`、`docs.yaml` の A-1 が `status: 完成`'
+      - name: test_migrate_workspace_when_nothing
+        case: 正常
+        summary: 移すものが無ければ書かない
+        condition: 今の形式のワークスペース。`summary=None`
+        mock: なし
+        expected: 空。`mindmap.yaml`・`docs.yaml` の更新日時が呼ぶ前と同じ
+      - name: test_migrate_workspace_when_schema_mismatch
+        case: 異常
+        summary: 移しても合わなければ書かない
+        condition: 'A-1（`done: true`）と、`status` を `完了` にした D-1 を持つワークスペース'
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` に `decisions.yaml: items[0].status:`）。ファイルが呼ぶ前と同じ'
+        exception: 移した後に問題がある
+      - name: test_migrate_workspace_when_replace_fails
+        case: 異常
+        summary: 2 つ目の置き換えに失敗したら 1 つ目を戻す
+        condition: '`summary` を持たない設定と A-1（`done: true`）。`os.replace` を、`mindmap.yaml` への置き換えで `OSError` を送る関数に差し替える'
+        mock: '`os.replace`（`migrator` モジュールの参照を monkeypatch）'
+        expected: '`WriteFailedError`。`mindmap.yaml`・`docs.yaml` が呼ぶ前と同じで、`.tmp` のファイルが無い'
+        exception: 置き換えで OSError
+test_files:
+  - tests/unit/scripts/test_migrator.py

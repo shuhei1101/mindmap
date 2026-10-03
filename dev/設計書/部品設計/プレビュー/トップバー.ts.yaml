@@ -1,0 +1,84 @@
+title: トップバー
+lead: 画面の最上部の帯。話し合いの題名・全体の検索の入口・ライト / ダークの切り替えと、画面を移るタブの帯（右端につながりの入口）を出す。
+implementation: skills/mindmap/preview/components/topbar.ts#MindmapPreview.topbar
+story: Preview/Topbar
+test_file: tests/integration/storybook/test_topbar_stories.py
+args:
+  - name: title
+    type: 文字列
+    required: true
+    description: 話し合いの題名（`mindmap.yaml` の `summary`）。1 行で末尾を省略し、全文を `title` 属性に持たせる
+  - name: tabs
+    type: オブジェクトの配列
+    required: true
+    description: タブの帯に並べる画面（概要・検討事項・タスク・調査・資料・用語集・メモ・会話ログ）。つながりは含めない
+  - name: tabs[].key
+    type: 列挙
+    required: true
+    choices: overview・decisions・tasks・research・docs・terms・notes・logs
+    description: 画面の識別子。URL のハッシュの `tab` と同じ値
+  - name: tabs[].label
+    type: 文字列
+    required: true
+    description: タブの文字
+  - name: tabs[].icon
+    type: 文字列
+    required: true
+    description: タブのアイコンの名前
+  - name: tabs[].count
+    type: 整数
+    required: false
+    default: なし（件数を出さない）
+    choices: 0 以上
+    description: その種類の項目の件数。概要は持たない
+  - name: current
+    type: 列挙
+    required: true
+    choices: '`tabs[].key` のどれかか graph'
+    description: 開いている画面
+  - name: theme
+    type: 列挙
+    required: true
+    choices: light・dark
+    description: 今のライト / ダーク
+events:
+  - name: 画面を移る
+    when: タブかつながりの入口を押したとき
+    value: key（`data-tab`）
+    description: 使う側がその画面を開き、URL のハッシュの `tab` を変えて履歴に積む。開いている詳細パネルは閉じない
+  - name: 検索を開く
+    when: 検索の入口を押したとき（`/` キーは使う側が受ける）
+    description: 使う側が全体の検索を開く
+  - name: テーマの切り替え
+    when: ライト / ダークのボタンを押したとき
+    value: theme（`data-theme`）
+    description: 使う側が切り替えて、端末の保存領域に残す
+states:
+  - name: Overview
+    description: 概要を開いている。開いている画面のタブに印の色の下線
+    args:
+      - name: current
+        value: overview
+  - name: Graph
+    description: つながりを開いている。つながりの入口だけを選んだ見た目にする
+    args:
+      - name: current
+        value: graph
+  - name: LongTitle
+    description: 題名が長い。1 行で末尾を省略し、検索の入口とテーマの切り替えを押し出さない
+    args:
+      - name: title
+        value: プレビューの画面（概要・検討事項・タスク・資料・つながり・詳細パネル）を見本に沿って作るための話し合いの記録
+  - name: Dark
+    description: ダーク
+    args:
+      - name: theme
+        value: dark
+  - name: Narrow
+    description: 幅 390px。検索の入口を虫眼鏡だけにし、題名を隠す。タブは帯の中で横に送る
+    notes:
+      見せ方: Storybook の画面幅を 390px にして確かめる
+accessibility:
+  - タブはリンクの並び（`nav`）にし、開いている画面に `aria-current="page"` を付ける
+  - アイコンだけのボタン（狭い幅の検索の入口・テーマの切り替え）に読み上げ名を付ける
+  - ホバーは面の色、キーボードのフォーカスは印の色の輪で見分ける

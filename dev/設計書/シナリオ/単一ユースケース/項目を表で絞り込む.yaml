@@ -1,0 +1,69 @@
+title: "項目を表で絞り込む"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: '調査 R-1（確度: 高）・R-2（確度: 低）・R-3（確度: 高）。表が画面に収まらず縦に送れる件数にする'
+        notes: 縦に送れるよう、調査をそのほかに 40 件足す
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 調査のタブを開き、表を下へ送る
+        U->>P: 確度の列の見出しを 3 回押す
+        P-->>U: 昇順 → 降順 → 解除
+        U->>P: 確度の列の絞り込みで「高」を選ぶ
+        P-->>U: 絞り込んだ表と条件のチップ
+        U->>P: 2 列目までピン留めし、列を 1 つ隠す
+        U->>P: 初期設定に戻す
+        P-->>U: 既定の列と並び
+      ```
+    expected:
+      - 確度の見出しを押すたびに、並びが昇順 → 降順 → 既定の並びに変わり、見出しの `aria-sort` もそれに合う
+      - 確度の絞り込みの選択肢に値ごとの件数が出る
+      - 「高」で絞ると行に R-2 が無く、表の上に確度 = 高のチップがある
+      - 押した列のピン留めのボタンだけが押された見た目になり、横に送っても 2 列目までが残る
+      - 隠した列が表に無い
+      - どの操作の後も、表の縦のスクロールの位置が操作の前と同じ
+      - 初期設定に戻すと、隠した列が戻り、ピン留めが外れる
+    test: test_normal
+  - name: 正常シナリオ（該当なし）
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 'タスク T-1（種類: 作業・状態: 完了）と T-2（種類: 調査・状態: 未着手）'
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: タスクの表で、種類 = 作業 × 状態 = 未着手で絞る
+        P-->>U: 該当なしの表示
+        U->>P: 条件をすべて外す
+        P-->>U: 全ての行
+      ```
+    expected:
+      - 絞った後、表の場所に「該当するタスクはありません。別の条件を試してください。」が出る
+      - 条件をすべて外すと T-1・T-2 の 2 行が戻り、チップが無くなる
+    test: test_normal_when_no_match
+lead: 利用者が、どの種類の項目も共通の表で並べ替え・列ごとの絞り込み・ピン留め・表示する列の選択をして、初期設定に戻す単一ユースケース。
+issue: 5
+primary_actor: 利用者
+trigger: 利用者がどれかのタブを表で開く
+preconditions:
+  - ワークスペースに記録があり、プレビューを書き出してある
+test_file: tests/e2e/単一ユースケース/test_table_filter_view.py

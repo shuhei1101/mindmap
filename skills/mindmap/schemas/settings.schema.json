@@ -9,7 +9,8 @@
     "phases",
     "targets",
     "categories",
-    "goal"
+    "goal",
+    "summary"
   ],
   "additionalProperties": false,
   "properties": {
@@ -148,6 +149,11 @@
           }
         }
       }
+    },
+    "summary": {
+      "type": "string",
+      "description": "話し合いの題名（何についての話し合いかを 1 文で）。プレビューのトップバーに出す",
+      "minLength": 1
     }
   }
 }

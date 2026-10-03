@@ -1,20 +1,15 @@
 title: "スクリプト / ビルド"
-lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。読み書きと検証だけに依存する。
+lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。読み書きと検証と、依存と影響・ゴール判定（画面に出す値の計算）に依存する。
 directory: |-
   ```
   skills/mindmap/
     preview/
-      template.html   プレビューの雛形（この PR は項目の件数を出すだけ。画面は #5）
+      template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み）
+      tokens.css・style.css・*.ts（と tsc が生成した *.js）  画面の中身（モジュール構成『プレビュー』）
     scripts/
-      builder.py      データの収集・埋め込み・書き出し
+      builder.py      雛形の組み立て・データの収集・埋め込み・書き出し
   ```
 constants:
-  - name: TEMPLATE_PATH
-    title: 雛形のパス
-    container: skills/mindmap/scripts/builder.py
-    usecase: プレビューの書き出し
-    summary: このファイルから見た `skills/mindmap/preview/template.html`
-    value: Path(__file__).resolve().parent.parent / "preview" / "template.html"
   - name: DATA_ELEMENT
     title: 埋め込み先の要素
     container: skills/mindmap/scripts/builder.py
@@ -27,6 +22,36 @@ constants:
     usecase: プレビューの書き出し
     summary: ワークスペースに書き出すファイル名
     value: '"preview.html"'
+  - name: PREVIEW_DIR
+    title: 雛形のフォルダ
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: このファイルから見た `skills/mindmap/preview/`
+    value: Path(__file__).resolve().parent.parent / "preview"
+  - name: STYLE_FILES
+    title: 差し込む CSS
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: 雛形のフォルダからの相対パス。並びの順につなぐ
+    value: ("tokens.css", "style.css")
+  - name: SCRIPT_FILES
+    title: 差し込む JavaScript
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: 雛形のフォルダからの相対パス。tsc が `.ts` から生成した `.js` を並びの順につなぐ（起動する `app.js` が最後）。中身はモジュール構成『プレビュー』のディレクトリ構成
+    value: ("core/dom.js", "core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
+  - name: STYLE_SLOT
+    title: CSS の差し込み口
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、CSS を入れる空の要素'
+    value: "'<style id=\"mindmap-style\"></style>'"
+  - name: SCRIPT_SLOT
+    title: JavaScript の差し込み口
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、JavaScript を入れる空の要素（`DATA_ELEMENT` より後ろ）'
+    value: "'<script id=\"mindmap-app\"></script>'"
 functions:
   - name: build_preview
     title: プレビューの書き出し
@@ -47,19 +72,19 @@ functions:
         required: true
         passing: keyword
         description: 書き出した日時（`now_utc` の文字列）
-      - name: template_path
+      - name: preview_dir
         type: Path
         required: false
-        default: TEMPLATE_PATH
+        default: PREVIEW_DIR
         passing: keyword
-        description: 雛形のパス
+        description: 雛形のフォルダ
     returns:
       type: Path
       description: 書き出した `preview.html` の絶対パス
     process: |-
       1. ワークスペースを検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（書かない）
-      2. データを集めて雛形に埋め込む（`collect_preview_data`、`embed_data`）
+      2. 雛形を組み立て、データを集めて埋め込む（`assemble_template`、`collect_preview_data`、`embed_data`）
       3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える
          - `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る（前の `preview.html` は残る）
     exceptions:
@@ -72,7 +97,7 @@ functions:
       - name: test_build_preview
         case: 正常
         summary: データを埋め込んだ preview.html を書く
-        condition: D-1 と資料 A-1（`docs/A-1.md` あり）を持つワークスペースと、`DATA_ELEMENT` だけを持つ雛形
+        condition: D-1 と資料 A-1（`docs/A-1.md` あり）を持つワークスペースと、差し込み口と `DATA_ELEMENT` を持つ `template.html` と空の CSS・JavaScript を置いた雛形のフォルダ
         mock: なし
         expected: 戻り値が `preview.html`。中の `mindmap-data` を JSON として読むと `decisions` に D-1、`bodies` に `A-1.md`、`built_at` が渡した日時
       - name: test_build_preview_when_schema_mismatch
@@ -109,17 +134,18 @@ functions:
         description: 書き出した日時
     returns:
       type: dict[str, Any]
-      description: '`settings`・`decisions` など種類ごと（ファイル名から `.yaml` を落としたキー）・`bodies`・`built_at`'
+      description: '`settings`・`decisions` など種類ごと（ファイル名から `.yaml` を落としたキー）・`bodies`・`derived`・`built_at`'
     process: |-
       1. 種類ごとの `items` をファイル名から `.yaml` を落としたキーで入れる
       2. 項目の `body` が指す本文を読んで `bodies` に入れる（本文の読み込み。`read_body`。読めないものは入れない）
+      3. 画面に出す値を計算して `derived` に入れる（`derive_preview_values`）
     unit_tests:
       - name: test_collect_preview_data
         case: 正常
         summary: 種類ごとのキーと、指された本文だけを集める
         condition: 'A-1（`body: A-1.md`、ファイルあり）・R-1（`body: R-1.md`、ファイル無し）・`docs/X-1.md`（指されない）'
         mock: なし
-        expected: キーが `settings`・`decisions`・`tasks`・`research`・`docs`・`terms`・`notes`・`logs`・`bodies`・`built_at`。`bodies` のキーが `A-1.md` だけ
+        expected: キーが `settings`・`decisions`・`tasks`・`research`・`docs`・`terms`・`notes`・`logs`・`bodies`・`derived`・`built_at`。`bodies` のキーが `A-1.md` だけ
   - name: escape_for_script
     title: 埋め込みのエスケープ
     kind: 関数
@@ -187,5 +213,81 @@ functions:
         mock: なし
         expected: '`ValueError`（`match` に `0 個`・`2 個`）'
         exception: 雛形の要素が 0 個か 2 個以上
+  - name: assemble_template
+    title: 雛形の組み立て
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: '`template.html` に CSS・JavaScript を差し込んだ HTML を返す'
+    args:
+      - name: preview_dir
+        type: Path
+        required: false
+        default: PREVIEW_DIR
+        passing: keyword
+        description: 雛形のフォルダ
+    returns:
+      type: str
+      description: 差し込んだ HTML（`DATA_ELEMENT` は空のまま）
+    process: |-
+      1. `template.html` と、`STYLE_FILES`・`SCRIPT_FILES` を並びの順に UTF-8 で読む
+      2. CSS に `</style`、JavaScript に `</script` が無いことを確かめる（大文字・小文字を区別しない）
+         - ある場合、`ValueError` を送る（同梱の雛形の誤り）
+      3. `STYLE_SLOT`・`SCRIPT_SLOT` がそれぞれちょうど 1 つあることを確かめる
+         - 1 つでない場合、`ValueError` を送る
+      4. CSS を改行でつないで `STYLE_SLOT` の中身に、JavaScript を改行でつないで `SCRIPT_SLOT` の中身に入れる
+    exceptions:
+      - name: ValueError
+        condition: CSS が `</style`、JavaScript が `</script` を含むか、差し込み口が 0 個か 2 個以上
+        message: 雛形の {ファイル名} が {閉じタグ} を含みます / 雛形に差し込み口 {要素} が 1 つだけありません（{個数} 個）
+    unit_tests:
+      - name: test_assemble_template
+        case: 正常
+        summary: CSS と JavaScript を並びの順に差し込む
+        condition: '`tmp_path` に差し込み口と `DATA_ELEMENT` を持つ `template.html` と、`STYLE_FILES`・`SCRIPT_FILES` の名前のファイル（中身はファイル名のコメント）'
+        mock: なし
+        expected: '`<style id="mindmap-style">` の中に CSS が並びの順で、`<script id="mindmap-app">` の中に JavaScript が並びの順であり、`DATA_ELEMENT` は空のまま'
+      - name: test_assemble_template_when_closing_tag
+        case: 異常
+        summary: 閉じタグを含むファイルは差し込まない
+        condition: '`parametrize`: CSS に `</STYLE>` / JavaScript に `</script>`'
+        mock: なし
+        expected: '`ValueError`（`match` にそのファイル名）'
+        exception: 閉じタグを含むか差し込み口が 1 つでない
+      - name: test_assemble_template_when_slot_count_wrong
+        case: 異常
+        summary: 差し込み口が 1 つでない雛形
+        condition: '`parametrize`: `STYLE_SLOT` 0 個 / `SCRIPT_SLOT` 2 個'
+        mock: なし
+        expected: '`ValueError`（`match` に個数）'
+        exception: 閉じタグを含むか差し込み口が 1 つでない
+  - name: derive_preview_values
+    title: プレビューに出す値の計算
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: プレビューの書き出し
+    scope: public
+    summary: 概要と表に出す次の候補・ゴールまで・カテゴリー別の進み具合を、コマンドと同じ関数で計算して返す
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: 検証済みのワークスペース
+    returns:
+      type: dict[str, Any]
+      description: '`next`（`Candidate` を `asdict` した並び）・`goal`（`GoalReport` を `asdict` し、`phase_progress` を足した辞書）・`progress`（カテゴリーごとのセル）'
+    process: |-
+      1. 次の候補を全件並べる（`list_next_candidates`、`limit=None`）
+      2. ゴールを判定し（`judge_goal`）、判定に入れたフェーズごとに、そのフェーズの検討事項の決着した数と全体の数を `phase_progress`（`{phase, settled, total}` の並び）にする（`is_settled`）
+      3. `settings.categories` の順に、`settings.phases` の順のセルごとの決着した数と全体の数を `progress`（`{category, cells: [{phase, settled, total}], settled, total}` の並び）にする（`is_settled`）
+    unit_tests:
+      - name: test_derive_preview_values
+        case: 正常
+        summary: コマンドと同じ答えをまとめる
+        condition: '`phases` 目的・要件、`goal.phase` 要件、カテゴリー A・B。D-1（A・目的・決定済み）・D-2（A・要件・未決定・`depends_on: [D-1]`）・D-3（B・要件・対象外）'
+        mock: なし
+        expected: '`next` が `list_next_candidates` と同じ（D-2 だけ）。`goal.phase_progress` が 目的 1/1・要件 1/2。`progress` の A が 目的 1/1・要件 0/1、B が 目的 0/0・要件 1/1'
 test_files:
   - tests/unit/scripts/test_builder.py

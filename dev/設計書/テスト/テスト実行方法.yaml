@@ -17,7 +17,22 @@ layers:
         pytest {テストファイルパス}
         ```
   - name: 単体テスト（フロント）
-    run_all: 未確定
+    description: pytest-playwright で、プレビューの部品・画面の `.ts` から tsc が生成した `.js` を `page.add_script_tag` で読み、`page.evaluate` で関数を引数付きで呼んで、返った DOM と計算した値を本物のブラウザ（Chromium）で確かめる。描画のライブラリは `page.route` で差し替える
+    prerequisites:
+      - Python 3.12 以上と、`requirements-dev.txt` の開発用の依存（pytest・pytest-playwright・playwright ほか）
+      - '`python -m playwright install --only-shell chromium` でブラウザを入れてある（CI は `--with-deps` を付ける）'
+      - Node 20.19 以上で `npm ci` を済ませ、`npx tsc -p .` で `.ts` から `.js` を生成してある（テストは生成した `.js` を読む）
+      - 実行はリポジトリの直下で行う
+    run_all: |-
+      ```bash
+      pytest tests/unit/preview
+      ```
+    run_one:
+      label: ファイル
+      command: |-
+        ```bash
+        pytest {テストファイルパス}
+        ```
   - name: 結合テスト（バック）
     run_all: |-
       ```bash
@@ -38,18 +53,40 @@ layers:
         pytest {テストファイルパス}
         ```
   - name: 結合テスト（フロント）
-    run_all: 未確定
+    description: pytest-playwright で 2 つを確かめる。インターフェース定義『プレビューを開く』は、`make_workspace` と `run_mindmap("build", ...)` で書き出した `preview.html` を file:// と URL のハッシュで開き、描画のライブラリの配信元を失敗させるときは `page.route` で要求を abort する。部品設計の状態は、`storybook build` の出力を一時の HTTP サーバーで配る fixture から `iframe.html?id={story}--{state}` を開いて確かめる
+    prerequisites:
+      - 単体テスト（フロント）の前提
+      - jsDelivr と Google Fonts へ HTTPS で届く（『プレビューを開く』の正常系は描画のライブラリを配信元から読む）
+      - '部品のテスト（`tests/integration/storybook/`）: 先に `npx storybook build -o storybook-static` を済ませておく（Node 20.19 以上。部品のストーリー（Storybook）の節）'
+    run_all: |-
+      ```bash
+      pytest tests/integration/preview tests/integration/storybook
+      ```
+    run_one:
+      label: ファイル
+      command: |-
+        ```bash
+        pytest {テストファイルパス}
+        ```
+    notes:
+      画面の起動: |-
+        1. `make_workspace` で記録を置いたワークスペースを作り、`run_mindmap("build", "--workspace", {フォルダ})` で `{フォルダ}/preview.html` を書き出す（手で確かめるときは `python3 skills/mindmap/scripts/mindmap.py build --workspace {フォルダ}`）。
+        2. `file://{フォルダ}/preview.html` に URL のハッシュを付けて開く。ハッシュで画面・表示形式・項目を指す（例 `#tab=decisions&view=table&id=D-3`。形はインターフェース定義『プレビューを開く』）。
+        3. 本文の領域 `main#main` に子が入るまで待つ。本文の図は描画のライブラリが読み終わった後に SVG になるので、図を確かめるときは `.mermaid svg` が出るまで待つ。
+        4. 要素は画面設計の項目 ID（`#tile-next`・`#decision-map`・`#graph-canvas` ほか）で引く。項目 ID を持たない要素は、画面設計の名前に当たる見出し・ボタンの読み上げ名で引く。
+        5. 幅の違いを確かめるときは、開いた後に `set_viewport_size` で幅を変える。
   - name: E2E テスト
     run_all: |-
       ```bash
       pytest tests/e2e
       ```
-    description: pytest で、シナリオ設計書の利用者の操作を通しで確かめる。プラグインは実際の Claude Code の CLI（`claude plugin ...`）を使い、スクリプトはスキルがコマンドを連ねて呼ぶ流れを実際の `mindmap.py` を子プロセスで起動して確かめる。Mock は使わない。
+    description: pytest で、シナリオ設計書の利用者の操作を通しで確かめる。プラグインは実際の Claude Code の CLI（`claude plugin ...`）を使い、スクリプトはスキルがコマンドを連ねて呼ぶ流れを実際の `mindmap.py` を子プロセスで起動して確かめる。プレビューのシナリオは、`build` で書き出した `preview.html` を pytest-playwright で開いて確かめる。Mock は使わない（描画のライブラリの配信元を失敗させる異常シナリオは、ブラウザの通信の差し替え）。
     prerequisites:
       - Python 3.12 以上と pytest
       - 'プラグインのシナリオ: Claude Code 2.1.287 以上（`claude` が PATH にある）。スクリプトのシナリオは `claude` を使わない'
       - 'スクリプトのシナリオ: PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている。仮想環境はテストごとの一時フォルダに `--without-pip` で作り、ライブラリはテストを動かす Python のものを見せる（通信しない）'
       - 実行はリポジトリの直下で行う。マーケットプレイスにはこの作業ツリーの直下を渡す。設定のフォルダは conftest が `CLAUDE_CONFIG_DIR` にテストごとの空の一時フォルダを渡して差し替えるため、利用者の環境を汚さない
+      - 'プレビューのシナリオ: 単体テスト（フロント）の前提と、jsDelivr と Google Fonts へ HTTPS で届くこと'
     run_one:
       label: シナリオ
       command: |-
@@ -58,3 +95,12 @@ layers:
         ```
   - name: 外部疎通テスト
     run_all: 未確定
+notes:
+  部品のストーリー（Storybook）: |-
+    前提: Node 20.19 以上（22 系なら 22.12 以上。vite 8.3.2 の `engines`）。リポジトリの直下で `npm ci` を済ませておく。
+
+    ```bash
+    npx storybook dev -p 6006
+    ```
+
+    静的なファイルに書き出すときは `npx storybook build -o storybook-static`。

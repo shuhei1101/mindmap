@@ -1,2 +1,4 @@
 summary: 採用済みの外部 API のリファレンス
-items: []
+items:
+  - page: GoogleFonts.yaml
+    summary: プレビューの文字（Inter・Noto Sans JP・JetBrains Mono）を配る

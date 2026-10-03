@@ -1,0 +1,17 @@
+title: "詳細の全画面"
+elements:
+  - name: 元の大きさに戻す
+    kind: button
+    position: 見出し
+    description: 詳細パネルに戻す。全てを閉じるボタンは置かない
+  - name: 後ろの幕
+    kind: backdrop
+    description: 薄い幕。押すと元の大きさ（詳細パネル）に戻す。Esc でも戻す
+  - name: 詳細の中身
+    kind: article
+    description: 詳細パネルと同じ要素（戻る・進む・タイトル・案・本文・図の操作・関係する項目）。図を拡大して見るときは、モーダルを重ねずにこの中身を図の拡大に切り替え、閉じると本文に戻す
+    io: 表示
+    source: 詳細パネルと同じ
+lead: 詳細パネルの中身を画面の中央のモーダルで大きく出す。後ろの幕は薄くし、元の画面が透けて見える。
+mock: dev/mock/pages/detail-full/21/standard/index.html
+test_file: tests/integration/preview/test_detail_full_screen.py

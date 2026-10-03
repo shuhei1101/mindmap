@@ -11,6 +11,9 @@ from store import Workspace, as_ids, find_item
 # 再開時の状況に載せる次の候補の件数
 STATUS_NEXT_LIMIT = 3
 
+# ゴールの成果物ができたとみなす資料の状態
+DOC_COMPLETE_STATUS = "完成"
+
 # 影響度 → 並べる順。影響度が無いものは最後
 WEIGHT_ORDER = {"大": 0, "中": 1, "小": 2}
 
@@ -178,8 +181,8 @@ def judge_goal(workspace: Workspace) -> GoalReport:
     for deliverable in deliverables if isinstance(deliverables, list) else []:
         doc_id = deliverable.get("doc")
         doc = docs.get(doc_id) if doc_id is not None else None
-        # 資料が無いか、完成（done）が真でない
-        if doc is None or not doc.get("done"):
+        # 資料が無いか、状態が完成でない
+        if doc is None or doc.get("status") != DOC_COMPLETE_STATUS:
             remaining_deliverables.append(
                 {"title": str(deliverable.get("title", "")), "doc": doc_id}
             )

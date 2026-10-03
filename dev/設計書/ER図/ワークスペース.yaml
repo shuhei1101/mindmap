@@ -89,6 +89,12 @@ tables:
         title: 関連する場所
         type: array
         description: 要素は `title`・`url`
+      - name: summary
+        title: 題名
+        type: string
+        not_null: true
+        description: 話し合いの題名（何についての話し合いかを 1 文で）。プレビューのトップバーに出す
+        example: 要件出しのスキル mindmap を設計する
   - name: skills/mindmap/schemas/common.schema.json
     title: 共通のキー
     datastore: JSON
@@ -288,12 +294,13 @@ tables:
         not_null: true
         default: 'false'
         description: ゴールで引き渡す成果物か
-      - name: done
-        title: できたか
-        type: boolean
+      - name: status
+        title: 状態
+        type: string
         not_null: true
-        default: 'false'
-        description: 成果物ができたか
+        default: 下書き
+        description: 資料の状態。成果物は `完成` でできたとみなす
+        enum_values: 下書き / 確認中 / 完成
       - name: body
         title: 本文
         type: string

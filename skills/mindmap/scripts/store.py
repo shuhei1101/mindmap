@@ -52,6 +52,9 @@ DEFAULT_FILE_MODE = 0o666
 # 一番上など、キーのパスが空のときの表記
 WHOLE_PATH = "(全体)"
 
+# 前の版の形式でスキーマに合わないときに、エラーの最後に続ける 1 行
+LEGACY_HINT = "ヒント: 前の版の形式の記録は migrate で今の形式に移せます"
+
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class Problem:
@@ -222,11 +225,34 @@ def now_utc() -> str:
     return datetime.now(UTC).replace(microsecond=0).isoformat()
 
 
-def build_mismatch_error(problems: list[Problem]) -> SchemaMismatchError:
-    """問題ごとの `{ファイル名}: {キーのパス}: {理由}` の行を持つ例外を作る。"""
-    return SchemaMismatchError(
-        [f"{problem.file}: {problem.key or WHOLE_PATH}: {problem.detail}" for problem in problems]
-    )
+def build_mismatch_error(
+    problems: list[Problem], workspace: Workspace | None = None
+) -> SchemaMismatchError:
+    """問題ごとの `{ファイル名}: {キーのパス}: {理由}` の行を持つ例外を作る。workspace を渡すと前の版の形式の問題かも決める。"""
+    lines = [
+        f"{problem.file}: {problem.key or WHOLE_PATH}: {problem.detail}" for problem in problems
+    ]
+    legacy = workspace is not None and any(is_legacy_problem(p, workspace) for p in problems)
+    return SchemaMismatchError(lines, legacy=legacy)
+
+
+def is_legacy_problem(problem: Problem, workspace: Workspace) -> bool:
+    """問題が、前の版の形式（資料の `done`・題名の無い設定）から来ているかを返す。"""
+    # スキーマ違反以外（参照切れなど）は前の版の形式のせいではない
+    if problem.kind != "schema":
+        return False
+    # 設定: 題名（summary）が無い
+    if problem.file == SETTINGS_FILE:
+        raw_settings = workspace.raw.get(SETTINGS_FILE)
+        return isinstance(raw_settings, dict) and "summary" not in raw_settings
+    # 資料: done を持ち、status を持たない
+    if problem.file == KINDS["doc"].file and problem.id is not None:
+        docs = _extract_items(workspace.raw.get(problem.file))
+        return any(
+            item.get("id") == problem.id and "done" in item and "status" not in item
+            for item in docs
+        )
+    return False
 
 
 def save_change(workspace: Workspace, change: Change) -> None:
@@ -235,12 +261,13 @@ def save_change(workspace: Workspace, change: Change) -> None:
     # 書き戻すと中身を失う形のファイルには書かない（変更を当てる前の、そのファイルの問題を返す）
     if _loses_content_on_rewrite(workspace, change.kind):
         current = [p for p in validate_workspace(workspace) if p.file == spec.file]
-        raise build_mismatch_error(current)
+        raise build_mismatch_error(current, workspace)
     # 変更を当てた後のワークスペース全体を検証する
     changed_raw = {**workspace.raw, spec.file: {"items": change.items}}
-    problems = validate_workspace(replace(workspace, raw=changed_raw))
+    changed = replace(workspace, raw=changed_raw)
+    problems = validate_workspace(changed)
     if problems:
-        raise build_mismatch_error(problems)
+        raise build_mismatch_error(problems, changed)
 
     yaml_path = workspace.root / spec.file
     body_path = workspace.root / BODY_DIR / change.body.name if change.body else None

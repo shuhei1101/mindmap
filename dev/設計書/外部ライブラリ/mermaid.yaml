@@ -1,0 +1,44 @@
+title: "mermaid"
+kind: "CDN の JS"
+version:
+  current: 12.1.0
+  latest: 12.1.0
+  checked_on: '2026-10-02'
+  source: https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.min.js
+  pinning: 版を固定し、script 要素に integrity（`sha384-EbBpjO7rlR6eqZEcG7GaPpyk9H9WrMyPWX4d3KvPYltgt8Z8l0z6R56B1qP40pR4`）と `crossorigin="anonymous"` を付ける。上げるときは integrity も書き換える
+catalogs:
+  - name: API
+    version: 12.1.0
+    entries:
+      - name: mermaid.initialize
+        kind: 関数
+        purpose: '`startOnLoad: false`・`securityLevel: strict` と、デザイン方針のトークンから決めた `themeVariables` を渡す'
+      - name: mermaid.render
+        kind: 関数
+        purpose: 本文の mermaid のコードブロックを SVG に描く
+lead: テキストで書いた図（フローチャート・シーケンス図ほか）を SVG に描く JavaScript のライブラリ。
+purl: pkg:npm/mermaid
+dependency_scope: 必須
+adoption: 採用
+upstream: mermaid-js/mermaid
+used_in:
+  - skills/mindmap/preview/template.html
+verification:
+  state: 済
+  date: '2026-10-02'
+  detail: 'file:// で開いた HTML から jsDelivr の `dist/mermaid.min.js` を下の integrity と `crossorigin="anonymous"` 付きで読み、Chromium で `mermaid.initialize`（`securityLevel: strict`・`theme: base`）の後に `mermaid.render` がフローチャート・シーケンス図・ELK の配置（`layout: elk`）の図を SVG に描くことを確かめた'
+license: MIT（商用利用可）
+official_url: https://mermaid.js.org/
+selection:
+  candidates: '配信元として jsDelivr・unpkg・raw.esm.sh・cdnjs を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4165328069)）。ライブラリそのものは Issue #5 で決まっている'
+  decision: jsDelivr から 12.1.0 の UMD を読む。12.1.0 は依存の lodash-es@4.17.23 の勧告 2 件（GHSA-r5fr-rjxr-66jc・GHSA-f23m-r3pf-42rh）が外れる。ESM は 208 個のチャンクを後から読み integrity が入口にしか効かないため、1 本で完結する UMD にした
+  consequences: 12.1.0 から ELK の配置で `elk.orientFeedbackEdges` が既定で有効になり、本文の図が ELK の配置を指定したときだけ描画が変わる
+install: |-
+  ```html
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@12.1.0/dist/mermaid.min.js" integrity="sha384-EbBpjO7rlR6eqZEcG7GaPpyk9H9WrMyPWX4d3KvPYltgt8Z8l0z6R56B1qP40pR4" crossorigin="anonymous"></script>
+  ```
+
+  プレビューの雛形が読む。グローバルの `mermaid` に入る
+limitations:
+  - item: 大きさ
+    content: '`mermaid.min.js` は約 5.5MB あり、プレビューを開くたびに読む（2 回目以降はブラウザのキャッシュから読む）'

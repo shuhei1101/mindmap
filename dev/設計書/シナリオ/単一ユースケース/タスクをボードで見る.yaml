@@ -1,0 +1,38 @@
+title: "タスクをボードで見る"
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 状態が未着手・進行中・保留・完了・中止のタスクを 1 件ずつ（T-1〜T-5）。T-2（進行中）は検討事項 D-3 を進める
+        notes: 'T-2 は `for: [D-3]`'
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: タスクのタブを開く
+        P-->>U: 状態ごとの列のボード
+        U->>P: T-2 のカードを押す
+        P-->>U: T-2 の詳細パネル
+        U->>P: 表示形式を表に切り替える
+        P-->>U: タスクの表
+      ```
+    expected:
+      - ボードに未着手・進行中・保留・完了・中止の 5 列があり、T-1〜T-5 がそれぞれの状態の列にある
+      - T-2 の詳細パネルに、進める検討事項として D-3 がある
+      - 表に T-1〜T-5 の 5 行がある
+    test: test_normal
+lead: 利用者が、タスクを状態ごとの列のボードで見て、カードから詳細を開く単一ユースケース。表への切り替えを含む。
+issue: 5
+primary_actor: 利用者
+trigger: 利用者がタスクのタブを開く
+preconditions:
+  - ワークスペースに記録があり、プレビューを書き出してある
+test_file: tests/e2e/単一ユースケース/test_task_board_view.py

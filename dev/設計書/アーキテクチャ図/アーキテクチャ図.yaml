@@ -32,7 +32,10 @@ overview:
       label: ブラウザ
       kind: external
     - id: CDN
-      label: CDN（銘柄未定）
+      label: jsDelivr
+      kind: external
+    - id: GF
+      label: Google Fonts
       kind: external
   edges:
     - from: U
@@ -67,6 +70,9 @@ overview:
       label: ファイルを開く
     - from: BR
       to: CDN
+      label: HTTPS
+    - from: BR
+      to: GF
       label: HTTPS
   subgraphs:
     - id: SYS
@@ -104,9 +110,9 @@ subsystems:
   - name: プレビュー
     scope: preview
     role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面
-    runtime: JavaScript（ブラウザ）
+    runtime: TypeScript 7（tsc が生成した JavaScript をブラウザで動かす）
     runs_on: 利用者の端末のブラウザ（ファイルとして開く。サーバーは立てない）
-    status: planned
+    status: implemented
 external_systems:
   - name: Claude Code
     purpose: プラグインの読み込み・スキルの手順の実行・スクリプトのコマンドの起動
@@ -115,16 +121,28 @@ external_systems:
     notes:
       事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
     detail: dev/設計書/外部ライブラリ/claude-code#
-  - name: CDN（銘柄未定）
+  - name: jsDelivr
     purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得
     direction: 受信のみ
     protocol: HTTPS
     notes:
       事前確認: 要。プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。
+    refs:
+      - dev/設計書/外部ライブラリ/marked#
+      - dev/設計書/外部ライブラリ/DOMPurify#
+      - dev/設計書/外部ライブラリ/elkjs#
+      - dev/設計書/外部ライブラリ/mermaid#
+  - name: Google Fonts
+    purpose: プレビューの文字（Inter・Noto Sans JP・JetBrains Mono）の取得
+    direction: 受信のみ
+    protocol: HTTPS
+    detail: dev/設計書/外部API/GoogleFonts#
+    notes:
+      事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。
 lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
 constraints: |-
   - hooks・MCP サーバーを持たない
   - 他のスキル・外部の仕組みに依存しない
   - スキル・スクリプト・プレビューの中で、特定の開発基盤の名前を出さない
   - 常駐するサーバーを持たない（プレビューはファイルとして開く）
-  - ネットがある前提で、描画のライブラリは CDN から読む（埋め込む選択肢は持たない）
+  - ネットがある前提で、描画のライブラリは CDN から、文字は Google Fonts から読む（埋め込む選択肢は持たない）

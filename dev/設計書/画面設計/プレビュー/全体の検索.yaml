@@ -1,0 +1,22 @@
+title: "全体の検索"
+elements:
+  - name: 検索の言葉
+    kind: input
+    description: 空白で区切った語を全て含む項目を探す（大文字・小文字を区別しない）
+    io: 入力
+    type: 文字列
+    placeholder: ID・タイトル・本文で探す
+    autofocus: true
+    initial_value: 空
+  - name: 検索の結果
+    kind: list
+    description: 当たった項目の種類・ID・タイトル。押すか、上下の矢印で選んで Enter で、その項目のタブと詳細パネルを開き、検索を閉じる
+    io: 表示
+    source: プレビューを開く.mindmap-data（7 種類の項目と bodies）
+    visible_when: 検索の言葉が空でない（当たらないときは「該当する項目はありません。別の条件を試してください。」）
+  - name: 閉じる
+    kind: button
+    description: 検索を閉じる。Esc と外側の押下でも閉じる
+lead: 全種類の項目を ID・タイトル・本文で探すモーダル。トップバーの入口か `/` キーで開く。
+mock: dev/mock/pages/search/21/standard/index.html
+test_file: tests/integration/preview/test_search_screen.py

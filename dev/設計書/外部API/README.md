@@ -6,3 +6,4 @@
 
 | ページ | 概要 |
 | --- | --- |
+| [GoogleFonts](./GoogleFonts.yaml) | プレビューの文字（Inter・Noto Sans JP・JetBrains Mono）を配る |

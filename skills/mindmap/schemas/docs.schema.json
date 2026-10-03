@@ -26,7 +26,7 @@
         "updated",
         "kind",
         "deliverable",
-        "done",
+        "status",
         "body"
       ],
       "additionalProperties": false,
@@ -74,9 +74,14 @@
           "type": "boolean",
           "description": "ゴールで引き渡す成果物か"
         },
-        "done": {
-          "type": "boolean",
-          "description": "成果物ができたか"
+        "status": {
+          "type": "string",
+          "enum": [
+            "下書き",
+            "確認中",
+            "完成"
+          ],
+          "description": "資料の状態。成果物は `完成` でできたとみなす"
         },
         "body": {
           "type": "string",

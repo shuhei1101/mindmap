@@ -8,7 +8,14 @@ from typing import Any
 
 import yaml
 
-from .fixture_types import LockDirs, MakeItem, MakeWorkspace, RunMindmap, SnapshotTree
+from .fixture_types import (
+    LockDirs,
+    MakeItem,
+    MakeLegacyWorkspace,
+    MakeWorkspace,
+    RunMindmap,
+    SnapshotTree,
+)
 
 
 def _read_decisions(root: Path) -> list[dict[str, Any]]:
@@ -113,4 +120,26 @@ def test_error_when_write_fails(
     assert result.returncode == 1
     assert result.stderr.startswith("エラー: ")
     assert "Traceback" not in result.stderr
+    assert snapshot_tree(root) == before
+
+
+def test_error_when_legacy_format(
+    make_item: MakeItem,
+    make_legacy_workspace: MakeLegacyWorkspace,
+    run_mindmap: RunMindmap,
+    snapshot_tree: SnapshotTree,
+) -> None:
+    """資料の done が残るワークスペースでは何も書かず、migrate を案内して終わる（異常系）。"""
+    # 準備
+    root = make_legacy_workspace(make_item("D-1"), legacy_docs={"A-1": True})
+    before = snapshot_tree(root)
+    # 実行
+    result = run_mindmap(
+        "update", "D-1", "--workspace", str(root), stdin='{"answer": "種類ごとに分ける"}'
+    )
+    # 検証
+    assert result.returncode == 1
+    lines = result.stderr.splitlines()
+    assert any(line.startswith("docs.yaml: items[0]") for line in lines)
+    assert lines[-1] == "ヒント: 前の版の形式の記録は migrate で今の形式に移せます"
     assert snapshot_tree(root) == before

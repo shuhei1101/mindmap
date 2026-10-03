@@ -211,7 +211,7 @@ classes:
     title: スキーマに合わない
     container: skills/mindmap/scripts/errors.py
     usecase: 共通
-    summary: '書き込もうとした・書き出そうとしたワークスペースがスキーマに合わない。`lines` は問題ごとの `{ファイル名}: {キーのパス}: {理由}`'
+    summary: '書き込もうとした・書き出そうとしたワークスペースがスキーマに合わない。`lines` は問題ごとの `{ファイル名}: {キーのパス}: {理由}`。`legacy`（既定 `False`）は、問題に前の版の形式のものがあるか（ワークスペースを検証して送る側が `is_legacy_problem` で決める。`save_change`・`build_preview` が当たる）'
     kind: クラス
     inherits: MindmapError
   - name: ItemNotFoundError
@@ -233,6 +233,13 @@ classes:
     container: skills/mindmap/scripts/errors.py
     usecase: 共通
     summary: ファイルの書き込み・置き換えで `OSError` が起きた。後始末をした後に送る。メッセージに置き換え先のパスと `OSError` の理由（`raise ... from` で元の例外をつなぐ）
+    kind: クラス
+    inherits: MindmapError
+  - name: SummaryRequiredError
+    title: 題名が要る
+    container: skills/mindmap/scripts/errors.py
+    usecase: 記録の形式の移行
+    summary: 題名を持たないワークスペースを `--summary` 無しで移そうとした。入口は終了コード 2（引数の誤り）にする
     kind: クラス
     inherits: MindmapError
 constants:
@@ -305,6 +312,12 @@ constants:
     usecase: 共通
     summary: 置き換える前に書く一時ファイルの拡張子（置き換えるファイルと同じフォルダに作る）
     value: '".tmp"'
+  - name: LEGACY_HINT
+    title: 前の版の形式の案内
+    container: skills/mindmap/scripts/store.py
+    usecase: 記録の形式の移行
+    summary: 前の版の形式でスキーマに合わないときに続ける 1 行
+    value: '"ヒント: 前の版の形式の記録は migrate で今の形式に移せます"'
 functions:
   - name: kind_of_id
     title: ID の種類
@@ -879,6 +892,39 @@ functions:
         condition: '`parametrize`: `0o640` の置き換え先がある / 置き換え先が無く umask が `0o022`。Windows では skip'
         mock: なし（umask は `os.umask` で設定し、後で戻す）
         expected: 一時ファイルの権限が `0o640` / `0o644`
+  - name: is_legacy_problem
+    title: 前の版の形式の問題か
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 問題が、前の版の形式（資料の `done`・題名の無い設定）から来ているかを返す
+    args:
+      - name: problem
+        type: Problem
+        required: true
+        passing: positional
+        description: 問題
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: 問題を出したワークスペース
+    returns:
+      type: bool
+      description: 前の版の形式から来ていれば真
+    process: |-
+      1. `kind` が `schema` でない場合、偽を返す
+      2. `file` が `mindmap.yaml` の場合、`raw` の設定が辞書で `summary` を持たなければ真
+      3. `file` が `docs.yaml` で `id` がある場合、その ID の資料が `done` を持ち `status` を持たなければ真
+      4. それ以外は偽
+    unit_tests:
+      - name: test_is_legacy_problem
+        case: 正常
+        summary: 前の版の形式の問題を見分ける
+        condition: '`summary` を持たない設定と A-1（`done: true`）、`status` を `完了` にした D-1 を持つワークスペースを検証した問題。`parametrize`: `mindmap.yaml` の問題 / A-1 の問題 / D-1 の問題 / `kind: broken_ref` の問題'
+        mock: なし
+        expected: 真 / 真 / 偽 / 偽
 test_files:
   - tests/unit/scripts/test_kinds.py
   - tests/unit/scripts/test_store.py

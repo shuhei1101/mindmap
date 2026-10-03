@@ -1,0 +1,32 @@
+title: "つながり"
+elements:
+  - name: トップバー
+    kind: nav
+    component: dev/設計書/部品設計/プレビュー/トップバー.ts#
+    args:
+      - name: title
+        value: プレビューを開く.mindmap-data.settings.summary
+      - name: tabs
+        value: 概要と同じ
+      - name: current
+        value: graph
+      - name: theme
+        value: 概要と同じ
+    description: 全ての画面で共通の帯
+    visible_when: 常時
+  - name: 項目の種類
+    kind: checkbox
+    position: ツールバー
+    description: 種類ごと（検討事項・タスク・調査・資料・用語集・メモ・会話ログ）のチェックボックスで、表示 / 非表示を切り替える。表示中と非表示をチェックの有無と見た目で分ける
+    initial_value: 全て表示
+    visible_when: 常時
+  - name: 3D のキャンバス
+    id: graph-canvas
+    kind: canvas
+    description: 項目を平たい円、関連（依存・関連・根拠・進めるタスク）を線で、透視で描く。線の種類は実線・点線などの見た目で分ける。上下左右に回す・ホイールでマウスの位置へ寄る・背景のダブルクリックで戻る。向きは目標へ毎コマ少しずつ寄せ、離すと慣性でゆっくり止まり、操作が止まって少しすると、ごくゆっくり自動で回る。玉にカーソルを乗せるとつながる玉が距離の 1 割ほど寄り、押すとそこへ寄って詳細を開き、つながる線に小さな玉を流す
+    io: 表示
+    source: プレビューを開く.mindmap-data（7 種類の項目と `depends_on`・`related`・`sources`・`for`）
+    visible_when: 常時
+lead: 全種類の項目を関連でつないで 3D で描く画面。タブの帯の右端の入口から開く。
+mock: dev/mock/pages/graph/21/standard/index.html
+test_file: tests/integration/preview/test_graph_screen.py

@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from preview_helpers import preview_reflects_yaml
 from workspace_fixtures import MakeItem, MakeWorkspace, RunMindmap
 
 if TYPE_CHECKING:
@@ -21,11 +22,6 @@ PLACE = {"target": "mindmap", "category": "データ構造", "phase": "要件"}
 
 # 会話の日付
 TODAY = "2026-10-02"
-
-
-def _newest_yaml_mtime(root: Path) -> int:
-    """ワークスペースの YAML の更新時刻のうち、一番新しいものを返す。"""
-    return max(path.stat().st_mtime_ns for path in root.glob("*.yaml"))
 
 
 def test_normal(
@@ -103,8 +99,8 @@ def test_normal(
         "データ構造",
         "要件",
     ]
-    # preview.html が最後の書き込みより後に書き出されている
-    assert (root / "preview.html").stat().st_mtime_ns >= _newest_yaml_mtime(root)
+    # preview.html が最後の書き込みより後に書き出されている（埋め込んだ記録が今の YAML と同じ）
+    assert preview_reflects_yaml(root)
 
 
 def test_normal_when_diagram_kept_as_doc(
@@ -127,7 +123,7 @@ def test_normal_when_diagram_kept_as_doc(
             "title": "保存の流れ",
             "kind": "図",
             "deliverable": False,
-            "done": False,
+            "status": "下書き",
             "related": ["D-1"],
             "body_markdown": "```mermaid\nflowchart TD\n  A --> B\n```\n",
         },

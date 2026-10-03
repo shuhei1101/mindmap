@@ -26,16 +26,27 @@ def _read_embedded(html: str) -> dict[str, Any]:
     return json.loads(inner)
 
 
+def _write_preview_dir(preview_dir: Path, template: str) -> None:
+    """雛形のフォルダに template.html と、STYLE_FILES・SCRIPT_FILES の名前のファイルを書く。"""
+    preview_dir.mkdir(parents=True, exist_ok=True)
+    (preview_dir / "template.html").write_text(template, encoding="utf-8")
+    # 中身はファイル名のコメント（並びの順に差し込まれたかを見分けるため）
+    for name in (*builder.STYLE_FILES, *builder.SCRIPT_FILES):
+        path = preview_dir / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"/* {name} */", encoding="utf-8")
+
+
 @pytest.fixture
-def template_path(tmp_path: Path) -> Path:
-    """埋め込み先の要素だけを持つ雛形のファイルを作ってそのパスを返す。"""
-    path = tmp_path / "template.html"
-    path.write_text(builder.DATA_ELEMENT, encoding="utf-8")
-    return path
+def preview_dir(tmp_path: Path) -> Path:
+    """差し込み口と埋め込み先を持つ template.html と、空に近い CSS・JavaScript を置いた雛形のフォルダを返す。"""
+    folder = tmp_path / "preview"
+    _write_preview_dir(folder, f"{builder.STYLE_SLOT}{builder.DATA_ELEMENT}{builder.SCRIPT_SLOT}")
+    return folder
 
 
 def test_build_preview(
-    make_workspace: MakeWorkspace, make_item: MakeItem, template_path: Path
+    make_workspace: MakeWorkspace, make_item: MakeItem, preview_dir: Path
 ) -> None:
     """データを埋め込んだ preview.html を書く（正常系）。"""
     # 準備
@@ -46,7 +57,7 @@ def test_build_preview(
     )
     workspace = store.load_workspace(root)
     # 実行
-    path = builder.build_preview(workspace, built_at=BUILT_AT, template_path=template_path)
+    path = builder.build_preview(workspace, built_at=BUILT_AT, preview_dir=preview_dir)
     # 検証
     assert path == root / "preview.html"
     data = _read_embedded(path.read_text(encoding="utf-8"))
@@ -59,7 +70,7 @@ def test_build_preview_when_schema_mismatch(
     make_workspace: MakeWorkspace,
     make_item: MakeItem,
     snapshot_tree: SnapshotTree,
-    template_path: Path,
+    preview_dir: Path,
 ) -> None:
     """問題があれば前の preview.html を残す（異常系）。"""
     # 準備
@@ -69,7 +80,7 @@ def test_build_preview_when_schema_mismatch(
     before = snapshot_tree(root)
     # 実行・検証
     with pytest.raises(SchemaMismatchError):
-        builder.build_preview(workspace, built_at=BUILT_AT, template_path=template_path)
+        builder.build_preview(workspace, built_at=BUILT_AT, preview_dir=preview_dir)
     assert snapshot_tree(root) == before
 
 
@@ -78,7 +89,7 @@ def test_build_preview_when_replace_fails(
     make_item: MakeItem,
     snapshot_tree: SnapshotTree,
     failing_replace: FailingReplace,
-    template_path: Path,
+    preview_dir: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """置き換えに失敗したら前の preview.html を残す（異常系）。"""
@@ -91,7 +102,7 @@ def test_build_preview_when_replace_fails(
     monkeypatch.setattr(builder.os, "replace", failing_replace("preview.html"))
     # 実行・検証
     with pytest.raises(WriteFailedError):
-        builder.build_preview(workspace, built_at=BUILT_AT, template_path=template_path)
+        builder.build_preview(workspace, built_at=BUILT_AT, preview_dir=preview_dir)
     assert snapshot_tree(root) == before
     assert list(root.rglob("*.tmp")) == []
 
@@ -118,6 +129,7 @@ def test_collect_preview_data(make_workspace: MakeWorkspace, make_item: MakeItem
         "notes",
         "logs",
         "bodies",
+        "derived",
         "built_at",
     }
     assert data["bodies"] == {"A-1.md": "資料の本文\n"}
@@ -161,3 +173,107 @@ def test_embed_data_when_element_count_wrong(template: str, count_text: str) -> 
     # 実行・検証
     with pytest.raises(ValueError, match=count_text):
         builder.embed_data(template, {"a": 1})
+
+
+def test_assemble_template(preview_dir: Path) -> None:
+    """CSS と JavaScript を並びの順に差し込む（正常系）。"""
+    # 実行
+    html = builder.assemble_template(preview_dir=preview_dir)
+    # 検証
+    style = html.split('<style id="mindmap-style">', 1)[1].split("</style>", 1)[0]
+    script = html.split('<script id="mindmap-app">', 1)[1].split("</script>", 1)[0]
+    assert style == "\n".join(f"/* {name} */" for name in builder.STYLE_FILES)
+    assert script == "\n".join(f"/* {name} */" for name in builder.SCRIPT_FILES)
+    # 埋め込み先は空のまま
+    assert builder.DATA_ELEMENT in html
+
+
+@pytest.mark.parametrize(
+    ("kind", "closing_tag"),
+    [
+        pytest.param("style", "</STYLE>", id="style"),
+        pytest.param("script", "</script>", id="script"),
+    ],
+)
+def test_assemble_template_when_closing_tag(preview_dir: Path, kind: str, closing_tag: str) -> None:
+    """閉じタグを含むファイルは差し込まない（異常系）。"""
+    # 準備
+    file_name = builder.STYLE_FILES[0] if kind == "style" else builder.SCRIPT_FILES[0]
+    (preview_dir / file_name).write_text(f"x {closing_tag} y", encoding="utf-8")
+    # 実行・検証
+    with pytest.raises(ValueError, match=file_name):
+        builder.assemble_template(preview_dir=preview_dir)
+
+
+@pytest.mark.parametrize(
+    ("slot_kind", "count_text"),
+    [
+        pytest.param("style_slot_none", "0 個", id="style_slot_none"),
+        pytest.param("script_slot_two", "2 個", id="script_slot_two"),
+    ],
+)
+def test_assemble_template_when_slot_count_wrong(
+    tmp_path: Path, slot_kind: str, count_text: str
+) -> None:
+    """差し込み口が 1 つでない雛形は受け付けない（異常系）。"""
+    # 準備
+    if slot_kind == "style_slot_none":
+        template = f"{builder.DATA_ELEMENT}{builder.SCRIPT_SLOT}"
+    else:
+        template = f"{builder.STYLE_SLOT}{builder.DATA_ELEMENT}{builder.SCRIPT_SLOT * 2}"
+    folder = tmp_path / "preview"
+    _write_preview_dir(folder, template)
+    # 実行・検証
+    with pytest.raises(ValueError, match=count_text):
+        builder.assemble_template(preview_dir=folder)
+
+
+def test_derive_preview_values(
+    make_workspace: MakeWorkspace, make_item: MakeItem, valid_settings: dict[str, Any]
+) -> None:
+    """コマンドと同じ答えをまとめる（正常系）。"""
+    # 準備
+    settings = {
+        **valid_settings,
+        "phases": ["目的", "要件"],
+        "categories": [
+            {"name": "A", "target": "mindmap", "summary": "カテゴリー A"},
+            {"name": "B", "target": "mindmap", "summary": "カテゴリー B"},
+        ],
+        "goal": {"phase": "要件", "summary": "要件が決まる", "deliverables": []},
+    }
+    root = make_workspace(
+        make_item("D-1", category="A", phase="目的", status="決定済み"),
+        make_item("D-2", category="A", phase="要件", status="未決定", depends_on=["D-1"]),
+        make_item("D-3", category="B", phase="要件", status="対象外"),
+        settings=settings,
+    )
+    workspace = store.load_workspace(root)
+    # 実行
+    derived = builder.derive_preview_values(workspace)
+    # 検証
+    assert [candidate["id"] for candidate in derived["next"]] == ["D-2"]
+    assert derived["goal"]["phase_progress"] == [
+        {"phase": "目的", "settled": 1, "total": 1},
+        {"phase": "要件", "settled": 1, "total": 2},
+    ]
+    assert derived["progress"] == [
+        {
+            "category": "A",
+            "cells": [
+                {"phase": "目的", "settled": 1, "total": 1},
+                {"phase": "要件", "settled": 0, "total": 1},
+            ],
+            "settled": 1,
+            "total": 2,
+        },
+        {
+            "category": "B",
+            "cells": [
+                {"phase": "目的", "settled": 0, "total": 0},
+                {"phase": "要件", "settled": 1, "total": 1},
+            ],
+            "settled": 1,
+            "total": 1,
+        },
+    ]

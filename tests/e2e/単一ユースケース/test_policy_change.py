@@ -98,7 +98,7 @@ def test_normal_when_deliverable_no_longer_needed(
         },
     }
     root = make_workspace(
-        make_item("A-1", deliverable=True, done=False),
+        make_item("A-1", deliverable=True, status="確認中"),
         settings=settings,
         bodies={"A-1.md": "構成図の本文"},
     )

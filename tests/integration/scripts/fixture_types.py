@@ -4,12 +4,20 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from workspace_fixtures import MakeItem, MakeVenv, MakeWorkspace, RunMindmap, SnapshotTree
+from workspace_fixtures import (
+    MakeItem,
+    MakeLegacyWorkspace,
+    MakeVenv,
+    MakeWorkspace,
+    RunMindmap,
+    SnapshotTree,
+)
 
 __all__ = [
     "FindOldPython",
     "LockDirs",
     "MakeItem",
+    "MakeLegacyWorkspace",
     "MakeVenv",
     "MakeWorkspace",
     "RunMindmap",

@@ -1,0 +1,5 @@
+summary: "画面の要素が使う部品の引数・イベント・状態（Storybook のストーリー）"
+docs_index: true
+items:
+  - page: プレビュー/
+    summary: プレビューの画面が共通で使う部品

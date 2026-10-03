@@ -11,7 +11,7 @@ import yaml
 
 import commands
 from errors import ItemNotFoundError, OptionNotFoundError, SchemaMismatchError
-from fixture_types import MakeItem, MakeWorkspace
+from fixture_types import MakeItem, MakeLegacyWorkspace, MakeWorkspace
 from query import SearchFilter
 
 # now の代わりに返す日時
@@ -275,6 +275,20 @@ def test_run_check_when_problems(make_workspace: MakeWorkspace, make_item: MakeI
     assert exit_code == 1
 
 
+def test_run_check_when_legacy_format(make_legacy_workspace: MakeLegacyWorkspace) -> None:
+    """前の版の形式の問題に migrate を案内する（正常系）。"""
+    # 準備
+    root = make_legacy_workspace(legacy_docs={"A-1": True})
+    # 実行
+    payload, exit_code = commands.run_check(root)
+    # 検証
+    assert payload["ok"] is False
+    assert exit_code == 1
+    details = [problem["detail"] for problem in payload["problems"] if problem["id"] == "A-1"]
+    assert details != []
+    assert all(detail.endswith("（migrate で今の形式に移せます）") for detail in details)
+
+
 def test_run_build(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
     """書き出したパスを返す（正常系）。"""
     # 準備
@@ -394,3 +408,16 @@ def test_run_goal(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
         "remaining_decisions",
         "remaining_deliverables",
     } <= set(payload)
+
+
+def test_run_migrate(make_legacy_workspace: MakeLegacyWorkspace) -> None:
+    """移したものを返す（正常系）。"""
+    # 準備
+    root = make_legacy_workspace(legacy_docs={"A-1": False})
+    # 実行
+    payload, exit_code = commands.run_migrate(root, summary=None)
+    # 検証
+    assert exit_code == 0
+    assert payload == {
+        "migrated": [{"id": "A-1", "file": "docs.yaml", "change": "done: false → status: 下書き"}]
+    }

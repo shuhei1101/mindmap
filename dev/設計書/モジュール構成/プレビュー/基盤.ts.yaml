@@ -1,0 +1,663 @@
+title: "プレビュー / 基盤"
+lead: 画面が共通で使う土台。記録の索引と画面に出す値の計算、描画のライブラリの呼び出しと読めないときの知らせ、URL のハッシュと履歴を持つ。
+directory: |-
+  ```
+  tsconfig.json      tsc の設定（リポジトリの直下。外部ライブラリ『typescript』）
+  skills/mindmap/preview/
+    core/
+      globals.d.ts   描画のライブラリ（marked・DOMPurify・ELK・mermaid）のグローバルに npm の型を割り当てる（出力しない）
+      dom.ts         要素の組み立て（`h`）・アイコン・状態の印など、画面が共通で使う DOM の部品
+      records.ts     記録の索引・関係する項目・検索（次の候補・ゴールまで・進み具合は build が計算した `derived` を使う）
+      libs.ts        描画のライブラリの有無と呼び出し（Markdown・図・配置）
+      router.ts      URL のハッシュの読み書きと履歴
+  ```
+
+  全ての `.ts` は import / export を持たない script で、`namespace MindmapPreview` の下に関数を置く。読んだだけでは DOM に触らない。
+  `tsc -p .` が `.ts` と同じ階層に即時実行関数の形の `.js` を出し、その `.js` を commit する。各 `.js` が名前空間を無ければ作り、あれば足すので、名前空間を作るだけのファイルは要らない。build はこの `.js` をつないで雛形に差し込む（モジュール構成『ビルド』の `SCRIPT_FILES`）。
+data_models:
+  - name: RecordIndex
+    title: 記録の索引
+    container: skills/mindmap/preview/core/records.ts
+    usecase: 共通
+    summary: 埋め込みのデータを ID で引けるようにし、参照の逆向きを持つ
+    properties:
+      - name: data
+        type: object
+        description: 埋め込みのデータ（`settings`・7 種類・`bodies`・`derived`・`built_at`）そのもの。次の候補・ゴールまで・進み具合は `derived` をそのまま使い、画面で計算し直さない
+      - name: byId
+        type: Map<string, {kind, item}>
+        description: ID → 種類と項目
+      - name: referencedBy
+        type: Map<string, string[]>
+        description: ID → その項目を `depends_on`・`for`・`related`・`sources` で指す項目の ID（ID の順）
+      - name: readyIds
+        type: Set<string>
+        description: 着手できる検討事項の ID（`data.derived.next` の ID。表の「着手できる」の列が使う）
+  - name: Route
+    title: 画面の場所
+    container: skills/mindmap/preview/core/router.ts
+    usecase: 共通
+    summary: URL のハッシュが指す画面・表示形式・項目・絞り込み（インターフェース定義『プレビューを開く』のリクエスト）
+    properties:
+      - name: tab
+        type: "'overview' | 'decisions' | 'tasks' | 'research' | 'docs' | 'terms' | 'notes' | 'logs' | 'graph'"
+        description: 画面
+      - name: view
+        type: "'map' | 'board' | 'cards' | 'table'"
+        description: 表示形式
+      - name: id
+        type: string | null
+        description: 開いている項目
+      - name: full
+        type: boolean
+        description: 詳細を全画面で開いているか
+      - name: filters
+        type: Record<string, string[]>
+        description: 開いたときの `f.{列}`（書き戻さない）
+constants:
+  - name: DEFAULT_VIEW
+    title: 画面ごとの既定の表示形式
+    container: skills/mindmap/preview/core/router.ts
+    usecase: 共通
+    summary: '`tab` → 既定の `view`'
+    entries:
+      - key: decisions
+        value: map
+      - key: tasks
+        value: board
+      - key: docs
+        value: cards
+      - key: そのほか
+        value: table
+  - name: VIEWS_OF
+    title: 画面が持つ表示形式
+    container: skills/mindmap/preview/core/router.ts
+    usecase: 共通
+    summary: '`tab` → 切り替えられる `view` の並び'
+    entries:
+      - key: decisions
+        value: '["map", "board", "table"]'
+      - key: tasks
+        value: '["board", "table"]'
+      - key: docs
+        value: '["cards", "table"]'
+      - key: そのほか
+        value: '["table"]'
+  - name: LIBRARIES
+    title: 描画のライブラリ
+    container: skills/mindmap/preview/core/libs.ts
+    usecase: 共通
+    summary: ライブラリの名前 → 読めたときに置かれるグローバル
+    entries:
+      - key: marked
+        value: marked
+      - key: DOMPurify
+        value: DOMPurify
+      - key: elkjs
+        value: ELK
+      - key: mermaid
+        value: mermaid
+functions:
+  - name: buildIndex
+    title: 記録の索引を作る
+    kind: 関数
+    container: skills/mindmap/preview/core/records.ts
+    usecase: 共通
+    scope: public
+    summary: 埋め込みのデータから `RecordIndex` を作る
+    args:
+      - name: data
+        type: object
+        required: true
+        passing: positional
+        description: '`mindmap-data` を `JSON.parse` した値'
+    returns:
+      type: RecordIndex
+      description: 索引
+    process: |-
+      1. 7 種類の項目を ID で `byId` に入れる
+      2. 各項目の `depends_on`・`for`・`related`・`sources` が指す ID ごとに、指した側の ID を `referencedBy` に足す（記録に無い ID もそのまま持つ）
+      3. `derived.next` の ID を `readyIds` に入れる
+    unit_tests:
+      - name: test_build_index
+        case: 正常
+        summary: ID で引け、参照元を逆に引ける
+        condition: 'D-1・D-2（`depends_on: [D-1]`）・T-1（`for: [D-1]`）を持ち、`derived.next` が D-1 だけのデータ'
+        mock: なし
+        expected: '`byId.get("T-1").kind` が `tasks`。`referencedBy.get("D-1")` が `["D-2", "T-1"]`。`readyIds` が D-1 だけ'
+  - name: relatedItems
+    title: 関係する項目
+    kind: 関数
+    container: skills/mindmap/preview/core/records.ts
+    usecase: 項目の詳細を読む
+    scope: public
+    summary: 詳細パネルに出す前提・後続・関連タスク・経緯・関連・参照している項目を返す
+    args:
+      - name: id
+        type: string
+        required: true
+        passing: keyword
+        description: 項目の ID
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: keyword
+        description: 索引
+    returns:
+      type: '{prerequisites, successors, tasks, logs, related, referencedBy}'
+      description: それぞれ ID の並び。前提は `depends_on`、後続はその逆向き、関連タスクは `for` で指すタスク、経緯は `related` で指す会話ログ、参照している項目はそれ以外の `referencedBy`
+    unit_tests:
+      - name: test_related_items
+        case: 正常
+        summary: 関係の種類ごとに分ける
+        condition: 'D-2（`depends_on: [D-1]`）・T-1（`for: [D-1]`）・L-1（`related: [D-1]`）・N-1（`related: [D-1]`）と D-1（`depends_on: [D-0]`）'
+        mock: なし
+        expected: D-1 の `prerequisites` が D-0、`successors` が D-2、`tasks` が T-1、`logs` が L-1、`referencedBy` が N-1
+  - name: searchItems
+    title: 全体の検索
+    kind: 関数
+    container: skills/mindmap/preview/core/records.ts
+    usecase: 項目を検索する
+    scope: public
+    summary: 空白で区切った語を全て含む項目を返す
+    args:
+      - name: query
+        type: string
+        required: true
+        passing: keyword
+        description: 検索の言葉
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: keyword
+        description: 索引
+    returns:
+      type: '{id, kind, title}[]'
+      description: ID・タイトル・項目の文字の値・本文（`bodies`）のどこかに語が全てある項目。大文字・小文字を区別しない。種類の順 → 連番の順。言葉が空なら空
+    unit_tests:
+      - name: test_search_items
+        case: 正常
+        summary: 全ての語を含む項目を返す
+        condition: '`parametrize`: `"d-1"` / 本文にだけある語 / 2 語のうち 1 語だけ含む項目 / 空白だけ'
+        mock: なし
+        expected: D-1 / その項目 / 返らない / 空
+  - name: missingLibraries
+    title: 読めなかったライブラリ
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.ts
+    usecase: 共通
+    scope: public
+    summary: 渡したライブラリのうち、グローバルが無いものの名前を返す
+    args:
+      - name: names
+        type: string[]
+        required: true
+        passing: positional
+        description: '`LIBRARIES` のキー'
+    returns:
+      type: string[]
+      description: 読めなかったライブラリの名前（渡した順）
+    unit_tests:
+      - name: test_missing_libraries
+        case: 正常
+        summary: グローバルが無いものだけ返す
+        condition: '`window.marked` だけを置いて `["marked", "DOMPurify"]`'
+        mock: なし
+        expected: '`["DOMPurify"]`'
+  - name: libraryNotice
+    title: 読めなかったライブラリの知らせ
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.ts
+    usecase: 共通
+    scope: public
+    summary: 読めなかったライブラリの名前を出す `role="alert"` の要素を返す
+    args:
+      - name: names
+        type: string[]
+        required: true
+        passing: keyword
+        description: 読めなかったライブラリの名前
+      - name: what
+        type: string
+        required: true
+        passing: keyword
+        description: 表示できないもの（本文・図・マップ）
+    returns:
+      type: HTMLElement
+      description: '`{what}を表示できません。読めなかったライブラリ: {名前を「・」でつなぐ}` と、通信を確かめて読み込み直すよう促す文を持つ要素（文字は `textContent` で入れる）'
+    unit_tests:
+      - name: test_library_notice
+        case: 正常
+        summary: 名前を並べた知らせを返す
+        condition: '`{names: ["marked", "DOMPurify"], what: "本文"}`'
+        mock: なし
+        expected: '`role` が `alert` で、文字に `読めなかったライブラリ: marked・DOMPurify`'
+  - name: renderMarkdown
+    title: 本文を描く
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.ts
+    usecase: 項目の詳細を読む
+    scope: public
+    summary: 本文の Markdown を無害化した要素にする。mermaid のコードブロックは図の入れ物に置き換える
+    args:
+      - name: source
+        type: string
+        required: true
+        passing: positional
+        description: 本文の Markdown
+    returns:
+      type: HTMLElement
+      description: 描いた本文。marked か DOMPurify が読めないときは、`libraryNotice` と原文の `pre` を持つ要素
+    process: |-
+      1. marked・DOMPurify が読めたか確かめる（`missingLibraries`）
+         - 読めていない場合、知らせと原文を返す（本文に mermaid のコードブロックがあり mermaid も読めていなければ名前に足す）
+      2. `marked.parse` した HTML を `DOMPurify.sanitize` して要素に入れる
+      3. `language-mermaid` のコードブロックを、原文を `data-source` に持つ図の入れ物に置き換える（描くのは `renderDiagrams`）
+    unit_tests:
+      - name: test_render_markdown
+        case: 正常
+        summary: 無害化して描き、図の入れ物を作る
+        condition: 見出し・表・`<img src=x onerror=alert(1)>`・mermaid のコードブロックを持つ本文。marked・DOMPurify はリポジトリの外部ライブラリの設計書の版を `page.route` で返す
+        mock: 描画のライブラリの配信元（`page.route`）
+        expected: '`h1`・`table` があり、`onerror` が無く、図の入れ物が 1 つで `data-source` に原文'
+      - name: test_render_markdown_when_library_missing
+        case: 正常
+        summary: ライブラリが無ければ知らせと原文
+        condition: marked を読まない。本文に mermaid のコードブロック
+        mock: なし
+        expected: '`role="alert"` に `marked`・`DOMPurify`・`mermaid`、`pre` に原文'
+  - name: renderDiagrams
+    title: 図を描く
+    kind: 関数
+    container: skills/mindmap/preview/core/libs.ts
+    usecase: 項目の詳細を読む
+    scope: public
+    is_async: true
+    summary: 要素の中の図の入れ物を mermaid で SVG に描く
+    args:
+      - name: root
+        type: HTMLElement
+        required: true
+        passing: positional
+        description: '`renderMarkdown` の戻り値'
+    returns:
+      type: Promise<void>
+      description: 全て描き終えたら解決する
+    process: |-
+      1. mermaid が読めていない場合、各入れ物に知らせ（`libraryNotice({names: ["mermaid"], what: "図"})`）と原文を入れる
+      2. 初めて描くときに `mermaid.initialize({startOnLoad: false, securityLevel: "strict", theme: "base"})` を呼ぶ
+      3. 入れ物ごとに `mermaid.render` した SVG を入れる
+         - 描けなかった場合、その入れ物に描けなかったことと原文を入れる（ほかの図は続ける）
+    unit_tests:
+      - name: test_render_diagrams
+        case: 正常
+        summary: 図を SVG に描き、描けない図は原文を残す
+        condition: 正しいフローチャートと、構文の誤った図の入れ物。mermaid は `page.route` で返す
+        mock: 描画のライブラリの配信元（`page.route`）
+        expected: 1 つ目に `svg`、2 つ目に描けなかったことと原文
+  - name: parseHash
+    title: ハッシュを読む
+    kind: 関数
+    container: skills/mindmap/preview/core/router.ts
+    usecase: 共通
+    scope: public
+    summary: URL のハッシュを `Route` にする
+    args:
+      - name: hash
+        type: string
+        required: true
+        passing: keyword
+        description: '`location.hash`'
+      - name: index
+        type: RecordIndex
+        required: true
+        passing: keyword
+        description: 索引（`id` が記録にあるかを見る）
+    returns:
+      type: Route
+      description: 画面の場所
+    process: |-
+      1. `#` の後ろを `URLSearchParams` で読む
+      2. `tab` が画面の値でなければ `overview`、`view` が `VIEWS_OF` に無ければ `DEFAULT_VIEW`
+      3. `id` が記録に無ければ `null`。`full` は `id` があり `1` のときだけ真
+      4. `f.` で始まるキーを `filters` に、値を `|` で分けて入れる
+    unit_tests:
+      - name: test_parse_hash
+        case: 正常
+        summary: 既定と誤った値を扱う
+        condition: '`parametrize`: 空 / `#tab=decisions&view=table&id=D-1&f.status=要見直し|保留` / `#tab=nope&view=cards` / `#tab=decisions&id=D-99&full=1` / `#tab=tasks&view=map`'
+        mock: なし
+        expected: 'overview・table・null / decisions・table・D-1・`{status: [要見直し, 保留]}` / overview・table / decisions・map・null・full 偽 / tasks・board'
+  - name: toHash
+    title: ハッシュを作る
+    kind: 関数
+    container: skills/mindmap/preview/core/router.ts
+    usecase: 共通
+    scope: public
+    summary: '`Route` を URL のハッシュにする（既定の値と `filters` は書かない）'
+    args:
+      - name: route
+        type: Route
+        required: true
+        passing: positional
+        description: 画面の場所
+    returns:
+      type: string
+      description: '`#tab=...&view=...&id=...&full=1` の形。全て既定なら空文字'
+    unit_tests:
+      - name: test_to_hash
+        case: 正常
+        summary: 既定の値を書かない
+        condition: '`parametrize`: 概要の既定 / 検討事項の表で D-1 を全画面、`filters` あり'
+        mock: なし
+        expected: 空 / `#tab=decisions&view=table&id=D-1&full=1`（`f.` を含まない）
+  - name: navigate
+    title: 画面を移る
+    kind: 関数
+    container: skills/mindmap/preview/core/router.ts
+    usecase: 共通
+    scope: public
+    summary: ハッシュを書き換え、履歴に積むか置き換える
+    side_effects: '`history.pushState` か `history.replaceState`'
+    args:
+      - name: route
+        type: Route
+        required: true
+        passing: keyword
+        description: 移る先
+      - name: push
+        type: boolean
+        required: true
+        passing: keyword
+        description: 履歴に積むか（画面の移動・項目の移動・幅 900px 以下で詳細パネルを開くときは真。表示形式の切り替え・詳細パネルの開閉・重ねる画面の開閉は偽）
+    returns:
+      type: void
+      description: '-'
+    unit_tests:
+      - name: test_navigate
+        case: 正常
+        summary: 積むか置き換えるかで履歴の長さが変わる
+        condition: '`parametrize`: `push` 真 / 偽'
+        mock: なし
+        expected: '`history.length` が 1 増える / 変わらず、`location.hash` が `toHash` の値'
+  - name: h
+    title: 要素を作る
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 要素を作り、属性とイベントのリスナーを付け、子を並べる
+    args:
+      - name: tag
+        type: keyof HTMLElementTagNameMap
+        required: true
+        passing: keyword
+        description: 要素の名前
+      - name: attrs
+        type: Record<string, string | number | boolean | null | undefined | EventListener>
+        required: false
+        passing: keyword
+        description: 属性。`on` で始まる名前の関数はそのイベントのリスナーとして付ける。`class` は `className`、`true` は値の無い属性にする。`null`・`undefined`・`false` は付けない
+      - name: children
+        type: (Node | string | number | null | undefined | false)[]
+        required: false
+        passing: keyword
+        description: 子。文字と数は文字として入れ、`null`・`undefined`・`false` は入れない
+    returns:
+      type: HTMLElementTagNameMap[tag]
+      description: 作った要素
+    unit_tests:
+      - name: test_h
+        case: 正常
+        summary: 属性・リスナー・子を付けた要素を返す
+        condition: '`{tag: "button", attrs: {class: "b", disabled: true, title: null, hidden: false, onclick: 数える関数}, children: ["a", 1, null, false, 要素]}` で作り、click のイベントを送る'
+        mock: なし
+        expected: '`className` が `b`、`disabled` が空の値で付き、`title`・`hidden` は無い。子は `a`・`1`・要素の 3 つ。関数が 1 回呼ばれる'
+  - name: append
+    title: 子を足す
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 要素の中に子を足す
+    args:
+      - name: parent
+        type: Element
+        required: true
+        passing: keyword
+        description: 足す先
+      - name: children
+        type: (Node | string | number | null | undefined | false)[]
+        required: true
+        passing: keyword
+        description: '`h` の `children` と同じ扱い'
+    returns:
+      type: void
+      description: '-'
+    unit_tests:
+      - name: test_append
+        case: 正常
+        summary: 偽の値を除いて末尾に足す
+        condition: 子を 1 つ持つ要素に `["x", 0, undefined, false]`
+        mock: なし
+        expected: 子が `元の子・x・0` の 3 つ
+  - name: icon
+    title: アイコン
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 24px の枠に描いた線のアイコン。読み上げ名は付けず、装飾として隠す
+    args:
+      - name: name
+        type: IconName（画面が使うアイコンの名前）
+        required: true
+        passing: positional
+        description: アイコンの名前
+    returns:
+      type: SVGSVGElement
+      description: '`class="icon"`・`viewBox="0 0 24 24"`・`aria-hidden="true"` の SVG'
+    unit_tests:
+      - name: test_icon
+        case: 正常
+        summary: 装飾として隠した SVG を返す
+        condition: '`"search"`'
+        mock: なし
+        expected: '`svg.icon` で `aria-hidden` が `true`、子の図形を 1 つ以上持つ'
+  - name: statusMark
+    title: 状態の印
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 状態ごとの印（色と形）を 10px の枠に描く。検討事項・タスク・資料の状態を持つ
+    args:
+      - name: status
+        type: string | undefined
+        required: true
+        passing: positional
+        description: 項目の状態
+    returns:
+      type: SVGSVGElement | null
+      description: '`class="mark"` の SVG。知らない状態・`undefined` は `null`'
+    unit_tests:
+      - name: test_status_mark
+        case: 正常
+        summary: 知っている状態だけ印を返す
+        condition: '`parametrize`: `決定済み` / `要見直し` / `完成` / `知らない` / `undefined`'
+        mock: なし
+        expected: '`svg.mark` / `svg.mark` / `svg.mark` / `null` / `null`'
+  - name: statusBadge
+    title: 状態の表示
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 状態の印と名前を並べる
+    args:
+      - name: status
+        type: string | undefined
+        required: true
+        passing: positional
+        description: 項目の状態
+    returns:
+      type: Node
+      description: '`span.st`（`data-st` に状態）。`undefined` は空の断片'
+    unit_tests:
+      - name: test_status_badge
+        case: 正常
+        summary: 印と名前を並べ、状態が無ければ空
+        condition: '`parametrize`: `未決定` / `undefined`'
+        mock: なし
+        expected: '`span.st` で `data-st` が `未決定`、文字が `未決定`、`svg.mark` を持つ / 子の無い断片'
+  - name: impactBadge
+    title: 影響度の表示
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 影響度（大・中・小）を 3 本の目盛りと文字で表す
+    args:
+      - name: weight
+        type: string | undefined
+        required: true
+        passing: positional
+        description: 影響度
+    returns:
+      type: Node
+      description: '`span.impact`。大は 3 本・中は 2 本・小は 1 本の目盛りを `on` にする。大・中・小のどれでもない値と `undefined` は空の断片'
+    unit_tests:
+      - name: test_impact_badge
+        case: 正常
+        summary: 影響度ごとの目盛りの数
+        condition: '`parametrize`: `大` / `中` / `小` / `知らない` / `undefined`'
+        mock: なし
+        expected: '`on` の目盛りが 3 / 2 / 1 本 / 空の断片 / 空の断片'
+  - name: tagList
+    title: タグの並び
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: タグを `span.tag` で並べる
+    args:
+      - name: values
+        type: readonly string[] | undefined
+        required: true
+        passing: positional
+        description: タグ
+    returns:
+      type: Node
+      description: タグごとの `span.tag` を持つ断片
+    unit_tests:
+      - name: test_tag_list
+        case: 正常
+        summary: タグの数だけ並べる
+        condition: '`parametrize`: `["UI", "性能"]` / `undefined`'
+        mock: なし
+        expected: '`span.tag` が 2 つで文字が `UI`・`性能` / 子の無い断片'
+  - name: deliverableBadge
+    title: 成果物の印
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 成果物の資料に付ける印（箱のアイコンと「成果物」）
+    args: []
+    returns:
+      type: HTMLElement
+      description: '`span.deliv-badge`'
+    unit_tests:
+      - name: test_deliverable_badge
+        case: 正常
+        summary: アイコンと文字を持つ
+        condition: 引数なし
+        mock: なし
+        expected: '`span.deliv-badge` が `svg.icon` と文字 `成果物` を持つ'
+  - name: emptyNote
+    title: 空のときの 1 行
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 一覧が空のときに出す 1 行（「該当なし」など）
+    args:
+      - name: text
+        type: string
+        required: true
+        passing: positional
+        description: 出す文
+    returns:
+      type: HTMLElement
+      description: '`p.empty`'
+    unit_tests:
+      - name: test_empty_note
+        case: 正常
+        summary: 文を持つ段落を返す
+        condition: '`"該当なし"`'
+        mock: なし
+        expected: '`p.empty` の文字が `該当なし`'
+  - name: enableDragScroll
+    title: 背景のドラッグで動かす
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: スクロールする要素を、押せるもの（button・a・input・label）の上でない所の左ボタンのドラッグで動かせるようにする
+    side_effects: 要素にポインターのリスナーを付ける。ドラッグの間は `dragging` のクラスを付ける
+    args:
+      - name: scroller
+        type: HTMLElement
+        required: true
+        passing: positional
+        description: スクロールする要素（ボード・マップ）
+    returns:
+      type: void
+      description: '-'
+    unit_tests:
+      - name: test_enable_drag_scroll
+        case: 正常
+        summary: 背景のドラッグで動き、ボタンの上では動かない
+        condition: '`parametrize`: 背景で押して左へ 50px・上へ 30px 動かす / ボタンの上で押して同じだけ動かす'
+        mock: なし
+        expected: '`scrollLeft` が 50・`scrollTop` が 30 増え、離すと `dragging` が外れる / `scrollLeft`・`scrollTop` が変わらない'
+  - name: markSelected
+    title: 選択中の印を付け替える
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: 詳細パネルで開いている項目を持ち、描いてある行・カード・節（`main [data-id]`）の `selected` を付け替える
+    side_effects: 開いている項目の ID を持ち替え、`main [data-id]` のクラスを書き換える
+    args:
+      - name: id
+        type: string | null
+        required: true
+        passing: positional
+        description: 開いた項目の ID。閉じたときは `null`
+    returns:
+      type: void
+      description: '-'
+    unit_tests:
+      - name: test_mark_selected
+        case: 正常
+        summary: 開いた項目だけに印が付き、持った ID を引ける
+        condition: '`main` の中に `data-id` が D-1・D-2 の要素を置き、`parametrize`: `"D-2"` / `null`'
+        mock: なし
+        expected: D-2 だけが `selected`・`currentSelection()` が `D-2` / どれも `selected` でなく、`currentSelection()` が `null`
+  - name: currentSelection
+    title: 開いている項目
+    kind: 関数
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    scope: public
+    summary: '`markSelected` が最後に受けた ID を返す。描き直した行・カードに「選択中」の印を付けるのに使う'
+    args: []
+    returns:
+      type: string | null
+      description: 開いている項目の ID
+test_files:
+  - tests/unit/preview/test_records.py
+  - tests/unit/preview/test_libs.py
+  - tests/unit/preview/test_router.py
+  - tests/unit/preview/test_dom.py

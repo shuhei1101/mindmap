@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import os
 import re
 import stat
@@ -198,6 +199,39 @@ def test_validate_workspace_when_top_level_invalid(make_workspace, text: str) ->
     assert problems[0].file == "decisions.yaml"
     assert problems[0].kind == "schema"
     assert problems[0].key == "(全体)"
+
+
+@pytest.mark.parametrize(
+    ("file_name", "item_id", "kind", "expected"),
+    [
+        pytest.param("mindmap.yaml", None, "schema", True, id="settings"),
+        pytest.param("docs.yaml", "A-1", "schema", True, id="legacy_doc"),
+        pytest.param("decisions.yaml", "D-1", "schema", False, id="decision"),
+        pytest.param("docs.yaml", "A-1", "broken_ref", False, id="broken_ref"),
+    ],
+)
+def test_is_legacy_problem(
+    make_legacy_workspace,
+    make_item,
+    file_name: str,
+    item_id: str | None,
+    kind: str,
+    expected: bool,
+) -> None:
+    """前の版の形式の問題を見分ける（正常系）。"""
+    # 準備
+    root = make_legacy_workspace(
+        make_item("D-1", status="完了"), legacy_docs={"A-1": True}, without_summary=True
+    )
+    workspace = store.load_workspace(root)
+    problems = store.validate_workspace(workspace)
+    problem = next(p for p in problems if p.file == file_name and p.id == item_id)
+    # 種類だけを差し替えた問題にする
+    problem = dataclasses.replace(problem, kind=kind)
+    # 実行
+    result = store.is_legacy_problem(problem, workspace)
+    # 検証
+    assert result is expected
 
 
 @pytest.mark.parametrize(

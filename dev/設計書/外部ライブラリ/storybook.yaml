@@ -1,0 +1,76 @@
+title: "storybook"
+kind: "フレームワーク"
+version:
+  current: 10.6.1
+  latest: 10.6.1
+  checked_on: '2026-10-02'
+  source: package.json
+  pinning: '`storybook`・`@storybook/html-vite` を 10.6.1、`vite` を 8.3.2 に固定する（`^` を付けない）'
+catalogs:
+  - name: コマンド
+    version: 10.6.1
+    entries:
+      - name: storybook dev
+        kind: コマンド
+        purpose: 部品のストーリーを開発サーバーで開く
+      - name: storybook build
+        kind: コマンド
+        purpose: ストーリーを静的なファイルに書き出す
+  - name: 設定
+    version: 10.6.1
+    entries:
+      - name: framework
+        kind: 設定
+        purpose: '`@storybook/html-vite` を使う'
+      - name: staticDirs
+        kind: 設定
+        purpose: 部品の CSS・JavaScript をそのまま配る
+      - name: previewHead
+        kind: 設定
+        purpose: 部品と描画のライブラリの script 要素をストーリーの画面に差し込む
+      - name: core.disableTelemetry
+        kind: 設定
+        purpose: 利用状況の送信を止める
+  - name: API
+    version: 10.6.1
+    entries:
+      - name: render
+        kind: 関数
+        purpose: ストーリーの `args` で部品の関数を呼び、返った要素を描く
+      - name: play
+        kind: 関数
+        purpose: ストーリーの中でクリックなどの操作と確かめを書く
+lead: UI の部品を状態ごとのストーリーとして一覧・操作できる開発用のツール。素の HTML / JavaScript の framework（`@storybook/html-vite`）とビルダーの Vite を含む。
+purl: pkg:npm/storybook
+dependency_scope: 開発のみ
+adoption: 採用
+used_in:
+  - .storybook/main.js
+upstream: storybookjs/storybook
+verification:
+  state: 済
+  date: '2026-10-02'
+  detail: Node 24.14.0 で storybook 10.6.1・@storybook/html-vite 10.6.1・vite 8.3.2 を入れ、classic script の部品（表示形式の切り替えを「引数を受けて要素を返す関数」にしたもの）を `staticDirs` で配り `previewHead` で読む構成を `storybook build` した。Chromium で 2 つのストーリーが `args` どおりの `aria-pressed` で描かれ、クリックで切り替わり、雛形から取り出した描画のライブラリの script 要素（marked）が読め、コンソールのエラーが 0 であることを確かめた
+license: MIT（storybook・@storybook/html-vite・vite。開発用だけで配る物に入らない）
+official_url: https://storybook.js.org/
+docs_url: https://storybook.js.org/docs
+selection:
+  candidates: '`@storybook/server-webpack5`・`@storybook/html-vite`・`@storybook/web-components-vite`・`storybook-html-rsbuild` を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4165828025)）'
+  decision: '`@storybook/html-vite` にする。部品を「引数を受けて要素を返す関数」で書けば、ストーリーの `args` で状態を渡すだけで描け、状態ごとの HTML 断片が要らない。依存は server-webpack5 の約 3 分の 1（94 件）'
+  consequences: 判定フローチャート『Storybookの描画の方式』の結論（server-webpack5）から外れる。素の JS をブラウザで描く部品の行き先がフローチャートに無いためで、ルール改修を報告した
+install: |-
+  ```bash
+  npm install --save-dev --save-exact storybook@10.6.1 @storybook/html-vite@10.6.1 vite@8.3.2
+  npx storybook dev -p 6006
+  ```
+
+  `package.json` はリポジトリの直下に `private`・`"type": "module"` で置き、`node_modules/` は `.gitignore` に足す。`.storybook/main.js` は次を持つ。
+
+  - `framework: "@storybook/html-vite"`・`core.disableTelemetry: true`
+  - `staticDirs` で `skills/mindmap/preview/` を配り、`previewHead` で部品の CSS・JavaScript を読む
+  - 描画のライブラリの script 要素は、雛形 `template.html` から取り出して `previewHead` に差し込む（版・integrity を雛形の 1 か所に保つ）
+limitations:
+  - item: Node の版
+    content: vite 8.3.2 が `^20.19.0 || >=22.12.0` を求める
+  - item: 部品の書き方
+    content: 部品の JavaScript はストーリーごとに読み直されない。部品は読んだだけでは描かず、関数を呼ばれたときに要素を作り、リスナーはその要素に付ける

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport: スマホ幅でも等倍で開く（拡大は禁止しない） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- color-scheme: 既定は端末の明暗。切り替えは app.js が data-theme に持つ -->
+  <meta name="color-scheme" content="light dark">
+  <title>図の拡大 | mindmap プレビューのモック</title>
+  <!-- 文字: 英数字は Inter、日本語は Noto Sans JP、ID は JetBrains Mono を読む（デザイン方針） -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <!-- トークン: 採用したデザインスタイル（dev-swiss-cards）の値 -->
+  <link rel="stylesheet" href="../../../../../../skills/mindmap/preview/tokens.css">
+  <link rel="stylesheet" href="../../../../refs/21/assets/style.css">
+  <!-- Markdown の描画と無害化、マップの配置の計算: 版を固定し、integrity でファイルの中身を確かめる -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@18.0.14/lib/marked.umd.js" integrity="sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js" integrity="sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL" crossorigin="anonymous" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/elkjs@0.12.0/lib/elk.bundled.js" integrity="sha384-ww57TDqx4cGknIavPm0QKO+aygLUR1BLSn2Vhbnt1XdYKWcwLyWTFKX7aZMaKIi2" crossorigin="anonymous" defer></script>
+  <script src="../../../../refs/21/assets/data.js" defer></script>
+  <script src="../../../../refs/21/assets/app.js" defer></script>
+</head>
+<!-- data-screen: 描く画面。data-pages: pages/ への相対パス。data-initial: ハッシュが無いときに開く状態 -->
+<body data-screen="docs" data-pages="../../../" data-initial="id=A-001&full=1&viewer=1">
+  <!-- モック専用の操作列: 描画のライブラリが読めない状態に切り替える -->
+  <div class="mockbar" role="group" aria-label="モックの状態">
+    <span>モック</span>
+    <span id="mock-states"></span>
+  </div>
+
+  <!-- トップバー -->
+  <header class="topbar">
+    <a class="brand" href="../../../../index.md" style="color: inherit; text-decoration: none;">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M12 16h5M17 16V7h5M17 16v9h5"/><circle cx="25" cy="7" r="2.6"/><circle cx="25" cy="25" r="2.6"/></svg>
+      <span class="brand-name">mindmap</span>
+    </a>
+    <span class="brand-sub" id="brand-sub"></span>
+    <span class="spacer"></span>
+    <button class="search-trigger" type="button" data-act="search" aria-label="すべての項目を検索"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="label">すべての項目を検索</span><kbd>/</kbd></button>
+    <button class="top-btn" id="theme-btn" type="button" data-act="theme"></button>
+  </header>
+
+  <!-- タブ: 件数つき。中身は app.js が描く -->
+  <nav class="tabbar" id="tabs" aria-label="項目の種類"></nav>
+
+  <!-- パンくず -->
+  <nav class="crumbs crumbs-bar" aria-label="パンくず"><a href="../../../index.md">pages</a> / <a href="../../index.md">diagram-viewer</a> / <a href="../index.md">21</a> / standard</nav>
+
+  <!-- 本文 -->
+  <main class="content" id="main"></main>
+
+  <!-- 詳細パネル: 本文に重ねて出す非モーダルのパネル。項目を選ぶまでは隠す -->
+  <aside class="panel" id="panel" aria-label="詳細">
+    <div class="panel-head">
+      <button class="icon-btn panel-back" type="button" data-act="close" aria-label="一覧へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <span class="panel-kind"></span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" data-act="pback" aria-label="前に見た項目へ戻る" title="前に見た項目へ戻る" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" data-act="pfwd" aria-label="次に見た項目へ進む" title="次に見た項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="icon-btn panel-full" type="button" data-act="full" aria-label="全画面で表示" title="全画面で表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button>
+      <button class="icon-btn panel-close-x" type="button" data-act="close" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="panel-body"></div>
+  </aside>
+
+  <!-- 詳細の全画面: 周りに余白を空けたモーダル。外側の押下と Esc で元の大きさに戻す（図を拡大しているときは Esc で本文へ戻る） -->
+  <dialog class="full" id="full" aria-label="詳細の全画面">
+    <div class="panel-head">
+      <span class="panel-kind"></span>
+      <span class="spacer"></span>
+      <button class="icon-btn" type="button" data-act="pback" aria-label="前に見た項目へ戻る" title="前に見た項目へ戻る" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" data-act="pfwd" aria-label="次に見た項目へ進む" title="次に見た項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <button class="icon-btn" type="button" data-act="full" aria-label="元の大きさに戻す" title="元の大きさに戻す"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+    </div>
+    <div class="panel-body"></div>
+  </dialog>
+
+  <!-- 全体の検索: トップバーのボタンか / キーで開く。Esc と外側の押下で閉じる -->
+  <dialog class="search" id="search" closedby="any" aria-label="すべての項目を検索">
+    <div class="search-head">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <label class="sr-only" for="search-q">検索する語</label>
+      <input id="search-q" type="text" placeholder="ID・タイトル・本文で検索" autocomplete="off">
+      <form method="dialog"><button class="icon-btn" aria-label="検索を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </dialog>
+
+  <!-- 図の拡大: 詳細パネルから開くモーダル。ホイールで拡大・縮小、ドラッグで移動。Esc と閉じるボタンで閉じる -->
+  <dialog class="viewer" id="viewer" aria-label="図の拡大">
+    <div class="v-bar">
+      <button class="icon-btn" type="button" data-act="vzoom" data-z="out" aria-label="縮小">−</button>
+      <span class="v-pct mono">100%</span>
+      <button class="icon-btn" type="button" data-act="vzoom" data-z="in" aria-label="拡大">＋</button>
+      <span class="spacer"></span>
+      <form method="dialog"><button class="icon-btn" aria-label="図の拡大を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form>
+    </div>
+    <div class="v-canvas"><div class="v-stage"></div></div>
+  </dialog>
+
+  <!-- 列の絞り込み・表示する列・カードの絞り込みで使い回すポップオーバー -->
+  <div class="pop" id="pop" popover></div>
+</body>
+</html>
