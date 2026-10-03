@@ -272,6 +272,9 @@ dialog.search::backdrop { background: var(--scrim); }
   .search-trigger .label, .search-trigger kbd, .brand-sub { display: none; }
   .table-wrap [data-pri="4"], .table-wrap [data-pri="5"] { display: none; }
   .panel-close-x { display: none; }
+  /* 狭い幅のマップは、マップと倍率の操作を隠し、字下げした縦の一覧にする */
+  .map-view-root .map-frame, .map-view-root .zoom { display: none; }
+  .map-outline { display: block; }
 }
 @media (min-width: 901px) { .panel-back { display: none; } }
 @media (max-width: 720px) {
@@ -285,9 +288,6 @@ dialog.search::backdrop { background: var(--scrim); }
   .th-tool.pin { display: none; }
   .toolbar .btn .lbl { display: none; }
   .toolbar .grow { max-width: none; flex-basis: 100%; }
-  /* 狭い幅のマップは、字下げした縦の一覧にする */
-  .map-wrap { display: none; }
-  .map-outline { display: block; }
   .board { grid-template-columns: 1fr; }
 }
 .map-outline ul { list-style: none; margin: 0; padding: 0; }
