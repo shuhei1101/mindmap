@@ -15,9 +15,9 @@ elements:
     description: 全ての画面で共通の帯
     visible_when: 常時
   - name: 項目の種類
-    kind: button
+    kind: checkbox
     position: ツールバー
-    description: 種類ごと（検討事項・タスク・調査・資料・用語集・メモ・会話ログ）に表示 / 非表示を切り替える。表示中と非表示を `aria-pressed` と見た目で分ける
+    description: 種類ごと（検討事項・タスク・調査・資料・用語集・メモ・会話ログ）のチェックボックスで、表示 / 非表示を切り替える。表示中と非表示をチェックの有無と見た目で分ける
     initial_value: 全て表示
     visible_when: 常時
   - name: 3D のキャンバス

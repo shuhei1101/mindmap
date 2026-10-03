@@ -26,9 +26,9 @@ elements:
     description: 表示形式を切り替える
     visible_when: 常時
   - name: 状態の印
-    kind: button
+    kind: checkbox
     position: マップ > ツールバー
-    description: 状態ごとの印（色と形）。押すとその状態の項目を表示 / 非表示にする（`aria-pressed`）。キーワードに当たった項目を含む印に件数のバッジ（非表示の状態の項目も数える）
+    description: 状態ごとの印（色と形）を付けたチェックボックス。外すとその状態の項目を非表示にする。キーワードに当たった項目を含む印に件数のバッジ（非表示の状態の項目も数える）
     initial_value: 要見直し・未決定・未整理・保留を表示、決定済み・対象外・取り下げを非表示
     visible_when: 表示形式がマップ
   - name: キーワード
