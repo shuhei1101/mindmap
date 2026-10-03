@@ -2,7 +2,7 @@ title: "概要"
 elements:
   - name: トップバー
     kind: nav
-    component: dev/設計書/部品設計/プレビュー/トップバー.js#
+    component: dev/設計書/部品設計/プレビュー/トップバー.ts#
     args:
       - name: title
         value: プレビューを開く.mindmap-data.settings.summary

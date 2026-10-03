@@ -1,6 +1,6 @@
 title: トップバー
 lead: 画面の最上部の帯。話し合いの題名・全体の検索の入口・ライト / ダークの切り替えと、画面を移るタブの帯（右端につながりの入口）を出す。
-implementation: skills/mindmap/preview/components/topbar.js#MindmapPreview.topbar
+implementation: skills/mindmap/preview/components/topbar.ts#MindmapPreview.topbar
 story: Preview/Topbar
 args:
   - name: title

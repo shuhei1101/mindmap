@@ -2,7 +2,7 @@ title: "記録の表"
 elements:
   - name: トップバー
     kind: nav
-    component: dev/設計書/部品設計/プレビュー/トップバー.js#
+    component: dev/設計書/部品設計/プレビュー/トップバー.ts#
     args:
       - name: title
         value: プレビューを開く.mindmap-data.settings.summary
@@ -16,7 +16,7 @@ elements:
     visible_when: 常時
   - name: 表
     kind: table
-    component: dev/設計書/部品設計/プレビュー/表.js#
+    component: dev/設計書/部品設計/プレビュー/表.ts#
     args:
       - name: kind
         value: プレビューを開く.tab
