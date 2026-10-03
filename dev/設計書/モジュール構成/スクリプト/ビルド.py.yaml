@@ -585,7 +585,7 @@ functions:
       - name: test_fetch_url_when_unreachable
         case: 異常
         summary: 届かないか 200 以外なら DownloadFailedError
-        condition: '`parametrize`: 閉じたポートの URL / 手元の HTTP サーバーが 404 を返す URL'
+        condition: '`parametrize`: 閉じたポートの URL / 手元の HTTP サーバーが 404 を返す URL / 手元の HTTP サーバーが 204 を返す URL'
         mock: なし
         expected: '`DownloadFailedError`（`match` にその URL）'
         exception: 届かないか 200 以外
