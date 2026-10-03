@@ -45,7 +45,7 @@ scenarios:
       - A-1 の詳細パネルの本文に、表が `table` 要素で、mermaid の図が SVG で描かれる
       - つながりに玉が描かれる
       - 画面に、項目の追加・編集・削除、回答・コメントの送信、設定の保存のボタンが無い
-      - 書き出した HTML の中に、marked・DOMPurify・elkjs・mermaid のそれぞれの名前・版・ライセンスの表示がある
+      - 書き出した HTML の中に、marked・DOMPurify・elkjs・mermaid のそれぞれの名前・版・著作権の表示・ライセンスの名前がある
       - 書き出した HTML の中に、elkjs のソースコードの入手先（リポジトリと版のタグの URL）がある
       - ワークスペースの `preview.html` の中身が、配る書き出しを呼ぶ前と同じ
     test: test_normal
