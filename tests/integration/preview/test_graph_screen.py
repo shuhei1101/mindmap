@@ -8,6 +8,10 @@ from preview_fixture_types import OpenPreview, WriteSamplePreview
 # 種類の切り替えの並び（検討事項・タスク・調査・資料・用語集・メモ・会話ログ）
 KIND_VALUES = ["decisions", "tasks", "research", "docs", "terms", "notes", "logs"]
 
+# 狭い幅の画面の大きさ（空の旨の文はどの幅でも出す）
+NARROW_WIDTH = 800
+NARROW_HEIGHT = 700
+
 # まとめて切り替える箱（項目の種類の並びの右端）と、その読み上げの名前
 TOGGLE_ALL_BOX = ".legend .legend-all-check input"
 TOGGLE_ALL_LABEL = "すべての種類を表示"
@@ -146,7 +150,7 @@ def test_kind_toggle_all_box(
 def test_no_shown_kind_note(
     write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
 ) -> None:
-    """全ての種類を隠すと、枠の中央に空の旨を出す。1 つでも出すと消す（正常系）。"""
+    """全ての種類を隠すと、どの幅でも枠の中央に空の旨を出す。1 つでも出すと消す（正常系）。"""
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=graph")
@@ -155,8 +159,13 @@ def test_no_shown_kind_note(
     # 実行（全て隠す）
     page.click(TOGGLE_ALL_BOX)
     page.wait_for_selector("p.map-empty", state="visible")
-    # 検証
+    # 検証（広い幅）
     assert shown_before is False
+    assert page.inner_text("p.map-empty") == NO_SHOWN_KIND_TEXT
+    # 実行（狭い幅へ）
+    page.set_viewport_size({"width": NARROW_WIDTH, "height": NARROW_HEIGHT})
+    page.wait_for_selector("p.map-empty", state="visible")
+    # 検証（狭い幅）
     assert page.inner_text("p.map-empty") == NO_SHOWN_KIND_TEXT
     # 実行（1 つ戻す）
     page.click('.legend label:has(input[value="decisions"])')

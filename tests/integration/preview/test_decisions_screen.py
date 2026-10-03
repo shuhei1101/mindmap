@@ -27,6 +27,9 @@ NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません"
 # 状態の印のチェックボックス（まとめて切り替える箱を除く）
 STATUS_INPUTS = ".legend label:not(.legend-all-check) input"
 
+# チェックの記号の見た目の中心が、箱の中心からずれてよい幅（px。チェックの形の偏りを許す）
+CHECK_CENTER_TOLERANCE = 1
+
 # マップに検討事項が 1 件も描かれていない
 NO_MAP_ITEM_SCRIPT = "!document.querySelector('#decision-map .map-node.n-item')"
 
@@ -350,16 +353,21 @@ def test_map_toggle_all_box_appearance(
         }""",
         TOGGLE_ALL_BOX,
     )
-    # 実行（押して全部表示にし、チェックの記号の位置を測る）
+    # 実行（押して全部表示にし、チェックの記号の見た目の中心と箱の中心のずれを測る）
     page.click(TOGGLE_ALL_BOX)
     page.wait_for_selector('#decision-map button[data-node="D-1"]')
     check = page.evaluate(
         """box => {
             const input = document.querySelector(box);
             const mark = getComputedStyle(input, '::after');
+            const px = (name) => parseFloat(mark.getPropertyValue(name));
+            // 記号の枠の外形。回転は中心を動かさないので、中心へ寄せる移動だけを足す
+            const width = px('width') + px('border-left-width') + px('border-right-width');
+            const height = px('height') + px('border-top-width') + px('border-bottom-width');
+            const move = new DOMMatrix(mark.transform);
             return {
-                left: parseFloat(mark.left) - input.clientWidth / 2,
-                top: parseFloat(mark.top) - input.clientHeight / 2,
+                dx: px('left') + width / 2 + move.e - input.clientWidth / 2,
+                dy: px('top') + height / 2 + move.f - input.clientHeight / 2,
             };
         }""",
         TOGGLE_ALL_BOX,
@@ -371,4 +379,5 @@ def test_map_toggle_all_box_appearance(
     # 横棒は枠線で描く（線の太さは画面の倍率で丸められるため、線があることだけを確かめる）
     assert box["barStyle"] == "solid"
     assert box["barWidth"] != "0px"
-    assert check == {"left": 0, "top": 0}
+    assert abs(check["dx"]) <= CHECK_CENTER_TOLERANCE
+    assert abs(check["dy"]) <= CHECK_CENTER_TOLERANCE
