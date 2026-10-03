@@ -2,8 +2,17 @@
 
 from __future__ import annotations
 
+import pytest
 from playwright.sync_api import Page
 from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_style_checks import (
+    BOARD_EDGE_GAP_PX,
+    MIN_UI_FONT_SIZE_PX,
+    TRANSPARENT,
+    board_edges,
+    map_item_id_font_size,
+    table_cell_backgrounds,
+)
 
 # マップを字下げの一覧に切り替える幅の境（これ以下）
 NARROW_WIDTH = 800
@@ -381,3 +390,46 @@ def test_map_toggle_all_box_appearance(
     assert box["barWidth"] != "0px"
     assert abs(check["dx"]) <= CHECK_CENTER_TOLERANCE
     assert abs(check["dy"]) <= CHECK_CENTER_TOLERANCE
+
+
+def test_map_item_id_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """マップの項目の 2 行目の ID は、計算後の文字の大きさが 11px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=map")
+    page.wait_for_selector("#decision-map .map-node.n-item")
+    # 実行
+    size = map_item_id_font_size(page)
+    # 検証
+    assert size >= MIN_UI_FONT_SIZE_PX
+
+
+def test_board_edge_gap(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """検討事項のボードは、カードの左端をボードの左端から余白を空けて置き、ツールバーの左端に揃える（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=board")
+    # 実行
+    edges = board_edges(page)
+    # 検証
+    assert edges["cardLeft"] - edges["boardLeft"] >= BOARD_EDGE_GAP_PX
+    assert edges["cardLeft"] == pytest.approx(edges["toolbarLeft"], abs=1)
+
+
+def test_table_cell_surface(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """検討事項の表のセルは静止時に面の色を持たず、面の色は表の枠と固定した列が持つ（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table")
+    # 実行
+    backgrounds = table_cell_backgrounds(page)
+    # 検証
+    assert backgrounds["wrap"] != TRANSPARENT
+    assert backgrounds["plain"] == [TRANSPARENT]
+    assert TRANSPARENT not in backgrounds["pinned"]

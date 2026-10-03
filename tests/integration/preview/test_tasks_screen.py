@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
 from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_style_checks import BOARD_EDGE_GAP_PX, TRANSPARENT, board_edges, table_cell_backgrounds
 
 
 def test_board(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
@@ -56,3 +58,32 @@ def test_table(write_sample_preview: WriteSamplePreview, open_preview: OpenPrevi
     # 検証
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-2の題"
+
+
+def test_board_edge_gap(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """タスクのボードは、カードの左端をボードの左端から余白を空けて置き、ツールバーの左端に揃える（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=tasks")
+    # 実行
+    edges = board_edges(page)
+    # 検証
+    assert edges["cardLeft"] - edges["boardLeft"] >= BOARD_EDGE_GAP_PX
+    assert edges["cardLeft"] == pytest.approx(edges["toolbarLeft"], abs=1)
+
+
+def test_table_cell_surface(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """タスクの表のセルは静止時に面の色を持たず、面の色は表の枠と固定した列が持つ（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=tasks&view=table")
+    # 実行
+    backgrounds = table_cell_backgrounds(page)
+    # 検証
+    assert backgrounds["wrap"] != TRANSPARENT
+    assert backgrounds["plain"] == [TRANSPARENT]
+    assert TRANSPARENT not in backgrounds["pinned"]
