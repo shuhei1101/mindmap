@@ -19,7 +19,7 @@ scenarios:
         participant SCR as スクリプト
         participant WS as ワークスペース
 
-        U->>CC: /mindmap:setup {フォルダ}
+        U->>CC: /mindstella:setup {フォルダ}
         CC->>SCR: check-env
         SCR-->>CC: 依存が揃っている
         CC->>WS: mindmap.yaml の有無を見る
@@ -30,7 +30,7 @@ scenarios:
         SCR->>WS: mindmap.yaml と空の YAML を作る
         CC->>SCR: build
         SCR->>WS: preview.html を書き出す
-        CC-->>U: /mindmap:session で話し合いを続けるよう案内する
+        CC-->>U: /mindstella:session で話し合いを続けるよう案内する
       ```
     expected:
       - '`mindmap.yaml` の分野がシステム開発、最上位の軸の呼び名がシステム、フェーズが 目的 → 要件 → 構成 → インターフェース → コンテンツ、ゴールがインターフェースまでになっている'
@@ -54,14 +54,14 @@ scenarios:
         participant SCR as スクリプト
         participant WS as ワークスペース
 
-        U->>CC: /mindmap:setup {フォルダ}
+        U->>CC: /mindstella:setup {フォルダ}
         CC->>SCR: check-env
         SCR-->>CC: 依存が揃っている
         CC->>WS: mindmap.yaml の有無を見る
         CC->>SCR: status
         SCR->>WS: 全ての YAML を読む
         SCR-->>CC: 要見直し・進行中・再開可能・次の候補
-        CC-->>U: 状況と続きの推奨を示し、/mindmap:session で続けるよう案内する
+        CC-->>U: 状況と続きの推奨を示し、/mindstella:session で続けるよう案内する
       ```
     expected:
       - '`status` の出力の要見直しに D-1、進行中に T-1、再開可能に D-2、次の候補に D-3 がある'
@@ -83,7 +83,7 @@ scenarios:
         participant CC as Claude Code（setup）
         participant SCR as スクリプト
 
-        U->>CC: /mindmap:setup
+        U->>CC: /mindstella:setup
         CC->>SCR: check-env
         SCR-->>CC: 依存が揃っている
         CC-->>U: ワークスペースのフォルダの指定を求める
@@ -110,7 +110,7 @@ scenarios:
         participant CC as Claude Code（setup）
         participant SCR as スクリプト
 
-        U->>CC: /mindmap:setup {フォルダ}
+        U->>CC: /mindstella:setup {フォルダ}
         CC->>SCR: check-env
         SCR-->>CC: 終了コード 1・足りないもの・install のコマンド
         CC-->>U: 足りないものと、そろえるコマンドを示して止まる
@@ -126,12 +126,12 @@ primary_actor: 利用者
 stakeholders:
   - name: 利用者
     interest: 依存が足りなければ何をすればよいかが分かる。新しい話し合いは分野に合った軸で始まり、既存の話し合いは前回の続きから迷わず再開できる
-trigger: 利用者が `/mindmap:setup` を呼ぶ（引数にワークスペースのフォルダを渡すか、何も渡さない）
+trigger: 利用者が `/mindstella:setup` を呼ぶ（引数にワークスペースのフォルダを渡すか、何も渡さない）
 preconditions:
-  - プラグイン mindmap がインストールされている
-success_guarantee: 新しいワークスペースは、進め方ガイドに沿った分野・最上位の軸の呼び名・フェーズ・カテゴリー・ゴールを持つ `mindmap.yaml` と `preview.html` を持つ。既存のワークスペースは、どのファイルも書き換えずに状況と続きの推奨が示される。どちらも最後に `/mindmap:session` で話し合いを続けるよう案内する。
+  - プラグイン mindstella がインストールされている
+success_guarantee: 新しいワークスペースは、進め方ガイドに沿った分野・最上位の軸の呼び名・フェーズ・カテゴリー・ゴールを持つ `mindmap.yaml` と `preview.html` を持つ。既存のワークスペースは、どのファイルも書き換えずに状況と続きの推奨が示される。どちらも最後に `/mindstella:session` で話し合いを続けるよう案内する。
 minimal_guarantee: 依存が足りないときと、ワークスペースのフォルダが決まらないときは、ワークスペースに何も書かずに止まる。
 frequency: 話し合いを始めるとき・再開するときに 1 回
 priority: 高
 notes:
-  E2E の範囲: このユースケースは E2E を持たない（各シナリオの補足の既存のシナリオが、スクリプトの振る舞いを確かめる）。たたき台の中身・状況の示し方・続きの推奨・`/mindmap:session` の案内はモデルの応答で、確かめない
+  E2E の範囲: このユースケースは E2E を持たない（各シナリオの補足の既存のシナリオが、スクリプトの振る舞いを確かめる）。たたき台の中身・状況の示し方・続きの推奨・`/mindstella:session` の案内はモデルの応答で、確かめない
