@@ -5,12 +5,20 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from workspace_fixtures import MakeItem, MakeWorkspace, SnapshotTree
+from workspace_fixtures import (
+    MakeItem,
+    MakeLegacyItem,
+    MakeLegacyWorkspace,
+    MakeWorkspace,
+    SnapshotTree,
+)
 
 __all__ = [
     "FailingReplace",
     "FailingWriteText",
     "MakeItem",
+    "MakeLegacyItem",
+    "MakeLegacyWorkspace",
     "MakeWorkspace",
     "SnapshotTree",
 ]

@@ -13,7 +13,7 @@ import yaml
 
 import check_env
 import mindmap
-from fixture_types import MakeWorkspace
+from fixture_types import MakeLegacyWorkspace, MakeWorkspace
 
 # check-env の結果として返す、揃っているときの結果
 GOOD_REPORT: dict[str, Any] = {"python": "3.12.3", "python_ok": True, "install": None}
@@ -80,6 +80,37 @@ def test_main_when_mindmap_error(tmp_path: Path, capsys: pytest.CaptureFixture[s
     assert exit_code == 1
     assert captured.err.startswith("エラー: ")
     assert str(tmp_path) in captured.err
+    assert captured.out == ""
+
+
+def test_main_when_legacy_format(
+    make_legacy_workspace: MakeLegacyWorkspace, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """前の版の形式のスキーマ違反には migrate を案内する（正常系）。"""
+    # 準備
+    root = make_legacy_workspace(legacy_docs={"A-1": True})
+    # 実行
+    exit_code = mindmap.main(["build", "--workspace", str(root)])
+    # 検証
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert (
+        captured.err.splitlines()[-1] == "ヒント: 前の版の形式の記録は migrate で今の形式に移せます"
+    )
+
+
+def test_main_when_summary_required(
+    make_legacy_workspace: MakeLegacyWorkspace, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """題名が要る migrate は終了コード 2（正常系）。"""
+    # 準備
+    root = make_legacy_workspace(without_summary=True)
+    # 実行
+    exit_code = mindmap.main(["migrate", "--workspace", str(root)])
+    # 検証
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "--summary" in captured.err
     assert captured.out == ""
 
 

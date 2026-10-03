@@ -127,7 +127,7 @@ def test_normal_when_diagram_kept_as_doc(
             "title": "保存の流れ",
             "kind": "図",
             "deliverable": False,
-            "done": False,
+            "status": "下書き",
             "related": ["D-1"],
             "body_markdown": "```mermaid\nflowchart TD\n  A --> B\n```\n",
         },

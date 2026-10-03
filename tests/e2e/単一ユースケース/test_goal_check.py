@@ -48,7 +48,7 @@ def test_normal_when_reached(
         make_item("D-4", phase="インターフェース", status="決定済み", answer="コマンドで書く"),
         # ゴールより後ろのフェーズは判定に入らない
         make_item("D-9", phase="コンテンツ", status="未決定"),
-        make_item("A-1", deliverable=True, done=True),
+        make_item("A-1", deliverable=True, status="完成"),
         settings=_goal_settings(valid_settings),
         bodies={"A-1.md": "# 要件定義書\n\n支出を記録する。"},
     )
@@ -86,7 +86,7 @@ def test_normal_when_not_reached(
     # 準備
     root = make_workspace(
         make_item("D-1", phase="目的", status="未決定"),
-        make_item("A-1", deliverable=True, done=False),
+        make_item("A-1", deliverable=True, status="確認中"),
         settings=_goal_settings(valid_settings),
         bodies={"A-1.md": "要件定義書の下書き"},
     )

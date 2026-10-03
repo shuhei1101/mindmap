@@ -218,7 +218,7 @@ def test_judge_goal(
         make_item("D-2", phase="要件", status="対象外"),
         make_item("D-3", phase="要件", status="取り下げ"),
         make_item("D-4", phase="構成", status="未決定"),
-        make_item("A-1", deliverable=True, done=True),
+        make_item("A-1", deliverable=True, status="完成"),
         settings=settings,
         bodies={"A-1.md": "要件定義書の本文"},
     )
@@ -255,7 +255,7 @@ def test_judge_goal_when_remaining(
         make_item("D-2", phase="要件", status="要見直し"),
         make_item("D-1", phase="目的", status="未決定"),
         make_item("D-3", phase="要件", status="決定済み"),
-        make_item("A-1", deliverable=True, done=False),
+        make_item("A-1", deliverable=True, status="確認中"),
         settings=settings,
         bodies={"A-1.md": "要件定義書の本文"},
     )

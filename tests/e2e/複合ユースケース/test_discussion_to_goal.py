@@ -25,6 +25,7 @@ TODAY = "2026-10-02"
 
 # 新しい話し合いで /mindmap:setup が決める設定（分野: システム開発、ゴール: インターフェースまで）
 SETTINGS: dict[str, Any] = {
+    "summary": "家計簿アプリの要件を決める",
     "field": "システム開発",
     "target_label": "システム",
     "phases": ["目的", "要件", "構成", "インターフェース", "コンテンツ"],
@@ -165,7 +166,7 @@ def test_normal_when_new_discussion(
             "要件",
             kind="文書",
             deliverable=True,
-            done=True,
+            status="完成",
             body_markdown="# 要件定義書\n\n支出を DB に記録する。",
         ),
     )
