@@ -443,7 +443,7 @@ functions:
     container: skills/mindmap/preview/screens/docs.ts
     usecase: 資料を読む
     scope: public
-    summary: 成果物を先頭に、それぞれ連番の順に並べた資料を返す
+    summary: 納品物を先頭に、それぞれ連番の順に並べた資料を返す
     args:
       - name: docs
         type: object[]
@@ -456,8 +456,8 @@ functions:
     unit_tests:
       - name: test_order_docs
         case: 正常
-        summary: 成果物が先
-        condition: A-1（成果物でない）・A-3（成果物）・A-2（成果物）
+        summary: 納品物が先
+        condition: A-1（納品物でない）・A-3（納品物）・A-2（納品物）
         mock: なし
         expected: A-2・A-3・A-1
   - name: buildDecisionTree

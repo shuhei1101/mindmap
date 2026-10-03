@@ -557,12 +557,12 @@ functions:
         mock: なし
         expected: '`span.tag` が 2 つで文字が `UI`・`性能` / 子の無い断片'
   - name: deliverableBadge
-    title: 成果物の印
+    title: 納品物の印
     kind: 関数
     container: skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
-    summary: 成果物の資料に付ける印（箱のアイコンと「成果物」）
+    summary: 納品物の資料に付ける印（箱のアイコンと「納品物」）
     args: []
     returns:
       type: HTMLElement
@@ -573,7 +573,7 @@ functions:
         summary: アイコンと文字を持つ
         condition: 引数なし
         mock: なし
-        expected: '`span.deliv-badge` が `svg.icon` と文字 `成果物` を持つ'
+        expected: '`span.deliv-badge` が `svg.icon` と文字 `納品物` を持つ'
   - name: emptyNote
     title: 空のときの 1 行
     kind: 関数
