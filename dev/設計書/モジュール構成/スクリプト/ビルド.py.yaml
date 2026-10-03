@@ -1,13 +1,17 @@
 title: "スクリプト / ビルド"
-lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。読み書きと検証と、依存と影響・ゴール判定（画面に出す値の計算）に依存する。
+lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。配る書き出しは、同じ雛形に同梱した描画のライブラリとライセンスの表示を入れて書き出す。読み書きと検証と、依存と影響・ゴール判定（画面に出す値の計算）に依存する。
 directory: |-
   ```
   skills/mindmap/
     preview/
-      template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み）
+      template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み。読み込みは EXTERNAL_START と EXTERNAL_END の間に置く）
       tokens.css・style.css・*.ts（と tsc が生成した *.js）  画面の中身（モジュール構成『プレビュー』）
+      vendor/
+        marked.umd.js・purify.min.js・elk.bundled.js・mermaid.min.js  配る書き出しに差し込む描画のライブラリの配布ファイル（package.json と同じ版の npm のパッケージから改変せずに写す）
+        licenses/
+          marked.txt・DOMPurify.txt・elkjs.txt・mermaid.txt  各パッケージの LICENSE の写（DOMPurify は LICENSE と LICENSE-MPL をつなぐ）
     scripts/
-      builder.py      雛形の組み立て・データの収集・埋め込み・書き出し
+      builder.py      雛形の組み立て・データの収集・埋め込み・書き出しと、配る書き出し
   ```
 constants:
   - name: DATA_ELEMENT
@@ -52,6 +56,30 @@ constants:
     usecase: プレビューの書き出し
     summary: '`template.html` がちょうど 1 つ持つ、JavaScript を入れる空の要素（`DATA_ELEMENT` より後ろ）'
     value: "'<script id=\"mindmap-app\"></script>'"
+  - name: VENDOR_LIBRARIES
+    title: 同梱するライブラリの一覧
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: 配る書き出しに差し込む順の `VendorLibrary`。並びは `template.html` の `<script src>` と同じ（marked・DOMPurify・elkjs・mermaid）
+    value: (VendorLibrary(name="marked", version="18.0.14", script="vendor/marked.umd.js", notice="Copyright (c) 2018+, MarkedJS / Copyright (c) 2011-2018, Christopher Jeffrey", license="MIT", license_file="vendor/licenses/marked.txt", source="https://github.com/markedjs/marked/tree/v18.0.14"), VendorLibrary(name="DOMPurify", version="3.4.16", script="vendor/purify.min.js", notice="(c) Cure53 and other contributors", license="MPL-2.0 OR Apache-2.0", license_file="vendor/licenses/DOMPurify.txt", source="https://github.com/cure53/DOMPurify/tree/3.4.16"), VendorLibrary(name="elkjs", version="0.12.0", script="vendor/elk.bundled.js", notice="(c) Kiel University and others", license="EPL-2.0", license_file="vendor/licenses/elkjs.txt", source="https://github.com/kieler/elkjs/tree/0.12.0"), VendorLibrary(name="mermaid", version="12.1.0", script="vendor/mermaid.min.js", notice="Copyright (c) 2014 - 2022 Knut Sveidqvist", license="MIT", license_file="vendor/licenses/mermaid.txt", source="https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0"))
+  - name: EXTERNAL_START
+    title: 外の読み込みの始まり
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、描画のライブラリの `<script src>` と文字の `<link>` の前に置くコメント'
+    value: "'<!-- mindmap-external:start -->'"
+  - name: EXTERNAL_END
+    title: 外の読み込みの終わり
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: '`template.html` がちょうど 1 つ持つ、外の読み込みの後ろに置くコメント（`EXTERNAL_START` より後ろ）'
+    value: "'<!-- mindmap-external:end -->'"
+  - name: LICENSES_OPEN
+    title: ライセンスの表示の要素
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    summary: 配る書き出しに置く、ライセンスの表示を中身に持つ要素の開きタグ（閉じタグは `</script>`）。画面には出ない
+    value: "'<script type=\"text/plain\" id=\"mindmap-licenses\">'"
 functions:
   - name: build_preview
     title: プレビューの書き出し
@@ -85,7 +113,7 @@ functions:
       1. ワークスペースを検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（書かない）
       2. 雛形を組み立て、データを集めて埋め込む（`assemble_template`、`collect_preview_data`、`embed_data`）
-      3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える
+      3. 一時ファイルに書いて `os.replace` で `preview.html` を置き換える（`replace_file`）
          - `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る（前の `preview.html` は残る）
     exceptions:
       - name: SchemaMismatchError
@@ -289,5 +317,287 @@ functions:
         condition: '`phases` 目的・要件、`goal.phase` 要件、カテゴリー A・B。D-1（A・目的・決定済み）・D-2（A・要件・未決定・`depends_on: [D-1]`）・D-3（B・要件・対象外）'
         mock: なし
         expected: '`next` が `list_next_candidates` と同じ（D-2 だけ）。`goal.phase_progress` が 目的 1/1・要件 1/2。`progress` の A が 目的 1/1・要件 0/1、B が 目的 0/0・要件 1/1'
+  - name: replace_file
+    title: ファイルの置き換え
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: 共通
+    scope: public
+    summary: 同じフォルダの一時ファイルに書いてから `os.replace` で置き換える。`build_preview` と `export_preview` が使う
+    side_effects: '`path` を置き換える'
+    args:
+      - name: path
+        type: Path
+        required: true
+        passing: positional
+        description: 置き換えるファイル
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: 書く中身（UTF-8）
+    returns:
+      type: None
+      description: '-'
+    process: |-
+      1. 一時ファイルに書く（一時ファイルへの書き込み。`write_temp`）
+      2. `os.replace` で `path` を置き換える
+         - 1・2 で `OSError` が起きた場合、残った一時ファイルを消して `WriteFailedError` を送る（`write_failed`。親のフォルダが無いときもここに入り、フォルダは作らない）
+    exceptions:
+      - name: WriteFailedError
+        condition: 一時ファイルの書き込みか置き換えで `OSError` が起きた（一時ファイルを消した後）
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_replace_file
+        case: 正常
+        summary: 中身を書いて置き換える
+        condition: '`tmp_path` に中身 `古い` の `a.html` を置き、`新しい` で呼ぶ'
+        mock: なし
+        expected: '`a.html` の中身が `新しい`。`.tmp` のファイルが無い'
+      - name: test_replace_file_when_parent_missing
+        case: 異常
+        summary: 親のフォルダが無ければフォルダを作らずに失敗する
+        condition: '`tmp_path / "無い" / "a.html"`'
+        mock: なし
+        expected: '`WriteFailedError`（`match` に `a.html`）。`無い/` が無い'
+        exception: 一時ファイルの書き込みか置き換えで OSError
+  - name: export_preview
+    title: 配る書き出し
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: 検証してから、描画のライブラリとライセンスの表示を中に持つ雛形にデータを埋め込み、`out` を置き換える
+    side_effects: '`out` を置き換える。ワークスペースは読むだけ'
+    args:
+      - name: workspace
+        type: Workspace
+        required: true
+        passing: positional
+        description: ワークスペース
+      - name: out
+        type: Path
+        required: true
+        passing: keyword
+        description: 書き出す先（`validate_export_out` を通した絶対パス）
+      - name: built_at
+        type: str
+        required: true
+        passing: keyword
+        description: 書き出した日時（`now_utc` の文字列）
+      - name: preview_dir
+        type: Path
+        required: false
+        default: PREVIEW_DIR
+        passing: keyword
+        description: 雛形のフォルダ
+    returns:
+      type: Path
+      description: 書き出した `out`
+    process: |-
+      1. ワークスペースを検証する（ワークスペースの検証。`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（書かない）
+      2. 配る書き出しの雛形を組み立て、データを集めて埋め込む（`assemble_standalone_template`、`collect_preview_data`、`embed_data`）
+      3. `out` を置き換える（`replace_file`）
+    exceptions:
+      - name: SchemaMismatchError
+        condition: ワークスペースに問題がある
+      - name: WriteFailedError
+        condition: '`out` の親のフォルダが無い、または書き込み・置き換えで `OSError` が起きた'
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_export_preview
+        case: 正常
+        summary: 記録と同梱のライブラリとライセンスの表示を持つ HTML を out に書き、preview.html は触らない
+        condition: D-1 と資料 A-1（`docs/A-1.md` あり）と前の `preview.html` を持つワークスペースと、外の読み込みの印・差し込み口・`DATA_ELEMENT` を持つ `template.html`・空の CSS・JavaScript・配布ファイル・ライセンスの本文を置いた雛形のフォルダ。`out` はワークスペースの外の `tmp_path / "配る.html"`
+        mock: なし
+        expected: 戻り値が `out`。`out` の `mindmap-data` を JSON として読むと `decisions` に D-1、`bodies` に `A-1.md`。`out` に `src=`・`href=` が無く、`mindmap-licenses` の要素がある。ワークスペースの `preview.html` が呼ぶ前と同じ
+      - name: test_export_preview_when_schema_mismatch
+        case: 異常
+        summary: 問題があれば前の out を残す
+        condition: 前の `out` を置き、D-1 の `status` を `完了` にする
+        mock: なし
+        expected: '`SchemaMismatchError`。`out` が呼ぶ前と同じ'
+        exception: ワークスペースに問題がある
+      - name: test_export_preview_when_out_dir_missing
+        case: 異常
+        summary: out の親のフォルダが無ければ書かない
+        condition: '`out` が `tmp_path / "無い" / "配る.html"`'
+        mock: なし
+        expected: '`WriteFailedError`。`無い/` が無い'
+        exception: 親のフォルダが無いか OSError
+  - name: validate_export_out
+    title: 書き出す先の確かめ
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: '`--out` が `.html` で終わり、ワークスペースの `preview.html` を指さないことを確かめ、絶対パスにして返す'
+    args:
+      - name: out
+        type: Path
+        required: true
+        passing: positional
+        description: '`--out` の値（相対パスは起動した場所から）'
+      - name: root
+        type: Path
+        required: true
+        passing: keyword
+        description: ワークスペースのフォルダ
+    returns:
+      type: Path
+      description: '`out` を `resolve()` した絶対パス'
+    process: |-
+      1. `out` の拡張子を確かめる（大文字・小文字を区別しない）
+         - `.html` でない場合、`OutPathError` を送る
+      2. `out` と `root / PREVIEW_FILE` を `resolve()` して比べる
+         - 同じ場合、`OutPathError` を送る
+      3. `resolve()` した `out` を返す
+    exceptions:
+      - name: OutPathError
+        condition: '`out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す'
+        message: '--out は .html のファイルを指してください: {パス} / --out にワークスペースの preview.html は指せません: {パス}'
+    unit_tests:
+      - name: test_validate_export_out
+        case: 正常
+        summary: 相対パスを起動した場所から読んで絶対パスにする
+        condition: '`monkeypatch.chdir(tmp_path)` で `Path("配る.HTML")`（大文字の拡張子）、`root` は `tmp_path / "ws"`'
+        mock: なし
+        expected: '`tmp_path / "配る.HTML"` を返す'
+      - name: test_validate_export_out_when_invalid
+        case: 異常
+        summary: html でないか preview.html を指す out を弾く
+        condition: '`parametrize`: `tmp_path / "配る.txt"` / `root / "sub" / ".." / "preview.html"`'
+        mock: なし
+        expected: '`OutPathError`（`match` に `.html` / `preview.html`）'
+        exception: html で終わらないか preview.html を指す
+  - name: assemble_standalone_template
+    title: 配る書き出しの雛形の組み立て
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: '`assemble_template` の HTML の外の読み込みを、同梱した描画のライブラリの `<script>` とライセンスの表示の要素に置き換えた HTML を返す'
+    args:
+      - name: preview_dir
+        type: Path
+        required: false
+        default: PREVIEW_DIR
+        passing: keyword
+        description: 雛形のフォルダ
+      - name: libraries
+        type: tuple[VendorLibrary, ...]
+        required: false
+        default: VENDOR_LIBRARIES
+        passing: keyword
+        description: 差し込むライブラリ（並びの順）
+    returns:
+      type: str
+      description: 外のファイルも URL も指さない HTML（`DATA_ELEMENT` は空のまま）
+    process: |-
+      1. 雛形を組み立てる（`assemble_template`）
+      2. `EXTERNAL_START`・`EXTERNAL_END` がそれぞれちょうど 1 つあり、`EXTERNAL_START` が前にあることを確かめる
+         - そうでない場合、`ValueError` を送る（同梱の雛形の誤り）
+      3. 各ライブラリの `script` と `license_file` を UTF-8 で読み、`</script` を含まないことを確かめる（大文字・小文字を区別しない）
+         - 含む場合、`ValueError` を送る（同梱の誤り）
+      4. `EXTERNAL_START` から `EXTERNAL_END` まで（両方を含む）を、ライブラリごとの `<script>{配布ファイルの中身}</script>` を並びの順につないだものと、`LICENSES_OPEN` + ライセンスの表示（`format_licenses`）+ `</script>` に置き換える
+    exceptions:
+      - name: ValueError
+        condition: 外の読み込みの印が 1 つずつでないか順が逆、または配布ファイル・ライセンスの本文が `</script` を含む
+        message: 雛形に外の読み込みの印が 1 つずつありません / 同梱の {ファイル名} が </script を含みます
+    unit_tests:
+      - name: test_assemble_standalone_template
+        case: 正常
+        summary: 外の読み込みを同梱のライブラリとライセンスの表示に置き換える
+        condition: '`tmp_path` に、外の読み込みの印の間に `<script src="https://example.com/x.js"></script>` を持つ `template.html` と、2 つの `VendorLibrary`（配布ファイルの中身は `/* a */`・`/* b */`、ライセンスの本文あり）'
+        mock: なし
+        expected: '`https://example.com` と外の読み込みの印が無い。`/* a */`・`/* b */` がこの順で、どちらも `<script id="mindmap-app">` より前にある。`mindmap-licenses` の要素の中に 2 つの名前がある'
+      - name: test_assemble_standalone_template_when_closing_tag
+        case: 異常
+        summary: 閉じタグを含む同梱のファイルは差し込まない
+        condition: '`parametrize`: 配布ファイルに `</SCRIPT>` / ライセンスの本文に `</script>`'
+        mock: なし
+        expected: '`ValueError`（`match` にそのファイル名）'
+        exception: 印が 1 つずつでないか閉じタグを含む
+      - name: test_assemble_standalone_template_when_marker_wrong
+        case: 異常
+        summary: 外の読み込みの印が 1 つずつでない雛形
+        condition: '`parametrize`: `EXTERNAL_START` 0 個 / `EXTERNAL_END` 2 個 / `EXTERNAL_END` が `EXTERNAL_START` より前'
+        mock: なし
+        expected: '`ValueError`（`match` に `外の読み込みの印`）'
+        exception: 印が 1 つずつでないか閉じタグを含む
+      - name: test_vendor_libraries_match_template
+        case: 正常
+        summary: 同梱のライブラリが雛形の CDN の版と一致し、ファイルがある
+        condition: 本物の `PREVIEW_DIR` と `VENDOR_LIBRARIES`
+        mock: なし
+        expected: '`template.html` の jsDelivr の URL の `{パッケージ}@{版}` が、`VENDOR_LIBRARIES` の並びと版に一致する。各 `script` と `license_file` がある'
+  - name: format_licenses
+    title: ライセンスの表示の組み立て
+    kind: 関数
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    scope: public
+    summary: 同梱するライブラリごとの名前・版・著作権の表示・ライセンスの名前・ソースコードの入手先・ライセンスの本文を並べた文字列を返す
+    args:
+      - name: libraries
+        type: tuple[VendorLibrary, ...]
+        required: true
+        passing: positional
+        description: 同梱するライブラリ
+      - name: preview_dir
+        type: Path
+        required: true
+        passing: keyword
+        description: 雛形のフォルダ（`license_file` を読む）
+    returns:
+      type: str
+      description: ライブラリごとの塊を空行で区切った文字列
+    process: |-
+      1. ライブラリごとに、`{name} {version}`・`notice`・`License: {license}`・`Source: {source}` の行と、`license_file` の本文をこの順に並べる
+      2. 塊を並びの順に空行でつなぐ
+    unit_tests:
+      - name: test_format_licenses
+        case: 正常
+        summary: ライブラリごとに名前・版・著作権・ライセンス・入手先・本文を並べる
+        condition: '2 つの `VendorLibrary`（ライセンスの本文は `本文 A`・`本文 B`）'
+        mock: なし
+        expected: 1 つ目の名前と版・`notice`・`License:`・`Source:`・`本文 A` がこの順にあり、その後に 2 つ目の塊が空行を挟んで続く
 test_files:
   - tests/unit/scripts/test_builder.py
+data_models:
+  - name: VendorLibrary
+    title: 同梱するライブラリ
+    container: skills/mindmap/scripts/builder.py
+    usecase: 配る書き出し
+    role: DTO
+    summary: 配る書き出しに差し込む描画のライブラリ 1 つの配布ファイルとライセンスの表示。`@dataclass(frozen=True, slots=True, kw_only=True)`
+    properties:
+      - name: name
+        type: str
+        description: ライブラリの名前
+        example: elkjs
+      - name: version
+        type: str
+        description: 同梱している版。`template.html` の jsDelivr の URL の版と同じ
+        example: 0.12.0
+      - name: script
+        type: str
+        description: 配布ファイルの、雛形のフォルダからの相対パス
+        example: vendor/elk.bundled.js
+      - name: notice
+        type: str
+        description: 著作権の表示
+        example: (c) Kiel University and others
+      - name: license
+        type: str
+        description: 配るときのライセンスの名前（SPDX）。選べるライセンスを持つときは選んだもの
+        example: EPL-2.0
+      - name: license_file
+        type: str
+        description: ライセンスの本文の、雛形のフォルダからの相対パス
+        example: vendor/licenses/elkjs.txt
+      - name: source
+        type: str
+        description: ソースコードの入手先（リポジトリの、その版のタグの URL）
+        example: https://github.com/kieler/elkjs/tree/0.12.0

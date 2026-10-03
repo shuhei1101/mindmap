@@ -242,6 +242,13 @@ classes:
     summary: 題名を持たないワークスペースを `--summary` 無しで移そうとした。入口は終了コード 2（引数の誤り）にする
     kind: クラス
     inherits: MindmapError
+  - name: OutPathError
+    title: 書き出す先の誤り
+    container: skills/mindmap/scripts/errors.py
+    usecase: 配る書き出し
+    summary: '`export` の `--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す。入口は終了コード 2（引数の誤り）にする'
+    kind: クラス
+    inherits: MindmapError
 constants:
   - name: KINDS
     title: 種類の一覧

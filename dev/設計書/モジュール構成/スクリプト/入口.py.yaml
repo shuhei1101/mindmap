@@ -134,9 +134,9 @@ functions:
       2. 引数を解釈する（`build_parser`）
       3. コマンドで分ける
          - `check-env` の場合、`--venv` の仮想環境を確かめる（`run_check_env`）。`VenvNotFoundError`・`PythonVersionError`・`DependencyMissingError` は `report` を標準出力に出して 1 を返す
-         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`、`migrate` は `run_migrate`、`clear-release` は `run_clear_release`）
+         - それ以外の場合、`commands` をここで import し、コマンドの関数を呼ぶ（中身の JSON を受け取る `init`・`add`・`update` は、`--json` があればその値を、無ければ `sys.stdin.read()` を渡す。`goal` は `run_goal`、`migrate` は `run_migrate`、`clear-release` は `run_clear_release`、`export` は `run_export`）
       4. 結果を `json.dumps(ensure_ascii=False)` で標準出力に出し、コマンドが返した終了コードを返す
-      5. `SummaryRequiredError` を捕まえたら、標準エラーに `エラー: {メッセージ}` を出して 2 を返す
+      5. `SummaryRequiredError`・`OutPathError` を捕まえたら、標準エラーに `エラー: {メッセージ}` を出して 2 を返す
       6. `MindmapError` を捕まえたら、標準エラーに `エラー: {メッセージ}` と `lines` を出して 1 を返す（標準出力には何も出さない）
          - `SchemaMismatchError` で `legacy` が真の場合、最後に `LEGACY_HINT` の 1 行を続ける
     unit_tests:
@@ -182,6 +182,12 @@ functions:
         condition: '`summary` を持たない設定のワークスペースで `migrate --workspace`'
         mock: なし
         expected: 2 を返し、標準エラーに `--summary`。標準出力が空
+      - name: test_main_when_out_invalid
+        case: 正常
+        summary: 書き出す先の誤りは終了コード 2
+        condition: 作成済みのワークスペースで `export --workspace {ws} --out {ws}/preview.html`
+        mock: なし
+        expected: 2 を返し、標準エラーに `--out`。標準出力が空
   - name: build_parser
     title: 引数の定義
     kind: 関数
@@ -194,7 +200,7 @@ functions:
       description: サブコマンドを持つ引数の定義（引数は各インターフェース定義のリクエストのとおり）
     process: |-
       1. `check-env` に `--venv`（省略時 `default_venv_dir()`）、それ以外のサブコマンドに `--workspace`（必須）を持たせる
-      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal`・`clear-release` は `--workspace` だけ。`migrate` は `--summary`（省略時 `None`）を持たせる
+      2. `add` は `kind`（`KINDS` のキー）、`update`・`impact`・`show` は `id`、`adopt` は `id` と `key`、`next` は `--limit`（1 以上の整数）、`find` は `--text`・`--kind`・`--status`・`--tag`・`--target`・`--category`・`--phase`・`--attr`（繰り返し）を持たせる。`goal`・`clear-release` は `--workspace` だけ。`migrate` は `--summary`（省略時 `None`）を持たせる。`export` は `--out`（必須）を持たせる
       3. `init`・`add`・`update` に `--json`（中身の JSON の文字列。省略時 `None`）を持たせる
     unit_tests:
       - name: test_build_parser
@@ -1115,6 +1121,53 @@ functions:
         condition: 作成済みのワークスペースの `release/` に `古い資料.md`
         mock: なし
         expected: '`{"removed": ["古い資料.md"]}` と 0'
+  - name: run_export
+    title: export の処理
+    kind: 関数
+    container: skills/mindmap/scripts/commands.py
+    usecase: 配る書き出し
+    scope: public
+    summary: 書き出す先を確かめて配る書き出しを書き、そのパスを返す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: out
+        type: Path
+        required: true
+        passing: positional
+        description: '`--out`'
+      - name: now
+        type: NowFn
+        required: false
+        default: now_utc
+        passing: positional
+        description: 書き出した日時を返す関数
+    returns:
+      type: tuple[dict[str, Any], int]
+      description: '`{path}` と 0'
+    process: |-
+      1. 書き出す先を確かめる（書き出す先の確かめ。`validate_export_out`）。ワークスペースを読む前に行い、`OutPathError` では何も書かない
+      2. ワークスペースを読んで配る書き出しを書く（`load_workspace`、配る書き出し。`export_preview`）
+    exceptions:
+      - name: OutPathError
+        condition: '`--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す'
+    unit_tests:
+      - name: test_run_export
+        case: 正常
+        summary: 配る書き出しを書いてそのパスを返す
+        condition: 作成済みのワークスペースと、ワークスペースの外の `tmp_path / "配る.html"`
+        mock: なし
+        expected: '`{"path": "{配る.html の絶対パス}"}` と 0。`配る.html` がある'
+      - name: test_run_export_when_out_is_preview
+        case: 異常
+        summary: preview.html を指す out はワークスペースを読む前に弾く
+        condition: '`mindmap.yaml` の無いフォルダで `out` が `{フォルダ}/preview.html`'
+        mock: なし
+        expected: '`OutPathError`（`WorkspaceNotFoundError` ではない）'
+        exception: html で終わらないか preview.html を指す
 notes:
   モジュールの読み込み: スクリプトはパッケージとして入れず、スキルは全てのコマンドをシステムの `python3` で `{スキルのフォルダ}/scripts/mindmap.py` を起動する（依存が揃っていなければ入口が仮想環境の Python で起動し直す。『起動し直し』）。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
   入口の構文: '`mindmap.py`・`launcher.py`・`check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、起動した Python の依存が揃った後にだけ読むので 3.12 の書き方を使ってよい。'
