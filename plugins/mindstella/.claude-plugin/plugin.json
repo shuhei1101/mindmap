@@ -1,5 +1,8 @@
 {
   "name": "mindstella",
   "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
-  "author": { "name": "shuhei1101" }
+  "author": { "name": "shuhei1101", "url": "https://github.com/shuhei1101" },
+  "license": "MIT",
+  "homepage": "https://github.com/shuhei1101/mindstella",
+  "repository": "https://github.com/shuhei1101/mindstella"
 }
