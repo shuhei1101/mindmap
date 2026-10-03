@@ -11,4 +11,4 @@ collecting ... collected 2 items
 tests/integration/plugin/test_plugin_loading.py::test_normal PASSED      [ 50%]
 tests/integration/plugin/test_marketplace_registration.py::test_normal PASSED [100%]
 
-============================== 2 passed in 7.47s ===============================
+============================== 2 passed in 7.77s ===============================
