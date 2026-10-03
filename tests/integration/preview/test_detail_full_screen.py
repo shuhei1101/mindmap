@@ -26,9 +26,16 @@ def test_open_and_restore(
     path = write_sample_preview()
     page = open_preview(path, "#tab=decisions&view=table&id=D-2")
     history_length = page.evaluate("history.length")
+    panel_button = 'aside.panel button[data-act="full"]'
+    assert page.get_attribute(panel_button, "aria-label") == "全画面表示"
+    assert page.get_attribute(panel_button, "aria-pressed") == "false"
     # 実行
     _open_full(page)
     # 検証
+    # ラベルは変えず、押された状態で全画面を示す
+    full_button = 'dialog.full button[data-act="full"]'
+    assert page.get_attribute(full_button, "aria-label") == "全画面表示"
+    assert page.get_attribute(full_button, "aria-pressed") == "true"
     assert "full=1" in page.evaluate("location.hash")
     assert page.evaluate("history.length") == history_length
     assert page.inner_text("dialog.full .d-title") == "D-2の題"

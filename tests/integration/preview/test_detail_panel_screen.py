@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page
-from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
+from workspace_fixtures import MakeItem
 
 # パネルを別画面として積む幅（これ以下）
 NARROW_WIDTH = 800
@@ -63,6 +64,27 @@ def test_related_items(
     assert "id=D-1" in page.evaluate("location.hash")
 
 
+def test_referenced_by(
+    write_preview: WritePreview, open_preview: OpenPreview, make_item: MakeItem
+) -> None:
+    """関連で指している項目から、参照元の節で指されている項目を開ける（正常系）。"""
+    # 準備
+    path = write_preview(
+        make_item("D-1", status="決定済み"),
+        make_item("D-2", status="決定済み", related=["D-1"]),
+    )
+    page = open_preview(path, "#tab=decisions&view=table&id=D-1")
+    # 実行
+    sections = page.eval_on_selector_all(
+        "aside.panel .d-sec h3", "hs => hs.map(h => h.textContent)"
+    )
+    page.click("aside.panel .d-sec:has(h3:text-is('参照元')) button.idlink")
+    page.wait_for_function("document.querySelector('aside.panel .d-title')?.textContent === 'D-2の題'")
+    # 検証
+    assert "参照元" in sections
+    assert "id=D-2" in page.evaluate("location.hash")
+
+
 def test_back_and_forward(
     write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
 ) -> None:
@@ -74,6 +96,8 @@ def test_back_and_forward(
     forward = 'aside.panel button[data-act="forward"]'
     assert page.is_disabled(back)
     assert page.is_disabled(forward)
+    assert page.get_attribute(back, "aria-label") == "前の項目へ戻る"
+    assert page.get_attribute(forward, "aria-label") == "次の項目へ進む"
     page.click("aside.panel .d-sec:has(h3:text-is('前提')) button.idlink")
     page.wait_for_function("document.querySelector('aside.panel .d-title')?.textContent === 'D-1の題'")
     # 実行・検証

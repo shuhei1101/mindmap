@@ -46,9 +46,12 @@ def test_next_tile(write_sample_preview: WriteSamplePreview, open_preview: OpenP
     page = open_preview(path)
     # 実行
     ids = page.eval_on_selector_all("#tile-next button[data-id]", "b => b.map(x => x.dataset.id)")
+    impact = page.inner_text('#tile-next button[data-id="D-2"] .impact')
     page.click('#tile-next button[data-id="D-2"]')
     # 検証
     assert ids == ["D-2", "D-5"]
+    # 影響度の目盛りの横には、軸の名前を添える
+    assert impact == "影響度 大"
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-2の題"
 
@@ -56,7 +59,7 @@ def test_next_tile(write_sample_preview: WriteSamplePreview, open_preview: OpenP
 def test_next_tile_show_all(
     write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
 ) -> None:
-    """すべて表示で、検討事項の表を 未決定 × 着手できる = はい で絞って開く（正常系）。"""
+    """すべて表示で、検討事項の表を 未決定 × 着手可否 = 着手可能 で絞って開く（正常系）。"""
     # 準備
     path = write_sample_preview()
     page = open_preview(path)
@@ -64,7 +67,7 @@ def test_next_tile_show_all(
     page.click("#tile-next .t-link")
     page.wait_for_selector("table.grid")
     # 検証
-    assert _chips(page) == ["状態: 未決定", "着手できる: はい"]
+    assert _chips(page) == ["状態: 未決定", "着手可否: 着手可能"]
     assert _row_ids(page) == ["D-2", "D-5"]
 
 
@@ -77,7 +80,7 @@ def test_next_tile_when_nothing_to_discuss(
     # 実行
     page = open_preview(path)
     # 検証
-    assert "次に検討する項目はありません" in page.inner_text("#tile-next")
+    assert "次に検討する項目はありません。" in page.inner_text("#tile-next")
     assert page.locator("#tile-next .t-link").count() == 0
 
 
@@ -136,15 +139,20 @@ def test_small_tiles_show_all(
 def test_small_tiles_when_empty(
     write_preview: WritePreview, open_preview: OpenPreview, make_item: MakeItem
 ) -> None:
-    """該当する項目が無いタイルは 0 件と「なし」を出す（正常系）。"""
+    """該当する項目が無いタイルは 0 件と、種類の名前で「〇〇はありません。」を出す（正常系）。"""
     # 準備
     path = write_preview(make_item("D-1", status="決定済み"))
     # 実行
     page = open_preview(path)
     # 検証
-    for tile_id in ("tile-review", "tile-hold", "tile-running"):
+    empty_texts = {
+        "tile-review": "要見直しの検討事項はありません。",
+        "tile-hold": "保留の検討事項はありません。",
+        "tile-running": "進行中のタスクはありません。",
+    }
+    for tile_id, text in empty_texts.items():
         assert page.inner_text(f"#{tile_id} .num") == "0"
-        assert "なし" in page.inner_text(f"#{tile_id}")
+        assert page.inner_text(f"#{tile_id} .empty") == text
 
 
 def test_progress_tile(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
