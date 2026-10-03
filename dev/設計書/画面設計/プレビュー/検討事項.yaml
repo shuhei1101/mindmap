@@ -72,7 +72,7 @@ elements:
       - name: kind
         value: decisions
       - name: columns
-        value: ID・タイトル（外せない）・状態（status、絞れる）・対象（絞れる）・カテゴリー（category、絞れる）・フェーズ（phase、絞れる）・影響度（絞れる）・着手できる（ready、絞れる）・前提・タグ（絞れる）
+        value: ID・タイトル（外せない）・状態（status、絞れる）・対象（絞れる）・カテゴリー（category、絞れる）・フェーズ（phase、絞れる）・影響度（絞れる）・着手可否（ready、絞れる）・前提・タグ（絞れる）
       - name: rows
         value: プレビューを開く.mindmap-data.decisions
       - name: filters
