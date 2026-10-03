@@ -228,7 +228,7 @@ functions:
       - name: test_library_notice
         case: 正常
         summary: 名前を並べた知らせを返す
-        condition: '`(["marked", "DOMPurify"], "本文")`'
+        condition: '`{names: ["marked", "DOMPurify"], what: "本文"}`'
         mock: なし
         expected: '`role` が `alert` で、文字に `読めなかったライブラリ: marked・DOMPurify`'
   - name: renderMarkdown
@@ -283,7 +283,7 @@ functions:
       type: Promise<void>
       description: 全て描き終えたら解決する
     process: |-
-      1. mermaid が読めていない場合、各入れ物に知らせ（`libraryNotice(["mermaid"], "図")`）と原文を入れる
+      1. mermaid が読めていない場合、各入れ物に知らせ（`libraryNotice({names: ["mermaid"], what: "図"})`）と原文を入れる
       2. 初めて描くときに `mermaid.initialize({startOnLoad: false, securityLevel: "strict", theme: "base"})` を呼ぶ
       3. 入れ物ごとに `mermaid.render` した SVG を入れる
          - 描けなかった場合、その入れ物に描けなかったことと原文を入れる（ほかの図は続ける）
