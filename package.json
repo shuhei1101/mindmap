@@ -1,0 +1,22 @@
+{
+  "name": "mindmap",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p .",
+    "typecheck": "tsc -p . --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build -o storybook-static"
+  },
+  "devDependencies": {
+    "@storybook/html-vite": "10.6.1",
+    "dompurify": "3.4.16",
+    "elkjs": "0.12.0",
+    "marked": "18.0.14",
+    "mermaid": "12.1.0",
+    "storybook": "10.6.1",
+    "type-fest": "4.41.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
+  }
+}
