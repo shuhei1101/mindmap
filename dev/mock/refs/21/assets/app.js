@@ -610,6 +610,8 @@
     } else if (keep) wrap.scrollTo({ left: keep.l || 0, top: keep.t || 0 });
     lastMapSel = sel;
   };
+  // 並びをまとめて切り替えるチェックの箱: 文字を持たず、名前は aria-label で持つ。一部だけのときの横棒は描いた後に付ける
+  const allBox = (act, of, label, all) => `<label class="legend-all-check" title="${label}"><input type="checkbox" data-act="${act}" data-all-of="${of}" aria-label="${label}" ${all ? "checked" : ""}></label>`;
   const mapHit = (d) => !!state.mapQ && d.title.toLowerCase().includes(state.mapQ.toLowerCase());
   const mapToolbar = () => {
     const counts = Object.fromEntries(STATUS_ORDER.map((s) => [s, M.decisions.filter((d) => d.status === s).length]));
@@ -621,7 +623,7 @@
     const mode = document.body.dataset.toggleAll;
     const shown = STATUS_ORDER.filter((s) => counts[s]);
     const allButtons = mode === "buttons" ? `<div class="legend-all" role="group" aria-label="状態をまとめて切り替える"><button type="button" class="btn ghost" data-act="mapall" data-on="1">全選択</button><button type="button" class="btn ghost" data-act="mapall" data-on="0">全解除</button></div>` : "";
-    const allCheck = mode === "check" ? `<label class="legend-all-check" title="すべての状態を表示"><input type="checkbox" data-act="mapallchk" aria-label="すべての状態を表示" ${shown.every((s) => state.mapShow.has(s)) ? "checked" : ""}></label>` : "";
+    const allCheck = mode === "check" ? allBox("mapallchk", "mapst", "すべての状態を表示", shown.every((s) => state.mapShow.has(s))) : "";
     return `<div class="toolbar">${segment("decisions")}<label class="sr-only" for="map-q">名前で強調するキーワード</label><input class="input map-q" id="map-q" data-act="mapq" type="search" placeholder="名前で強調" value="${esc(state.mapQ)}"><span class="spacer"></span>${toggle}</div>
       <div class="map-tools"><div class="legend" role="group" aria-label="表示する状態">${legend}${allButtons}${allCheck}</div></div>`;
   };
@@ -913,8 +915,9 @@
   const renderGraphTab = () => {
     const counts = Object.fromEntries(Object.keys(KIND_VAR).map((k) => [k, M[k].filter((it) => !CLOSED.has(it.status)).length]));
     const chips = Object.keys(KIND_VAR).map((k) => `<label><input type="checkbox" data-act="gkind" value="${k}" ${state.graphKinds.has(k) ? "checked" : ""}><span class="kdot" style="background:var(${KIND_VAR[k]})"></span>${KINDS.find((x) => x.key === k).label}<span class="n">${counts[k]}</span></label>`).join("");
-    return `<div class="map-tools"><div class="legend" role="group" aria-label="表示する種類">${chips}</div></div>
-      <div class="map-frame space" data-bg="nebula"><canvas class="g3-wrap" id="fg3" role="img" aria-label="すべての項目のつながり"></canvas></div>`;
+    const allCheck = document.body.dataset.toggleAll === "check" ? allBox("gallchk", "gkind", "すべての種類を表示", Object.keys(KIND_VAR).every((k) => state.graphKinds.has(k))) : "";
+    return `<div class="map-tools"><div class="legend" role="group" aria-label="表示する種類">${chips}${allCheck}</div></div>
+      <div class="map-frame space" data-bg="nebula">${state.graphKinds.size ? "" : `<p class="empty map-empty">表示する種類の項目はありません</p>`}<canvas class="g3-wrap" id="fg3" role="img" aria-label="すべての項目のつながり"></canvas></div>`;
   };
 
   // ===== 詳細パネル =====
@@ -1092,9 +1095,9 @@
     else if (k === "docs" && state.view === "cards") main.innerHTML = renderToolbar(k) + renderChips(k) + renderDocCards();
     else if (k === "tasks" && state.view === "board") main.innerHTML = renderToolbar(k) + renderChips(k) + renderBoard("tasks");
     else main.innerHTML = renderToolbar(k) + renderChips(k) + renderTable(k);
-    // まとめて切り替えるチェックの箱: 一部の状態だけを出しているときは横棒にする（HTML の属性では持てない）
-    const allChk = main.querySelector('[data-act="mapallchk"]');
-    if (allChk) allChk.indeterminate = !allChk.checked && [...main.querySelectorAll('[data-act="mapst"]')].some((x) => x.checked);
+    // まとめて切り替えるチェックの箱: 一部だけを出しているときは横棒にする（HTML の属性では持てない）
+    const allChk = main.querySelector("[data-all-of]");
+    if (allChk) allChk.indeterminate = !allChk.checked && [...main.querySelectorAll(`[data-act="${allChk.dataset.allOf}"]`)].some((x) => x.checked);
     renderPanel();
     applyPins();
     if (k === "graph") drawGraph3();
@@ -1250,6 +1253,7 @@
     if (a === "mapst") { el.checked ? state.mapShow.add(el.value) : state.mapShow.delete(el.value); lastScreen = ""; render(); }
     // 横棒（一部）から押すと、ブラウザがチェックを入れるので全部表示になる
     if (a === "mapallchk") { state.mapShow = new Set(el.checked ? STATUS_ORDER : []); lastScreen = ""; render(); }
+    if (a === "gallchk") { state.graphKinds = new Set(el.checked ? Object.keys(KIND_VAR) : []); lastScreen = ""; render(); }
     if (a === "fval") {
       const set = (state.tables[el.dataset.kind].filters[el.dataset.key] ??= new Set());
       el.checked ? set.add(el.value) : set.delete(el.value);
