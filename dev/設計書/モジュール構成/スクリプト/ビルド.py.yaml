@@ -2,7 +2,7 @@ title: "スクリプト / ビルド"
 lead: ワークスペースの記録を 1 つの JSON にまとめ、プレビューの雛形に埋め込んで `preview.html` を書き出す。配る書き出しは、同じ雛形に jsDelivr から取った描画のライブラリとライセンスの表示を入れて書き出す。読み書きと検証と、依存と影響・ゴール判定（画面に出す値の計算）に依存する。
 directory: |-
   ```
-  skills/mindmap/
+  plugins/mindstella/skills/mindmap/
     preview/
       template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み。読み込みは EXTERNAL_START と EXTERNAL_END の間に置く）
       tokens.css・style.css・*.ts（と tsc が生成した *.js）  画面の中身（モジュール構成『プレビュー』）
@@ -15,79 +15,79 @@ directory: |-
 constants:
   - name: DATA_ELEMENT
     title: 埋め込み先の要素
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: 雛形がちょうど 1 つ持つ、中身が空の要素
     value: "'<script type=\"application/json\" id=\"mindmap-data\"></script>'"
   - name: PREVIEW_FILE
     title: プレビューのファイル名
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: ワークスペースに書き出すファイル名
     value: '"preview.html"'
   - name: PREVIEW_DIR
     title: 雛形のフォルダ
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
-    summary: このファイルから見た `skills/mindmap/preview/`
+    summary: このファイルから見た `plugins/mindstella/skills/mindmap/preview/`
     value: Path(__file__).resolve().parent.parent / "preview"
   - name: STYLE_FILES
     title: 差し込む CSS
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: 雛形のフォルダからの相対パス。並びの順につなぐ
     value: ("tokens.css", "style.css")
   - name: SCRIPT_FILES
     title: 差し込む JavaScript
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: 雛形のフォルダからの相対パス。tsc が `.ts` から生成した `.js` を並びの順につなぐ（起動する `app.js` が最後）。中身はモジュール構成『プレビュー』のディレクトリ構成
     value: ("core/dom.js", "core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
   - name: STYLE_SLOT
     title: CSS の差し込み口
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: '`template.html` がちょうど 1 つ持つ、CSS を入れる空の要素'
     value: "'<style id=\"mindmap-style\"></style>'"
   - name: SCRIPT_SLOT
     title: JavaScript の差し込み口
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: '`template.html` がちょうど 1 つ持つ、JavaScript を入れる空の要素（`DATA_ELEMENT` より後ろ）'
     value: "'<script id=\"mindmap-app\"></script>'"
   - name: VENDOR_LIBRARIES
     title: 配る書き出しに入れるライブラリの一覧
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: 雛形の描画のライブラリの `<script src>` ごとの、ライセンスの表示に使う `VendorLibrary`。`package` で `<script src>` の URL のパッケージ名と結ぶ。版と URL と `integrity` は雛形が持ち、ここには持たない
     value: (VendorLibrary(package="marked", name="marked", notice="Copyright (c) 2018+, MarkedJS / Copyright (c) 2011-2018, Christopher Jeffrey", license="MIT", license_path="LICENSE", bundled_license_file=None, repository="https://github.com/markedjs/marked", tag="v{version}"), VendorLibrary(package="dompurify", name="DOMPurify", notice="(c) Cure53 and other contributors", license="Apache-2.0", license_path="LICENSE", bundled_license_file=None, repository="https://github.com/cure53/DOMPurify", tag="{version}"), VendorLibrary(package="elkjs", name="elkjs", notice="(c) Kiel University and others", license="EPL-2.0", license_path="LICENSE.md", bundled_license_file=None, repository="https://github.com/kieler/elkjs", tag="{version}"), VendorLibrary(package="mermaid", name="mermaid", notice="Copyright (c) 2014 - 2022 Knut Sveidqvist", license="MIT", license_path="LICENSE", bundled_license_file="licenses/mermaid-bundled.txt", repository="https://github.com/mermaid-js/mermaid", tag="mermaid@{version}"))
   - name: FETCH_TIMEOUT_SEC
     title: 取るときの待ちの上限
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: jsDelivr への 1 回の要求で、接続と 1 回の読み取りをそれぞれ待つ秒数（`urllib.request.urlopen` の `timeout`）。実測は 1 件あたり最大 0.65 秒（2026-10-03）。読み取りごとに効くので遅い回線でも途切れなければ止めない
     value: '30'
   - name: CDN_PACKAGE_URL
     title: パッケージのファイルの URL
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: jsDelivr の、版を固定したパッケージの中のファイルの URL の形。ライセンスの本文を取るのに使う
     value: '"https://cdn.jsdelivr.net/npm/{package}@{version}/{path}"'
   - name: EXTERNAL_START
     title: 外の読み込みの始まり
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: '`template.html` がちょうど 1 つ持つ、描画のライブラリの `<script src>` と文字の `<link>` の前に置くコメント'
     value: "'<!-- mindmap-external:start -->'"
   - name: EXTERNAL_END
     title: 外の読み込みの終わり
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: '`template.html` がちょうど 1 つ持つ、外の読み込みの後ろに置くコメント（`EXTERNAL_START` より後ろ）'
     value: "'<!-- mindmap-external:end -->'"
   - name: LICENSES_OPEN
     title: ライセンスの表示の要素
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: 配る書き出しに置く、ライセンスの表示を中身に持つ要素の開きタグ（閉じタグは `</script>`）。画面には出ない
     value: "'<script type=\"text/plain\" id=\"mindmap-licenses\">'"
@@ -95,7 +95,7 @@ functions:
   - name: build_preview
     title: プレビューの書き出し
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 検証してからデータを雛形に埋め込み、`preview.html` を置き換える
@@ -156,7 +156,7 @@ functions:
   - name: collect_preview_data
     title: プレビューのデータの収集
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 設定・7 種類・本文・書き出した日時を 1 つの辞書にまとめる
@@ -188,7 +188,7 @@ functions:
   - name: escape_for_script
     title: 埋め込みのエスケープ
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: JSON の文字列の `<`・`>`・`&` を、JSON の Unicode エスケープ（バックスラッシュに続けて `u003c`・`u003e`・`u0026`）に置き換える
@@ -212,7 +212,7 @@ functions:
   - name: embed_data
     title: 雛形への埋め込み
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 雛形の `DATA_ELEMENT` の中身にデータの JSON を入れた HTML を返す
@@ -255,7 +255,7 @@ functions:
   - name: assemble_template
     title: 雛形の組み立て
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: '`template.html` に CSS・JavaScript を差し込んだ HTML を返す'
@@ -304,7 +304,7 @@ functions:
   - name: derive_preview_values
     title: プレビューに出す値の計算
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     scope: public
     summary: 概要と表に出す次の候補・ゴールまで・カテゴリー別の進み具合を、コマンドと同じ関数で計算して返す
@@ -331,7 +331,7 @@ functions:
   - name: replace_file
     title: ファイルの置き換え
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 共通
     scope: public
     summary: 同じフォルダの一時ファイルに書いてから `os.replace` で置き換える。`build_preview` と `export_preview` が使う
@@ -375,7 +375,7 @@ functions:
   - name: export_preview
     title: 配る書き出し
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     scope: public
     summary: 検証してから、描画のライブラリとライセンスの表示を中に持つ雛形にデータを埋め込み、`out` を置き換える
@@ -456,7 +456,7 @@ functions:
   - name: validate_export_out
     title: 書き出す先の確かめ
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     scope: public
     summary: '`--out` が `.html` で終わり、ワークスペースの `preview.html` を指さないことを確かめ、絶対パスにして返す'
@@ -501,7 +501,7 @@ functions:
   - name: list_external_scripts
     title: 外の読み込みの一覧
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     scope: public
     summary: 雛形の `EXTERNAL_START` と `EXTERNAL_END` の間の `<script src integrity>` を、並びの順に `ExternalScript` にして返す
@@ -547,7 +547,7 @@ functions:
   - name: fetch_url
     title: URL の中身を取る
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     scope: public
     summary: URL を GET して本文のバイト列を返す。`FetchFn` の本物
@@ -592,7 +592,7 @@ functions:
   - name: assemble_standalone_template
     title: 配る書き出しの雛形の組み立て
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     scope: public
     summary: '`assemble_template` の HTML の外の読み込みを、取った描画のライブラリの `<script>` とライセンスの表示の要素に置き換えた HTML を返す'
@@ -666,7 +666,7 @@ functions:
   - name: format_licenses
     title: ライセンスの表示の組み立て
     kind: 関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     scope: public
     summary: ライブラリごとの名前・版・著作権の表示・ライセンスの名前・ソースコードの入手先・ライセンスの本文・束ねた依存のライセンスを並べた文字列を返す
@@ -694,7 +694,7 @@ test_files:
 data_models:
   - name: VendorLibrary
     title: 配る書き出しに入れるライブラリ
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     role: DTO
     summary: 雛形の描画のライブラリ 1 つの、ライセンスの表示に使う値。`@dataclass(frozen=True, slots=True, kw_only=True)`
@@ -733,7 +733,7 @@ data_models:
         example: '{version}'
   - name: ExternalScript
     title: 外の読み込み
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     role: DTO
     summary: 雛形の外の読み込みの `<script src integrity>` 1 つ。`@dataclass(frozen=True, slots=True, kw_only=True)`
@@ -755,7 +755,7 @@ data_models:
         example: 0.12.0
   - name: LicenseBlock
     title: ライセンスの表示の材料
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     role: DTO
     summary: ライブラリ 1 つのライセンスの表示を組み立てる材料。`@dataclass(frozen=True, slots=True, kw_only=True)`
@@ -775,7 +775,7 @@ data_models:
 function_types:
   - name: FetchFn
     title: URL の中身を取る関数
-    container: skills/mindmap/scripts/builder.py
+    container: plugins/mindstella/skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: URL を受けて本文のバイト列を返す。取れなければ `DownloadFailedError` を送る（`type FetchFn = Callable[[str], bytes]`）
     args:

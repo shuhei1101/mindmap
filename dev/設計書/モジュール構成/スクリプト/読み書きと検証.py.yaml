@@ -2,7 +2,7 @@ title: "スクリプト / 読み書きと検証"
 lead: ワークスペースの YAML と本文を読み書きし、JSON Schema と突き合わせる。ほかの全てのモジュールがここに依存し、ここはほかに依存しない。
 directory: |-
   ```
-  skills/mindmap/
+  plugins/mindstella/skills/mindmap/
     schemas/
       common.schema.json     共通のキー（$defs）
       settings.schema.json   mindmap.yaml
@@ -31,7 +31,7 @@ diagrams:
 data_models:
   - name: KindSpec
     title: 種類の定義
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: 共通
     role: DTO
     summary: 1 種類のファイル・ID の頭の文字・スキーマ・本文と状態の有無
@@ -60,7 +60,7 @@ data_models:
         description: 決着とみなす状態。状態を持たない種類は空
   - name: Workspace
     title: ワークスペース
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     role: DTO
     summary: 読み込んだ設定・種類ごとの項目・読めなかったファイル
@@ -83,7 +83,7 @@ data_models:
         description: 'YAML として読めなかったファイル（`kind: schema`・`key: (全体)`）'
   - name: Problem
     title: 問題
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     role: DTO
     summary: スキーマ違反・参照切れなど 1 件の問題
@@ -106,7 +106,7 @@ data_models:
         description: 中身
   - name: ItemRef
     title: 項目の場所
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     role: DTO
     summary: ID で引いた項目と、その種類・並びの位置
@@ -123,7 +123,7 @@ data_models:
         description: 項目
   - name: BodyWrite
     title: 本文の書き込み
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     role: DTO
     summary: '`docs/` に書く 1 つの本文'
@@ -137,7 +137,7 @@ data_models:
         description: 本文の Markdown
   - name: Change
     title: 書き込みの変更
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     role: DTO
     summary: 1 つの種類の項目の並びを丸ごと置き換える変更と、一緒に書く本文
@@ -156,7 +156,7 @@ data_models:
 enums:
   - name: Kind
     title: 種類
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: 共通
     summary: ワークスペースの項目の種類（`Literal` の型エイリアス）
     values:
@@ -184,7 +184,7 @@ enums:
 classes:
   - name: MindmapError
     title: コマンドのエラー
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 共通
     summary: 入口が捕まえて終了コード 1 と標準エラーにする例外の親
     kind: クラス
@@ -195,63 +195,63 @@ classes:
         description: '`エラー: {内容}` の後に続けて標準エラーに出す行'
   - name: WorkspaceNotFoundError
     title: ワークスペースが無い
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 共通
     summary: '`mindmap.yaml` が無いフォルダを指した。メッセージにフォルダのパス'
     kind: クラス
     inherits: MindmapError
   - name: WorkspaceExistsError
     title: ワークスペースが既にある
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: ワークスペースの作成
     summary: '`mindmap.yaml` が既にあるフォルダに作ろうとした。メッセージにフォルダのパス'
     kind: クラス
     inherits: MindmapError
   - name: SchemaMismatchError
     title: スキーマに合わない
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 共通
     summary: '書き込もうとした・書き出そうとしたワークスペースがスキーマに合わない。`lines` は問題ごとの `{ファイル名}: {キーのパス}: {理由}`。`legacy`（既定 `False`）は、問題に前の版の形式のものがあるか（ワークスペースを検証して送る側が `is_legacy_problem` で決める。`save_change`・`build_preview` が当たる）'
     kind: クラス
     inherits: MindmapError
   - name: ItemNotFoundError
     title: ID が無い
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 共通
     summary: 渡した ID の項目が無い。メッセージに ID
     kind: クラス
     inherits: MindmapError
   - name: OptionNotFoundError
     title: 案が無い
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 採用する案の切り替え
     summary: 検討事項が渡した記号の案を持たない。メッセージに渡した記号と持っている記号の一覧
     kind: クラス
     inherits: MindmapError
   - name: WriteFailedError
     title: 書き込みに失敗した
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 共通
     summary: ファイルの書き込み・置き換えで `OSError` が起きた。後始末をした後に送る。メッセージに置き換え先のパスと `OSError` の理由（`raise ... from` で元の例外をつなぐ）
     kind: クラス
     inherits: MindmapError
   - name: SummaryRequiredError
     title: 題名が要る
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 記録の形式の移行
     summary: 題名を持たないワークスペースを `--summary` 無しで移そうとした。入口は終了コード 2（引数の誤り）にする
     kind: クラス
     inherits: MindmapError
   - name: OutPathError
     title: 書き出す先の誤り
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 配る書き出し
     summary: '`export` の `--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す。入口は終了コード 2（引数の誤り）にする'
     kind: クラス
     inherits: MindmapError
   - name: DownloadFailedError
     title: 取れなかった
-    container: skills/mindmap/scripts/errors.py
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 配る書き出し
     summary: 配る書き出しで jsDelivr から配布ファイルかライセンスの本文を取れないか、配布ファイルが雛形の `integrity` と合わない。メッセージに URL と理由（`raise ... from` で元の例外をつなぐ）
     kind: クラス
@@ -259,7 +259,7 @@ classes:
 constants:
   - name: KINDS
     title: 種類の一覧
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: 共通
     summary: 種類 → 種類の定義。並びは D・T・R・A・G・N・L の順で、一覧を出す並びにも使う
     entries:
@@ -286,49 +286,49 @@ constants:
         description: 状態なし
   - name: SETTINGS_FILE
     title: 設定のファイル名
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: 共通
     summary: ワークスペースの設定のファイル名
     value: '"mindmap.yaml"'
   - name: BODY_DIR
     title: 本文のフォルダ名
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: 共通
     summary: 本文の Markdown を置くフォルダ名
     value: '"docs"'
   - name: RELEASE_DIR
     title: リリースのフォルダ名
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: ワークスペースの作成
     summary: ゴール判定で書き出す資料のフォルダ名
     value: '"release"'
   - name: SCHEMA_DIR
     title: スキーマのフォルダ
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
-    summary: このファイルから見た `skills/mindmap/schemas/`
+    summary: このファイルから見た `plugins/mindstella/skills/mindmap/schemas/`
     value: Path(__file__).resolve().parent.parent / "schemas"
   - name: COMMON_SCHEMA
     title: 共通のスキーマのファイル名
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     summary: Registry に登録し、各種類のスキーマが `$ref` で指す名前
     value: '"common.schema.json"'
   - name: SETTINGS_SCHEMA
     title: 設定のスキーマのファイル名
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     summary: '`mindmap.yaml` を検証するスキーマ'
     value: '"settings.schema.json"'
   - name: TEMP_SUFFIX
     title: 一時ファイルの拡張子
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     summary: 置き換える前に書く一時ファイルの拡張子（置き換えるファイルと同じフォルダに作る）
     value: '".tmp"'
   - name: LEGACY_HINT
     title: 前の版の形式の案内
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 記録の形式の移行
     summary: 前の版の形式でスキーマに合わないときに続ける 1 行
     value: '"ヒント: 前の版の形式の記録は migrate で今の形式に移せます"'
@@ -336,7 +336,7 @@ functions:
   - name: kind_of_id
     title: ID の種類
     kind: 関数
-    container: skills/mindmap/scripts/kinds.py
+    container: plugins/mindstella/skills/mindmap/scripts/kinds.py
     usecase: 共通
     scope: public
     summary: ID の頭の文字から種類を引く
@@ -369,7 +369,7 @@ functions:
   - name: load_workspace
     title: ワークスペースの読み込み
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: 設定と 7 種類の YAML を読む。読めないファイルは問題に記録して空として扱う
@@ -434,7 +434,7 @@ functions:
   - name: validate_workspace
     title: ワークスペースの検証
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: 設定と 7 種類をスキーマと突き合わせ、合わない箇所を問題の並びにする
@@ -487,7 +487,7 @@ functions:
   - name: load_validators
     title: 検証器の用意
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: 共通のスキーマを Registry に登録し、設定と 7 種類の検証器を作る
@@ -501,13 +501,13 @@ functions:
       - name: test_load_validators
         case: 正常
         summary: 同梱のスキーマから 8 つの検証器を作り、各スキーマがそれ自体として正しい
-        condition: リポジトリの `skills/mindmap/schemas/`
+        condition: リポジトリの `plugins/mindstella/skills/mindmap/schemas/`
         mock: なし
         expected: キーが `settings.schema.json` と 7 種類のスキーマ名で、`Draft202012Validator.check_schema` がどれも通る
   - name: find_item
     title: 項目の引き当て
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: ID で項目を引く
@@ -561,7 +561,7 @@ functions:
   - name: next_id
     title: 採番
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 記録の追加と更新
     scope: public
     summary: その種類の連番の最大 + 1 の ID を返す
@@ -598,7 +598,7 @@ functions:
   - name: now_utc
     title: 今の日時
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: 今の日時を UTC のタイムゾーン付き ISO 8601（秒まで）で返す
@@ -611,7 +611,7 @@ functions:
   - name: save_change
     title: 変更の書き込み
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: 1 種類の項目の並びと本文を、検証してから両方とも書き換えるか、どちらも書き換えない
@@ -699,7 +699,7 @@ functions:
   - name: create_workspace
     title: ワークスペースの作成
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: ワークスペースの作成
     scope: public
     summary: 設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`release/` を作る
@@ -764,7 +764,7 @@ functions:
   - name: read_body
     title: 本文の読み込み
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: '`docs/` の本文を読む'
@@ -808,7 +808,7 @@ functions:
   - name: dump_yaml
     title: YAML の文字列化
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: public
     summary: 日本語をそのままにし、キーの並びを保って YAML の文字列にする
@@ -832,7 +832,7 @@ functions:
   - name: _read_yaml
     title: YAML の読み込み
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: internal
     summary: 1 ファイルを `yaml.safe_load` で読む
@@ -849,7 +849,7 @@ functions:
   - name: _format_path
     title: キーのパスの文字列化
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: internal
     summary: '`absolute_path` を `items[0].status` の形の文字列にする'
@@ -875,7 +875,7 @@ functions:
   - name: _write_temp
     title: 一時ファイルの書き込み
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 共通
     scope: internal
     summary: 置き換え先と同じフォルダに一時ファイルを書き、そのパスを返す
@@ -909,7 +909,7 @@ functions:
   - name: is_legacy_problem
     title: 前の版の形式の問題か
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 記録の形式の移行
     scope: public
     summary: 問題が、前の版の形式（資料の `done`・題名の無い設定）から来ているかを返す
@@ -942,7 +942,7 @@ functions:
   - name: clear_release
     title: リリースの片付け
     kind: 関数
-    container: skills/mindmap/scripts/store.py
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: リリースの片付け
     scope: public
     summary: '`release/` の中身を消し、空の `release/` を残す'

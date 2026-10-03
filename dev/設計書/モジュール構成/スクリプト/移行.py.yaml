@@ -2,13 +2,13 @@ title: "スクリプト / 移行"
 lead: 前の版の形式のワークスペース（資料の `done`・題名の無い設定）を今の形式に書き換える。読み書きと検証だけに依存する。
 directory: |-
   ```
-  skills/mindmap/scripts/
+  plugins/mindstella/skills/mindmap/scripts/
     migrator.py   移す中身の組み立て・検証・2 ファイルの置き換え
   ```
 data_models:
   - name: MigrationEntry
     title: 移したもの
-    container: skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     role: DTO
     summary: 書き換えた 1 件。`migrate` の出力の `migrated[]` と同じキー
@@ -27,7 +27,7 @@ data_models:
 constants:
   - name: DONE_TO_STATUS
     title: done から状態への対応
-    container: skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     summary: 資料の `done` の値 → `status`
     value: '{True: "完成", False: "下書き"}'
@@ -35,7 +35,7 @@ functions:
   - name: migrate_settings
     title: 設定の移行
     kind: 関数
-    container: skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     scope: public
     summary: 題名を持たない設定に題名を足した設定を返す
@@ -85,7 +85,7 @@ functions:
   - name: migrate_docs_items
     title: 資料の移行
     kind: 関数
-    container: skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     scope: public
     summary: 資料の `done` を `status` に置き換えた並びを返す
@@ -119,7 +119,7 @@ functions:
   - name: migrate_workspace
     title: ワークスペースの移行
     kind: 関数
-    container: skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     scope: public
     summary: 設定と資料を移し、検証してから 2 ファイルを置き換える
