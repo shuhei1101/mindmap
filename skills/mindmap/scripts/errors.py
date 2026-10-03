@@ -23,9 +23,11 @@ class WorkspaceExistsError(MindmapError):
 class SchemaMismatchError(MindmapError):
     """書き込もうとした・書き出そうとしたワークスペースがスキーマに合わない。"""
 
-    def __init__(self, lines: list[str]) -> None:
-        """合わない箇所ごとの `{ファイル名}: {キーのパス}: {理由}` の行を持つ。"""
+    def __init__(self, lines: list[str], *, legacy: bool = False) -> None:
+        """合わない箇所ごとの `{ファイル名}: {キーのパス}: {理由}` の行と、前の版の形式の問題があるかを持つ。"""
         super().__init__("スキーマに合いません", lines)
+        # 問題に前の版の形式（資料の `done`・題名の無い設定）のものがあるか
+        self.legacy = legacy
 
 
 class ItemNotFoundError(MindmapError):
@@ -38,3 +40,7 @@ class OptionNotFoundError(MindmapError):
 
 class WriteFailedError(MindmapError):
     """ファイルの書き込み・置き換えで OSError が起きた。"""
+
+
+class SummaryRequiredError(MindmapError):
+    """題名を持たないワークスペースを `--summary` 無しで移そうとした（入口は終了コード 2）。"""

@@ -49,22 +49,30 @@ def main(argv: list[str] | None = None) -> int:
 
     # それ以外: 依存の確認を通った環境で動くので、3.12 の書き方のモジュールをここで読む
     import commands
-    from errors import MindmapError
+    from errors import MindmapError, SchemaMismatchError, SummaryRequiredError
+    from store import LEGACY_HINT
 
     try:
         payload, exit_code = _run_command(commands, args)
+    except SummaryRequiredError as error:
+        # 題名が要る（引数の誤り）: 標準エラーに出して終了コード 2
+        print(f"エラー: {error}", file=sys.stderr)
+        return 2
     except MindmapError as error:
         # コマンドのエラー: 標準エラーに出して終了コード 1（標準出力には何も出さない）
         print(f"エラー: {error}", file=sys.stderr)
         for line in error.lines:
             print(line, file=sys.stderr)
+        # 前の版の形式のスキーマ違反: 最後に migrate を案内する
+        if isinstance(error, SchemaMismatchError) and error.legacy:
+            print(LEGACY_HINT, file=sys.stderr)
         return 1
     print(json.dumps(payload, ensure_ascii=False))
     return exit_code
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """14 のコマンドと引数を持つ ArgumentParser を作る。"""
+    """15 のコマンドと引数を持つ ArgumentParser を作る。"""
     parser = argparse.ArgumentParser(
         prog="mindmap.py", description="ワークスペースの YAML を読み書き・検索・点検する"
     )
@@ -116,6 +124,10 @@ def build_parser() -> argparse.ArgumentParser:
     add_command("check", "スキーマ違反・参照切れ・本文のずれを洗い出す")
     add_command("build", "記録を埋め込んだ preview.html を書き出す")
     add_command("goal", "ゴールに届いたかと残りを返す")
+    migrate_parser = add_command("migrate", "前の版の形式を今の形式に移す")
+    migrate_parser.add_argument(
+        "--summary", default=None, help="設定に足す題名（設定が題名を持たないときに渡す）"
+    )
     return parser
 
 
@@ -184,6 +196,7 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
         "check": lambda: commands.run_check(root),
         "build": lambda: commands.run_build(root),
         "goal": lambda: commands.run_goal(root),
+        "migrate": lambda: commands.run_migrate(root, summary=args.summary),
     }
     return handlers[args.command]()
 

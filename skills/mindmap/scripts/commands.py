@@ -13,17 +13,22 @@ from checker import check_workspace
 from errors import ItemNotFoundError, OptionNotFoundError, SchemaMismatchError
 from graph import judge_goal, list_next_candidates, summarize_status, trace_impact
 from kinds import KINDS, Kind
+from migrator import migrate_workspace
 from query import SearchFilter, list_attrs, search_items, show_item
 from store import (
     BodyWrite,
     Change,
     create_workspace,
     find_item,
+    is_legacy_problem,
     load_workspace,
     next_id,
     now_utc,
     save_change,
 )
+
+# 前の版の形式の問題の詳細に続ける案内
+MIGRATE_HINT = "（migrate で今の形式に移せます）"
 
 # 標準入力で渡させない、スクリプトが付けるキー
 RESERVED_KEYS = ("id", "created", "updated", "body")
@@ -166,10 +171,17 @@ def run_adopt(root: Path, item_id: str, key: str, now: NowFn = now_utc) -> Resul
 
 
 def run_check(root: Path) -> Result:
-    """点検して、問題があれば終了コード 1 を返す。"""
-    problems = check_workspace(load_workspace(root))
-    payload = {"ok": not problems, "problems": [asdict(problem) for problem in problems]}
-    return payload, 1 if problems else 0
+    """点検して、問題があれば終了コード 1 を返す。前の版の形式の問題には migrate を案内する。"""
+    workspace = load_workspace(root)
+    problems = check_workspace(workspace)
+    rows = []
+    for problem in problems:
+        row = asdict(problem)
+        # 前の版の形式から来た問題: 詳細に migrate での移し方を続ける
+        if is_legacy_problem(problem, workspace):
+            row["detail"] += MIGRATE_HINT
+        rows.append(row)
+    return {"ok": not problems, "problems": rows}, 1 if problems else 0
 
 
 def run_build(root: Path, now: NowFn = now_utc) -> Result:
@@ -222,3 +234,9 @@ def _body_write(item_id: str, data: dict[str, Any]) -> BodyWrite | None:
     if text is None:
         return None
     return BodyWrite(name=f"{item_id}.md", text=str(text))
+
+
+def run_migrate(root: Path, *, summary: str | None) -> Result:
+    """前の版の形式を今の形式に移し、移したものを返す。"""
+    entries = migrate_workspace(root, summary=summary)
+    return {"migrated": [asdict(entry) for entry in entries]}, 0
