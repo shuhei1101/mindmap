@@ -52,3 +52,6 @@ items:
   - page: リリースの片付け.yaml
     summary: 'clear-release: リリースの資料を書き出す前に release/ の中身を消す'
     group: 点検と書き出し
+  - page: 配る書き出し.yaml
+    summary: 'export: 描画のライブラリまで中に持つ見るだけの 1 枚の HTML を書き出す'
+    group: 点検と書き出し
