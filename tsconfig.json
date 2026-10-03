@@ -5,8 +5,8 @@
     "types": [],
     "lib": ["es2022", "dom", "dom.iterable"],
     "target": "es2022",
-    "rootDir": "skills/mindmap/preview"
+    "rootDir": "plugins/mindstella/skills/mindmap/preview"
   },
-  "include": ["skills/mindmap/preview/**/*.ts"],
-  "exclude": ["skills/mindmap/preview/**/*.stories.ts"]
+  "include": ["plugins/mindstella/skills/mindmap/preview/**/*.ts"],
+  "exclude": ["plugins/mindstella/skills/mindmap/preview/**/*.stories.ts"]
 }

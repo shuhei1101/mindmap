@@ -1,11 +1,11 @@
 {
-  "name": "mindmap",
+  "name": "mindstella",
   "owner": { "name": "shuhei1101" },
   "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
   "plugins": [
     {
-      "name": "mindmap",
-      "source": "./",
+      "name": "mindstella",
+      "source": "./plugins/mindstella",
       "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル"
     }
   ]

@@ -50,7 +50,7 @@ const blocks = [...folders]
     const texts = files.map((file) => readFileSync(join(folder, file), "utf8").trim());
     return [`${name} ${version}`, `License: ${license ?? "（package.json に無い）"}`, "", ...texts].join("\n");
   });
-writeFileSync("skills/mindmap/preview/licenses/mermaid-bundled.txt", `${blocks.join("\n\n")}\n`);
+writeFileSync("plugins/mindstella/skills/mindmap/preview/licenses/mermaid-bundled.txt", `${blocks.join("\n\n")}\n`);
 console.log(`${blocks.length} packages`);
 ```
 

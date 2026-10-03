@@ -1,10 +1,10 @@
-// Storybook の設定。部品（skills/mindmap/preview/components/）の状態をストーリーとして開く。
+// Storybook の設定。部品（plugins/mindstella/skills/mindmap/preview/components/）の状態をストーリーとして開く。
 
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 // プレビューのフォルダ（雛形・CSS・tsc が生成した JavaScript を持つ）
-const PREVIEW_DIR = fileURLToPath(new URL("../skills/mindmap/preview", import.meta.url));
+const PREVIEW_DIR = fileURLToPath(new URL("../plugins/mindstella/skills/mindmap/preview", import.meta.url));
 
 // staticDirs で配るときの URL の頭
 const PREVIEW_URL = "/preview";
@@ -34,7 +34,7 @@ function componentScripts() {
 /** @type {import("@storybook/html-vite").StorybookConfig} */
 const config = {
   framework: "@storybook/html-vite",
-  stories: ["../skills/mindmap/preview/components/*.stories.ts"],
+  stories: ["../plugins/mindstella/skills/mindmap/preview/components/*.stories.ts"],
   core: { disableTelemetry: true },
   staticDirs: [{ from: PREVIEW_DIR, to: PREVIEW_URL }],
   // ストーリーの画面の head に、デザインのトークンと部品の CSS、描画のライブラリ、部品の JavaScript を差し込む

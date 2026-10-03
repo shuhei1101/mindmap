@@ -6,6 +6,6 @@
     "moduleResolution": "bundler",
     "rootDir": ".."
   },
-  "include": ["../skills/mindmap/preview/**/*.ts"],
+  "include": ["../plugins/mindstella/skills/mindmap/preview/**/*.ts"],
   "exclude": []
 }

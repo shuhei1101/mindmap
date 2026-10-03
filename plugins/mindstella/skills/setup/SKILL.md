@@ -7,7 +7,7 @@ allowed-tools: Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/m
 
 # setup
 
-依存を確かめ、新しいワークスペースを作るか、既存のワークスペースの状況を示して、`/mindmap:session` へ渡す。
+依存を確かめ、新しいワークスペースを作るか、既存のワークスペースの状況を示して、`/mindstella:session` へ渡す。
 
 ## 入力
 
