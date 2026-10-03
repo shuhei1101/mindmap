@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from preview_helpers import preview_reflects_yaml
 from workspace_fixtures import MakeItem, MakeWorkspace, RunMindmap
 
 if TYPE_CHECKING:
@@ -48,11 +49,6 @@ def _placed(title: str, phase: str, **keys: Any) -> dict[str, Any]:
 def _log(title: str, related: list[str], summary: str) -> dict[str, Any]:
     """会話ログの項目の中身を作る。"""
     return {"title": title, "date": TODAY, "related": related, "body_markdown": summary}
-
-
-def _newest_yaml_mtime(root: Path) -> int:
-    """ワークスペースの YAML の更新時刻のうち、一番新しいものを返す。"""
-    return max(path.stat().st_mtime_ns for path in root.glob("*.yaml"))
 
 
 def test_normal_when_new_discussion(
@@ -219,8 +215,8 @@ def test_normal_when_new_discussion(
     # check が参照切れと、YAML と Markdown のずれを 0 件で返す
     assert checked.returncode == 0
     assert json.loads(checked.stdout)["problems"] == []
-    # preview.html が最後の編集より後に書き出されている
-    assert (root / "preview.html").stat().st_mtime_ns >= _newest_yaml_mtime(root)
+    # preview.html が最後の編集より後に書き出されている（埋め込んだ記録が今の YAML と同じ）
+    assert preview_reflects_yaml(root)
 
 
 def test_normal_when_resume(

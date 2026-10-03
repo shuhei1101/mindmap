@@ -80,9 +80,11 @@ def test_normal(
     page.click('#tile-review button[data-id="D-3"]')
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-3の題"
-    # 実行（つながりを開き、D-3 の玉を押す。開いている詳細パネルは閉じない）
+    # 実行（つながりを開く。開いている詳細パネルは閉じない）
     page.click('nav.tabbar a[data-tab="graph"]')
     page.wait_for_selector("#graph-canvas")
+    assert page.inner_text("aside.panel .d-title") == "D-3の題"
+    # 実行（D-3 の玉を押す）
     click_item_ball(page, "D-3")
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-3の題"

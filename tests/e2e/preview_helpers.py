@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
+import yaml
 from playwright.sync_api import Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
@@ -12,6 +15,7 @@ __all__ = [
     "BuildPreview",
     "OpenPreview",
     "click_item_ball",
+    "preview_reflects_yaml",
     "row_ids",
 ]
 
@@ -27,8 +31,9 @@ BALL_MERGE_DISTANCE = 24
 # キャンバスの縁を調べないための余白（px）
 CANVAS_MARGIN = 6
 
-# 玉の数の上限（押した玉を順に試す回数の上限）
+# 玉の数の上限と、玉を一巡して試す回数（試す回数の上限は 2 つの積）
 BALL_MAX_BALLS = 20
+BALL_CYCLES = 2
 
 # カメラが止まったとみなす条件: 走査を間を空けて 2 回続け、どの玉も動いた距離がこの値（px）以下
 BALL_STILL_DISTANCE = 1.5
@@ -54,6 +59,33 @@ SCAN_BALLS_SCRIPT = """([step, margin]) => {
     canvas.dispatchEvent(new PointerEvent('pointerleave', {bubbles: true}));
     return found;
 }"""
+
+
+# 埋め込みのデータの開きタグ
+DATA_ELEMENT_OPEN = '<script type="application/json" id="mindmap-data">'
+
+# 7 種類の YAML のファイル名（キーの名前はファイル名から .yaml を落としたもの）
+KIND_KEYS = ("decisions", "tasks", "research", "docs", "terms", "notes", "logs")
+
+
+def _yaml_items(root: Path, key: str) -> list[Any]:
+    """ワークスペースの種類ごとの YAML の項目を返す（ファイルが無い種類は項目なし）。"""
+    path = root / f"{key}.yaml"
+    if not path.exists():
+        return []
+    return yaml.safe_load(path.read_text(encoding="utf-8"))["items"]
+
+
+def preview_reflects_yaml(root: Path) -> bool:
+    """preview.html に埋め込んだ記録が、今のワークスペースの YAML と同じか（最後の編集の後に書き出されたか）を返す。
+
+    ファイルの更新時刻の比べ方は、実行環境の時計が戻ると崩れるので、書き出された中身で確かめる。
+    """
+    html = (root / "preview.html").read_text(encoding="utf-8")
+    embedded: dict[str, Any] = json.loads(
+        html.split(DATA_ELEMENT_OPEN, 1)[1].split("</script>", 1)[0]
+    )
+    return all(embedded[key] == _yaml_items(root, key) for key in KIND_KEYS)
 
 
 def row_ids(page: Page) -> list[str]:
@@ -95,13 +127,18 @@ def _settled_ball_centers(page: Page) -> list[tuple[float, float]]:
 
 
 def click_item_ball(page: Page, item_id: str) -> None:
-    """つながりのキャンバスで、指定した項目の玉を探して押す（玉の位置は画面に出ないので、押して開いた詳細で確かめる）。"""
-    for tried in range(BALL_MAX_BALLS):
-        # カメラが止まってから玉を探し、まだ押していない玉を順に押す
+    """つながりのキャンバスで、指定した項目の玉を探して押す（玉の位置は画面に出ないので、押して開いた詳細で確かめる）。
+
+    詳細パネルが開いたままだと、押した玉が開いている項目と同じかを見分けられず、カメラもその項目へ寄っているので、
+    先にパネルを閉じて全体を見る位置に戻す。
+    """
+    if page.locator("aside.panel.open").count() > 0:
+        page.keyboard.press("Escape")
+        page.wait_for_function("!document.querySelector('aside.panel.open')")
+    for attempt in range(BALL_MAX_BALLS * BALL_CYCLES):
+        # カメラが止まってから玉を探す。押すたびに玉の数や並びが変わりうるので、探した玉を順に（一巡したら最初から）押す
         centers = _settled_ball_centers(page)
-        if tried >= len(centers):
-            break
-        x, y = centers[tried]
+        x, y = centers[attempt % len(centers)]
         page.mouse.move(x, y)
         page.mouse.down()
         page.mouse.up()
