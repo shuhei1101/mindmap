@@ -1,0 +1,1 @@
+# プラグインを配るフォルダ plugins/mindstella/ の中にも LICENSE を置く
