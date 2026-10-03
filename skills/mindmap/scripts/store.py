@@ -27,8 +27,8 @@ from errors import (
 )
 from kinds import (
     BODY_DIR,
-    HANDOFF_DIR,
     KINDS,
+    RELEASE_DIR,
     SETTINGS_FILE,
     Kind,
     kind_of_id,
@@ -306,7 +306,7 @@ def save_change(workspace: Workspace, change: Change) -> None:
 
 
 def create_workspace(root: Path, settings: dict[str, Any]) -> list[str]:
-    """設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`handoff/` を作る。"""
+    """設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`release/` を作る。"""
     root = root.resolve()
     if (root / SETTINGS_FILE).exists():
         raise WorkspaceExistsError(f"既にワークスペースがあります: {root}")
@@ -333,7 +333,7 @@ def create_workspace(root: Path, settings: dict[str, Any]) -> list[str]:
         root.mkdir(parents=True, exist_ok=True)
         if top_missing is not None:
             created.append(top_missing)
-        for dir_name in (BODY_DIR, HANDOFF_DIR):
+        for dir_name in (BODY_DIR, RELEASE_DIR):
             _make_dir(root / dir_name, created)
             files.append(f"{dir_name}/")
         for spec in KINDS.values():
@@ -347,6 +347,34 @@ def create_workspace(root: Path, settings: dict[str, Any]) -> list[str]:
         _remove_created(created)
         raise write_failed(root, error) from error
     return files
+
+
+def clear_release(root: Path) -> list[str]:
+    """`release/` の中のファイルとフォルダを消す（`release/` が無ければ作る）。"""
+    root = root.resolve()
+    # mindmap.yaml が無いフォルダはワークスペースではない（何も消さない）
+    if not (root / SETTINGS_FILE).is_file():
+        raise WorkspaceNotFoundError(f"ワークスペースがありません: {root}")
+
+    release_dir = root / RELEASE_DIR
+    removed: list[str] = []
+    try:
+        release_dir.mkdir(exist_ok=True)
+    except OSError as error:
+        raise write_failed(release_dir, error) from error
+    # 名前の順に消す。消せないものに当たったら、そこで止める（それまでに消したものは戻さない）
+    for path in sorted(release_dir.iterdir(), key=lambda entry: entry.name):
+        # リンクでないフォルダは中身ごと、リンクとファイルはそのものを消す（リンク先は消さない）
+        is_folder = path.is_dir() and not path.is_symlink()
+        try:
+            if is_folder:
+                shutil.rmtree(path)
+            else:
+                path.unlink()
+        except OSError as error:
+            raise write_failed(path, error) from error
+        removed.append(f"{path.name}/" if is_folder else path.name)
+    return removed
 
 
 def read_body(workspace: Workspace, name: str) -> str | None:

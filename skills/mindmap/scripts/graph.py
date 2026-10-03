@@ -11,7 +11,7 @@ from store import Workspace, as_ids, find_item
 # 再開時の状況に載せる次の候補の件数
 STATUS_NEXT_LIMIT = 3
 
-# ゴールの成果物ができたとみなす資料の状態
+# ゴールの納品物ができたとみなす資料の状態
 DOC_COMPLETE_STATUS = "完成"
 
 # 影響度 → 並べる順。影響度が無いものは最後
@@ -79,7 +79,7 @@ class StatusSummary:
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class GoalReport:
-    """ゴール判定の結果。ゴールに届いたかと、残りの検討事項・成果物。"""
+    """ゴール判定の結果。ゴールに届いたかと、残りの検討事項・納品物。"""
 
     # 届いたか（残りがどちらも空のときだけ真）
     reached: bool
@@ -89,7 +89,7 @@ class GoalReport:
     phases: list[str]
     # 決着していない検討事項（`id`・`title`・`phase`・`status`）
     remaining_decisions: list[dict[str, str]]
-    # 揃っていない成果物（`title`・`doc`）
+    # 揃っていない納品物（`title`・`doc`）
     remaining_deliverables: list[dict[str, str | None]]
 
 
@@ -145,7 +145,7 @@ def trace_impact(workspace: Workspace, start_id: str) -> list[Affected]:
 
 
 def judge_goal(workspace: Workspace) -> GoalReport:
-    """ゴールのフェーズまでの検討事項が決着し、ゴールの成果物が揃ったかを判定する。"""
+    """ゴールのフェーズまでの検討事項が決着し、ゴールの納品物が揃ったかを判定する。"""
     settings = workspace.settings
     phases = settings.get("phases")
     phase_order = [str(phase) for phase in phases] if isinstance(phases, list) else []
@@ -174,7 +174,7 @@ def judge_goal(workspace: Workspace) -> GoalReport:
         }
         for item in unsettled
     ]
-    # ゴールの成果物のうち、資料に繋がっていないか、資料が完成していないものを並びのまま集める
+    # ゴールの納品物のうち、資料に繋がっていないか、資料が完成していないものを並びのまま集める
     docs = {item["id"]: item for item in workspace.items["doc"]}
     deliverables = goal_settings.get("deliverables")
     remaining_deliverables: list[dict[str, str | None]] = []

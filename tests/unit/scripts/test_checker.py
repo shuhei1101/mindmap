@@ -74,7 +74,7 @@ def test_check_refs_when_missing(
 ) -> None:
     """存在しない ID を指す参照を拾う（正常系）。"""
     # 準備
-    valid_settings["goal"]["deliverables"] = [{"title": "成果物", "doc": "A-9"}]
+    valid_settings["goal"]["deliverables"] = [{"title": "納品物", "doc": "A-9"}]
     root = make_workspace(
         make_item("D-1", depends_on=["D-9"]),
         make_item("T-1", **{"for": ["D-8"]}),

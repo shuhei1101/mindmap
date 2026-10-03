@@ -14,7 +14,7 @@ def _card_ids(page) -> list[str]:
 
 
 def test_cards(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
-    """成果物を先頭に印付きで並べ、資料の状態を出し、押すと詳細を開く（正常系）。"""
+    """納品物を先頭に印付きで並べ、資料の状態を出し、押すと詳細を開く（正常系）。"""
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=docs")
@@ -60,15 +60,15 @@ def test_card_filter(write_sample_preview: WriteSamplePreview, open_preview: Ope
     page = open_preview(path, "#tab=docs")
     # 実行
     page.click('button[aria-label="絞り込み"]')
-    page.click('.pop label:has-text("成果物以外")')
+    page.click('.pop label:has-text("納品物以外")')
     page.wait_for_selector(".chips .chip")
     # 検証
     assert page.eval_on_selector_all(".chips .chip", "c => c.map(x => x.textContent)") == [
-        "成果物: 成果物以外"
+        "納品物: 納品物以外"
     ]
     assert _card_ids(page) == ["A-2"]
     # チップの × で個別に外す
-    page.click('.chips .chip button[aria-label="成果物: 成果物以外 の条件を外す"]')
+    page.click('.chips .chip button[aria-label="納品物: 納品物以外 の条件を外す"]')
     page.wait_for_function("document.querySelectorAll('.doc-card').length === 2")
     assert _card_ids(page) == ["A-1", "A-2"]
 
@@ -79,7 +79,7 @@ def test_card_filter_clear_all(
     """条件が 2 つ以上あるとき、すべて外すで全ての条件を外す（正常系）。"""
     # 準備
     path = write_sample_preview()
-    page = open_preview(path, "#tab=docs&f.deliverable=成果物&f.status=完成")
+    page = open_preview(path, "#tab=docs&f.deliverable=納品物&f.status=完成")
     assert _card_ids(page) == ["A-1"]
     # 実行
     page.click(".chips >> text=すべて外す")
@@ -142,7 +142,7 @@ def test_board_order(
     make_item: MakeItem,
     sample_settings: dict[str, Any],
 ) -> None:
-    """列の中は成果物を先頭に連番の順に並べる（正常系）。"""
+    """列の中は納品物を先頭に連番の順に並べる（正常系）。"""
     # 準備
     path = write_preview(
         make_item("A-1", deliverable=False, status="完成", kind="文書"),
@@ -188,11 +188,11 @@ def test_board_filter(write_sample_preview: WriteSamplePreview, open_preview: Op
     page = open_preview(path, "#tab=docs&view=board")
     # 実行
     page.click('button[aria-label="絞り込み"]')
-    page.click('.pop label:has-text("成果物以外")')
+    page.click('.pop label:has-text("納品物以外")')
     page.wait_for_selector(".chips .chip")
     # 検証
     assert page.eval_on_selector_all(".chips .chip", "c => c.map(x => x.textContent)") == [
-        "成果物: 成果物以外"
+        "納品物: 納品物以外"
     ]
     assert _board_columns(page) == [
         ["下書き", "1", ["A-2"]],
@@ -200,7 +200,7 @@ def test_board_filter(write_sample_preview: WriteSamplePreview, open_preview: Op
         ["完成", "0", []],
     ]
     # チップの × で外すと全ての列のカードが戻る
-    page.click('.chips .chip button[aria-label="成果物: 成果物以外 の条件を外す"]')
+    page.click('.chips .chip button[aria-label="納品物: 納品物以外 の条件を外す"]')
     page.wait_for_function("document.querySelectorAll('.board .doc-card').length === 2")
     assert _board_columns(page) == [
         ["下書き", "1", ["A-2"]],

@@ -1,4 +1,4 @@
-"""話し合いをゴールまで進める（セットアップから取り込み・ヒアリング・リサーチ・方針転換を重ね、ゴール判定で引き渡すまで）の E2E テスト。
+"""話し合いをゴールまで進める（セットアップから取り込み・ヒアリング・リサーチ・方針転換を重ね、ゴール判定でリリースするまで）の E2E テスト。
 
 モデルを呼ばず、スキルの手順が連ねるコマンドを決めた引数で順に再生して、ワークスペースの状態を確かめる。
 """
@@ -152,7 +152,7 @@ def test_normal_when_new_discussion(
         "update", "D-2", *ws, data={"status": "決定済み", "answer": "テーブルを種類ごとに分ける"}
     )
     replay("update", "T-2", *ws, data={"status": "完了", "result": "テーブルの分け方を決めた"})
-    # 成果物の資料を作る
+    # 納品物の資料を作る
     replay(
         "add",
         "doc",
@@ -168,14 +168,15 @@ def test_normal_when_new_discussion(
     )
     # プレビュー: 記録を書き出す
     replay("build", *ws)
-    # ゴール判定: 届いたかを確かめ、確定の後に handoff/ へ書き出す
+    # ゴール判定: 届いたかを確かめ、確定の後に release/ へ書き出す
     goal = replay("goal", *ws)
     deliverable = replay("show", "A-1", *ws)
-    (root / "handoff" / "決定事項.md").write_text(
+    replay("clear-release", *ws)
+    (root / "release" / "決定事項.md").write_text(
         "# 決定事項\n\n- D-1: DB に保存する\n- D-2: テーブルを種類ごとに分ける\n", encoding="utf-8"
     )
-    (root / "handoff" / "要件定義書.md").write_text(deliverable["body_markdown"], encoding="utf-8")
-    replay("add", "log", *ws, data=_log("ゴール判定", ["A-1"], "ゴールに届いたので引き渡した"))
+    (root / "release" / "要件定義書.md").write_text(deliverable["body_markdown"], encoding="utf-8")
+    replay("add", "log", *ws, data=_log("ゴール判定", ["A-1"], "ゴールに届いたのでリリースした"))
     replay("build", *ws)
     checked = run_mindmap("check", *ws)
 
@@ -207,9 +208,9 @@ def test_normal_when_new_discussion(
     assert goal["reached"] is True
     assert goal["remaining_decisions"] == []
     assert goal["remaining_deliverables"] == []
-    # handoff/ に、確定した検討事項と成果物の資料が書き出されている
-    assert "D-2" in (root / "handoff" / "決定事項.md").read_text(encoding="utf-8")
-    assert "支出を DB に記録する" in (root / "handoff" / "要件定義書.md").read_text(
+    # release/ に、確定した検討事項と納品物の資料が書き出されている
+    assert "D-2" in (root / "release" / "決定事項.md").read_text(encoding="utf-8")
+    assert "支出を DB に記録する" in (root / "release" / "要件定義書.md").read_text(
         encoding="utf-8"
     )
     # check が参照切れと、YAML と Markdown のずれを 0 件で返す

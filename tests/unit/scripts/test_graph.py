@@ -236,7 +236,7 @@ def test_judge_goal(
 def test_judge_goal_when_remaining(
     make_workspace: MakeWorkspace, make_item: MakeItem, valid_settings: dict[str, Any]
 ) -> None:
-    """決着していない検討事項と揃っていない成果物を集める（正常系）。"""
+    """決着していない検討事項と揃っていない納品物を集める（正常系）。"""
     # 準備
     settings = {
         **valid_settings,

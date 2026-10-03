@@ -162,6 +162,18 @@ def test_run_init(tmp_path: Path, valid_settings: dict[str, Any]) -> None:
     assert exit_code == 0
 
 
+def test_run_clear_release(make_workspace: MakeWorkspace) -> None:
+    """release/ の中を消し、消したものを返す（正常系）。"""
+    # 準備
+    root = make_workspace()
+    (root / "release" / "古い資料.md").write_text("古い\n", encoding="utf-8")
+    # 実行
+    payload, exit_code = commands.run_clear_release(root)
+    # 検証
+    assert payload == {"removed": ["古い資料.md"]}
+    assert exit_code == 0
+
+
 def test_run_add(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
     """本文つきの検討事項を足す（正常系）。"""
     # 準備

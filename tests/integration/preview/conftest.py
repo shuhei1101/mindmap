@@ -44,7 +44,7 @@ def write_preview(make_workspace: MakeWorkspace, run_mindmap: RunMindmap) -> Wri
 
 @pytest.fixture
 def sample_settings(valid_settings: dict[str, Any]) -> dict[str, Any]:
-    """カテゴリー 2 つ・成果物 1 つを持つ設定を返す（概要の進み具合・成果物のチェックリスト用）。"""
+    """カテゴリー 2 つ・納品物 1 つを持つ設定を返す（概要の進み具合・納品物のチェックリスト用）。"""
     return {
         **valid_settings,
         "categories": [
@@ -112,7 +112,7 @@ def sample_bodies() -> dict[str, str]:
     """サンプルの項目が指す本文（`docs/` のファイル名 → 本文）。"""
     return {
         "D-3.md": BODY_WITH_DIAGRAM,
-        "A-1.md": "# 成果物の本文\n",
+        "A-1.md": "# 納品物の本文\n",
         "A-2.md": "下書きの本文\n",
     }
 

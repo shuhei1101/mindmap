@@ -8,10 +8,10 @@ from playwright.sync_api import Page
 from preview_helpers import BuildPreview, OpenPreview, row_ids
 from workspace_fixtures import MakeItem
 
-# ゴールまでのタイルが、成果物を全て出す上限の件数
+# ゴールまでのタイルが、納品物を全て出す上限の件数
 DELIVERABLE_LIMIT = 5
 
-# 成果物の資料の件数（上限を超える数）
+# 納品物の資料の件数（上限を超える数）
 MANY_DELIVERABLES = 6
 
 # 保留の検討事項の件数（すべて表示の件数）
@@ -19,13 +19,13 @@ HOLD_COUNT = 2
 
 
 def _goal_settings(valid_settings: dict[str, Any], doc_ids: list[str]) -> dict[str, Any]:
-    """成果物が資料 doc_ids を指す設定を返す。"""
+    """納品物が資料 doc_ids を指す設定を返す。"""
     return {
         **valid_settings,
         "goal": {
             "phase": "構成",
             "summary": "作り始められる",
-            "deliverables": [{"title": f"{doc_id}の成果物", "doc": doc_id} for doc_id in doc_ids],
+            "deliverables": [{"title": f"{doc_id}の納品物", "doc": doc_id} for doc_id in doc_ids],
         },
     }
 
@@ -66,7 +66,7 @@ def test_normal(
         "#tile-goal .checklist li",
         "items => items.map(i => [i.querySelector('button').textContent, i.classList.contains('done')])",
     )
-    assert checklist == [["A-1の成果物", True], ["A-2の成果物", False]]
+    assert checklist == [["A-1の納品物", True], ["A-2の納品物", False]]
     review_ids = page.eval_on_selector_all(
         "#tile-review button[data-id]", "buttons => buttons.map(b => b.dataset.id)"
     )
@@ -121,7 +121,7 @@ def test_normal_when_many_deliverables(
     make_item: MakeItem,
     valid_settings: dict[str, Any],
 ) -> None:
-    """成果物が上限を超えると、先頭だけを出して、すべて表示で資料を成果物で絞って開く（正常系）。"""
+    """納品物が上限を超えると、先頭だけを出して、すべて表示で資料を納品物で絞って開く（正常系）。"""
     # 準備
     deliverable_ids = [f"A-{number}" for number in range(1, MANY_DELIVERABLES + 1)]
     other_id = f"A-{MANY_DELIVERABLES + 1}"
@@ -139,7 +139,7 @@ def test_normal_when_many_deliverables(
     assert show_all.count() == 1
     show_all.click()
     page.wait_for_selector(".doc-card")
-    assert _chips(page) == ["成果物: 成果物"]
+    assert _chips(page) == ["納品物: 納品物"]
     cards = page.eval_on_selector_all(".doc-card", "cards => cards.map(c => c.dataset.id)")
     assert sorted(cards) == deliverable_ids
     assert other_id not in cards
