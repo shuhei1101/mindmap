@@ -33,9 +33,12 @@ BALL_MERGE_DISTANCE = 24
 # キャンバスの縁を調べないための余白（px）
 CANVAS_MARGIN = 6
 
-# 玉の数の上限と、玉を一巡して試す回数（試す回数の上限は 2 つの積）
-BALL_MAX_BALLS = 20
-BALL_CYCLES = 2
+# 向きを変えて探し直す回数の上限と、1 回にキャンバスを横へドラッグする量（px）
+BALL_MAX_TURNS = 6
+BALL_TURN_DRAG_DISTANCE = 120
+
+# ドラッグの途中で動きを止めずに送るマウスの移動の回数
+BALL_TURN_DRAG_STEPS = 10
 
 # カメラが止まったとみなす条件: 走査を間を空けて 2 回続け、どの玉も動いた距離がこの値（px）以下
 BALL_STILL_DISTANCE = 1.5
@@ -128,32 +131,59 @@ def _settled_ball_centers(page: Page) -> list[tuple[float, float]]:
     raise AssertionError("つながりのカメラが止まりませんでした")
 
 
+def _turn_camera(page: Page) -> None:
+    """つながりのキャンバスを横にドラッグして、玉を見る向きを変える（玉の上から始めても、押しではなくドラッグになる）。"""
+    box = page.locator("#graph-canvas").bounding_box()
+    assert box is not None
+    x = box["x"] + box["width"] / 2
+    y = box["y"] + box["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x + BALL_TURN_DRAG_DISTANCE, y, steps=BALL_TURN_DRAG_STEPS)
+    page.mouse.up()
+
+
+def _click_ball_in_view(page: Page, item_id: str) -> bool:
+    """今の向きで見える玉を 1 つずつ押し、指定した項目の詳細が開いたら True を返す（全て試して開かなければ False）。"""
+    # 押すたびに玉の数や並びが変わりうるので、玉の数だけ数えて、押すたびに探し直す
+    ball_count = len(_settled_ball_centers(page))
+    for index in range(ball_count):
+        centers = _settled_ball_centers(page)
+        x, y = centers[index % len(centers)]
+        page.mouse.move(x, y)
+        page.mouse.down()
+        page.mouse.up()
+        try:
+            page.wait_for_selector(
+                "aside.panel.open .panel-kind .mono", timeout=BALL_OPEN_TIMEOUT_MS
+            )
+        except PlaywrightTimeoutError:
+            # 玉に当たらなかった: 次の玉へ
+            continue
+        # 押した玉が目的の項目なら、そこで終える。違えば閉じて、カメラが止まるのを待って次の玉を押す
+        if page.locator("aside.panel.open .panel-kind .mono").inner_text() == item_id:
+            return True
+        page.keyboard.press("Escape")
+        page.wait_for_function("!document.querySelector('aside.panel.open')")
+    return False
+
+
 def click_item_ball(page: Page, item_id: str) -> None:
     """つながりのキャンバスで、指定した項目の玉を探して押す（玉の位置は画面に出ないので、押して開いた詳細で確かめる）。
 
+    他の玉に隠れて見つからないときは、キャンバスをドラッグして向きを変え、カメラが止まってから探し直す。
     詳細パネルが開いたままだと、押した玉が開いている項目と同じかを見分けられず、カメラもその項目へ寄っているので、
     先にパネルを閉じて全体を見る位置に戻す。
     """
     if page.locator("aside.panel.open").count() > 0:
         page.keyboard.press("Escape")
         page.wait_for_function("!document.querySelector('aside.panel.open')")
-    for attempt in range(BALL_MAX_BALLS * BALL_CYCLES):
-        # カメラが止まってから玉を探す。押すたびに玉の数や並びが変わりうるので、探した玉を順に（一巡したら最初から）押す
-        centers = _settled_ball_centers(page)
-        x, y = centers[attempt % len(centers)]
-        page.mouse.move(x, y)
-        page.mouse.down()
-        page.mouse.up()
-        try:
-            page.wait_for_selector("aside.panel.open .panel-kind .mono", timeout=BALL_OPEN_TIMEOUT_MS)
-        except PlaywrightTimeoutError:
-            # 玉に当たらなかった: 次の玉へ
-            continue
-        # 押した玉が目的の項目なら、そこで終える。違えば閉じて、カメラが止まるのを待って次の玉を押す
-        if page.locator("aside.panel.open .panel-kind .mono").inner_text() == item_id:
+    for turn in range(BALL_MAX_TURNS + 1):
+        # 開いた直後の向きを最初に探し、見つからなければ向きを変えて探し直す（向きを変えるのは上限まで）
+        if turn > 0:
+            _turn_camera(page)
+        if _click_ball_in_view(page, item_id):
             return
-        page.keyboard.press("Escape")
-        page.wait_for_function("!document.querySelector('aside.panel.open')")
     raise AssertionError(f"つながりに {item_id} の玉が見つかりませんでした")
 
 

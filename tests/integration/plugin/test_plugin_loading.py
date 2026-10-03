@@ -1,4 +1,4 @@
-"""プラグインの読み込み（plugins/mindstella/ の .claude-plugin/plugin.json と skills/）の結合テスト。"""
+"""プラグインの読み込み（plugins/mindstella/ の .claude-plugin/plugin.json・skills/・LICENSE）の結合テスト。"""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ def _count_hooks(details: str) -> int:
 
 
 def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
-    """プラグイン mindstella が 2 つのスキルと共通の置き場所を持ち、プラグインの外のフォルダを持たず、hooks を持たずに読み込まれる（正常系）。"""
+    """プラグイン mindstella が 2 つのスキルと共通の置き場所と LICENSE を持ち、プラグインの外のフォルダを持たず、hooks を持たずに読み込まれる（正常系）。"""
     # 準備
     run_claude("plugin", "marketplace", "add", str(repo_root))
 
@@ -52,6 +52,9 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert (shared / "playbooks").is_dir()
     assert (shared / "schemas").is_dir()
     assert (shared / "scripts").is_dir()
+    # 取り込まれたプラグインのフォルダの直下に LICENSE があり、本文がリポジトリの直下の LICENSE と一致する
+    assert (install_path / "LICENSE").is_file()
+    assert (install_path / "LICENSE").read_bytes() == (repo_root / "LICENSE").read_bytes()
     # 取り込まれたプラグインのフォルダに .claude-plugin/plugin.json があり、リポジトリの開発用のファイルが無い
     assert (install_path / ".claude-plugin" / "plugin.json").is_file()
     assert [name for name in OUTSIDE_PLUGIN_NAMES if (install_path / name).exists()] == []
