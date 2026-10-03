@@ -518,7 +518,7 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 .crumbs a { color: var(--text-2); }
 
 /* ===== 表示形式の切り替え: どのタブでも同じ幅・同じ位置 ===== */
-.segment button { width: 96px; min-width: 0; }
+.segment button { width: var(--view-switch-item-width, 96px); min-width: 0; }
 
 /* ===== マップのキーワード: 名前に含む項目を黄色で強調し、状態の印に件数のバッジを付ける ===== */
 .map-node.hit { background: var(--hit); }

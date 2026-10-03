@@ -7,5 +7,6 @@
     "target": "es2022",
     "rootDir": "skills/mindmap/preview"
   },
-  "include": ["skills/mindmap/preview/**/*.ts"]
+  "include": ["skills/mindmap/preview/**/*.ts"],
+  "exclude": ["skills/mindmap/preview/**/*.stories.ts"]
 }

@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p .",
-    "typecheck": "tsc -p . --noEmit",
+    "typecheck": "tsc -p . --noEmit && tsc -p .storybook",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static"
   },
