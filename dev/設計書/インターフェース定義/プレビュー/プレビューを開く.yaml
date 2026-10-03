@@ -99,8 +99,8 @@ flows:
     setup:
       - name: Mock
         description: ブラウザから `file:` 以外への要求を全て失敗させ、要求の数を数える
-      - name: make_workspace
-        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を `export` で書き出した HTML
+      - name: exported_html
+        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を持つワークスペースから `export` で書き出した HTML
         notes: ハッシュは `tab=decisions&id=D-3`
     flow: |-
       ```mermaid
@@ -117,6 +117,7 @@ flows:
       - '`role="alert"` の読めなかったライブラリの知らせが無い'
       - マップに D-3 が描かれている
       - 詳細パネルに D-3 が開き、本文の見出しが見出しの要素で、図が SVG で描かれている
+    test: test_normal_when_exported_offline
   - name: 異常系（描画のライブラリが読めない）
     summary: 描画のライブラリの配信元に届かないと、使う箇所に読めなかったライブラリの名前を出す
     setup:
