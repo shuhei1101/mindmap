@@ -22,7 +22,7 @@ COLUMNS_JS = """
 
 # 絞り込みの行
 FILTER_ROWS = [
-    {"id": "D-1", "status": "要見直し", "ready": "着手可能", "tags": ["a", "b"]},
+    {"id": "D-1", "status": "要見直し", "ready": "なし", "tags": ["a", "b"]},
     {"id": "D-2", "status": "保留", "ready": "なし", "tags": ["c"]},
     {"id": "D-3", "status": "未決定", "ready": "着手可能", "tags": ["a"]},
     {"id": "D-4", "status": "未決定", "ready": "前提待ち", "tags": []},

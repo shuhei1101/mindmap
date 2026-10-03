@@ -602,3 +602,8 @@ table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--
 
 /* 詳細の見出しの「← →」: 見てきた項目を行き来する。行き来できないときは押せない見た目 */
 .icon-btn:disabled { color: var(--text-3); opacity: .45; cursor: default; background: none; }
+
+/* ===== 全画面表示のボタン: 押された状態（全画面のとき）を面と枠の色で示す ===== */
+
+/* 押された全画面表示のボタン */
+.icon-btn[data-act="full"][aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-weak); }
