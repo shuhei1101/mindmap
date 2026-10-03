@@ -6,6 +6,7 @@ directory: |-
   skills/mindmap/preview/
     core/
       globals.d.ts   描画のライブラリ（marked・DOMPurify・ELK・mermaid）のグローバルに npm の型を割り当てる（出力しない）
+      dom.ts         要素の組み立て（`h`）・アイコン・状態の印など、画面が共通で使う DOM の部品
       records.ts     記録の索引・関係する項目・検索（次の候補・ゴールまで・進み具合は build が計算した `derived` を使う）
       libs.ts        描画のライブラリの有無と呼び出し（Markdown・図・配置）
       router.ts      URL のハッシュの読み書きと履歴

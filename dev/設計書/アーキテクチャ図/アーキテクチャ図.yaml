@@ -112,7 +112,7 @@ subsystems:
     role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面
     runtime: TypeScript 7（tsc が生成した JavaScript をブラウザで動かす）
     runs_on: 利用者の端末のブラウザ（ファイルとして開く。サーバーは立てない）
-    status: planned
+    status: implemented
 external_systems:
   - name: Claude Code
     purpose: プラグインの読み込み・スキルの手順の実行・スクリプトのコマンドの起動

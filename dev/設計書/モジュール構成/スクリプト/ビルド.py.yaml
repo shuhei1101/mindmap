@@ -39,7 +39,7 @@ constants:
     container: skills/mindmap/scripts/builder.py
     usecase: プレビューの書き出し
     summary: 雛形のフォルダからの相対パス。tsc が `.ts` から生成した `.js` を並びの順につなぐ（起動する `app.js` が最後）。中身はモジュール構成『プレビュー』のディレクトリ構成
-    value: ("core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
+    value: ("core/dom.js", "core/records.js", "core/libs.js", "core/router.js", "components/view-switch.js", "components/topbar.js", "components/table.js", "screens/overview.js", "screens/decisions.js", "screens/tasks.js", "screens/docs.js", "screens/records.js", "screens/detail.js", "screens/search.js", "screens/diagram-viewer.js", "graph/graph.js", "app.js")
   - name: STYLE_SLOT
     title: CSS の差し込み口
     container: skills/mindmap/scripts/builder.py
