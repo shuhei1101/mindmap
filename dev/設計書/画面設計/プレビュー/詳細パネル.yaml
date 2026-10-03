@@ -49,7 +49,7 @@ elements:
     label: コピー
   - name: 関係する項目
     kind: list
-    description: 前提・後続の項目・関連タスク・経緯・関連・この項目を参照している項目。押すとその項目へ移り、履歴に積む。各行の先頭の ID のボタンは、見えている枠を縦横 24px（`--target-min`）以上にする
+    description: 前提・後続の項目・関連タスク・経緯・関連・この項目を参照している項目。押すとその項目へ移り、履歴に積む
     io: 表示
     source: プレビューを開く.mindmap-data（`depends_on`・`for`・`related`・`sources` とその逆向き）
     visible_when: その種類の項目が 1 件以上

@@ -43,7 +43,7 @@ elements:
         value: プレビューを開く.mindmap-data.tasks
       - name: filters
         value: プレビューを開く.f.{列}（開いたときだけ）
-    description: タスクの表。進める検討事項の列の ID のボタンは、見えている枠を縦横 24px（`--target-min`）以上にする
+    description: タスクの表
     visible_when: 表示形式が表
 lead: タスクをボード（既定）・表で見る画面。
 mock: dev/mock/pages/tasks/63/standard/index.html

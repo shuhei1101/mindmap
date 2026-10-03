@@ -77,7 +77,7 @@ elements:
         value: プレビューを開く.mindmap-data.decisions
       - name: filters
         value: プレビューを開く.f.{列}（開いたときだけ）
-    description: 検討事項の表。「着手できる」は `derived.next` にある検討事項か（はい / いいえ）。前提の列の ID のボタンは、見えている枠を縦横 24px（`--target-min`）以上にする
+    description: 検討事項の表。「着手できる」は `derived.next` にある検討事項か（はい / いいえ）
     visible_when: 表示形式が表
   - name: すべての状態を表示
     kind: checkbox
