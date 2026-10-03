@@ -25,6 +25,9 @@ if TYPE_CHECKING:
 
     from conftest import RunClaude
 
+# 版を比べるコマンド
+PLAN_COMMAND = "migrate --workspace {フォルダ} --plan"
+
 # スキル session の steps/ のファイル
 SESSION_STEP_FILES = [
     "ゴール判定.md",
@@ -54,6 +57,8 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert missing_plugin_paths(texts) == []
     # 本文のスクリプトの起動が全て python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py で始まる
     assert launches_not_in_form(texts) == []
+    # 本文が migrate --plan を呼んで版を比べる
+    assert any(PLAN_COMMAND in text for text in texts)
     # skills/mindmap/ に SKILL.md が無く、references/・playbooks/ がある
     assert not (SKILLS_DIR / "mindmap" / "SKILL.md").exists()
     assert (SKILLS_DIR / "mindmap" / "references").is_dir()
