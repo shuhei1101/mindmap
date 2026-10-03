@@ -1,0 +1,66 @@
+title: "typescript"
+kind: "CLI"
+version:
+  current: 7.0.2
+  latest: 7.0.2
+  checked_on: '2026-10-03'
+  source: package.json
+  pinning: 7.0.2 に固定する（`^` を付けない）。型だけを使う描画のライブラリは、雛形が jsDelivr から読む版と同じ版に固定する
+catalogs:
+  - name: コマンド
+    version: 7.0.2
+    entries:
+      - name: tsc -p .
+        kind: コマンド
+        purpose: 型検査と、.ts と同じ階層への .js の書き出し
+      - name: tsc -p . --noEmit
+        kind: コマンド
+        purpose: 書き出さずに型検査だけをする
+  - name: 設定
+    version: 7.0.2
+    entries:
+      - name: strict
+        kind: 設定
+        purpose: 厳しい型検査（7.0 の既定）
+      - name: skipLibCheck
+        kind: 設定
+        purpose: elkjs の同梱の型にある誤り（TS2536）で止まらないようにする
+      - name: types
+        kind: 設定
+        purpose: 自動で読む @types を空にする（7.0 の既定）
+      - name: rootDir
+        kind: 設定
+        purpose: 変換する .ts の置き場所（7.0 で既定が ./ に変わったため明示する）
+lead: TypeScript のコンパイラ `tsc`。型検査と、`.ts` から `.js` への変換を 1 つで行う。7.0 から Go 製のネイティブ版になった。
+purl: pkg:npm/typescript
+dependency_scope: 開発のみ
+adoption: 採用
+used_in:
+  - tsconfig.json
+upstream: microsoft/TypeScript
+verification:
+  state: 済
+  date: '2026-10-03'
+  detail: 'Node 24.14.0 で typescript 7.0.2・marked 18.0.14・dompurify 3.4.16・elkjs 0.12.0・mermaid 12.1.0・type-fest 4 を入れた。名前空間 `MindmapPreview` を import / export の無い 2 つの `.ts` に分け、描画のライブラリのグローバルを出力しない `.d.ts` に `declare const marked: typeof import("marked").marked;` の形で割り当てた。`tsc -p .` が終了コード 0 で `.ts` と同じ階層に即時実行関数の形の `.js` を出すこと、ファイルをまたいで名前空間の関数が呼べること、誤った引数（数値を文字列の引数へ）が TS2345 で終了コード 2 になることを確かめた'
+license: Apache-2.0（開発用だけで配る物に入らない）
+official_url: https://www.typescriptlang.org/
+docs_url: https://www.typescriptlang.org/tsconfig/
+selection:
+  candidates: typescript 7.0.2（tsc）・esbuild 0.28.2・SWC（@swc/core 1.16.13 + @swc/cli 0.8.1）・oxc-transform 0.152.0 を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4170820233)）。tsgo（`@typescript/native-preview`）は 7.0 の本体に吸収済み
+  decision: tsc だけにする。esbuild・SWC・Oxc は型を消すだけで、型検査のために tsc が残る。外部規約『ビルドレス原則』が許す変換も tsc の 1 段だけ
+  consequences: 7.0 はプログラムから呼ぶ API が安定しておらず、typescript-eslint（peer は `<6.1.0`）が動かないため、lint は入れない。vite・Storybook は typescript を peer に持たないので影響しない
+install: |-
+  ```bash
+  npm install --save-dev --save-exact typescript@7.0.2 marked@18.0.14 dompurify@3.4.16 elkjs@0.12.0 mermaid@12.1.0 type-fest@4.41.0
+  npx tsc -p .
+  ```
+
+  `tsconfig.json` はリポジトリの直下に置き、`strict: true`・`skipLibCheck: true`・`types: []`・`lib: ["es2022", "dom", "dom.iterable"]`・`rootDir` を持つ。`outDir` は持たず、`.js` を `.ts` と同じ階層に出す。
+  描画のライブラリは型だけを使う（実行時は雛形が jsDelivr から読む）。`type-fest` は mermaid の型が import するため入れる。
+limitations:
+  - item: モジュールの扱い
+    content: '`.ts` の本体に import / export を書くとモジュール扱いになり、出力の末尾に `export {};` が残る。雛形が classic script として差し込むと構文エラーになり、ほかのファイルの名前空間ともつながらない。グローバルの型の割り当ては、出力しない `.d.ts` に置く'
+  - item: ファイルの連結
+    content: '7.0 では `--outFile` が使えない（`module: none` が TS6046）。生成した `.js` をつなぐのは `build` の役目'
+  - item: node_modules の OS
+    content: ネイティブ版のバイナリは OS ごとに入る。WSL で入れた node_modules は Windows 側の Node から使えない

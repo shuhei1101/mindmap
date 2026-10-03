@@ -15,3 +15,4 @@
 | [mermaid](./mermaid.yaml) | プレビューで本文の図を SVG に描く |
 | [storybook](./storybook.yaml) | プレビューの部品を状態ごとのストーリーで見る（開発用） |
 | [playwright](./playwright.yaml) | プレビューのテストでブラウザを動かす（pytest-playwright。開発用） |
+| [typescript](./typescript.yaml) | プレビューのスクリプトを型検査し、.ts から .js へ変換する（開発用） |

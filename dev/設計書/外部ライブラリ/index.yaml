@@ -18,3 +18,5 @@ items:
     summary: プレビューの部品を状態ごとのストーリーで見る（開発用）
   - page: playwright.yaml
     summary: プレビューのテストでブラウザを動かす（pytest-playwright。開発用）
+  - page: typescript.yaml
+    summary: プレビューのスクリプトを型検査し、.ts から .js へ変換する（開発用）
