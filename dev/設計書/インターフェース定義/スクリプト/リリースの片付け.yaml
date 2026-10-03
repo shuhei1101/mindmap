@@ -80,10 +80,10 @@ flows:
     summary: 消せないものに当たった時点でエラーで終わり、それまでに消したものは消えたままになる
     setup:
       - name: Mock
-        description: 消す処理を差し替え、`release/` の `二.md` を消すときに `PermissionError` を出す
+        description: なし（実際の Python で起動し、消せないものはフォルダの権限で作る）
       - name: make_workspace
-        description: '`release/` に `一.md`・`二.md` があるワークスペース'
-        notes: 名前の順に消すので、`一.md` を消した後に `二.md` で止まる
+        description: '`release/` にファイル `一.md` と、中のファイルを消せないフォルダ `二.md/` があるワークスペース'
+        notes: '`二.md/` は `lock_dirs` で読み取りだけにする（root・Windows では skip）。名前の順に消すので、`一.md` を消した後に `二.md` で止まる'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -141,4 +141,4 @@ constraints:
     constraint: 起動した Python に依存が無ければ、スキル専用の仮想環境の Python で起動し直す（『コマンドの起動』）
 notes:
   スクリプトに置く理由: '`session` は Bash を `mindmap.py` の起動だけに絞っており、Write はファイルを消せない。古いファイルを残さず最新の確定版の一式だけを置くため、消す処理をスクリプトのコマンドにする'
-  対応テストファイル: '`tests/integration/scripts/test_clear_release.py` を結合テスト作成で作り、作ったときに `test_file` へ移す'
+test_file: tests/integration/scripts/test_clear_release.py
