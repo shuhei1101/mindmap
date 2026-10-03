@@ -76,6 +76,33 @@ flows:
       - 標準エラーにフォルダのパスがある
       - '`release/` の `資料.md` が残っている'
     test: test_error_when_workspace_not_found
+  - name: 異常系（消せない・WriteFailedError）
+    summary: 消せないものに当たった時点でエラーで終わり、それまでに消したものは消えたままになる
+    setup:
+      - name: Mock
+        description: 消す処理を差し替え、`release/` の `二.md` を消すときに `PermissionError` を出す
+      - name: make_workspace
+        description: '`release/` に `一.md`・`二.md` があるワークスペース'
+        notes: 名前の順に消すので、`一.md` を消した後に `二.md` で止まる
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py clear-release
+        participant WS as ワークスペース
+
+        クライアント->>IF: clear-release --workspace
+        IF-->>WS: mindmap.yaml があるか確かめる
+        IF->>WS: 一.md を消す
+        IF->>WS: 二.md を消せない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準出力が空
+      - '標準エラーが `エラー: ` で始まり、消せなかった `二.md` のパスを含み、トレースバックを含まない'
+      - '`release/` に `二.md` が残り、`一.md` は無い'
+    test: test_error_when_remove_fails
 lead: ゴール判定でリリースの資料を書き出す前に、`release/` の中身を消して空の `release/` を用意する。
 idempotent: true
 side_effects: '`release/` の中のファイルとフォルダを消す（`release/` が無ければ作る）。`release/` の外は読み書きしない'
@@ -99,6 +126,9 @@ exceptions:
   - name: WorkspaceNotFoundError
     condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
     notes: 終了コード 1。何も消さない
+  - name: WriteFailedError
+    condition: '`release/` の中のものを消せない、または `release/` を作れない（権限が無い・他のプログラムが開いている）'
+    notes: 終了コード 1。消せなかった時点で止め、それまでに消したものは戻さない。次の `clear-release` で片付く
 error_format: '標準エラーに `エラー: {内容}` の行を出す。'
 constraints:
   - item: 出力の形
