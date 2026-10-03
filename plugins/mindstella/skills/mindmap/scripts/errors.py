@@ -42,13 +42,21 @@ class WriteFailedError(MindmapError):
     """ファイルの書き込み・置き換えで OSError が起きた。"""
 
 
-class SummaryRequiredError(MindmapError):
-    """題名を持たないワークスペースを `--summary` 無しで移そうとした（入口は終了コード 2）。"""
-
-
 class OutPathError(MindmapError):
     """`export` の `--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す（入口は終了コード 2）。"""
 
 
 class DownloadFailedError(MindmapError):
     """配る書き出しで jsDelivr から配布ファイルかライセンスの本文を取れないか、配布ファイルが `integrity` と合わない。"""
+
+
+class WorkspaceNewerError(MindmapError):
+    """ワークスペースの版がプラグインの版より新しいのに、手順を当てる・版を書こうとした。メッセージに 2 つの版とプラグインの更新の案内を持つ。"""
+
+
+class StepFailedError(MindmapError):
+    """移し替えの手順が失敗し、写しから戻した。メッセージは `{版} の手順 {番号}（{操作}）: {理由}`。"""
+
+
+class StepsInvalidError(MindmapError):
+    """プラグインの `steps.yaml` が読めないか、手順の形のスキーマに合わない。`lines` は合わない箇所。"""

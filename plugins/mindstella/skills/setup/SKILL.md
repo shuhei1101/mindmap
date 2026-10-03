@@ -33,6 +33,7 @@ allowed-tools: Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/m
 | --- | --- | --- |
 | `check-env` | `check-env` | なし |
 | `init` | `init --workspace {フォルダ} --json '{JSON}'` | `--json` に設定の JSON（`summary`・`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`） |
+| `migrate` | `migrate --workspace {フォルダ} --plan` | `--workspace`・`--plan` |
 | `status` | `status --workspace {フォルダ}` | `--workspace` |
 | `find` | `find --workspace {フォルダ} --text {文字}` | `--text` |
 | `build` | `build --workspace {フォルダ}` | `--workspace` |

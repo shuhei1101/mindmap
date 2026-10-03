@@ -1,0 +1,251 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "移し替えの手順",
+  "description": "`migrations/{版}/steps.yaml` の形。1 つ前の版からの操作を並べる。",
+  "type": "object",
+  "required": [
+    "steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "steps": {
+      "type": "array",
+      "description": "当てる順に並べた操作（1 要素 = 1 つの手順）",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/rename_file"
+          },
+          {
+            "$ref": "#/$defs/move_dir"
+          },
+          {
+            "$ref": "#/$defs/delete"
+          },
+          {
+            "$ref": "#/$defs/rename_key"
+          },
+          {
+            "$ref": "#/$defs/set_default"
+          },
+          {
+            "$ref": "#/$defs/map_values"
+          },
+          {
+            "$ref": "#/$defs/call"
+          }
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "description": "ワークスペースからの相対パス",
+      "minLength": 1
+    },
+    "key": {
+      "type": "string",
+      "description": "キーの名前",
+      "minLength": 1
+    },
+    "each_item": {
+      "type": "boolean",
+      "description": "真なら `items[]` の各項目に当て、偽なら最上位の辞書に当てる"
+    },
+    "rename_file": {
+      "type": "object",
+      "description": "ファイルの名前を変える（破壊的）",
+      "required": [
+        "op",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "rename_file"
+        },
+        "from": {
+          "$ref": "#/$defs/path"
+        },
+        "to": {
+          "$ref": "#/$defs/path"
+        }
+      }
+    },
+    "move_dir": {
+      "type": "object",
+      "description": "フォルダを動かす（破壊的）",
+      "required": [
+        "op",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "move_dir"
+        },
+        "from": {
+          "$ref": "#/$defs/path"
+        },
+        "to": {
+          "$ref": "#/$defs/path"
+        }
+      }
+    },
+    "delete": {
+      "type": "object",
+      "description": "ファイルかフォルダを消す（破壊的）",
+      "required": [
+        "op",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "delete"
+        },
+        "path": {
+          "$ref": "#/$defs/path"
+        }
+      }
+    },
+    "rename_key": {
+      "type": "object",
+      "description": "キーの名前を、位置を保って変える",
+      "required": [
+        "op",
+        "file",
+        "each_item",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "rename_key"
+        },
+        "file": {
+          "$ref": "#/$defs/path"
+        },
+        "each_item": {
+          "$ref": "#/$defs/each_item"
+        },
+        "from": {
+          "$ref": "#/$defs/key"
+        },
+        "to": {
+          "$ref": "#/$defs/key"
+        }
+      }
+    },
+    "set_default": {
+      "type": "object",
+      "description": "キーが無い項目に既定の値を足す。`ask` のときは何も書かず、利用者に聞くキーとして返す",
+      "required": [
+        "op",
+        "file",
+        "each_item",
+        "key"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "set_default"
+        },
+        "file": {
+          "$ref": "#/$defs/path"
+        },
+        "each_item": {
+          "$ref": "#/$defs/each_item"
+        },
+        "key": {
+          "$ref": "#/$defs/key"
+        },
+        "value": {
+          "description": "足す既定の値"
+        },
+        "ask": {
+          "type": "string",
+          "description": "利用者に聞くことの説明",
+          "minLength": 1
+        }
+      },
+      "oneOf": [
+        {
+          "required": [
+            "value"
+          ],
+          "not": {
+            "required": [
+              "ask"
+            ]
+          }
+        },
+        {
+          "required": [
+            "ask"
+          ],
+          "not": {
+            "required": [
+              "value"
+            ]
+          }
+        }
+      ]
+    },
+    "map_values": {
+      "type": "object",
+      "description": "キーの値を、対応表にあるものだけ置き換える",
+      "required": [
+        "op",
+        "file",
+        "each_item",
+        "key",
+        "map"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "map_values"
+        },
+        "file": {
+          "$ref": "#/$defs/path"
+        },
+        "each_item": {
+          "$ref": "#/$defs/each_item"
+        },
+        "key": {
+          "$ref": "#/$defs/key"
+        },
+        "map": {
+          "type": "object",
+          "description": "置き換える前の値 → 後の値",
+          "minProperties": 1
+        }
+      }
+    },
+    "call": {
+      "type": "object",
+      "description": "`scripts/{script}.py` の `migrate(root)` を呼ぶ変換",
+      "required": [
+        "op",
+        "script"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "op": {
+          "const": "call"
+        },
+        "script": {
+          "type": "string",
+          "description": "`scripts/` の下のファイル名（拡張子なし）",
+          "pattern": "^[A-Za-z0-9_]+$"
+        }
+      }
+    }
+  }
+}

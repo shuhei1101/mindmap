@@ -22,7 +22,7 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 
 | ステップ | 手順 | 実行する場面 |
 | --- | --- | --- |
-| 準備 | `{ワークスペースのフォルダ}/mindmap.yaml` を Read で読み、`field` と同じ名前の進め方ガイド（`${CLAUDE_PLUGIN_ROOT}/skills/mindmap/playbooks/{field}.md`）を Read で読む | 話し合いの最初の 1 回 |
+| 準備 | `{ワークスペースのフォルダ}/mindmap.yaml` を Read で読み、`migrate --workspace {フォルダ} --plan` を呼ぶ。出力の `relation` が `older` なら何も書き込まず `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインを更新するよう案内して止まる。`same` のときだけ、`field` と同じ名前の進め方ガイド（`${CLAUDE_PLUGIN_ROOT}/skills/mindmap/playbooks/{field}.md`）を Read で読む | 話し合いの最初の 1 回 |
 | 取り込み | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/取り込み.md` | 利用者が発言した（決め事・問い・やること・保留・中止・図や文書・脱線した質問） |
 | ヒアリング | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/ヒアリング.md` | 取り込みの後に前提が揃った未決定がある、または利用者が次に決めることを求めた |
 | リサーチ | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/リサーチ.md` | 外部ライブラリ・外部 API を決める検討事項が積まれた、進め方ガイドの「必ず調べるもの」に当たった、または利用者が調べるよう頼んだ |
@@ -44,6 +44,7 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 | `impact` | `impact {ID} --workspace {フォルダ}` | `ID` |
 | `find` | `find --workspace {フォルダ} [--text {文字}] [--kind {種類}] [--status {状態}] [--tag {タグ}] [--target {対象}] [--category {カテゴリー}] [--phase {フェーズ}] [--attr {名前=値}]` | 条件は全て任意 |
 | `show` | `show {ID} --workspace {フォルダ}` | `ID` |
+| `migrate` | `migrate --workspace {フォルダ} --plan` | `--workspace`・`--plan` |
 | `status` | `status --workspace {フォルダ}` | `--workspace` |
 | `check` | `check --workspace {フォルダ}` | `--workspace` |
 | `build` | `build --workspace {フォルダ}` | `--workspace` |
