@@ -289,3 +289,5 @@ functions:
         condition: '`phases` 目的・要件、`goal.phase` 要件、カテゴリー A・B。D-1（A・目的・決定済み）・D-2（A・要件・未決定・`depends_on: [D-1]`）・D-3（B・要件・対象外）'
         mock: なし
         expected: '`next` が `list_next_candidates` と同じ（D-2 だけ）。`goal.phase_progress` が 目的 1/1・要件 1/2。`progress` の A が 目的 1/1・要件 0/1、B が 目的 0/0・要件 1/1'
+test_files:
+  - tests/unit/scripts/test_builder.py

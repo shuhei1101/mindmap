@@ -1094,3 +1094,7 @@ functions:
 notes:
   モジュールの読み込み: スクリプトはパッケージとして入れず、スキルは全てのコマンドをシステムの `python3` で `{スキルのフォルダ}/scripts/mindmap.py` を起動する（依存が揃っていなければ入口が仮想環境の Python で起動し直す。『起動し直し』）。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
   入口の構文: '`mindmap.py`・`launcher.py`・`check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、起動した Python の依存が揃った後にだけ読むので 3.12 の書き方を使ってよい。'
+test_files:
+  - tests/unit/scripts/test_mindmap.py
+  - tests/unit/scripts/test_check_env.py
+  - tests/unit/scripts/test_commands.py

@@ -181,3 +181,5 @@ functions:
         mock: '`os.replace`（`migrator` モジュールの参照を monkeypatch）'
         expected: '`WriteFailedError`。`mindmap.yaml`・`docs.yaml` が呼ぶ前と同じで、`.tmp` のファイルが無い'
         exception: 置き換えで OSError
+test_files:
+  - tests/unit/scripts/test_migrator.py

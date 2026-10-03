@@ -516,3 +516,9 @@ functions:
         condition: 'D-2（`depends_on: [D-1]`、`sources: [R-1]`）・T-1（`for: [D-1]`）・N-1（`related: [D-1]`）。表示する種類からメモを外す'
         mock: なし
         expected: 線が `depends`（D-2→D-1）・`source`（D-2→R-1）・`for`（T-1→D-1）の 3 本で、N-1 とその線が無い
+test_files:
+  - tests/unit/preview/test_table.py
+  - tests/unit/preview/test_tasks.py
+  - tests/unit/preview/test_docs.py
+  - tests/unit/preview/test_decisions.py
+  - tests/unit/preview/test_graph.py

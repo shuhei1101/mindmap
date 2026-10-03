@@ -140,3 +140,5 @@ functions:
       6. `hashchange`・`popstate` で 3・4 を繰り返す
     notes:
       確かめ方: 単体テストは持たない。インターフェース定義『プレビューを開く』の結合テストがこの流れを確かめる
+test_files:
+  - tests/unit/preview/test_app.py

@@ -379,3 +379,7 @@ functions:
         condition: '`parametrize`: `push` 真 / 偽'
         mock: なし
         expected: '`history.length` が 1 増える / 変わらず、`location.hash` が `toHash` の値'
+test_files:
+  - tests/unit/preview/test_records.py
+  - tests/unit/preview/test_libs.py
+  - tests/unit/preview/test_router.py

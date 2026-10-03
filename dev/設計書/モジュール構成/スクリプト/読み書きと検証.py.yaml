@@ -925,3 +925,6 @@ functions:
         condition: '`summary` を持たない設定と A-1（`done: true`）、`status` を `完了` にした D-1 を持つワークスペースを検証した問題。`parametrize`: `mindmap.yaml` の問題 / A-1 の問題 / D-1 の問題 / `kind: broken_ref` の問題'
         mock: なし
         expected: 真 / 真 / 偽 / 偽
+test_files:
+  - tests/unit/scripts/test_kinds.py
+  - tests/unit/scripts/test_store.py
