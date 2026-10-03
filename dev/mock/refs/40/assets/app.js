@@ -487,7 +487,7 @@
   const docBoardCard = (r) => `<button class="card doc-card${r.deliverable ? " deliv-card" : ""}${state.panel === r.id ? " selected" : ""}" data-act="open" data-id="${r.id}">${r.deliverable ? `<span class="deliv-badge">${icon("box")}成果物</span>` : ""}<span class="doc-kind">${icon(r.kind === "図" ? "graph" : "cards")}${esc(r.kind)}</span><span class="c-ttl">${esc(r.title)}</span><span class="c-meta"><span class="mono">${r.id}</span><span>${esc(r.category)} · ${esc(r.stage)}</span></span>${(r.tags || []).length ? `<span class="c-tags">${tags(r.tags)}</span>` : ""}</button>`;
   const renderDocBoard = () => {
     const rows = orderDocs(rowsFor("docs"));
-    return `<div class="board doc-board" style="--cols:${DOC_STATUS.length}" tabindex="0" role="group" aria-label="状態ごとの資料">${DOC_STATUS.map((st) => {
+    return `<div class="board doc-board" style="--cols:${DOC_STATUS.length}">${DOC_STATUS.map((st) => {
       const cards = rows.filter((r) => r.status === st);
       return `<section class="board-col" aria-label="${st}"><h3>${mark(st)}${st}<span class="n">${cards.length}</span></h3>${cards.length ? cards.map(docBoardCard).join("") : `<p class="empty">なし</p>`}</section>`;
     }).join("")}</div>`;
