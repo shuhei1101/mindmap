@@ -249,6 +249,13 @@ classes:
     summary: '`export` の `--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す。入口は終了コード 2（引数の誤り）にする'
     kind: クラス
     inherits: MindmapError
+  - name: DownloadFailedError
+    title: 取れなかった
+    container: skills/mindmap/scripts/errors.py
+    usecase: 配る書き出し
+    summary: 配る書き出しで jsDelivr から配布ファイルかライセンスの本文を取れないか、配布ファイルが雛形の `integrity` と合わない。メッセージに URL と理由（`raise ... from` で元の例外をつなぐ）
+    kind: クラス
+    inherits: MindmapError
 constants:
   - name: KINDS
     title: 種類の一覧

@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる配る書き出しを実際の Python で再生する。ブラウザは外への通信を全て止めて、書き出した HTML を開く
+        description: モデルを呼ばない。手順が連ねる配る書き出しを実際の Python で再生する（描画のライブラリは jsDelivr から取る）。ブラウザは外への通信を全て止めて、書き出した HTML を開く
       - name: make_workspace
         description: 作成を済ませ、`build` で `preview.html` を書き出したワークスペース
       - name: 記録
@@ -17,11 +17,13 @@ scenarios:
         participant CC as Claude Code（session）
         participant SCR as スクリプト
         participant WS as ワークスペース
+        participant CDN as jsDelivr
         participant P as 配る書き出し（通信を止めたブラウザ）
 
         U->>CC: 記録を人に渡したい
         CC->>SCR: 配る書き出し
         SCR->>WS: 全ての YAML と docs/ を読む
+        SCR->>CDN: 描画のライブラリとライセンスの本文を取る
         SCR->>SCR: データ・画面・描画のライブラリを 1 枚の HTML にまとめる
         SCR-->>CC: 書き出したファイルのパス
         CC-->>U: 絶対パスを示す

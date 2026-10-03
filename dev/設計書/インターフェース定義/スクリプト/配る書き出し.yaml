@@ -7,7 +7,7 @@ flows:
     summary: 記録・画面・描画のライブラリ・ライセンスの表示を中に持つ 1 枚の HTML を --out へ書き出す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（実際の Python で起動し、描画のライブラリの配布ファイルとライセンスの本文は jsDelivr から取る）
       - name: make_workspace
         description: 7 つの種類を 1 件ずつ持ち、資料 A-1 の本文に `</script>` を含み、`build` で `preview.html` を書き出したワークスペース
       - name: 書き出す先
@@ -18,11 +18,14 @@ flows:
         participant クライアント
         participant IF as mindmap.py export
         participant WS as ワークスペース
+        participant CDN as jsDelivr
         participant OUT as 書き出す先
 
         クライアント->>IF: export --workspace --out
         IF-->>WS: 全ての YAML と docs/ を読む
-        IF->>IF: スキーマと突き合わせ、雛形に画面・描画のライブラリ・ライセンスの表示・データを入れる
+        IF->>IF: スキーマと突き合わせる
+        IF-->>CDN: 雛形が指す配布ファイルとライセンスの本文を取る
+        IF->>IF: 配布ファイルを integrity と突き合わせ、雛形に画面・描画のライブラリ・ライセンスの表示・データを入れる
         IF->>OUT: HTML を書く
         IF-->>クライアント: JSON（path）
       ```
@@ -133,10 +136,36 @@ flows:
       - '標準エラーが `エラー: ` で始まり、`配る.html` のパスを含み、トレースバックを含まない'
       - フォルダ `無い/` が無い
     test: test_error_when_out_dir_missing
+  - name: 異常系（ライブラリを取れない・DownloadFailedError）
+    summary: jsDelivr に届かないと、何も書かずに終わる
+    setup:
+      - name: Mock
+        description: 環境変数 `HTTPS_PROXY` に届かないアドレスを入れて起動し、jsDelivr への要求を全て失敗させる
+        notes: '`HTTPS_PROXY=http://127.0.0.1:9`'
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 書き出す先
+        description: ワークスペースの外の一時フォルダの、一度書き出した `配る.html`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py export
+        participant CDN as jsDelivr
+
+        クライアント->>IF: export --workspace --out
+        IF-->>CDN: 配布ファイルを取る（届かない）
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - '標準エラーが `エラー: ` で始まり、取れなかった URL を含み、トレースバックを含まない'
+      - '`配る.html` の中身が呼ぶ前と同じ'
+    test: test_error_when_download_fails
 lead: ワークスペースの記録を、画面と描画のライブラリまで中に持つ見るだけの 1 枚の HTML にして、指定したパスへ書き出す。ワークスペースもサーバーもネットも持たない人へ配るために使う。
 test_file: tests/integration/scripts/test_export.py
 idempotent: true
-side_effects: '`--out` のファイルを、同じフォルダの一時ファイルから `os.replace` で置き換える。ワークスペースは読むだけで、`preview.html` も書き換えない。サーバーは立てず、ブラウザも開かず、通信もしない'
+side_effects: '`--out` のファイルを、同じフォルダの一時ファイルから `os.replace` で置き換える。ワークスペースは読むだけで、`preview.html` も書き換えない。サーバーは立てず、ブラウザも開かない。描画のライブラリの配布ファイルとライセンスの本文を jsDelivr から取る'
 callers:
   - dev/設計書/インターフェース定義/スキル/話し合いの進行#
 request:
@@ -176,6 +205,9 @@ exceptions:
   - name: SchemaMismatchError
     condition: ワークスペースのどれかの YAML がスキーマに合わないか、YAML として読めない
     notes: 終了コード 1。標準エラーに合わない箇所。`--out` のファイルを書き換えない
+  - name: DownloadFailedError
+    condition: jsDelivr から配布ファイルかライセンスの本文を取れない（届かない・待ちの上限を超えた・200 以外が返った）か、取った配布ファイルが雛形の `integrity` と合わない
+    notes: 終了コード 1。標準エラーに取れなかった URL と理由。`--out` のファイルを書き換えない
   - name: WriteFailedError
     condition: '`--out` の親のフォルダが無い、または書き込みか置き換えに失敗した'
     notes: 終了コード 1。標準エラーに書けなかったパスと理由。親のフォルダは作らず、前の `--out` のファイルを残す
@@ -186,15 +218,18 @@ constraints:
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 雛形
-    constraint: '`build` と同じ `template.html` と画面の CSS・JavaScript を使う。雛形の描画のライブラリの `<script src>` と文字の `<link>` を外し、同梱したライブラリの配布ファイルの中身を画面の JavaScript より前の `<script>` の中身として差し込む'
+    constraint: '`build` と同じ `template.html` と画面の CSS・JavaScript を使う。雛形の描画のライブラリの `<script src>` と文字の `<link>` を外し、`<script src>` の URL から取った配布ファイルの中身を、画面の JavaScript より前の `<script>` の中身として差し込む'
   - item: 埋め込みの安全
-    constraint: 『プレビューの書き出し』と同じ。差し込むライブラリ・ライセンスの本文が `</script`・`<script` を含むときは、同梱の誤りとして書き出さずにエラーにする（大文字・小文字を区別しない）
+    constraint: 『プレビューの書き出し』と同じ。差し込むライブラリ・ライセンスの本文が `</script`・`<script` を含むときは、書き出さずにエラーにする（大文字・小文字を区別しない）
   - item: 読み込むファイル
     constraint: 書き出した HTML は外のファイルも URL も指さない（`script`・`link`・`img` に `src`・`href` を持たない）。文字は端末の文字で描く
   - item: 見るだけ
     constraint: 画面の JavaScript は `build` と同じものを差し込む。ワークスペースへ書き込む操作は画面に出さない
   - item: 通信
-    constraint: スクリプトも書き出した HTML も通信しない
+    constraint: スクリプトは、雛形の描画のライブラリの `<script src>` の URL（jsDelivr、版を固定）と、ライブラリのライセンスの本文の URL（同じ版）を取るときだけ通信する。取った配布ファイルは雛形の `integrity`（sha384）と突き合わせ、合わなければ書き出さない。書き出した HTML は通信しない
+  - item: 待ちの上限
+    constraint: 1 回の要求で、接続と 1 回の読み取りをそれぞれ 30 秒まで待つ。取り直さず、届かなければ `DownloadFailedError` で終える
+    notes: jsDelivr から 4 つの配布ファイル（最大 5.5MB）とライセンスの本文を取る時間の実測は 1 件あたり最大 0.65 秒（2026-10-03、手元の回線）。待ちは読み取り 1 回ごとに効くので、遅い回線で全体が長くなっても途切れない限り止めない。取り直しは利用者が `export` を呼び直す
   - item: 起動
     constraint: 起動した Python に依存が無ければ、スキル専用の仮想環境の Python で起動し直す（『コマンドの起動』）
 refs:
@@ -202,5 +237,6 @@ refs:
   - dev/設計書/インターフェース定義/プレビュー/プレビューを開く#
   - dev/設計書/シナリオ/単一ユースケース/プレビューを配る#
 notes:
+  書き出すときに取る理由: 書き出す側は Claude Code が動く端末でネットにつながっているため、配布ファイルをリポジトリに同梱せず、書き出すときに jsDelivr から取る（ユーザーの決定）。開く側は書き出した HTML だけで足り、通信しない
   build と分ける理由: '#13 で `build` を無くしても、配る書き出しは残すと決めている。別のコマンドにしておき、`build` を消すときに手戻りを出さない'
   書き出す先を既定にしない理由: ワークスペースの `release/` はゴール判定のたびに `clear-release` が中身を消すため、既定の置き場所にすると配る書き出しが消える。置き場所は利用者が渡したい先で決まるので、`--out` を必須にして `session` が利用者に聞く
