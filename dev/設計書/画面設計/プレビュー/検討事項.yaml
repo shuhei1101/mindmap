@@ -71,12 +71,12 @@ elements:
       - name: kind
         value: decisions
       - name: columns
-        value: ID・タイトル（外せない）・状態（status、絞れる）・対象（絞れる）・カテゴリー（category、絞れる）・フェーズ（stage、絞れる）・影響度（絞れる）・着手できる（ready、絞れる）・前提・タグ（絞れる）
+        value: ID・タイトル（外せない）・状態（status、絞れる）・対象（絞れる）・カテゴリー（category、絞れる）・フェーズ（phase、絞れる）・影響度（絞れる）・着手できる（ready、絞れる）・前提・タグ（絞れる）
       - name: rows
         value: プレビューを開く.mindmap-data.decisions
       - name: filters
         value: プレビューを開く.f.{列}（開いたときだけ）
-    description: 検討事項の表。「着手できる」は前提が全て決定済みか（はい / いいえ）を画面で求める
+    description: 検討事項の表。「着手できる」は `derived.next` にある検討事項か（はい / いいえ）
     visible_when: 表示形式が表
 lead: 検討事項をマップ（既定）・ボード・表で見る画面。
 mock: dev/mock/pages/decisions/21/standard/index.html
