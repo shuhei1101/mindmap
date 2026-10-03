@@ -5,7 +5,7 @@ layers:
       ```bash
       pytest tests/unit
       ```
-    description: pytest で、スクリプトの関数を `tests/unit/scripts/` から直接呼んで確かめる。`conftest.py` が `skills/mindmap/scripts` を `sys.path` に足すので、各モジュールを `import store` のように同じ名前で読む。ファイルの読み書きは `tmp_path` の一時フォルダで行い、利用者の環境は触らない。
+    description: pytest で、スクリプトの関数を `tests/unit/scripts/` から直接呼んで確かめる。`conftest.py` が `plugins/mindstella/skills/mindmap/scripts` を `sys.path` に足すので、各モジュールを `import store` のように同じ名前で読む。ファイルの読み書きは `tmp_path` の一時フォルダで行い、利用者の環境は触らない。
     prerequisites:
       - Python 3.12 以上と pytest
       - PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている
@@ -70,8 +70,8 @@ layers:
         pytest {テストファイルパス}
         ```
     notes:
-      画面の起動: |-
-        1. `make_workspace` で記録を置いたワークスペースを作り、`run_mindmap("build", "--workspace", {フォルダ})` で `{フォルダ}/preview.html` を書き出す（手で確かめるときは `python3 skills/mindmap/scripts/mindmap.py build --workspace {フォルダ}`）。
+      画面の起動: |
+        1. `make_workspace` で記録を置いたワークスペースを作り、`run_mindmap("build", "--workspace", {フォルダ})` で `{フォルダ}/preview.html` を書き出す（手で確かめるときは `python3 plugins/mindstella/skills/mindmap/scripts/mindmap.py build --workspace {フォルダ}`）。
         2. `file://{フォルダ}/preview.html` に URL のハッシュを付けて開く。ハッシュで画面・表示形式・項目を指す（例 `#tab=decisions&view=table&id=D-3`。形はインターフェース定義『プレビューを開く』）。
         3. 本文の領域 `main#main` に子が入るまで待つ。本文の図は描画のライブラリが読み終わった後に SVG になるので、図を確かめるときは `.mermaid svg` が出るまで待つ。
         4. 要素は画面設計の項目 ID（`#tile-next`・`#decision-map`・`#graph-canvas` ほか）で引く。項目 ID を持たない要素は、画面設計の名前に当たる見出し・ボタンの読み上げ名で引く。

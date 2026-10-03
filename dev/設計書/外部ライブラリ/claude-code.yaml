@@ -17,7 +17,7 @@ catalogs:
         purpose: 登録済みのマーケットプレイスを確かめる
       - name: claude plugin install
         kind: コマンド
-        purpose: プラグイン mindmap をインストールする
+        purpose: プラグイン mindstella をインストールする
       - name: claude plugin list
         kind: コマンド
         purpose: インストール済みのプラグインと有効かを確かめる

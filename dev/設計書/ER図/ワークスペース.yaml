@@ -1,5 +1,5 @@
 title: "ER 図: ワークスペース"
-lead: 1 つの話し合いのフォルダ（ワークスペース）が持つ YAML の形。正本は `skills/mindmap/schemas/` の JSON Schema で、書き込む前に突き合わせる。
+lead: 1 つの話し合いのフォルダ（ワークスペース）が持つ YAML の形。正本は `plugins/mindstella/skills/mindmap/schemas/` の JSON Schema で、書き込む前に突き合わせる。
 er:
   entities:
     - name: 設定
@@ -95,7 +95,7 @@ tables:
         not_null: true
         description: 話し合いの題名（何についての話し合いかを 1 文で）。プレビューのトップバーに出す
         example: 要件出しのスキル mindmap を設計する
-  - name: skills/mindmap/schemas/common.schema.json
+  - name: plugins/mindstella/skills/mindmap/schemas/common.schema.json
     title: 共通のキー
     datastore: JSON
     summary: 種類ごとの YAML の項目が共通で持つキー（各種類のスキーマが `$ref` で指す）

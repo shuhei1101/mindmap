@@ -108,4 +108,4 @@ requirements:
       - part: アプリの決定値
         value: 2GB
         notes: 合計 1,754MB を切りよく丸める
-lead: mindmap が外部の制約から逆算して決める値。
+lead: mindstella が外部の制約から逆算して決める値。

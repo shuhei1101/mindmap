@@ -19,8 +19,8 @@ dependency_scope: 必須
 adoption: 採用
 upstream: kieler/elkjs
 used_in:
-  - skills/mindmap/preview/template.html
-  - skills/mindmap/scripts/builder.py
+  - plugins/mindstella/skills/mindmap/preview/template.html
+  - plugins/mindstella/skills/mindmap/scripts/builder.py
 verification:
   state: 済
   date: '2026-10-02'

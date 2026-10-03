@@ -1,14 +1,14 @@
 # GitHub Pages 用 Jekyll 設定
 # docs/ 配下を Jekyll サイトとしてビルドする
 
-title: mindmap
-description: mindmap の使い方と変更履歴
+title: mindstella
+description: mindstella の使い方と変更履歴
 
 # GitHub Pages のプロジェクトサイトはリポジトリ名がパスプレフィクスになる
-# 例: https://shuhei1101.github.io/mindmap/ で配信されるので baseurl を明示
-# これにより {{ '/' | relative_url }} が "/mindmap/" を返し、
+# 例: https://shuhei1101.github.io/mindstella/ で配信されるので baseurl を明示
+# これにより {{ '/' | relative_url }} が "/mindstella/" を返し、
 # トップ / パンくずの リンクが 404 にならなくなる
-baseurl: /mindmap
+baseurl: /mindstella
 
 # 公開サイトの URL（https://{owner}.github.io{baseurl}/）の所有者
 # 起票の宛先はビルドしたリポジトリ（site.github.repository_nwo）から入れるため、

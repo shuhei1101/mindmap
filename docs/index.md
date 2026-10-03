@@ -1,4 +1,4 @@
-# mindmap Docs
+# mindstella Docs
 
 下のコーナーから各セクションへ移動してください。
 
