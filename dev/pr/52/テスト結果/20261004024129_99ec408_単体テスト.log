@@ -31,4 +31,4 @@ tests/unit/preview/test_router.py .                                      [ 97%]
 tests/unit/preview/test_dom.py .                                         [ 98%]
 tests/unit/preview/test_router.py .                                      [100%]
 
-============================= 72 passed in 43.77s ==============================
+============================= 72 passed in 44.46s ==============================
