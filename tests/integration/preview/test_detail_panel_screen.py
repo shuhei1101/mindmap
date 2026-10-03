@@ -11,6 +11,7 @@ from preview_fixture_types import (
     WritePreview,
     WriteSamplePreview,
 )
+from preview_style_checks import TRANSPARENT, animated_properties, pin_id_column, row_backgrounds
 from workspace_fixtures import MakeItem
 
 # パネルを別画面として積む幅（これ以下）
@@ -200,6 +201,50 @@ def test_diagram_raw(write_sample_preview: WriteSamplePreview, open_preview: Ope
     assert "flowchart LR" in page.inner_text("aside.panel pre.dg-raw")
     page.click('aside.panel button[data-act="diagram-raw"]')
     assert page.is_visible("aside.panel .mermaid")
+
+
+def test_content_transition(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """本文の寄せは動かさず、パネルだけが transform ですべり込む（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table&id=D-2")
+    page.wait_for_selector("aside.panel.open")
+    # 実行
+    content = animated_properties(page, "main#main")
+    panel = animated_properties(page, "aside.panel")
+    # 検証
+    assert content == []
+    assert panel == ["transform"]
+
+
+def test_selected_row_hover(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """表で選んだ行は、ホバー中も選んだ行の色のままで、ほかの行はホバーで色が変わる（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table&id=D-2")
+    page.wait_for_selector("aside.panel.open")
+    pin_id_column(page)
+    selected_row = 'table.grid tbody tr[data-id="D-2"]'
+    other_row = 'table.grid tbody tr[data-id="D-4"]'
+    at_rest = row_backgrounds(page, selected_row)
+    # 実行
+    page.hover(selected_row)
+    selected_hovered = row_backgrounds(page, selected_row)
+    page.hover(other_row)
+    other_hovered = row_backgrounds(page, other_row)
+    # 検証
+    assert selected_hovered == at_rest
+    assert at_rest["row"] != TRANSPARENT
+    assert at_rest["cells"] == [TRANSPARENT]
+    assert at_rest["pinned"] == [at_rest["row"]]
+    assert other_hovered["row"] == TRANSPARENT
+    assert TRANSPARENT not in other_hovered["cells"]
+    assert other_hovered["pinned"] == other_hovered["cells"]
+    assert at_rest["row"] not in other_hovered["cells"]
 
 
 def test_id_button_size(
