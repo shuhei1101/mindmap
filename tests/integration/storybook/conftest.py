@@ -29,7 +29,7 @@ STORY_TIMEOUT_MS = 15_000
 class _QuietHandler(http.server.SimpleHTTPRequestHandler):
     """アクセスのログを標準エラーに出さない静的ファイルの配信。"""
 
-    def log_message(self, format: str, *args: object) -> None:  # noqa: A002
+    def log_message(self, format: str, *args: object) -> None:
         """ログを出さない。"""
 
 

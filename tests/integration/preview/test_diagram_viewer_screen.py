@@ -17,7 +17,7 @@ WHEEL_DELTA = -300
 DIAGRAM_POINT = (640, 400)
 
 
-def _open_viewer(write_sample_preview, open_preview) -> Page:  # noqa: ANN001
+def _open_viewer(write_sample_preview, open_preview) -> Page:
     """詳細パネルの図の拡大を開いて、そのページを返す。"""
     page = open_preview(write_sample_preview(), "#tab=decisions&view=table&id=D-3")
     page.wait_for_selector("aside.panel .mermaid svg", timeout=DIAGRAM_TIMEOUT_MS)

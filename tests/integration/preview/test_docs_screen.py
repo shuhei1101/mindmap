@@ -5,7 +5,7 @@ from __future__ import annotations
 from preview_fixture_types import OpenPreview, WriteSamplePreview
 
 
-def _card_ids(page) -> list[str]:  # noqa: ANN001
+def _card_ids(page) -> list[str]:
     """資料のカードの ID を並びのまま返す。"""
     return page.eval_on_selector_all(".doc-card", "cards => cards.map(c => c.dataset.id)")
 

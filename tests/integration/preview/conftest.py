@@ -11,7 +11,6 @@ from typing import Any
 
 import pytest
 from playwright.sync_api import Page
-
 from preview_fixture_types import (
     BODY_WITH_DIAGRAM,
     MAIN_SELECTOR,
