@@ -49,10 +49,10 @@ elements:
     label: コピー
   - name: 関係する項目
     kind: list
-    description: 前提・後続の項目・関連タスク・経緯・関連・この項目を参照している項目。押すとその項目へ移り、履歴に積む
+    description: 前提・後続の項目・関連タスク・経緯・関連・この項目を参照している項目。押すとその項目へ移り、履歴に積む。各行の先頭の ID のボタンは、見えている枠を縦横 24px（`--target-min`）以上にする
     io: 表示
     source: プレビューを開く.mindmap-data（`depends_on`・`for`・`related`・`sources` とその逆向き）
     visible_when: その種類の項目が 1 件以上
 lead: 項目 1 件の中身を本文の右に出すパネル。幅 1100px 以上（マップは 901px 以上）は本文を寄せて並べ、それより狭いと本文に重ねる。
-mock: dev/mock/pages/detail-panel/21/standard/index.html
+mock: dev/mock/pages/detail-panel/63/standard/index.html
 test_file: tests/integration/preview/test_detail_panel_screen.py

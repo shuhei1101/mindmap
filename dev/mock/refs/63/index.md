@@ -6,8 +6,8 @@
 | 画面 | 中身 |
 | --- | --- |
 | [decisions](../../pages/decisions/63/standard/index.html) | 検討事項の表（前提の列） |
-| [tasks](../../pages/tasks/63/standard/index.html) | タスクの表（関連する検討事項・前提の列） |
-| [docs](../../pages/docs/63/standard/index.html) | 資料の表（関連の列） |
+| [tasks](../../pages/tasks/63/standard/index.html) | タスクの表（進める検討事項の列） |
+| [docs](../../pages/docs/63/standard/index.html) | 資料の表（関連の列）。検出が見つかった画面の確認用で、本番の資料の表には ID のボタンの列が無い |
 | [records](../../pages/records/63/standard/index.html) | 調査・用語集・メモ・会話ログの表（メモの関連の列） |
 | [detail-panel](../../pages/detail-panel/63/standard/index.html) | 詳細パネル（前提・関連などの一覧） |
 | [detail-full](../../pages/detail-full/63/standard/index.html) | 詳細の全画面（前提・関連などの一覧） |

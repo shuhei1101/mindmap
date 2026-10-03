@@ -194,8 +194,7 @@
     tasks: [
       C.id, C.title(), C.status,
       { key: "kind", label: "種類", pri: 2, nowrap: true, filter: true, get: (r) => r.kind, cell: (r) => esc(r.kind) },
-      { key: "for", label: "関連する検討事項", pri: 3, get: (r) => (r.for || []).join(" "), cell: (r) => idlinks(r.for) || '<span class="muted">—</span>' },
-      { key: "depends_on", label: "前提", pri: 3, get: (r) => (r.depends_on || []).join(" "), cell: (r) => idlinks(r.depends_on) || '<span class="muted">—</span>' },
+      { key: "for", label: "進める検討事項", pri: 3, get: (r) => (r.for || []).join(" "), cell: (r) => idlinks(r.for) || '<span class="muted">—</span>' },
       C.target, C.category, C.stage, C.tags, C.updated,
     ],
     research: [
