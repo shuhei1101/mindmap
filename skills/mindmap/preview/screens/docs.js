@@ -1,14 +1,14 @@
 "use strict";
-// 資料。カード（既定）と表で見る。成果物を先頭に印付きで並べ、資料の状態を出す。
+// 資料。カード（既定）と表で見る。納品物を先頭に印付きで並べ、資料の状態を出す。
 var MindmapPreview;
 (function (MindmapPreview) {
-    /** 成果物を先頭に、それぞれ連番の順に並べた資料を返す */
+    /** 納品物を先頭に、それぞれ連番の順に並べた資料を返す */
     function orderDocs(docs) {
         return [...docs].sort((a, b) => Number(b.deliverable === true) - Number(a.deliverable === true) || MindmapPreview.compareIds(a.id, b.id));
     }
     MindmapPreview.orderDocs = orderDocs;
-    /** 成果物の列の値 */
-    const DELIVERABLE_VALUES = ["成果物", "成果物以外"];
+    /** 納品物の列の値 */
+    const DELIVERABLE_VALUES = ["納品物", "納品物以外"];
     /** 資料の画面を返す */
     function docsScreen({ index, route, on }) {
         const common = MindmapPreview.commonColumns(index.data.settings);
@@ -17,12 +17,12 @@ var MindmapPreview;
             common.title(),
             {
                 key: "deliverable",
-                label: "成果物",
+                label: "納品物",
                 nowrap: true,
                 filterable: true,
                 order: DELIVERABLE_VALUES,
                 priority: 2,
-                get: (row) => (row["deliverable"] === true ? "成果物" : "成果物以外"),
+                get: (row) => (row["deliverable"] === true ? "納品物" : "納品物以外"),
                 cell: (row) => row["deliverable"] === true ? MindmapPreview.deliverableBadge() : MindmapPreview.h({ tag: "span", attrs: { class: "muted" }, children: ["—"] }),
             },
             common.status(MindmapPreview.DOC_STATUSES),
@@ -175,7 +175,7 @@ var MindmapPreview;
         return MindmapPreview.h({ tag: "div", attrs: { class: "screen docs" }, children: [toolbarElement, chips, grid, pop] });
     }
     MindmapPreview.docsScreen = docsScreen;
-    /** 資料のカード（成果物の印・種類・状態・カテゴリー・フェーズ・タグ） */
+    /** 資料のカード（納品物の印・種類・状態・カテゴリー・フェーズ・タグ） */
     function docCard(index, doc, open) {
         return MindmapPreview.h({
             tag: "button",

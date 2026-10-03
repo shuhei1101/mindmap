@@ -7,7 +7,7 @@ from typing import Any
 from kinds import BODY_DIR, KINDS, SETTINGS_FILE, kind_of_id
 from store import Problem, Workspace, as_ids, read_body, validate_workspace
 
-# 設定の成果物の資料を指すキー（`REF_RULES` の参照する側の種類に使う）
+# 設定の納品物の資料を指すキー（`REF_RULES` の参照する側の種類に使う）
 SETTINGS_KIND = "settings"
 DELIVERABLE_DOC_KEY = "goal.deliverables[].doc"
 
@@ -147,7 +147,7 @@ def _ref_error(ref: str, allowed: frozenset[str], existing: dict[str, set[Any]])
 
 
 def _deliverables(settings: dict[str, Any]) -> list[dict[str, Any]]:
-    """設定のゴールの成果物のうち、辞書のものを取り出す。"""
+    """設定のゴールの納品物のうち、辞書のものを取り出す。"""
     goal = settings.get("goal")
     deliverables = goal.get("deliverables") if isinstance(goal, dict) else None
     if not isinstance(deliverables, list):

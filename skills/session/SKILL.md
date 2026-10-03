@@ -26,7 +26,7 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 | 取り込み | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/取り込み.md` | 利用者が発言した（決め事・問い・やること・保留・中止・図や文書・脱線した質問） |
 | ヒアリング | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/ヒアリング.md` | 取り込みの後に前提が揃った未決定がある、または利用者が次に決めることを求めた |
 | リサーチ | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/リサーチ.md` | 外部ライブラリ・外部 API を決める検討事項が積まれた、進め方ガイドの「必ず調べるもの」に当たった、または利用者が調べるよう頼んだ |
-| 方針転換 | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/方針転換.md` | 利用者が決定済みの検討事項の案を変える、またはスコープが変わって成果物が要らなくなった |
+| 方針転換 | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/方針転換.md` | 利用者が決定済みの検討事項の案を変える、またはスコープが変わって納品物が要らなくなった |
 | プレビュー | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/プレビュー.md` | 利用者が記録を見たいと言った |
 | ゴール判定 | `${CLAUDE_PLUGIN_ROOT}/skills/session/steps/ゴール判定.md` | 利用者がゴールに届いたかを尋ねた、または `next` の候補が無くなった |
 
@@ -48,3 +48,4 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 | `check` | `check --workspace {フォルダ}` | `--workspace` |
 | `build` | `build --workspace {フォルダ}` | `--workspace` |
 | `goal` | `goal --workspace {フォルダ}` | `--workspace` |
+| `clear-release` | `clear-release --workspace {フォルダ}` | `--workspace` |

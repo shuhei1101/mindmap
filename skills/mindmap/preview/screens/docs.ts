@@ -1,7 +1,7 @@
-// 資料。カード（既定）と表で見る。成果物を先頭に印付きで並べ、資料の状態を出す。
+// 資料。カード（既定）と表で見る。納品物を先頭に印付きで並べ、資料の状態を出す。
 
 namespace MindmapPreview {
-  /** 成果物を先頭に、それぞれ連番の順に並べた資料を返す */
+  /** 納品物を先頭に、それぞれ連番の順に並べた資料を返す */
   export function orderDocs(docs: Item[]): Item[] {
     return [...docs].sort(
       (a, b) =>
@@ -9,8 +9,8 @@ namespace MindmapPreview {
     );
   }
 
-  /** 成果物の列の値 */
-  const DELIVERABLE_VALUES = ["成果物", "成果物以外"];
+  /** 納品物の列の値 */
+  const DELIVERABLE_VALUES = ["納品物", "納品物以外"];
 
   /** 資料の画面を返す */
   export function docsScreen({ index, route, on }: ScreenProps): HTMLElement {
@@ -20,12 +20,12 @@ namespace MindmapPreview {
       common.title(),
       {
         key: "deliverable",
-        label: "成果物",
+        label: "納品物",
         nowrap: true,
         filterable: true,
         order: DELIVERABLE_VALUES,
         priority: 2,
-        get: (row) => (row["deliverable"] === true ? "成果物" : "成果物以外"),
+        get: (row) => (row["deliverable"] === true ? "納品物" : "納品物以外"),
         cell: (row) =>
           row["deliverable"] === true ? deliverableBadge() : h({ tag: "span", attrs: { class: "muted" }, children: ["—"] }),
       },
@@ -191,7 +191,7 @@ namespace MindmapPreview {
     return h({ tag: "div", attrs: { class: "screen docs" }, children: [toolbarElement, chips, grid, pop] });
   }
 
-  /** 資料のカード（成果物の印・種類・状態・カテゴリー・フェーズ・タグ） */
+  /** 資料のカード（納品物の印・種類・状態・カテゴリー・フェーズ・タグ） */
   function docCard(index: RecordIndex, doc: Item, open: (id: string) => void): HTMLElement {
     return h({
       tag: "button",

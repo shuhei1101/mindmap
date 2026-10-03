@@ -105,7 +105,7 @@
         },
         "deliverables": {
           "type": "array",
-          "description": "引き渡す成果物",
+          "description": "リリースする納品物",
           "items": {
             "type": "object",
             "required": [
@@ -115,7 +115,7 @@
             "properties": {
               "title": {
                 "type": "string",
-                "description": "成果物の題"
+                "description": "納品物の題"
               },
               "doc": {
                 "type": "string",
