@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page
-from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
 from preview_style_checks import (
     BOARD_EDGE_GAP_PX,
     MIN_UI_FONT_SIZE_PX,
@@ -14,6 +14,7 @@ from preview_style_checks import (
     pin_id_column,
     table_cell_backgrounds,
 )
+from workspace_fixtures import MakeItem
 
 # マップを字下げの一覧に切り替える幅の境（これ以下）
 NARROW_WIDTH = 800
@@ -32,7 +33,7 @@ TOGGLE_ALL_BOX = ".legend .legend-all-check input"
 TOGGLE_ALL_LABEL = "すべての状態を表示"
 
 # 全ての状態を隠したときに出す文
-NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません"
+NO_SHOWN_STATUS_TEXT = "表示する検討事項はありません。"
 
 # 状態の印のチェックボックス（まとめて切り替える箱を除く）
 STATUS_INPUTS = ".legend label:not(.legend-all-check) input"
@@ -132,6 +133,8 @@ def test_map_keyword(write_sample_preview: WriteSamplePreview, open_preview: Ope
         "#decision-map .map-node.hit", "nodes => nodes.map(n => n.dataset.node)"
     )
     assert hits == ["D-2"]
+    assert page.get_attribute("input.map-q", "placeholder") == "タイトルで強調"
+    assert page.get_attribute("input.map-q", "aria-label") == "タイトルで強調するキーワード"
 
 
 def test_map_zoom(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
@@ -190,14 +193,35 @@ def test_board(write_sample_preview: WriteSamplePreview, open_preview: OpenPrevi
         ["対象外", []],
         ["取り下げ", []],
     ]
+    # 0 件の列には、種類の名前で空の旨を出す
+    assert page.inner_text('.board section.board-col[aria-label="未整理"] .empty') == "検討事項はありません。"
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-5の題"
+
+
+def test_table_ready_column_when_waiting(
+    write_preview: WritePreview, open_preview: OpenPreview, make_item: MakeItem
+) -> None:
+    """前提が決着していない未決定は、着手可否を「前提待ち」にする（正常系）。"""
+    # 準備
+    path = write_preview(
+        make_item("D-1", status="未決定"),
+        make_item("D-2", status="未決定", depends_on=["D-1"]),
+    )
+    page = open_preview(path, "#tab=decisions&view=table")
+    # 実行
+    ready = page.eval_on_selector_all(
+        "table.grid tbody tr",
+        "rows => rows.map(r => [r.dataset.id, r.querySelector('td[data-col=\"7\"]').textContent])",
+    )
+    # 検証
+    assert ready == [["D-1", "着手可能"], ["D-2", "前提待ち"]]
 
 
 def test_table_ready_column(
     write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
 ) -> None:
-    """表の「着手できる」は、build が埋め込んだ次の候補にある検討事項だけ「はい」にする（正常系）。"""
+    """表の「着手可否」は、build が埋め込んだ次の候補にある未決定を「着手可能」、未決定以外を「なし」にする（正常系）。"""
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=decisions&view=table")
@@ -208,12 +232,13 @@ def test_table_ready_column(
     )
     # 検証
     assert ready == [
-        ["D-1", "いいえ"],
-        ["D-2", "はい"],
-        ["D-3", "いいえ"],
-        ["D-4", "いいえ"],
-        ["D-5", "はい"],
+        ["D-1", "なし"],
+        ["D-2", "着手可能"],
+        ["D-3", "なし"],
+        ["D-4", "なし"],
+        ["D-5", "着手可能"],
     ]
+    assert page.inner_text('table.grid thead th[data-col="7"]').strip().startswith("着手可否")
     # 行のタイトルを押すと詳細を開く
     page.click('table.grid button.row-open[data-id="D-4"]')
     page.wait_for_selector("aside.panel.open")

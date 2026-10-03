@@ -241,7 +241,7 @@ namespace MindmapPreview {
                 tag: "button",
                 attrs: {
                   type: "button",
-                  "aria-label": `${column?.label ?? key}: ${value} の条件を外す`,
+                  "aria-label": `${column?.label ?? key}: ${value} の条件を解除`,
                   onclick: () => {
                     on.filter({ key, values: values.filter((candidate) => candidate !== value) });
                   },
@@ -264,7 +264,7 @@ namespace MindmapPreview {
               on.filter({ key: null, values: [] });
             },
           },
-          children: ["すべて外す"],
+          children: ["すべて解除"],
         }),
       );
     }

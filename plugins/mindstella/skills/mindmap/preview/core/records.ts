@@ -1,4 +1,4 @@
-// 記録の索引・関係する項目・検索。次の候補・ゴールまで・進み具合は build が計算した `derived` を使い、画面で計算し直さない。
+// 記録の索引・関係する項目・検索。次の候補・ゴールまでの進捗・カテゴリー別の進捗は build が計算した `derived` を使い、画面で計算し直さない。
 
 namespace MindmapPreview {
   /** 項目の種類（`mindmap-data` のキー） */
@@ -146,7 +146,7 @@ namespace MindmapPreview {
     byId: Map<string, { kind: Kind; item: Item }>;
     /** ID → その項目を `depends_on`・`for`・`related`・`sources` で指す項目の ID（ID の順） */
     referencedBy: Map<string, string[]>;
-    /** 着手できる検討事項の ID（`derived.next` の ID） */
+    /** 着手可能な検討事項の ID（`derived.next` の ID） */
     readyIds: Set<string>;
   };
 

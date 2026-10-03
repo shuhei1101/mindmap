@@ -50,7 +50,7 @@ functions:
     exceptions:
       - name: Error
         condition: 要素が無いか JSON として読めない（同梱の雛形か書き出しの誤り）
-        message: 記録を読めませんでした。preview.html を書き出し直してください
+        message: 記録を読み込めませんでした。preview.html をもう一度書き出してください。
     unit_tests:
       - name: test_read_embedded_data
         case: 正常

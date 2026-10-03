@@ -1,4 +1,4 @@
-// 概要。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・カテゴリー別の進み具合のタイルを並べる。
+// 概要。次に検討する項目・ゴールまでの進捗・要見直し・保留・進行中のタスク・カテゴリー別の進捗のタイルを並べる。
 
 namespace MindmapPreview {
   /** 概要の引数 */
@@ -106,7 +106,7 @@ namespace MindmapPreview {
                     attrs: { class: "nl-meta" },
                     children: [
                       h({ tag: "span", children: [[item?.category, candidate.phase].filter(Boolean).join(" · ")] }),
-                      impactBadge(candidate.weight ?? undefined),
+                      impactBadge(candidate.weight ?? undefined, true),
                       h({
                         tag: "span",
                         attrs: { class: "fol", title: "後続の件数" },
@@ -132,11 +132,11 @@ namespace MindmapPreview {
           "次に検討する項目",
           candidates.length > 0
             ? showAll(candidates.length, () =>
-                on.navigate(tableRoute("decisions", { status: ["未決定"], ready: ["はい"] })),
+                on.navigate(tableRoute("decisions", { status: ["未決定"], ready: ["着手可能"] })),
               )
             : null,
         ),
-        candidates.length > 0 ? list : emptyNote("次に検討する項目はありません"),
+        candidates.length > 0 ? list : emptyNote("次に検討する項目はありません。"),
       ],
     });
     // 横に並べる幅ではタイルの枠に収まるだけ、縦に積む幅では上位の数件だけを出す
@@ -157,7 +157,7 @@ namespace MindmapPreview {
     return tile;
   }
 
-  /** ゴールまでのタイル（決定済みの数・フェーズごとの棒・納品物のチェックリスト） */
+  /** ゴールまでの進捗のタイル（決定済みの数・フェーズごとの棒・納品物のチェックリスト） */
   function goalTile({ index, on }: OverviewProps): HTMLElement {
     const { goal } = index.data.derived;
     const settled = goal.phase_progress.reduce((sum, cell) => sum + cell.settled, 0);
@@ -185,7 +185,7 @@ namespace MindmapPreview {
       tag: "section",
       attrs: { id: "tile-goal", class: "tile t-goal", "aria-labelledby": "h-goal" },
       children: [
-        h({ tag: "h2", attrs: { id: "h-goal" }, children: [icon("flag"), "ゴールまで"] }),
+        h({ tag: "h2", attrs: { id: "h-goal" }, children: [icon("flag"), "ゴールまでの進捗"] }),
         h({
           tag: "p",
           attrs: { class: "big" },
@@ -240,6 +240,7 @@ namespace MindmapPreview {
     iconName,
     title,
     items,
+    emptyText,
     link,
     open,
   }: {
@@ -250,6 +251,8 @@ namespace MindmapPreview {
     iconName: IconName;
     title: string;
     items: Item[];
+    /** 0 件のときに出す文 */
+    emptyText: string;
     link: () => void;
     open: (id: string) => void;
   }): HTMLElement {
@@ -259,12 +262,12 @@ namespace MindmapPreview {
       children: [
         tileHead(id, iconName, title, items.length > 0 ? showAll(items.length, link) : null),
         h({ tag: "p", attrs: { class: "num" }, children: [items.length] }),
-        miniList(items, "なし", open),
+        miniList(items, emptyText, open),
       ],
     });
   }
 
-  /** カテゴリー別の進み具合の表（カテゴリーを行、フェーズを列にする） */
+  /** カテゴリー別の進捗の表（カテゴリーを行、フェーズを列にする） */
   function progressTile({ index, on }: OverviewProps): HTMLElement {
     const { settings, derived } = index.data;
     const rowOf = (entry: Derived["progress"][number]): HTMLElement =>
@@ -352,7 +355,7 @@ namespace MindmapPreview {
       tag: "section",
       attrs: { id: "tile-progress", class: "tile t-cat", "aria-labelledby": "h-cat" },
       children: [
-        h({ tag: "h2", attrs: { id: "h-cat" }, children: [icon("layers"), "カテゴリー別の進み具合"] }),
+        h({ tag: "h2", attrs: { id: "h-cat" }, children: [icon("layers"), "カテゴリー別の進捗"] }),
         h({
           tag: "div",
           attrs: { class: "cat-wrap" },
@@ -419,6 +422,7 @@ namespace MindmapPreview {
               iconName: "alert",
               title: "要見直し",
               items: review,
+              emptyText: "要見直しの検討事項はありません。",
               link: () => on.navigate(tableRoute("decisions", { status: ["要見直し"] })),
               open: on.open,
             }),
@@ -428,6 +432,7 @@ namespace MindmapPreview {
               iconName: "pause",
               title: "保留",
               items: hold,
+              emptyText: "保留の検討事項はありません。",
               link: () => on.navigate(tableRoute("decisions", { status: ["保留"] })),
               open: on.open,
             }),
@@ -437,6 +442,7 @@ namespace MindmapPreview {
               iconName: "play",
               title: "進行中のタスク",
               items: running,
+              emptyText: "進行中のタスクはありません。",
               link: () => on.navigate(tableRoute("tasks", { status: ["進行中"] })),
               open: on.open,
             }),

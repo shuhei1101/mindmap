@@ -43,7 +43,8 @@ def test_library_notice(preview_page: Page, load_preview_scripts: LoadPreviewScr
     )
     # 検証
     assert notice["role"] == "alert"
-    assert "読めなかったライブラリ: marked・DOMPurify" in notice["text"]
+    assert "読み込めなかったライブラリ: marked・DOMPurify" in notice["text"]
+    assert "通信を確認して、ページを再読み込みしてください。" in notice["text"]
 
 
 def test_render_markdown(
@@ -129,4 +130,5 @@ def test_render_diagrams(
     # 検証
     assert result[0]["hasSvg"] is True
     assert result[1]["hasSvg"] is False
+    assert "この図は表示できませんでした。原文を表示します。" in result[1]["text"]
     assert broken_source in result[1]["text"]

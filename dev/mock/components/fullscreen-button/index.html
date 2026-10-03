@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport: スマホ幅でも等倍で開く（拡大は禁止しない） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- color-scheme: 既定は端末の明暗 -->
+  <meta name="color-scheme" content="light dark">
+  <title>全画面表示のボタン | mindmap 部品のモック</title>
+  <!-- 文字: デザイン方針の Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+  <!-- トークンと、画面のモックと同じスタイル -->
+  <link rel="stylesheet" href="../../../../plugins/mindstella/skills/mindmap/preview/tokens.css">
+  <link rel="stylesheet" href="../../refs/52/assets/style.css">
+  <style>
+    /* カタログの節: 状態ごとの案を縦に並べる */
+    .cat-sec { margin-top: 32px; }
+    /* カタログの節の見出し */
+    .cat-sec > h2 { margin: 0 0 4px; font-size: 1rem; }
+    /* 状態の説明 */
+    .cat-sec > p { margin: 0 0 12px; color: var(--text-2); font-size: var(--fs-small); }
+    /* 部品を置く台 */
+    .stage { border: 1px dashed var(--border); border-radius: var(--radius); padding: 12px; background: var(--bg); overflow: hidden; }
+    /* 台の中では帯を流れに置く */
+    .stage .topbar { position: static; }
+    /* 狭い幅の見本 */
+    .stage.narrow { width: 390px; max-width: 100%; }
+    /* 最も狭い幅の見本 */
+    .stage.narrowest { width: 320px; max-width: 100%; }
+    /* 狭い幅の見本: 画面幅 960px 以下のときと同じ置き方にする */
+    .stage.narrow .topbar, .stage.narrowest .topbar { gap: 8px; padding: 0 12px; }
+    .stage.narrow .search-trigger, .stage.narrowest .search-trigger { min-width: 0; }
+    .stage.narrow .search-trigger .label, .stage.narrow .search-trigger kbd, .stage.narrow .brand-sub,
+    .stage.narrowest .search-trigger .label, .stage.narrowest .search-trigger kbd, .stage.narrowest .brand-sub { display: none; }
+    /* 詳細パネルの頭の見本: パネルの面の上に置く */
+    .stage .panel-head { position: static; background: var(--surface); border: 1px solid var(--border); }
+    /* 状態を見せるための見本のクラス */
+    .is-hover { background: var(--hover) !important; color: var(--text) !important; }
+    .topbar .is-hover { background: var(--topbar-hover) !important; color: var(--topbar-fg) !important; }
+    .is-focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  </style>
+</head>
+<body>
+  <main class="content">
+    <!-- パンくず -->
+    <nav class="crumbs" aria-label="パンくず"><a href="../index.md">components</a> / fullscreen-button</nav>
+    <h1 style="margin: 0; font-size: var(--fs-h1); letter-spacing: -.02em;">全画面表示のボタン</h1>
+    <p style="margin: 8px 0 0; color: var(--text-2); font-size: var(--fs-small);">詳細パネルと詳細の全画面の頭に置く全画面表示のボタン。ラベル「全画面表示」とアイコンを変えず、全画面のときを押された見た目で示す。</p>
+    <section class="cat-sec">
+      <h2>詳細パネル（押していない）</h2>
+      <p>枠の無いアイコンボタン。読み上げは「全画面表示、切り替えボタン、オフ」。</p>
+      <div class="stage"><div class="panel-head"><span class="panel-kind">検討事項 <span class="mono">D-009</span></span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="前の項目へ戻る" title="前の項目へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" aria-label="次の項目へ進む" title="次の項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="icon-btn" type="button" data-act="full" aria-pressed="false" aria-label="全画面表示" title="全画面表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button><button class="icon-btn" type="button" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div></div>
+    </section>
+    <section class="cat-sec">
+      <h2>詳細の全画面（押されている）</h2>
+      <p>印の色の枠と面で押された状態を示す。もう一度押すと詳細パネルに戻る。全画面には閉じるボタンを置かない。</p>
+      <div class="stage"><div class="panel-head"><span class="panel-kind">検討事項 <span class="mono">D-009</span></span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="前の項目へ戻る" title="前の項目へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" aria-label="次の項目へ進む" title="次の項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="icon-btn" type="button" data-act="full" aria-pressed="true" aria-label="全画面表示" title="全画面表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button></div></div>
+    </section>
+    <section class="cat-sec">
+      <h2>ホバー（押していない）</h2>
+      <p>面の色だけを変える。</p>
+      <div class="stage"><div class="panel-head"><span class="panel-kind">検討事項 <span class="mono">D-009</span></span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="前の項目へ戻る" title="前の項目へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" aria-label="次の項目へ進む" title="次の項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="icon-btn is-hover" type="button" data-act="full" aria-pressed="false" aria-label="全画面表示" title="全画面表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button><button class="icon-btn" type="button" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div></div>
+    </section>
+    <section class="cat-sec">
+      <h2>キーボードのフォーカス（押されている）</h2>
+      <p>印の色の輪。押された見た目の上に重ねる。</p>
+      <div class="stage"><div class="panel-head"><span class="panel-kind">検討事項 <span class="mono">D-009</span></span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="前の項目へ戻る" title="前の項目へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" aria-label="次の項目へ進む" title="次の項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="icon-btn is-focus" type="button" data-act="full" aria-pressed="true" aria-label="全画面表示" title="全画面表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button></div></div>
+    </section>
+    <section class="cat-sec">
+      <h2>狭い幅（390px）</h2>
+      <p>詳細パネルが画面幅いっぱいになる幅でも、ボタンの形は同じ。</p>
+      <div class="stage narrow"><div class="panel-head"><span class="panel-kind">検討事項 <span class="mono">D-009</span></span><span class="spacer"></span><button class="icon-btn" type="button" aria-label="前の項目へ戻る" title="前の項目へ戻る"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button><button class="icon-btn" type="button" aria-label="次の項目へ進む" title="次の項目へ進む" disabled><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button><button class="icon-btn" type="button" data-act="full" aria-pressed="false" aria-label="全画面表示" title="全画面表示"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg></button><button class="icon-btn" type="button" aria-label="詳細を閉じる"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div></div>
+    </section>
+  </main>
+</body>
+</html>

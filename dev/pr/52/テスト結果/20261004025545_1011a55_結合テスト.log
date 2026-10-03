@@ -1,0 +1,26 @@
+$ pytest tests/integration/preview tests/integration/storybook
+============================= test session starts ==============================
+collected 95 items
+
+tests/integration/preview/test_decisions_screen.py .............         [ 13%]
+tests/integration/preview/test_detail_full_screen.py .....               [ 18%]
+tests/integration/preview/test_detail_panel_screen.py .........          [ 28%]
+tests/integration/preview/test_diagram_viewer_screen.py ....             [ 32%]
+tests/integration/preview/test_docs_screen.py ..........                 [ 43%]
+tests/integration/preview/test_graph_screen.py ......                    [ 49%]
+tests/integration/preview/test_open_preview.py ......                    [ 55%]
+tests/integration/preview/test_overview_screen.py ..........             [ 66%]
+tests/integration/preview/test_records_screen.py .                       [ 67%]
+tests/integration/preview/test_search_screen.py .....                    [ 72%]
+tests/integration/preview/test_tasks_screen.py ...                       [ 75%]
+tests/integration/preview/test_topbar_screen.py ...                      [ 78%]
+tests/integration/storybook/test_table_stories.py ........               [ 87%]
+tests/integration/storybook/test_topbar_stories.py .....                 [ 92%]
+tests/integration/storybook/test_view_switch_stories.py ..               [ 94%]
+tests/integration/preview/test_records_screen.py .                       [ 95%]
+tests/integration/storybook/test_view_switch_stories.py .                [ 96%]
+tests/integration/preview/test_records_screen.py .                       [ 97%]
+tests/integration/storybook/test_view_switch_stories.py .                [ 98%]
+tests/integration/preview/test_records_screen.py .                       [100%]
+
+======================== 95 passed in 174.22s (0:02:54) ========================

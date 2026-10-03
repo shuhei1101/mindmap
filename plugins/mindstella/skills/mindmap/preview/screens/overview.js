@@ -1,5 +1,5 @@
 "use strict";
-// 概要。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・カテゴリー別の進み具合のタイルを並べる。
+// 概要。次に検討する項目・ゴールまでの進捗・要見直し・保留・進行中のタスク・カテゴリー別の進捗のタイルを並べる。
 var MindmapPreview;
 (function (MindmapPreview) {
     /** 縦に積む幅で出す、次に検討する項目の件数 */
@@ -82,7 +82,7 @@ var MindmapPreview;
                                         attrs: { class: "nl-meta" },
                                         children: [
                                             MindmapPreview.h({ tag: "span", children: [[item?.category, candidate.phase].filter(Boolean).join(" · ")] }),
-                                            MindmapPreview.impactBadge(candidate.weight ?? undefined),
+                                            MindmapPreview.impactBadge(candidate.weight ?? undefined, true),
                                             MindmapPreview.h({
                                                 tag: "span",
                                                 attrs: { class: "fol", title: "後続の件数" },
@@ -103,9 +103,9 @@ var MindmapPreview;
             attrs: { id: "tile-next", class: "tile t-next", "aria-labelledby": "h-next" },
             children: [
                 tileHead("h-next", "next", "次に検討する項目", candidates.length > 0
-                    ? showAll(candidates.length, () => on.navigate(tableRoute("decisions", { status: ["未決定"], ready: ["はい"] })))
+                    ? showAll(candidates.length, () => on.navigate(tableRoute("decisions", { status: ["未決定"], ready: ["着手可能"] })))
                     : null),
-                candidates.length > 0 ? list : MindmapPreview.emptyNote("次に検討する項目はありません"),
+                candidates.length > 0 ? list : MindmapPreview.emptyNote("次に検討する項目はありません。"),
             ],
         });
         // 横に並べる幅ではタイルの枠に収まるだけ、縦に積む幅では上位の数件だけを出す
@@ -128,7 +128,7 @@ var MindmapPreview;
         new ResizeObserver(fit).observe(tile);
         return tile;
     }
-    /** ゴールまでのタイル（決定済みの数・フェーズごとの棒・納品物のチェックリスト） */
+    /** ゴールまでの進捗のタイル（決定済みの数・フェーズごとの棒・納品物のチェックリスト） */
     function goalTile({ index, on }) {
         const { goal } = index.data.derived;
         const settled = goal.phase_progress.reduce((sum, cell) => sum + cell.settled, 0);
@@ -155,7 +155,7 @@ var MindmapPreview;
             tag: "section",
             attrs: { id: "tile-goal", class: "tile t-goal", "aria-labelledby": "h-goal" },
             children: [
-                MindmapPreview.h({ tag: "h2", attrs: { id: "h-goal" }, children: [MindmapPreview.icon("flag"), "ゴールまで"] }),
+                MindmapPreview.h({ tag: "h2", attrs: { id: "h-goal" }, children: [MindmapPreview.icon("flag"), "ゴールまでの進捗"] }),
                 MindmapPreview.h({
                     tag: "p",
                     attrs: { class: "big" },
@@ -199,18 +199,18 @@ var MindmapPreview;
         });
     }
     /** 件数と名前の小さなタイル（要見直し・保留・進行中のタスク） */
-    function smallTile({ tileId, id, iconName, title, items, link, open, }) {
+    function smallTile({ tileId, id, iconName, title, items, emptyText, link, open, }) {
         return MindmapPreview.h({
             tag: "section",
             attrs: { id: tileId, class: "tile t-small", "aria-labelledby": id },
             children: [
                 tileHead(id, iconName, title, items.length > 0 ? showAll(items.length, link) : null),
                 MindmapPreview.h({ tag: "p", attrs: { class: "num" }, children: [items.length] }),
-                miniList(items, "なし", open),
+                miniList(items, emptyText, open),
             ],
         });
     }
-    /** カテゴリー別の進み具合の表（カテゴリーを行、フェーズを列にする） */
+    /** カテゴリー別の進捗の表（カテゴリーを行、フェーズを列にする） */
     function progressTile({ index, on }) {
         const { settings, derived } = index.data;
         const rowOf = (entry) => MindmapPreview.h({
@@ -287,7 +287,7 @@ var MindmapPreview;
             tag: "section",
             attrs: { id: "tile-progress", class: "tile t-cat", "aria-labelledby": "h-cat" },
             children: [
-                MindmapPreview.h({ tag: "h2", attrs: { id: "h-cat" }, children: [MindmapPreview.icon("layers"), "カテゴリー別の進み具合"] }),
+                MindmapPreview.h({ tag: "h2", attrs: { id: "h-cat" }, children: [MindmapPreview.icon("layers"), "カテゴリー別の進捗"] }),
                 MindmapPreview.h({
                     tag: "div",
                     attrs: { class: "cat-wrap" },
@@ -353,6 +353,7 @@ var MindmapPreview;
                             iconName: "alert",
                             title: "要見直し",
                             items: review,
+                            emptyText: "要見直しの検討事項はありません。",
                             link: () => on.navigate(tableRoute("decisions", { status: ["要見直し"] })),
                             open: on.open,
                         }),
@@ -362,6 +363,7 @@ var MindmapPreview;
                             iconName: "pause",
                             title: "保留",
                             items: hold,
+                            emptyText: "保留の検討事項はありません。",
                             link: () => on.navigate(tableRoute("decisions", { status: ["保留"] })),
                             open: on.open,
                         }),
@@ -371,6 +373,7 @@ var MindmapPreview;
                             iconName: "play",
                             title: "進行中のタスク",
                             items: running,
+                            emptyText: "進行中のタスクはありません。",
                             link: () => on.navigate(tableRoute("tasks", { status: ["進行中"] })),
                             open: on.open,
                         }),

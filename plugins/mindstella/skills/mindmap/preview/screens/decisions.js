@@ -32,7 +32,7 @@ var MindmapPreview;
     /** マップの狭い幅の境（これ以下は字下げした縦の一覧） */
     const NARROW_QUERY = "(max-width: 900px)";
     /** 表示する状態の検討事項が 1 件も無いときに、マップの枠と字下げの一覧に出す文 */
-    const NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません";
+    const NO_SHOWN_STATUS_TEXT = "表示する検討事項はありません。";
     /** 対象 → カテゴリー → フェーズ → 検討事項の木を、表示する状態で絞って返す（ELK に渡す節と枝の形） */
     function buildDecisionTree({ index, shownStatuses, }) {
         const { settings } = index.data;
@@ -329,7 +329,7 @@ var MindmapPreview;
                         hits > 0
                             ? MindmapPreview.h({
                                 tag: "span",
-                                attrs: { class: "hit-n", "aria-label": `キーワードに当たった項目 ${hits} 件` },
+                                attrs: { class: "hit-n", "aria-label": `キーワードに一致した項目 ${hits} 件` },
                                 children: [hits],
                             })
                             : null,
@@ -394,9 +394,9 @@ var MindmapPreview;
             attrs: {
                 class: "input map-q",
                 type: "search",
-                placeholder: "名前で強調",
+                placeholder: "タイトルで強調",
                 value: mapState.keyword,
-                "aria-label": "名前で強調するキーワード",
+                "aria-label": "タイトルで強調するキーワード",
             },
         });
         let timer;
@@ -464,7 +464,7 @@ var MindmapPreview;
                 tag: "div",
                 children: [
                     MindmapPreview.libraryNotice({ names: ["elkjs"], what: "マップ" }),
-                    MindmapPreview.emptyNote("表示形式を表に切り替えると、検討事項を読めます。"),
+                    MindmapPreview.emptyNote("表示形式を「表」に切り替えると、検討事項を表示できます。"),
                 ],
             })
             : null;
@@ -515,6 +515,7 @@ var MindmapPreview;
                             links: item.depends_on ?? [],
                             open: on.open,
                         }),
+                        emptyText: "検討事項はありません。",
                     }),
                 ],
             });
@@ -539,13 +540,13 @@ var MindmapPreview;
             },
             {
                 key: "ready",
-                label: "着手できる",
+                label: "着手可否",
                 nowrap: true,
                 filterable: true,
-                order: ["はい", "いいえ"],
+                order: ["着手可能", "前提待ち", "なし"],
                 priority: 2,
-                // 前提が全て決着した未決定の検討事項（build が計算した次の候補）
-                get: (row) => (index.readyIds.has(row.id) ? "はい" : "いいえ"),
+                // 前提が全て決着した未決定（build が計算した次の候補）は着手可能、ほかの未決定は前提待ち、未決定以外はなし
+                get: (row) => (row.status !== "未決定" ? "なし" : index.readyIds.has(row.id) ? "着手可能" : "前提待ち"),
             },
             {
                 key: "depends_on",

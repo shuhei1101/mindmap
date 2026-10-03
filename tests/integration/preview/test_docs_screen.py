@@ -75,8 +75,8 @@ def test_card_filter(write_sample_preview: WriteSamplePreview, open_preview: Ope
         "納品物: 納品物以外"
     ]
     assert _card_ids(page) == ["A-2"]
-    # チップの × で個別に外す
-    page.click('.chips .chip button[aria-label="納品物: 納品物以外 の条件を外す"]')
+    # チップの × で個別に解除する
+    page.click('.chips .chip button[aria-label="納品物: 納品物以外 の条件を解除"]')
     page.wait_for_function("document.querySelectorAll('.doc-card').length === 2")
     assert _card_ids(page) == ["A-1", "A-2"]
 
@@ -84,13 +84,13 @@ def test_card_filter(write_sample_preview: WriteSamplePreview, open_preview: Ope
 def test_card_filter_clear_all(
     write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
 ) -> None:
-    """条件が 2 つ以上あるとき、すべて外すで全ての条件を外す（正常系）。"""
+    """条件が 2 つ以上あるとき、すべて解除で全ての条件を解除する（正常系）。"""
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=docs&f.deliverable=納品物&f.status=完成")
     assert _card_ids(page) == ["A-1"]
     # 実行
-    page.click(".chips >> text=すべて外す")
+    page.click(".chips >> text=すべて解除")
     # 検証
     page.wait_for_function("document.querySelectorAll('.doc-card').length === 2")
     assert page.locator(".chips .chip").count() == 0
@@ -139,7 +139,7 @@ def test_board(write_sample_preview: WriteSamplePreview, open_preview: OpenPrevi
     )
     # 検証
     assert columns == [["下書き", "1", ["A-2"]], ["確認中", "0", []], ["完成", "1", ["A-1"]]]
-    assert page.locator(".board section.board-col").nth(1).inner_text().endswith("なし")
+    assert page.locator(".board section.board-col").nth(1).inner_text().endswith("資料はありません。")
     assert marks == 0
     assert badge_cards == ["A-1"]
 
@@ -190,7 +190,7 @@ def test_board_open_detail(
 
 
 def test_board_filter(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
-    """ボードでも絞り込みのポップオーバーで値を選ぶと、条件のチップが出て、列のカードが絞られ、外すと戻る（正常系）。"""
+    """ボードでも絞り込みのポップオーバーで値を選ぶと、条件のチップが出て、列のカードが絞られ、解除すると戻る（正常系）。"""
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=docs&view=board")
@@ -207,8 +207,8 @@ def test_board_filter(write_sample_preview: WriteSamplePreview, open_preview: Op
         ["確認中", "0", []],
         ["完成", "0", []],
     ]
-    # チップの × で外すと全ての列のカードが戻る
-    page.click('.chips .chip button[aria-label="納品物: 納品物以外 の条件を外す"]')
+    # チップの × で解除すると全ての列のカードが戻る
+    page.click('.chips .chip button[aria-label="納品物: 納品物以外 の条件を解除"]')
     page.wait_for_function("document.querySelectorAll('.board .doc-card').length === 2")
     assert _board_columns(page) == [
         ["下書き", "1", ["A-2"]],

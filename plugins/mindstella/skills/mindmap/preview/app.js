@@ -34,7 +34,7 @@ var MindmapPreview;
             return JSON.parse(element?.textContent ?? "");
         }
         catch {
-            throw new Error("記録を読めませんでした。preview.html を書き出し直してください");
+            throw new Error("記録を読み込めませんでした。preview.html をもう一度書き出してください。");
         }
     }
     MindmapPreview.readEmbeddedData = readEmbeddedData;

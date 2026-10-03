@@ -34,6 +34,8 @@ def test_board(write_sample_preview: WriteSamplePreview, open_preview: OpenPrevi
         ["中止", []],
     ]
     assert "D-2の題" in running_for
+    # 0 件の列には、種類の名前で空の旨を出す
+    assert page.inner_text('.board section.board-col[aria-label="保留"] .empty') == "タスクはありません。"
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "T-1の題"
 

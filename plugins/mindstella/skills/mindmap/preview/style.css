@@ -587,7 +587,7 @@ dialog.full .panel-head { flex: none; }
 @media (min-width: 901px) { body.panel-open:has(.content.map-view) .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
 @media (min-width: 1100px) { body.panel-open:has(.panel.wide) .crumbs-bar { margin-right: min(760px, 100%); } }
 
-/* ===== カテゴリー別の進み具合のセル: ホバー・フォーカスで面を変える（濃さはトークンの --hover） ===== */
+/* ===== カテゴリー別の進捗のセル: ホバー・フォーカスで面を変える（濃さはトークンの --hover） ===== */
 .cat-table a.cell, .cat-table a.cat-link { display: inline-flex; padding: 4px 6px; margin: -4px -6px; border-radius: var(--radius); color: inherit; text-decoration: none; }
 .cat-table a.cell:hover, .cat-table a.cell:focus-visible, .cat-table a.cat-link:hover, .cat-table a.cat-link:focus-visible { background: var(--hover); }
 
@@ -602,3 +602,8 @@ table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--
 
 /* 詳細の見出しの「← →」: 見てきた項目を行き来する。行き来できないときは押せない見た目 */
 .icon-btn:disabled { color: var(--text-3); opacity: .45; cursor: default; background: none; }
+
+/* ===== 全画面表示のボタン: 押された状態（全画面のとき）を面と枠の色で示す ===== */
+
+/* 押された全画面表示のボタン */
+.icon-btn[data-act="full"][aria-pressed="true"] { color: var(--accent); border-color: var(--accent); background: var(--accent-weak); }

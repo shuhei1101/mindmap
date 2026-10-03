@@ -3,7 +3,7 @@ elements:
   - name: 戻る・進む
     kind: button
     position: 見出し
-    description: パネルと全画面の中で移ってきた項目を行き来する（ブラウザの戻る・進むと同じ履歴）
+    description: パネルと全画面の中で移ってきた項目を行き来する（ブラウザの戻る・進むと同じ履歴）。読み上げの名前は「前の項目へ戻る」「次の項目へ進む」
     label: ← →
     enabled_when: その向きに見てきた項目がある
   - name: タイトル
@@ -12,10 +12,11 @@ elements:
     description: 項目の ID・タイトル・状態。納品物の資料はタイトルの右に余白を空けて納品物の印を置く（状態の横に並べない）
     io: 表示
     source: プレビューを開く.id の項目
-  - name: 全画面に切り替える
+  - name: 全画面表示
     kind: button
     position: 見出し
-    description: 詳細の全画面を開く（履歴に積まない）
+    description: 詳細の全画面を開く（履歴に積まない）。ラベルとアイコンは全画面の中でも変えず、全画面の中では押された状態（`aria-pressed`）で出す
+    label: 全画面表示
   - name: 閉じる
     kind: button
     position: 見出し
@@ -28,15 +29,15 @@ elements:
     visible_when: 検討事項で案を持つ
   - name: 本文
     kind: article
-    description: 本文の Markdown を marked で描き DOMPurify で無害化して差し込む。mermaid の図は SVG に描き、「拡大して見る」「Raw」「コピー」を置く。ライブラリが読めないときは読めなかったライブラリの知らせと原文
+    description: 本文の Markdown を marked で描き DOMPurify で無害化して差し込む。mermaid の図は SVG に描き、「拡大表示」「Raw」「コピー」を置く。図を描けないときは「この図は表示できませんでした。原文を表示します。」と原文。ライブラリが読めないときは読めなかったライブラリの知らせと原文
     io: 表示
     source: プレビューを開く.mindmap-data.bodies[{項目の body}]
     visible_when: 項目が `body` を持つ
-  - name: 図を拡大して見る
+  - name: 図の拡大表示
     kind: button
     position: 本文 > 図
-    description: 図の拡大を開く
-    label: 拡大して見る
+    description: 図の拡大を開く。読み上げの名前は「図を拡大表示」
+    label: 拡大表示
   - name: 図の Raw
     kind: button
     position: 本文 > 図
@@ -49,7 +50,7 @@ elements:
     label: コピー
   - name: 関係する項目
     kind: list
-    description: 前提・後続の項目・関連タスク・経緯・関連・この項目を参照している項目。押すとその項目へ移り、履歴に積む
+    description: 前提・後続の項目・関連タスク・経緯・関連・参照元。押すとその項目へ移り、履歴に積む
     io: 表示
     source: プレビューを開く.mindmap-data（`depends_on`・`for`・`related`・`sources` とその逆向き）
     visible_when: その種類の項目が 1 件以上

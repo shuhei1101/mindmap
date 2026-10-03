@@ -1,7 +1,7 @@
 # 21
 
 プレビューの画面（概要・検討事項・タスク・資料・つながり・詳細パネル）を見本に沿って作る（[PR #21](https://github.com/shuhei1101/mindmap/pull/21)）。
-画面は共通のスクリプト・スタイル・見本のデータ（`assets/`）を読み、値はデザイン方針のトークン（`skills/mindmap/preview/tokens.css`）を使う。
+画面は共通のスクリプト・スタイル・見本のデータ（`assets/`）を読み、値はデザイン方針のトークン（`plugins/mindstella/skills/mindmap/preview/tokens.css`）を使う。
 
 | 画面 | 中身 |
 | --- | --- |

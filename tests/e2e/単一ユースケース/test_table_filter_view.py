@@ -91,7 +91,7 @@ def test_normal(
     page.wait_for_selector(".chips .chip")
     assert page.eval_on_selector_all(".chips .chip", "c => c.map(x => x.textContent)") == ["確度: 高"]
     assert "R-2" not in row_ids(page)
-    page.click(".chips >> text=すべて外す")
+    page.click(".chips >> text=すべて解除")
     page.wait_for_function(
         f"document.querySelectorAll('table.grid tbody tr').length === {EXTRA_RESEARCH_COUNT + 3}"
     )
@@ -139,7 +139,7 @@ def test_normal_when_no_match(
     make_item: MakeItem,
     valid_settings: dict[str, Any],
 ) -> None:
-    """どの行にも合わない条件では、該当なしと次の操作を書き、条件をすべて外すと行が戻る（正常系）。"""
+    """どの行にも合わない条件では、該当なしと次の操作を書き、「すべて解除」を押すと行が戻る（正常系）。"""
     # 準備
     path = build_preview(
         make_item("T-1", kind="作業", status="完了"),
@@ -151,7 +151,7 @@ def test_normal_when_no_match(
     page.wait_for_selector("table.grid")
     # 検証
     assert "該当するタスクはありません。別の条件を試してください。" in page.inner_text(".table-block")
-    page.click(".chips >> text=すべて外す")
+    page.click(".chips >> text=すべて解除")
     page.wait_for_function("document.querySelectorAll('table.grid tbody tr[data-id]').length === 2")
     assert row_ids(page) == ["T-1", "T-2"]
     assert page.locator(".chips .chip").count() == 0
