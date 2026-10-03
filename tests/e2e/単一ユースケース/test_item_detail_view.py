@@ -83,7 +83,8 @@ def test_normal(
         bodies={"D-3.md": BODY_WITH_DIAGRAM},
     )
     page = open_preview(path, "#tab=decisions&view=table", width=WIDE_SIZE[0], height=WIDE_SIZE[1])
-    width_before = page.evaluate("document.querySelector('main#main').getBoundingClientRect().width")
+    box_script = "(() => { const r = document.querySelector('main#main').getBoundingClientRect(); return [r.left, r.right]; })()"
+    left_before = page.evaluate(box_script)[0]
     # 実行
     page.click('table.grid button.row-open[data-id="D-3"]')
     page.wait_for_selector("aside.panel.open .mermaid svg", timeout=DIAGRAM_TIMEOUT_MS)
@@ -106,8 +107,11 @@ def test_normal(
     assert page.inner_text('aside.panel .md [data-md-level="1"]') == "要件"
     for action in ("diagram-zoom", "diagram-raw", "diagram-copy"):
         assert page.locator(f'aside.panel button[data-act="{action}"]').count() == 1
-    # 幅 1920px では、パネルを開いている間、本文がパネルの分だけ寄る
-    assert page.evaluate("document.querySelector('main#main').getBoundingClientRect().width") < width_before
+    # 幅 1920px では、パネルを開いている間、本文がパネルの分だけ左へ寄り、パネルに重ならない
+    left_after, right_after = page.evaluate(box_script)
+    panel_left = page.evaluate("document.querySelector('aside.panel').getBoundingClientRect().left")
+    assert left_after < left_before
+    assert right_after <= panel_left
     # 全画面に切り替え、図の拡大は中身の切り替えで、モーダルが 2 枚重ならない
     page.click('aside.panel button[data-act="full"]')
     page.wait_for_selector("dialog.full[open] .mermaid svg", timeout=DIAGRAM_TIMEOUT_MS)
