@@ -678,11 +678,13 @@ functions:
     returns:
       type: '"all" | "some" | "none"'
       description: '`all` を全て表示していれば `all`（チェック）、1 つも表示していなければ `none`（空）、それ以外は `some`（横棒）。`all` が空なら `none`'
-    notes:
-      単体テスト（単体テスト作成で `unit_tests` へ移す）: |-
-        | テスト名 | 正常/異常 | 概要 | 条件 | Mock | 期待値 |
-        | --- | --- | --- | --- | --- | --- |
-        | test_toggle_all_state | 正常 | 表示している数で状態を返す | `parametrize`: all = a・b・c で shown = a・b・c / a / 空 / a・b・c・z（`all` に無い値を含む）、all = 空で shown = 空 | なし | `all` / `some` / `none` / `all` / `none` |
+    unit_tests:
+      - name: test_toggle_all_state
+        case: 正常
+        summary: 表示している数で状態を返す
+        condition: '`parametrize`: all = a・b・c で shown = a・b・c / a / 空 / a・b・c・z（`all` に無い値を含む）、all = 空で shown = 空'
+        mock: なし
+        expected: '`all` / `some` / `none` / `all` / `none`'
   - name: toggleAllBox
     title: まとめて切り替える箱
     container: skills/mindmap/preview/core/dom.ts
@@ -715,11 +717,13 @@ functions:
     returns:
       type: HTMLLabelElement
       description: '`class="legend-all-check"` の label と、その中のネイティブの checkbox。状態が `all` なら `checked`、`some` なら `indeterminate`、`none` ならどちらも偽'
-    notes:
-      単体テスト（単体テスト作成で `unit_tests` へ移す）: |-
-        | テスト名 | 正常/異常 | 概要 | 条件 | Mock | 期待値 |
-        | --- | --- | --- | --- | --- | --- |
-        | test_toggle_all_box | 正常 | 状態に合わせて箱を作り、押すと次に表示する値を渡す | `parametrize`: all = a・b・c で shown = a・b・c / a / 空。作った箱の checkbox を 1 回押す | `onChange` を記録する関数 | checked・indeterminate が 真・偽 / 偽・真 / 偽・偽、`aria-label` が `label`。押した後の `onChange` の引数が 空 / a・b・c / a・b・c |
+    unit_tests:
+      - name: test_toggle_all_box
+        case: 正常
+        summary: 状態に合わせて箱を作り、押すと次に表示する値を渡す
+        condition: '`parametrize`: all = a・b・c で shown = a・b・c / a / 空。作った箱の checkbox を 1 回押す'
+        mock: '`onChange` を記録する関数'
+        expected: checked・indeterminate が 真・偽 / 偽・真 / 偽・偽、`aria-label` が `label`。押した後の `onChange` の引数が 空 / a・b・c / a・b・c
 test_files:
   - tests/unit/preview/test_records.py
   - tests/unit/preview/test_libs.py
