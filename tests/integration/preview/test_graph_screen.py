@@ -52,6 +52,10 @@ def test_kind_toggles(write_sample_preview: WriteSamplePreview, open_preview: Op
     ]
     assert [row[0] for row in toggles] == KIND_VALUES
     assert page.is_checked('.legend input[value="logs"]') is False
+    # 非表示の種類は、見た目も変わる（種類の色の点が薄くなる）
+    assert page.evaluate(
+        "getComputedStyle(document.querySelector('.legend label:has(input[value=\"logs\"]) .kdot')).opacity"
+    ) == "0.25"
     assert page.is_checked('.legend input[value="decisions"]') is True
 
 
