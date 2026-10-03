@@ -3,7 +3,7 @@
 var MindmapPreview;
 (function (MindmapPreview) {
     /** 要素を作る。属性とイベントのリスナーを付け、子を並べる */
-    function h(tag, attrs, ...children) {
+    function h({ tag, attrs, children, }) {
         const element = document.createElement(tag);
         for (const [name, value] of Object.entries(attrs ?? {})) {
             // 値が無い・偽の属性は付けない
@@ -20,12 +20,12 @@ var MindmapPreview;
                 element.setAttribute(name, value === true ? "" : String(value));
             }
         }
-        append(element, ...children);
+        append({ parent: element, children: children ?? [] });
         return element;
     }
     MindmapPreview.h = h;
     /** 要素の中に子を足す（文字は textContent として入れる） */
-    function append(parent, ...children) {
+    function append({ parent, children }) {
         for (const child of children) {
             if (child === null || child === undefined || child === false)
                 continue;
@@ -116,35 +116,47 @@ var MindmapPreview;
     function statusBadge(status) {
         if (status === undefined)
             return document.createDocumentFragment();
-        return h("span", { class: "st", "data-st": status }, statusMark(status), status);
+        return h({
+            tag: "span",
+            attrs: { class: "st", "data-st": status },
+            children: [statusMark(status), status],
+        });
     }
     MindmapPreview.statusBadge = statusBadge;
     /** 影響度（大・中・小）の 3 本の目盛りと文字 */
     function impactBadge(weight) {
-        if (weight === undefined)
-            return document.createDocumentFragment();
         const levels = ["大", "中", "小"];
+        // 大・中・小のどれでもない値は、影響度を持たないものとして空の断片にする
+        if (weight === undefined || !levels.includes(weight))
+            return document.createDocumentFragment();
         const filled = 3 - levels.indexOf(weight);
-        const bars = [0, 1, 2].map((index) => h("i", { class: index < filled ? "on" : "" }));
-        return h("span", { class: "impact", title: `影響度 ${weight}` }, h("span", { "aria-hidden": "true" }, ...bars), weight);
+        const bars = [0, 1, 2].map((index) => h({ tag: "i", attrs: { class: index < filled ? "on" : "" } }));
+        return h({
+            tag: "span",
+            attrs: { class: "impact", title: `影響度 ${weight}` },
+            children: [
+                h({ tag: "span", attrs: { "aria-hidden": "true" }, children: [...bars] }),
+                weight,
+            ],
+        });
     }
     MindmapPreview.impactBadge = impactBadge;
     /** タグを並べる */
     function tagList(values) {
         const fragment = document.createDocumentFragment();
         for (const value of values ?? [])
-            fragment.append(h("span", { class: "tag" }, value));
+            fragment.append(h({ tag: "span", attrs: { class: "tag" }, children: [value] }));
         return fragment;
     }
     MindmapPreview.tagList = tagList;
     /** 成果物の印（箱のアイコンと文字） */
     function deliverableBadge() {
-        return h("span", { class: "deliv-badge" }, icon("box"), "成果物");
+        return h({ tag: "span", attrs: { class: "deliv-badge" }, children: [icon("box"), "成果物"] });
     }
     MindmapPreview.deliverableBadge = deliverableBadge;
     /** 「該当なし」など、空のときの 1 行 */
     function emptyNote(text) {
-        return h("p", { class: "empty" }, text);
+        return h({ tag: "p", attrs: { class: "empty" }, children: [text] });
     }
     MindmapPreview.emptyNote = emptyNote;
     /** 背景（ボタンなどの上でない所）をつかんで、スクロールする要素を動かせるようにする */

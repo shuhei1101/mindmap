@@ -19,29 +19,36 @@ namespace MindmapPreview {
 
   /** 全体の検索のモーダルを返す。文書に入れた後、`showModal()` で開く */
   export function searchDialog({ index, on }: SearchProps): HTMLDialogElement {
-    const input = h("input", {
-      type: "text",
-      placeholder: "ID・タイトル・本文で探す",
-      autocomplete: "off",
-      "aria-label": "検索する語",
+    const input = h({
+      tag: "input",
+      attrs: {
+        type: "text",
+        placeholder: "ID・タイトル・本文で探す",
+        autocomplete: "off",
+        "aria-label": "検索する語",
+      },
     });
-    const results = h("div", { class: "search-results" });
-    const dialog = h(
-      "dialog",
-      { class: "search", closedby: "any", "aria-label": "すべての項目を検索" },
-      h(
-        "div",
-        { class: "search-head" },
-        icon("search"),
-        input,
-        h(
-          "button",
-          { class: "icon-btn", type: "button", "aria-label": "検索を閉じる", onclick: () => dialog.close() },
-          icon("x"),
-        ),
-      ),
-      results,
-    );
+    const results = h({ tag: "div", attrs: { class: "search-results" } });
+    const dialog = h({
+      tag: "dialog",
+      attrs: { class: "search", closedby: "any", "aria-label": "すべての項目を検索" },
+      children: [
+        h({
+          tag: "div",
+          attrs: { class: "search-head" },
+          children: [
+            icon("search"),
+            input,
+            h({
+              tag: "button",
+              attrs: { class: "icon-btn", type: "button", "aria-label": "検索を閉じる", onclick: () => dialog.close() },
+              children: [icon("x")],
+            }),
+          ],
+        }),
+        results,
+      ],
+    });
     /** 結果のボタン */
     const buttons = (): HTMLElement[] => [...results.querySelectorAll<HTMLElement>(".sr-item")];
     /** 検索の言葉で結果を描き直す */
@@ -53,7 +60,7 @@ namespace MindmapPreview {
       }
       const hits = searchItems({ query, index });
       if (hits.length === 0) {
-        results.replaceChildren(h("p", { class: "no-match" }, "該当する項目はありません。"));
+        results.replaceChildren(h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する項目はありません。"] }));
         return;
       }
       const groups = KIND_KEYS.flatMap((kind) => {
@@ -61,22 +68,29 @@ namespace MindmapPreview {
         return ofKind.length === 0
           ? []
           : [
-              h("h3", null, KIND_LABEL[kind]),
+              h({ tag: "h3", children: [KIND_LABEL[kind]] }),
               ...ofKind.map((hit) => {
                 const item = index.byId.get(hit.id)?.item;
-                return h(
-                  "button",
-                  { class: "sr-item", type: "button", "data-id": hit.id, onclick: () => on.open(hit.id) },
-                  h("span", { class: "mono" }, hit.id),
-                  h(
-                    "span",
-                    null,
-                    statusMark(item?.status),
-                    ` ${hit.title}`,
-                    h("br"),
-                    h("span", { class: "sr-sub" }, item === undefined ? "" : summaryOf(item)),
-                  ),
-                );
+                return h({
+                  tag: "button",
+                  attrs: { class: "sr-item", type: "button", "data-id": hit.id, onclick: () => on.open(hit.id) },
+                  children: [
+                    h({ tag: "span", attrs: { class: "mono" }, children: [hit.id] }),
+                    h({
+                      tag: "span",
+                      children: [
+                        statusMark(item?.status),
+                        ` ${hit.title}`,
+                        h({ tag: "br" }),
+                        h({
+                          tag: "span",
+                          attrs: { class: "sr-sub" },
+                          children: [item === undefined ? "" : summaryOf(item)],
+                        }),
+                      ],
+                    }),
+                  ],
+                });
               }),
             ];
       });

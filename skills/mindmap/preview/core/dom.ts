@@ -11,11 +11,15 @@ namespace MindmapPreview {
   export type Child = Node | string | number | null | undefined | false;
 
   /** 要素を作る。属性とイベントのリスナーを付け、子を並べる */
-  export function h<K extends keyof HTMLElementTagNameMap>(
-    tag: K,
-    attrs?: Attrs | null,
-    ...children: Child[]
-  ): HTMLElementTagNameMap[K] {
+  export function h<K extends keyof HTMLElementTagNameMap>({
+    tag,
+    attrs,
+    children,
+  }: {
+    tag: K;
+    attrs?: Attrs | null;
+    children?: Child[];
+  }): HTMLElementTagNameMap[K] {
     const element = document.createElement(tag);
     for (const [name, value] of Object.entries(attrs ?? {})) {
       // 値が無い・偽の属性は付けない
@@ -29,12 +33,12 @@ namespace MindmapPreview {
         element.setAttribute(name, value === true ? "" : String(value));
       }
     }
-    append(element, ...children);
+    append({ parent: element, children: children ?? [] });
     return element;
   }
 
   /** 要素の中に子を足す（文字は textContent として入れる） */
-  export function append(parent: Element, ...children: Child[]): void {
+  export function append({ parent, children }: { parent: Element; children: Child[] }): void {
     for (const child of children) {
       if (child === null || child === undefined || child === false) continue;
       parent.append(typeof child === "number" ? String(child) : child);
@@ -127,38 +131,45 @@ namespace MindmapPreview {
   /** 印と状態の名前を並べた表示。状態を持たない項目は空の断片 */
   export function statusBadge(status: string | undefined): Node {
     if (status === undefined) return document.createDocumentFragment();
-    return h("span", { class: "st", "data-st": status }, statusMark(status), status);
+    return h({
+      tag: "span",
+      attrs: { class: "st", "data-st": status },
+      children: [statusMark(status), status],
+    });
   }
 
   /** 影響度（大・中・小）の 3 本の目盛りと文字 */
   export function impactBadge(weight: string | undefined): Node {
-    if (weight === undefined) return document.createDocumentFragment();
     const levels = ["大", "中", "小"];
+    // 大・中・小のどれでもない値は、影響度を持たないものとして空の断片にする
+    if (weight === undefined || !levels.includes(weight)) return document.createDocumentFragment();
     const filled = 3 - levels.indexOf(weight);
-    const bars = [0, 1, 2].map((index) => h("i", { class: index < filled ? "on" : "" }));
-    return h(
-      "span",
-      { class: "impact", title: `影響度 ${weight}` },
-      h("span", { "aria-hidden": "true" }, ...bars),
-      weight,
-    );
+    const bars = [0, 1, 2].map((index) => h({ tag: "i", attrs: { class: index < filled ? "on" : "" } }));
+    return h({
+      tag: "span",
+      attrs: { class: "impact", title: `影響度 ${weight}` },
+      children: [
+        h({ tag: "span", attrs: { "aria-hidden": "true" }, children: [...bars] }),
+        weight,
+      ],
+    });
   }
 
   /** タグを並べる */
   export function tagList(values: readonly string[] | undefined): Node {
     const fragment = document.createDocumentFragment();
-    for (const value of values ?? []) fragment.append(h("span", { class: "tag" }, value));
+    for (const value of values ?? []) fragment.append(h({ tag: "span", attrs: { class: "tag" }, children: [value] }));
     return fragment;
   }
 
   /** 成果物の印（箱のアイコンと文字） */
   export function deliverableBadge(): HTMLElement {
-    return h("span", { class: "deliv-badge" }, icon("box"), "成果物");
+    return h({ tag: "span", attrs: { class: "deliv-badge" }, children: [icon("box"), "成果物"] });
   }
 
   /** 「該当なし」など、空のときの 1 行 */
   export function emptyNote(text: string): HTMLElement {
-    return h("p", { class: "empty" }, text);
+    return h({ tag: "p", attrs: { class: "empty" }, children: [text] });
   }
 
   /** 背景（ボタンなどの上でない所）をつかんで、スクロールする要素を動かせるようにする */

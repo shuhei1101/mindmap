@@ -22,17 +22,19 @@ namespace MindmapPreview {
 
   /** 読めなかったライブラリの名前を出す知らせの要素を返す */
   export function libraryNotice({ names, what }: { names: string[]; what: string }): HTMLElement {
-    return h(
-      "div",
-      { class: "lib-error", role: "alert" },
-      h("span", null, `${what}を表示できません。読めなかったライブラリ: ${names.join("・")}`),
-      h("span", { class: "muted" }, "通信を確かめて、ページを読み込み直してください。"),
-    );
+    return h({
+      tag: "div",
+      attrs: { class: "lib-error", role: "alert" },
+      children: [
+        h({ tag: "span", children: [`${what}を表示できません。読めなかったライブラリ: ${names.join("・")}`] }),
+        h({ tag: "span", attrs: { class: "muted" }, children: ["通信を確かめて、ページを読み込み直してください。"] }),
+      ],
+    });
   }
 
   /** 本文の Markdown を無害化した要素にする。mermaid のコードブロックは図の入れ物に置き換える */
   export function renderMarkdown(source: string): HTMLElement {
-    const root = h("div", { class: "md" });
+    const root = h({ tag: "div", attrs: { class: "md" } });
     const missing = missingLibraries(["marked", "DOMPurify"]);
     const hasDiagram = source.includes("```mermaid");
     // marked か DOMPurify が読めていない: 知らせと原文を出す
@@ -41,7 +43,7 @@ namespace MindmapPreview {
       if (hasDiagram && missingLibraries(["mermaid"]).length > 0) names.push("mermaid");
       root.append(
         libraryNotice({ names, what: "本文" }),
-        h("pre", { class: "md-raw" }, source),
+        h({ tag: "pre", attrs: { class: "md-raw" }, children: [source] }),
       );
       return root;
     }
@@ -50,19 +52,35 @@ namespace MindmapPreview {
     // mermaid のコードブロックを、原文を持つ図の入れ物（拡大・Raw・コピーの道具つき）に置き換える
     for (const code of root.querySelectorAll("code.language-mermaid")) {
       const original = code.textContent ?? "";
-      const figure = h(
-        "figure",
-        { class: "diagram" },
-        h(
-          "div",
-          { class: "dg-tools" },
-          h("button", { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大して見る", title: "拡大して見る" }, icon("expand")),
-          h("button", { class: "btn ghost", type: "button", "data-act": "diagram-raw", "aria-pressed": "false" }, "Raw"),
-          h("button", { class: "icon-btn", type: "button", "data-act": "diagram-copy", "aria-label": "原文をコピー", title: "コピー" }, icon("copy")),
-        ),
-        h("div", { class: "mermaid", [DIAGRAM_SOURCE_ATTR]: original }),
-        h("pre", { class: "dg-raw", hidden: true }, original),
-      );
+      const figure = h({
+        tag: "figure",
+        attrs: { class: "diagram" },
+        children: [
+          h({
+            tag: "div",
+            attrs: { class: "dg-tools" },
+            children: [
+              h({
+                tag: "button",
+                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大して見る", title: "拡大して見る" },
+                children: [icon("expand")],
+              }),
+              h({
+                tag: "button",
+                attrs: { class: "btn ghost", type: "button", "data-act": "diagram-raw", "aria-pressed": "false" },
+                children: ["Raw"],
+              }),
+              h({
+                tag: "button",
+                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-copy", "aria-label": "原文をコピー", title: "コピー" },
+                children: [icon("copy")],
+              }),
+            ],
+          }),
+          h({ tag: "div", attrs: { class: "mermaid", [DIAGRAM_SOURCE_ATTR]: original } }),
+          h({ tag: "pre", attrs: { class: "dg-raw", hidden: true }, children: [original] }),
+        ],
+      });
       (code.closest("pre") ?? code).replaceWith(figure);
     }
     return root;
@@ -87,7 +105,11 @@ namespace MindmapPreview {
       for (const container of containers) {
         container.replaceChildren(
           libraryNotice({ names: ["mermaid"], what: "図" }),
-          h("pre", { class: "dg-raw" }, container.getAttribute(DIAGRAM_SOURCE_ATTR) ?? ""),
+          h({
+            tag: "pre",
+            attrs: { class: "dg-raw" },
+            children: [container.getAttribute(DIAGRAM_SOURCE_ATTR) ?? ""],
+          }),
         );
       }
       return;
@@ -134,8 +156,8 @@ namespace MindmapPreview {
         document.getElementById(`d${id}`)?.remove();
         document.getElementById(id)?.remove();
         container.replaceChildren(
-          h("p", { class: "md-error" }, "この図は描けませんでした。原文を表示します。"),
-          h("pre", { class: "dg-raw" }, source),
+          h({ tag: "p", attrs: { class: "md-error" }, children: ["この図は描けませんでした。原文を表示します。"] }),
+          h({ tag: "pre", attrs: { class: "dg-raw" }, children: [source] }),
         );
       }
     }

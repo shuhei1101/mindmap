@@ -46,9 +46,9 @@ namespace MindmapPreview {
     onNavigate: (key: Tab) => void,
     extraClass = "",
   ): HTMLElement {
-    return h(
-      "a",
-      {
+    return h({
+      tag: "a",
+      attrs: {
         class: `tab ${extraClass}`.trim(),
         href: `#${key === "overview" ? "" : `tab=${key}`}`,
         "data-tab": key,
@@ -58,10 +58,12 @@ namespace MindmapPreview {
           onNavigate(key);
         },
       },
-      icon(iconName),
-      label,
-      count === undefined ? null : h("span", { class: "count" }, count),
-    );
+      children: [
+        icon(iconName),
+        label,
+        count === undefined ? null : h({ tag: "span", attrs: { class: "count" }, children: [count] }),
+      ],
+    });
   }
 
   /** トップバーとタブの帯を返す */
@@ -75,44 +77,57 @@ namespace MindmapPreview {
     onTheme,
   }: TopbarProps): HTMLElement {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
-    const bar = h(
-      "header",
-      { class: "topbar" },
-      h("span", { class: "brand" }, brandMark(), h("span", { class: "brand-name" }, "mindmap")),
-      h("span", { class: "brand-sub", title }, title),
-      h("span", { class: "spacer" }),
-      h(
-        "button",
-        {
-          class: "search-trigger",
-          type: "button",
-          "data-act": "search",
-          "aria-label": "すべての項目を検索",
-          onclick: () => onSearch(),
-        },
-        icon("search"),
-        h("span", { class: "label" }, "すべての項目を検索"),
-        h("kbd", null, "/"),
-      ),
-      h(
-        "button",
-        {
-          class: "top-btn",
-          type: "button",
-          "data-theme": nextTheme,
-          "aria-label": theme === "dark" ? "ライトに切り替え" : "ダークに切り替え",
-          onclick: () => onTheme(nextTheme),
-        },
-        icon(theme === "dark" ? "sun" : "moon"),
-      ),
-    );
-    const tabbar = h(
-      "nav",
-      { class: "tabbar", "aria-label": "項目の種類" },
-      ...tabs.map((tab) => tabLink(tab, current, onNavigate)),
-      h("span", { class: "tab-gap" }),
-      tabLink({ key: "graph", label: "つながり", icon: "orbit" }, current, onNavigate, "tab-special"),
-    );
-    return h("div", { class: "top" }, bar, tabbar);
+    const bar = h({
+      tag: "header",
+      attrs: { class: "topbar" },
+      children: [
+        h({
+          tag: "span",
+          attrs: { class: "brand" },
+          children: [
+            brandMark(),
+            h({ tag: "span", attrs: { class: "brand-name" }, children: ["mindmap"] }),
+          ],
+        }),
+        h({ tag: "span", attrs: { class: "brand-sub", title }, children: [title] }),
+        h({ tag: "span", attrs: { class: "spacer" } }),
+        h({
+          tag: "button",
+          attrs: {
+            class: "search-trigger",
+            type: "button",
+            "data-act": "search",
+            "aria-label": "すべての項目を検索",
+            onclick: () => onSearch(),
+          },
+          children: [
+            icon("search"),
+            h({ tag: "span", attrs: { class: "label" }, children: ["すべての項目を検索"] }),
+            h({ tag: "kbd", children: ["/"] }),
+          ],
+        }),
+        h({
+          tag: "button",
+          attrs: {
+            class: "top-btn",
+            type: "button",
+            "data-theme": nextTheme,
+            "aria-label": theme === "dark" ? "ライトに切り替え" : "ダークに切り替え",
+            onclick: () => onTheme(nextTheme),
+          },
+          children: [icon(theme === "dark" ? "sun" : "moon")],
+        }),
+      ],
+    });
+    const tabbar = h({
+      tag: "nav",
+      attrs: { class: "tabbar", "aria-label": "項目の種類" },
+      children: [
+        ...tabs.map((tab) => tabLink(tab, current, onNavigate)),
+        h({ tag: "span", attrs: { class: "tab-gap" } }),
+        tabLink({ key: "graph", label: "つながり", icon: "orbit" }, current, onNavigate, "tab-special"),
+      ],
+    });
+    return h({ tag: "div", attrs: { class: "top" }, children: [bar, tabbar] });
   }
 }

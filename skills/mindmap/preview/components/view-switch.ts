@@ -22,9 +22,9 @@ namespace MindmapPreview {
   /** 表示形式を切り替えるセグメントを返す（描き直しは使う側が行う） */
   export function viewSwitch({ views, current, onChange }: ViewSwitchProps): HTMLElement {
     const buttons = views.map(({ key, label }) =>
-      h(
-        "button",
-        {
+      h({
+        tag: "button",
+        attrs: {
           type: "button",
           "data-view": key,
           "aria-pressed": String(key === current),
@@ -33,10 +33,13 @@ namespace MindmapPreview {
             if (key !== current) onChange(key);
           },
         },
-        icon(VIEW_ICON[key]),
-        label,
-      ),
+        children: [icon(VIEW_ICON[key]), label],
+      }),
     );
-    return h("div", { class: "segment", role: "group", "aria-label": "表示形式" }, ...buttons);
+    return h({
+      tag: "div",
+      attrs: { class: "segment", role: "group", "aria-label": "表示形式" },
+      children: [...buttons],
+    });
   }
 }

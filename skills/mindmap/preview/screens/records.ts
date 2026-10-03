@@ -71,16 +71,18 @@ namespace MindmapPreview {
         related("更新した項目"),
       ],
     };
-    return h(
-      "div",
-      { class: "screen records" },
-      managedTable({
-        kind,
-        columns: columnsOf[kind],
-        rows: index.data[kind],
-        open: on.open,
-        initialFilters: route.filters,
-      }),
-    );
+    return h({
+      tag: "div",
+      attrs: { class: "screen records" },
+      children: [
+        managedTable({
+          kind,
+          columns: columnsOf[kind],
+          rows: index.data[kind],
+          open: on.open,
+          initialFilters: route.filters,
+        }),
+      ],
+    });
   }
 }

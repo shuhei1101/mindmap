@@ -61,13 +61,19 @@ var MindmapPreview;
                 related("更新した項目"),
             ],
         };
-        return MindmapPreview.h("div", { class: "screen records" }, MindmapPreview.managedTable({
-            kind,
-            columns: columnsOf[kind],
-            rows: index.data[kind],
-            open: on.open,
-            initialFilters: route.filters,
-        }));
+        return MindmapPreview.h({
+            tag: "div",
+            attrs: { class: "screen records" },
+            children: [
+                MindmapPreview.managedTable({
+                    kind,
+                    columns: columnsOf[kind],
+                    rows: index.data[kind],
+                    open: on.open,
+                    initialFilters: route.filters,
+                }),
+            ],
+        });
     }
     MindmapPreview.recordsScreen = recordsScreen;
 })(MindmapPreview || (MindmapPreview = {}));

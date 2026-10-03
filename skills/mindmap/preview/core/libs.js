@@ -18,12 +18,19 @@ var MindmapPreview;
     MindmapPreview.missingLibraries = missingLibraries;
     /** 読めなかったライブラリの名前を出す知らせの要素を返す */
     function libraryNotice({ names, what }) {
-        return MindmapPreview.h("div", { class: "lib-error", role: "alert" }, MindmapPreview.h("span", null, `${what}を表示できません。読めなかったライブラリ: ${names.join("・")}`), MindmapPreview.h("span", { class: "muted" }, "通信を確かめて、ページを読み込み直してください。"));
+        return MindmapPreview.h({
+            tag: "div",
+            attrs: { class: "lib-error", role: "alert" },
+            children: [
+                MindmapPreview.h({ tag: "span", children: [`${what}を表示できません。読めなかったライブラリ: ${names.join("・")}`] }),
+                MindmapPreview.h({ tag: "span", attrs: { class: "muted" }, children: ["通信を確かめて、ページを読み込み直してください。"] }),
+            ],
+        });
     }
     MindmapPreview.libraryNotice = libraryNotice;
     /** 本文の Markdown を無害化した要素にする。mermaid のコードブロックは図の入れ物に置き換える */
     function renderMarkdown(source) {
-        const root = MindmapPreview.h("div", { class: "md" });
+        const root = MindmapPreview.h({ tag: "div", attrs: { class: "md" } });
         const missing = missingLibraries(["marked", "DOMPurify"]);
         const hasDiagram = source.includes("```mermaid");
         // marked か DOMPurify が読めていない: 知らせと原文を出す
@@ -31,7 +38,7 @@ var MindmapPreview;
             const names = [...missing];
             if (hasDiagram && missingLibraries(["mermaid"]).length > 0)
                 names.push("mermaid");
-            root.append(libraryNotice({ names, what: "本文" }), MindmapPreview.h("pre", { class: "md-raw" }, source));
+            root.append(libraryNotice({ names, what: "本文" }), MindmapPreview.h({ tag: "pre", attrs: { class: "md-raw" }, children: [source] }));
             return root;
         }
         // 描いた HTML は無害化してから差し込む（記録は利用者のもの）
@@ -39,7 +46,35 @@ var MindmapPreview;
         // mermaid のコードブロックを、原文を持つ図の入れ物（拡大・Raw・コピーの道具つき）に置き換える
         for (const code of root.querySelectorAll("code.language-mermaid")) {
             const original = code.textContent ?? "";
-            const figure = MindmapPreview.h("figure", { class: "diagram" }, MindmapPreview.h("div", { class: "dg-tools" }, MindmapPreview.h("button", { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大して見る", title: "拡大して見る" }, MindmapPreview.icon("expand")), MindmapPreview.h("button", { class: "btn ghost", type: "button", "data-act": "diagram-raw", "aria-pressed": "false" }, "Raw"), MindmapPreview.h("button", { class: "icon-btn", type: "button", "data-act": "diagram-copy", "aria-label": "原文をコピー", title: "コピー" }, MindmapPreview.icon("copy"))), MindmapPreview.h("div", { class: "mermaid", [MindmapPreview.DIAGRAM_SOURCE_ATTR]: original }), MindmapPreview.h("pre", { class: "dg-raw", hidden: true }, original));
+            const figure = MindmapPreview.h({
+                tag: "figure",
+                attrs: { class: "diagram" },
+                children: [
+                    MindmapPreview.h({
+                        tag: "div",
+                        attrs: { class: "dg-tools" },
+                        children: [
+                            MindmapPreview.h({
+                                tag: "button",
+                                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大して見る", title: "拡大して見る" },
+                                children: [MindmapPreview.icon("expand")],
+                            }),
+                            MindmapPreview.h({
+                                tag: "button",
+                                attrs: { class: "btn ghost", type: "button", "data-act": "diagram-raw", "aria-pressed": "false" },
+                                children: ["Raw"],
+                            }),
+                            MindmapPreview.h({
+                                tag: "button",
+                                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-copy", "aria-label": "原文をコピー", title: "コピー" },
+                                children: [MindmapPreview.icon("copy")],
+                            }),
+                        ],
+                    }),
+                    MindmapPreview.h({ tag: "div", attrs: { class: "mermaid", [MindmapPreview.DIAGRAM_SOURCE_ATTR]: original } }),
+                    MindmapPreview.h({ tag: "pre", attrs: { class: "dg-raw", hidden: true }, children: [original] }),
+                ],
+            });
             (code.closest("pre") ?? code).replaceWith(figure);
         }
         return root;
@@ -59,7 +94,11 @@ var MindmapPreview;
         // mermaid が読めていない: 各入れ物に知らせと原文を入れる
         if (missingLibraries(["mermaid"]).length > 0) {
             for (const container of containers) {
-                container.replaceChildren(libraryNotice({ names: ["mermaid"], what: "図" }), MindmapPreview.h("pre", { class: "dg-raw" }, container.getAttribute(MindmapPreview.DIAGRAM_SOURCE_ATTR) ?? ""));
+                container.replaceChildren(libraryNotice({ names: ["mermaid"], what: "図" }), MindmapPreview.h({
+                    tag: "pre",
+                    attrs: { class: "dg-raw" },
+                    children: [container.getAttribute(MindmapPreview.DIAGRAM_SOURCE_ATTR) ?? ""],
+                }));
             }
             return;
         }
@@ -103,7 +142,7 @@ var MindmapPreview;
                 // 描けなかった図: mermaid が body に残した作業用の要素を消し、描けなかったことと原文を入れる
                 document.getElementById(`d${id}`)?.remove();
                 document.getElementById(id)?.remove();
-                container.replaceChildren(MindmapPreview.h("p", { class: "md-error" }, "この図は描けませんでした。原文を表示します。"), MindmapPreview.h("pre", { class: "dg-raw" }, source));
+                container.replaceChildren(MindmapPreview.h({ tag: "p", attrs: { class: "md-error" }, children: ["この図は描けませんでした。原文を表示します。"] }), MindmapPreview.h({ tag: "pre", attrs: { class: "dg-raw" }, children: [source] }));
             }
         }
     }

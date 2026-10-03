@@ -13,9 +13,9 @@ var MindmapPreview;
     const FIT_MAX_SCALE = 3;
     /** 図の拡大の中身（道具の行と、図を置く窓）を返す。モーダルか全画面の中に入れて使う */
     function diagramViewer({ svg, on }) {
-        const stage = MindmapPreview.h("div", { class: "v-stage" });
-        const canvas = MindmapPreview.h("div", { class: "v-canvas" }, stage);
-        const percent = MindmapPreview.h("span", { class: "v-pct mono" }, "100%");
+        const stage = MindmapPreview.h({ tag: "div", attrs: { class: "v-stage" } });
+        const canvas = MindmapPreview.h({ tag: "div", attrs: { class: "v-canvas" }, children: [stage] });
+        const percent = MindmapPreview.h({ tag: "span", attrs: { class: "v-pct mono" }, children: ["100%"] });
         const view = { scale: 1, x: 0, y: 0 };
         /** 位置と拡大率を図に当てる */
         const apply = () => {
@@ -69,7 +69,36 @@ var MindmapPreview;
         };
         canvas.addEventListener("pointerup", release);
         canvas.addEventListener("pointercancel", release);
-        const root = MindmapPreview.h("div", { class: "viewer-body" }, MindmapPreview.h("div", { class: "v-bar" }, MindmapPreview.h("button", { class: "icon-btn", type: "button", "aria-label": "縮小", onclick: () => centerZoom(1 / BUTTON_FACTOR) }, "−"), percent, MindmapPreview.h("button", { class: "icon-btn", type: "button", "aria-label": "拡大", onclick: () => centerZoom(BUTTON_FACTOR) }, "＋"), MindmapPreview.h("span", { class: "spacer" }), MindmapPreview.h("button", { class: "btn ghost", type: "button", "data-act": "diagram-close", onclick: on.close }, MindmapPreview.icon("back"), "本文へ戻る")), canvas);
+        const root = MindmapPreview.h({
+            tag: "div",
+            attrs: { class: "viewer-body" },
+            children: [
+                MindmapPreview.h({
+                    tag: "div",
+                    attrs: { class: "v-bar" },
+                    children: [
+                        MindmapPreview.h({
+                            tag: "button",
+                            attrs: { class: "icon-btn", type: "button", "aria-label": "縮小", onclick: () => centerZoom(1 / BUTTON_FACTOR) },
+                            children: ["−"],
+                        }),
+                        percent,
+                        MindmapPreview.h({
+                            tag: "button",
+                            attrs: { class: "icon-btn", type: "button", "aria-label": "拡大", onclick: () => centerZoom(BUTTON_FACTOR) },
+                            children: ["＋"],
+                        }),
+                        MindmapPreview.h({ tag: "span", attrs: { class: "spacer" } }),
+                        MindmapPreview.h({
+                            tag: "button",
+                            attrs: { class: "btn ghost", type: "button", "data-act": "diagram-close", onclick: on.close },
+                            children: [MindmapPreview.icon("back"), "本文へ戻る"],
+                        }),
+                    ],
+                }),
+                canvas,
+            ],
+        });
         // 開いたときは、窓に収まる大きさで中央に置く（窓の大きさが決まってから）
         let placed = false;
         new ResizeObserver(() => {

@@ -196,7 +196,7 @@ namespace MindmapPreview {
   function sortIcon(direction: "asc" | "desc" | null): Node {
     if (direction === "asc") return icon("up");
     if (direction === "desc") return icon("down");
-    return h("span", { class: "sort-hint" }, icon("updown"));
+    return h({ tag: "span", attrs: { class: "sort-hint" }, children: [icon("updown")] });
   }
 
   /** 項目の表を返す。操作は引数のコールバックで知らせ、描き直しは使う側が行う */
@@ -219,8 +219,8 @@ namespace MindmapPreview {
     const pinned = pinTo === null ? 0 : visible.findIndex((column) => column.key === pinTo) + 1;
     const shownRows = sortRows({ rows: filterRows({ rows, columns, filters }), columns, sort });
 
-    const root = h("div", { class: "table-block", "data-kind": kind });
-    const wrap = h("div", { class: "table-wrap" });
+    const root = h({ tag: "div", attrs: { class: "table-block", "data-kind": kind } });
+    const wrap = h({ tag: "div", attrs: { class: "table-wrap" } });
 
     /** 操作の前に、表の入れ物のスクロールの位置を控える（描き直した後に戻す） */
     const remember = (): void => {
@@ -233,31 +233,33 @@ namespace MindmapPreview {
       const column = columns.find((candidate) => candidate.key === key);
       for (const value of values) {
         chips.push(
-          h(
-            "span",
-            { class: "chip" },
-            `${column?.label ?? key}: ${value}`,
-            h(
-              "button",
-              {
-                type: "button",
-                "aria-label": `${column?.label ?? key}: ${value} の条件を外す`,
-                onclick: () => {
-                  remember();
-                  on.filter({ key, values: values.filter((candidate) => candidate !== value) });
+          h({
+            tag: "span",
+            attrs: { class: "chip" },
+            children: [
+              `${column?.label ?? key}: ${value}`,
+              h({
+                tag: "button",
+                attrs: {
+                  type: "button",
+                  "aria-label": `${column?.label ?? key}: ${value} の条件を外す`,
+                  onclick: () => {
+                    remember();
+                    on.filter({ key, values: values.filter((candidate) => candidate !== value) });
+                  },
                 },
-              },
-              icon("x"),
-            ),
-          ),
+                children: [icon("x")],
+              }),
+            ],
+          }),
         );
       }
     }
     if (chips.length > 0) {
       chips.push(
-        h(
-          "button",
-          {
+        h({
+          tag: "button",
+          attrs: {
             class: "btn ghost",
             type: "button",
             onclick: () => {
@@ -265,11 +267,11 @@ namespace MindmapPreview {
               on.filter({ key: null, values: [] });
             },
           },
-          "すべて外す",
-        ),
+          children: ["すべて外す"],
+        }),
       );
     }
-    const pop = h("div", { class: "pop", popover: "auto" });
+    const pop = h({ tag: "div", attrs: { class: "pop", popover: "auto" } });
     // 開いたポップオーバーの元のボタンを探す
     const anchorOf = (spec: TablePopover): Element | null =>
       root.querySelector(
@@ -289,75 +291,89 @@ namespace MindmapPreview {
     /** 表示する列のポップオーバーの中身 */
     const columnsPopoverBody = (): Node => {
       const boxes = columns.map((column) =>
-        h(
-          "label",
-          null,
-          h("input", {
-            type: "checkbox",
-            checked: !hidden.has(column.key),
-            disabled: column.fixed === true,
-            onchange: (event: Event) => {
-              const checked = (event.target as HTMLInputElement).checked;
-              remember();
-              on.columns(
-                checked
-                  ? [...hidden].filter((key) => key !== column.key)
-                  : [...hidden, column.key],
-              );
-            },
-          }),
-          column.label,
-        ),
-      );
-      return h(
-        "div",
-        null,
-        h("h3", null, "表示する列"),
-        ...boxes,
-        h(
-          "div",
-          { class: "pop-foot" },
-          h(
-            "button",
-            {
-              class: "btn ghost",
-              type: "button",
-              onclick: () => {
-                remember();
-                on.reset();
+        h({
+          tag: "label",
+          children: [
+            h({
+              tag: "input",
+              attrs: {
+                type: "checkbox",
+                checked: !hidden.has(column.key),
+                disabled: column.fixed === true,
+                onchange: (event: Event) => {
+                  const checked = (event.target as HTMLInputElement).checked;
+                  remember();
+                  on.columns(
+                    checked
+                      ? [...hidden].filter((key) => key !== column.key)
+                      : [...hidden, column.key],
+                  );
+                },
               },
-            },
-            "列・並べ替え・固定を初期設定に戻す",
-          ),
-        ),
+            }),
+            column.label,
+          ],
+        }),
       );
+      return h({
+        tag: "div",
+        children: [
+          h({ tag: "h3", children: ["表示する列"] }),
+          ...boxes,
+          h({
+            tag: "div",
+            attrs: { class: "pop-foot" },
+            children: [
+              h({
+                tag: "button",
+                attrs: {
+                  class: "btn ghost",
+                  type: "button",
+                  onclick: () => {
+                    remember();
+                    on.reset();
+                  },
+                },
+                children: ["列・並べ替え・固定を初期設定に戻す"],
+              }),
+            ],
+          }),
+        ],
+      });
     };
     /** 列の絞り込みのポップオーバーの中身（値ごとの件数つき） */
     const filterPopoverBody = (key: string): Node => {
       const column = columns.find((candidate) => candidate.key === key);
       const chosen = filters[key] ?? [];
       const options = filterCounts({ rows, columns, filters, key }).map(({ value, count }) =>
-        h(
-          "label",
-          null,
-          h("input", {
-            type: "checkbox",
-            checked: chosen.includes(value),
-            onchange: (event: Event) => {
-              const checked = (event.target as HTMLInputElement).checked;
-              remember();
-              on.filter({
-                key,
-                values: checked ? [...chosen, value] : chosen.filter((item) => item !== value),
-              });
-            },
-          }),
-          key === "status" ? statusMark(value) : null,
-          value,
-          h("span", { class: "n" }, count),
-        ),
+        h({
+          tag: "label",
+          children: [
+            h({
+              tag: "input",
+              attrs: {
+                type: "checkbox",
+                checked: chosen.includes(value),
+                onchange: (event: Event) => {
+                  const checked = (event.target as HTMLInputElement).checked;
+                  remember();
+                  on.filter({
+                    key,
+                    values: checked ? [...chosen, value] : chosen.filter((item) => item !== value),
+                  });
+                },
+              },
+            }),
+            key === "status" ? statusMark(value) : null,
+            value,
+            h({ tag: "span", attrs: { class: "n" }, children: [count] }),
+          ],
+        }),
       );
-      return h("div", null, h("h3", null, `${column?.label ?? key}で絞り込み`), ...options);
+      return h({
+        tag: "div",
+        children: [h({ tag: "h3", children: [`${column?.label ?? key}で絞り込み`] }), ...options],
+      });
     };
     // ポップオーバーを閉じたら、使う側にも知らせる（描き直しで消えたときは知らせない）
     pop.addEventListener("toggle", (event) => {
@@ -370,23 +386,27 @@ namespace MindmapPreview {
     };
 
     root.append(
-      h(
-        "div",
-        { class: "table-toolbar" },
-        h("div", { class: "chips" }, ...chips),
-        h(
-          "button",
-          {
-            class: "btn",
-            type: "button",
-            "data-popover": "columns",
-            "aria-label": "表示する列",
-            onclick: () => openPopover({ type: "columns" }),
-          },
-          icon("cols"),
-          h("span", { class: "lbl" }, "表示する列"),
-        ),
-      ),
+      h({
+        tag: "div",
+        attrs: { class: "table-toolbar" },
+        children: [
+          h({ tag: "div", attrs: { class: "chips" }, children: [...chips] }),
+          h({
+            tag: "button",
+            attrs: {
+              class: "btn",
+              type: "button",
+              "data-popover": "columns",
+              "aria-label": "表示する列",
+              onclick: () => openPopover({ type: "columns" }),
+            },
+            children: [
+              icon("cols"),
+              h({ tag: "span", attrs: { class: "lbl" }, children: ["表示する列"] }),
+            ],
+          }),
+        ],
+      }),
     );
 
     // ===== 見出し =====
@@ -394,9 +414,9 @@ namespace MindmapPreview {
       const direction = sort !== null && sort.key === column.key ? sort.dir : null;
       const isFiltered = (filters[column.key] ?? []).length > 0;
       const isPinned = position === pinned - 1;
-      return h(
-        "th",
-        {
+      return h({
+        tag: "th",
+        attrs: {
           scope: "col",
           class: [column.num ? "num" : "", position < pinned ? "pinned" : ""].join(" ").trim(),
           "data-col": position,
@@ -405,54 +425,57 @@ namespace MindmapPreview {
             direction === "asc" ? "ascending" : direction === "desc" ? "descending" : "none",
           style: column.minWidth === undefined ? null : `min-width:${column.minWidth}`,
         },
-        h(
-          "div",
-          { class: "th-in" },
-          h(
-            "button",
-            {
-              class: "th-sort",
-              type: "button",
-              "data-sort": column.key,
-              onclick: () => {
-                remember();
-                on.sort(column.key);
-              },
-            },
-            column.label,
-            sortIcon(direction),
-          ),
-          column.filterable === true
-            ? h(
-                "button",
-                {
-                  class: "th-tool",
+        children: [
+          h({
+            tag: "div",
+            attrs: { class: "th-in" },
+            children: [
+              h({
+                tag: "button",
+                attrs: {
+                  class: "th-sort",
                   type: "button",
-                  "data-popover": `filter:${column.key}`,
-                  "aria-pressed": String(isFiltered),
-                  "aria-label": `${column.label}で絞り込み`,
-                  onclick: () => openPopover({ type: "filter", key: column.key }),
+                  "data-sort": column.key,
+                  onclick: () => {
+                    remember();
+                    on.sort(column.key);
+                  },
                 },
-                icon("filter"),
-              )
-            : null,
-          h(
-            "button",
-            {
-              class: "th-tool pin",
-              type: "button",
-              "data-pin": column.key,
-              "aria-pressed": String(isPinned),
-              "aria-label": `${column.label}まで固定`,
-              onclick: () => {
-                remember();
-                on.pin(column.key);
-              },
-            },
-            icon("pin"),
-          ),
-        ),
-      );
+                children: [column.label, sortIcon(direction)],
+              }),
+              column.filterable === true
+                ? h({
+                  tag: "button",
+                  attrs: {
+                    class: "th-tool",
+                    type: "button",
+                    "data-popover": `filter:${column.key}`,
+                    "aria-pressed": String(isFiltered),
+                    "aria-label": `${column.label}で絞り込み`,
+                    onclick: () => openPopover({ type: "filter", key: column.key }),
+                  },
+                  children: [icon("filter")],
+                })
+                : null,
+              h({
+                tag: "button",
+                attrs: {
+                  class: "th-tool pin",
+                  type: "button",
+                  "data-pin": column.key,
+                  "aria-pressed": String(isPinned),
+                  "aria-label": `${column.label}まで固定`,
+                  onclick: () => {
+                    remember();
+                    on.pin(column.key);
+                  },
+                },
+                children: [icon("pin")],
+              }),
+            ],
+          }),
+        ],
+      });
     });
 
     // ===== 行 =====
@@ -462,59 +485,66 @@ namespace MindmapPreview {
         column.cell?.(row) ?? valuesOf(column, row).join(column.num === true ? "" : "、");
       if (column.fixed !== true) return content;
       // タイトルの列は、押すと詳細を開くボタンにする
-      return h(
-        "button",
-        { class: "row-open", type: "button", "data-id": row.id, onclick: () => on.open(row.id) },
-        content,
-      );
+      return h({
+        tag: "button",
+        attrs: { class: "row-open", type: "button", "data-id": row.id, onclick: () => on.open(row.id) },
+        children: [content],
+      });
     };
     const body =
       shownRows.length > 0
         ? shownRows.map((row) =>
-            h(
-              "tr",
-              { "data-id": row.id, class: row.id === currentSelection() ? "selected" : "" },
-              ...visible.map((column, position) =>
-                h(
-                  "td",
-                  {
-                    "data-col": position,
-                    "data-pri": column.priority ?? 1,
-                    class: [
-                      column.num ? "num" : "",
-                      column.nowrap ? "nowrap" : "",
-                      position < pinned ? "pinned" : "",
-                    ]
-                      .join(" ")
-                      .trim(),
-                  },
-                  cellContent(column, row),
+            h({
+              tag: "tr",
+              attrs: { "data-id": row.id, class: row.id === currentSelection() ? "selected" : "" },
+              children: [
+                ...visible.map((column, position) =>
+                  h({
+                    tag: "td",
+                    attrs: {
+                      "data-col": position,
+                      "data-pri": column.priority ?? 1,
+                      class: [
+                        column.num ? "num" : "",
+                        column.nowrap ? "nowrap" : "",
+                        position < pinned ? "pinned" : "",
+                      ]
+                        .join(" ")
+                        .trim(),
+                    },
+                    children: [cellContent(column, row)],
+                  }),
                 ),
-              ),
-            ),
+              ],
+            }),
           )
         : [
-            h(
-              "tr",
-              null,
-              h(
-                "td",
-                { colspan: visible.length, class: "no-match-cell" },
-                h(
-                  "div",
-                  { class: "no-match" },
-                  `該当する${KIND_LABEL[kind]}はありません。別の条件を試してください。`,
-                ),
-              ),
-            ),
+            h({
+              tag: "tr",
+              children: [
+                h({
+                  tag: "td",
+                  attrs: { colspan: visible.length, class: "no-match-cell" },
+                  children: [
+                    h({
+                      tag: "div",
+                      attrs: { class: "no-match" },
+                      children: [`該当する${KIND_LABEL[kind]}はありません。別の条件を試してください。`],
+                    }),
+                  ],
+                }),
+              ],
+            }),
           ];
     wrap.append(
-      h(
-        "table",
-        { class: "grid" },
-        h("thead", null, h("tr", null, ...headers)),
-        h("tbody", null, ...body),
-      ),
+      h({
+        tag: "table",
+        attrs: { class: "grid" },
+        children: [
+          h({ tag: "thead", children: [h({ tag: "tr", children: [...headers] })] }),
+          h({ tag: "tbody", children: [...body] }),
+        ],
+      }),
     );
     root.append(wrap, pop);
 
@@ -561,10 +591,14 @@ namespace MindmapPreview {
 
   /** 項目の ID を並べたセル（押すと詳細を開く）。無ければ「—」 */
   export function idLinksCell(ids: string[], open: (id: string) => void): Node {
-    if (ids.length === 0) return h("span", { class: "muted" }, "—");
+    if (ids.length === 0) return h({ tag: "span", attrs: { class: "muted" }, children: ["—"] });
     const fragment = document.createDocumentFragment();
     for (const id of ids) {
-      fragment.append(h("button", { class: "idlink", type: "button", onclick: () => open(id) }, id));
+      fragment.append(h({
+        tag: "button",
+        attrs: { class: "idlink", type: "button", onclick: () => open(id) },
+        children: [id],
+      }));
     }
     return fragment;
   }
@@ -586,7 +620,7 @@ namespace MindmapPreview {
         label: "ID",
         nowrap: true,
         get: (row) => row.id,
-        cell: (row) => h("span", { class: "mono" }, row.id),
+        cell: (row) => h({ tag: "span", attrs: { class: "mono" }, children: [row.id] }),
       },
       title: (label = "タイトル") => ({
         key: "title",
@@ -716,7 +750,7 @@ namespace MindmapPreview {
     if (initialFilters !== undefined && Object.keys(initialFilters).length > 0) {
       state.filters = { ...initialFilters };
     }
-    const slot = h("div", { class: "table-slot" });
+    const slot = h({ tag: "div", attrs: { class: "table-slot" } });
     /** 端末に残す値が変わったことを知らせる */
     const persist = (): void => {
       prefsListener?.(kind, { hidden: state.hidden ?? [], pinTo: state.pinTo });

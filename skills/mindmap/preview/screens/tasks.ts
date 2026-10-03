@@ -44,31 +44,43 @@ namespace MindmapPreview {
     links: string[];
     open: (id: string) => void;
   }): HTMLElement {
-    return h(
-      "button",
-      {
+    return h({
+      tag: "button",
+      attrs: {
         class: item.id === currentSelection() ? "card selected" : "card",
         type: "button",
         "data-id": item.id,
         onclick: () => open(item.id),
       },
-      h("div", { class: "c-ttl" }, item.title),
-      h(
-        "div",
-        { class: "c-meta" },
-        h("span", { class: "mono" }, item.id),
-        ...meta.filter(Boolean).map((value) => h("span", null, value)),
-      ),
-      links.length > 0
-        ? h(
-            "div",
-            { class: "c-for" },
-            ...links.map((id) =>
-              h("div", null, h("span", { class: "mono" }, id), ` ${titleOf(index, id)}`),
-            ),
-          )
-        : null,
-    );
+      children: [
+        h({ tag: "div", attrs: { class: "c-ttl" }, children: [item.title] }),
+        h({
+          tag: "div",
+          attrs: { class: "c-meta" },
+          children: [
+            h({ tag: "span", attrs: { class: "mono" }, children: [item.id] }),
+            ...meta.filter(Boolean).map((value) => h({ tag: "span", children: [value] })),
+          ],
+        }),
+        links.length > 0
+          ? h({
+            tag: "div",
+            attrs: { class: "c-for" },
+            children: [
+              ...links.map((id) =>
+                h({
+                  tag: "div",
+                  children: [
+                    h({ tag: "span", attrs: { class: "mono" }, children: [id] }),
+                    ` ${titleOf(index, id)}`,
+                  ],
+                }),
+              ),
+            ],
+          })
+          : null,
+      ],
+    });
   }
 
   /** 状態ごとの列にカードを並べたボード。横に送れ、背景のドラッグで動かせる */
@@ -79,25 +91,40 @@ namespace MindmapPreview {
     columns: { status: string; items: Item[] }[];
     card: (item: Item) => HTMLElement;
   }): HTMLElement {
-    const element = h(
-      "div",
-      { class: "board", style: `--cols:${columns.length}` },
-      ...columns.map(({ status, items }) =>
-        h(
-          "section",
-          { class: "board-col", "aria-label": status },
-          h("h3", null, statusMark(status), status, h("span", { class: "n" }, items.length)),
-          ...(items.length > 0 ? items.map(card) : [emptyNote("なし")]),
+    const element = h({
+      tag: "div",
+      attrs: { class: "board", style: `--cols:${columns.length}` },
+      children: [
+        ...columns.map(({ status, items }) =>
+          h({
+            tag: "section",
+            attrs: { class: "board-col", "aria-label": status },
+            children: [
+              h({
+                tag: "h3",
+                children: [
+                  statusMark(status),
+                  status,
+                  h({ tag: "span", attrs: { class: "n" }, children: [items.length] }),
+                ],
+              }),
+              ...(items.length > 0 ? items.map(card) : [emptyNote("なし")]),
+            ],
+          }),
         ),
-      ),
-    );
+      ],
+    });
     enableDragScroll(element);
     return element;
   }
 
   /** 表示形式の切り替えを置いた道具の行 */
   export function toolbar(views: { key: View; label: string }[], route: Route, onView: (view: View) => void): HTMLElement {
-    return h("div", { class: "toolbar" }, viewSwitch({ views, current: route.view, onChange: onView }));
+    return h({
+      tag: "div",
+      attrs: { class: "toolbar" },
+      children: [viewSwitch({ views, current: route.view, onChange: onView })],
+    });
   }
 
   /** タスクの画面を返す */
@@ -140,18 +167,20 @@ namespace MindmapPreview {
             open: on.open,
             initialFilters: route.filters,
           });
-    return h(
-      "div",
-      { class: "screen tasks" },
-      toolbar(
-        [
-          { key: "board", label: "ボード" },
-          { key: "table", label: "表" },
-        ],
-        route,
-        on.view,
-      ),
-      content,
-    );
+    return h({
+      tag: "div",
+      attrs: { class: "screen tasks" },
+      children: [
+        toolbar(
+          [
+            { key: "board", label: "ボード" },
+            { key: "table", label: "表" },
+          ],
+          route,
+          on.view,
+        ),
+        content,
+      ],
+    });
   }
 }

@@ -27,7 +27,7 @@ namespace MindmapPreview {
         priority: 2,
         get: (row) => (row["deliverable"] === true ? "成果物" : "成果物以外"),
         cell: (row) =>
-          row["deliverable"] === true ? deliverableBadge() : h("span", { class: "muted" }, "—"),
+          row["deliverable"] === true ? deliverableBadge() : h({ tag: "span", attrs: { class: "muted" }, children: ["—"] }),
       },
       common.status(DOC_STATUSES),
       common.text("kind", "種類", { filterable: true, nowrap: true, priority: 2 }),
@@ -45,30 +45,32 @@ namespace MindmapPreview {
       on.view,
     );
     if (route.view === "table") {
-      return h(
-        "div",
-        { class: "screen docs" },
-        toolbarElement,
-        managedTable({
-          kind: "docs",
-          columns,
-          rows: index.data.docs,
-          open: on.open,
-          initialFilters: route.filters,
-        }),
-      );
+      return h({
+        tag: "div",
+        attrs: { class: "screen docs" },
+        children: [
+          toolbarElement,
+          managedTable({
+            kind: "docs",
+            columns,
+            rows: index.data.docs,
+            open: on.open,
+            initialFilters: route.filters,
+          }),
+        ],
+      });
     }
 
     // ===== カード: 絞り込みは表と同じ条件を使う =====
     const state = tableState("docs");
     if (Object.keys(route.filters).length > 0) state.filters = { ...route.filters };
     const ordered = orderDocs(index.data.docs);
-    const grid = h("div", { class: "doc-grid" });
-    const chips = h("div", { class: "chips" });
-    const pop = h("div", { class: "pop", popover: "auto" });
-    const filterButton = h(
-      "button",
-      {
+    const grid = h({ tag: "div", attrs: { class: "doc-grid" } });
+    const chips = h({ tag: "div", attrs: { class: "chips" } });
+    const pop = h({ tag: "div", attrs: { class: "pop", popover: "auto" } });
+    const filterButton = h({
+      tag: "button",
+      attrs: {
         class: "btn",
         type: "button",
         "aria-label": "絞り込み",
@@ -78,47 +80,54 @@ namespace MindmapPreview {
           positionPopover(pop, filterButton);
         },
       },
-      icon("filter"),
-      h("span", { class: "lbl" }, "絞り込み"),
-    );
+      children: [
+        icon("filter"),
+        h({ tag: "span", attrs: { class: "lbl" }, children: ["絞り込み"] }),
+      ],
+    });
     /** 絞り込める列の値を、列ごとに件数つきで並べる */
     const fillPopover = (): void => {
       pop.replaceChildren(
         ...columns
           .filter((column) => column.filterable === true)
           .map((column) =>
-            h(
-              "div",
-              null,
-              h("h3", null, `${column.label}で絞り込み`),
-              ...filterCounts({
-                rows: ordered,
-                columns,
-                filters: state.filters,
-                key: column.key,
-              }).map(({ value, count }) =>
-                h(
-                  "label",
-                  null,
-                  h("input", {
-                    type: "checkbox",
-                    checked: (state.filters[column.key] ?? []).includes(value),
-                    onchange: (event: Event) => {
-                      const chosen = state.filters[column.key] ?? [];
-                      const checked = (event.target as HTMLInputElement).checked;
-                      const values = checked ? [...chosen, value] : chosen.filter((v) => v !== value);
-                      if (values.length === 0) delete state.filters[column.key];
-                      else state.filters = { ...state.filters, [column.key]: values };
-                      render();
-                      fillPopover();
-                    },
+            h({
+              tag: "div",
+              children: [
+                h({ tag: "h3", children: [`${column.label}で絞り込み`] }),
+                ...filterCounts({
+                  rows: ordered,
+                  columns,
+                  filters: state.filters,
+                  key: column.key,
+                }).map(({ value, count }) =>
+                  h({
+                    tag: "label",
+                    children: [
+                      h({
+                        tag: "input",
+                        attrs: {
+                          type: "checkbox",
+                          checked: (state.filters[column.key] ?? []).includes(value),
+                          onchange: (event: Event) => {
+                            const chosen = state.filters[column.key] ?? [];
+                            const checked = (event.target as HTMLInputElement).checked;
+                            const values = checked ? [...chosen, value] : chosen.filter((v) => v !== value);
+                            if (values.length === 0) delete state.filters[column.key];
+                            else state.filters = { ...state.filters, [column.key]: values };
+                            render();
+                            fillPopover();
+                          },
+                        },
+                      }),
+                      column.key === "status" ? statusMark(value) : null,
+                      value,
+                      h({ tag: "span", attrs: { class: "n" }, children: [count] }),
+                    ],
                   }),
-                  column.key === "status" ? statusMark(value) : null,
-                  value,
-                  h("span", { class: "n" }, count),
                 ),
-              ),
-            ),
+              ],
+            }),
           ),
       );
     };
@@ -128,40 +137,42 @@ namespace MindmapPreview {
       grid.replaceChildren(
         ...(shown.length > 0
           ? shown.map((row) => docCard(index, row as Item, on.open))
-          : [h("p", { class: "no-match" }, "該当する資料はありません。別の条件を試してください。")]),
+          : [h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する資料はありません。別の条件を試してください。"] })]),
       );
       const items: HTMLElement[] = [];
       for (const [key, values] of Object.entries(state.filters)) {
         const label = columns.find((column) => column.key === key)?.label ?? key;
         for (const value of values) {
           items.push(
-            h(
-              "span",
-              { class: "chip" },
-              `${label}: ${value}`,
-              h(
-                "button",
-                {
-                  type: "button",
-                  "aria-label": `${label}: ${value} の条件を外す`,
-                  onclick: () => {
-                    const rest = values.filter((v) => v !== value);
-                    if (rest.length === 0) delete state.filters[key];
-                    else state.filters = { ...state.filters, [key]: rest };
-                    render();
+            h({
+              tag: "span",
+              attrs: { class: "chip" },
+              children: [
+                `${label}: ${value}`,
+                h({
+                  tag: "button",
+                  attrs: {
+                    type: "button",
+                    "aria-label": `${label}: ${value} の条件を外す`,
+                    onclick: () => {
+                      const rest = values.filter((v) => v !== value);
+                      if (rest.length === 0) delete state.filters[key];
+                      else state.filters = { ...state.filters, [key]: rest };
+                      render();
+                    },
                   },
-                },
-                icon("x"),
-              ),
-            ),
+                  children: [icon("x")],
+                }),
+              ],
+            }),
           );
         }
       }
       if (items.length > 0) {
         items.push(
-          h(
-            "button",
-            {
+          h({
+            tag: "button",
+            attrs: {
               class: "btn ghost",
               type: "button",
               onclick: () => {
@@ -169,38 +180,46 @@ namespace MindmapPreview {
                 render();
               },
             },
-            "すべて外す",
-          ),
+            children: ["すべて外す"],
+          }),
         );
       }
       chips.replaceChildren(...items);
     };
     render();
-    toolbarElement.append(h("span", { class: "spacer" }), filterButton);
-    return h("div", { class: "screen docs" }, toolbarElement, chips, grid, pop);
+    toolbarElement.append(h({ tag: "span", attrs: { class: "spacer" } }), filterButton);
+    return h({ tag: "div", attrs: { class: "screen docs" }, children: [toolbarElement, chips, grid, pop] });
   }
 
   /** 資料のカード（成果物の印・種類・状態・カテゴリー・フェーズ・タグ） */
   function docCard(index: RecordIndex, doc: Item, open: (id: string) => void): HTMLElement {
-    return h(
-      "button",
-      {
+    return h({
+      tag: "button",
+      attrs: {
         class: `card doc-card${doc.deliverable === true ? " deliv-card" : ""}`,
         type: "button",
         "data-id": doc.id,
         onclick: () => open(doc.id),
       },
-      doc.deliverable === true ? deliverableBadge() : null,
-      h("span", { class: "doc-kind" }, icon(doc.kind === "図" ? "graph" : "cards"), doc.kind ?? ""),
-      h("span", { class: "c-ttl" }, doc.title),
-      h(
-        "span",
-        { class: "c-meta" },
-        h("span", { class: "mono" }, doc.id),
-        statusBadge(doc.status),
-        h("span", null, [doc.category, doc.phase].filter(Boolean).join(" · ")),
-      ),
-      (doc.tags ?? []).length > 0 ? h("span", { class: "c-tags" }, tagList(doc.tags)) : null,
-    );
+      children: [
+        doc.deliverable === true ? deliverableBadge() : null,
+        h({
+          tag: "span",
+          attrs: { class: "doc-kind" },
+          children: [icon(doc.kind === "図" ? "graph" : "cards"), doc.kind ?? ""],
+        }),
+        h({ tag: "span", attrs: { class: "c-ttl" }, children: [doc.title] }),
+        h({
+          tag: "span",
+          attrs: { class: "c-meta" },
+          children: [
+            h({ tag: "span", attrs: { class: "mono" }, children: [doc.id] }),
+            statusBadge(doc.status),
+            h({ tag: "span", children: [[doc.category, doc.phase].filter(Boolean).join(" · ")] }),
+          ],
+        }),
+        (doc.tags ?? []).length > 0 ? h({ tag: "span", attrs: { class: "c-tags" }, children: [tagList(doc.tags)] }) : null,
+      ],
+    });
   }
 }

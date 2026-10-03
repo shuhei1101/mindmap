@@ -8,14 +8,36 @@ var MindmapPreview;
     }
     /** 全体の検索のモーダルを返す。文書に入れた後、`showModal()` で開く */
     function searchDialog({ index, on }) {
-        const input = MindmapPreview.h("input", {
-            type: "text",
-            placeholder: "ID・タイトル・本文で探す",
-            autocomplete: "off",
-            "aria-label": "検索する語",
+        const input = MindmapPreview.h({
+            tag: "input",
+            attrs: {
+                type: "text",
+                placeholder: "ID・タイトル・本文で探す",
+                autocomplete: "off",
+                "aria-label": "検索する語",
+            },
         });
-        const results = MindmapPreview.h("div", { class: "search-results" });
-        const dialog = MindmapPreview.h("dialog", { class: "search", closedby: "any", "aria-label": "すべての項目を検索" }, MindmapPreview.h("div", { class: "search-head" }, MindmapPreview.icon("search"), input, MindmapPreview.h("button", { class: "icon-btn", type: "button", "aria-label": "検索を閉じる", onclick: () => dialog.close() }, MindmapPreview.icon("x"))), results);
+        const results = MindmapPreview.h({ tag: "div", attrs: { class: "search-results" } });
+        const dialog = MindmapPreview.h({
+            tag: "dialog",
+            attrs: { class: "search", closedby: "any", "aria-label": "すべての項目を検索" },
+            children: [
+                MindmapPreview.h({
+                    tag: "div",
+                    attrs: { class: "search-head" },
+                    children: [
+                        MindmapPreview.icon("search"),
+                        input,
+                        MindmapPreview.h({
+                            tag: "button",
+                            attrs: { class: "icon-btn", type: "button", "aria-label": "検索を閉じる", onclick: () => dialog.close() },
+                            children: [MindmapPreview.icon("x")],
+                        }),
+                    ],
+                }),
+                results,
+            ],
+        });
         /** 結果のボタン */
         const buttons = () => [...results.querySelectorAll(".sr-item")];
         /** 検索の言葉で結果を描き直す */
@@ -27,7 +49,7 @@ var MindmapPreview;
             }
             const hits = MindmapPreview.searchItems({ query, index });
             if (hits.length === 0) {
-                results.replaceChildren(MindmapPreview.h("p", { class: "no-match" }, "該当する項目はありません。"));
+                results.replaceChildren(MindmapPreview.h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する項目はありません。"] }));
                 return;
             }
             const groups = MindmapPreview.KIND_KEYS.flatMap((kind) => {
@@ -35,10 +57,29 @@ var MindmapPreview;
                 return ofKind.length === 0
                     ? []
                     : [
-                        MindmapPreview.h("h3", null, MindmapPreview.KIND_LABEL[kind]),
+                        MindmapPreview.h({ tag: "h3", children: [MindmapPreview.KIND_LABEL[kind]] }),
                         ...ofKind.map((hit) => {
                             const item = index.byId.get(hit.id)?.item;
-                            return MindmapPreview.h("button", { class: "sr-item", type: "button", "data-id": hit.id, onclick: () => on.open(hit.id) }, MindmapPreview.h("span", { class: "mono" }, hit.id), MindmapPreview.h("span", null, MindmapPreview.statusMark(item?.status), ` ${hit.title}`, MindmapPreview.h("br"), MindmapPreview.h("span", { class: "sr-sub" }, item === undefined ? "" : summaryOf(item))));
+                            return MindmapPreview.h({
+                                tag: "button",
+                                attrs: { class: "sr-item", type: "button", "data-id": hit.id, onclick: () => on.open(hit.id) },
+                                children: [
+                                    MindmapPreview.h({ tag: "span", attrs: { class: "mono" }, children: [hit.id] }),
+                                    MindmapPreview.h({
+                                        tag: "span",
+                                        children: [
+                                            MindmapPreview.statusMark(item?.status),
+                                            ` ${hit.title}`,
+                                            MindmapPreview.h({ tag: "br" }),
+                                            MindmapPreview.h({
+                                                tag: "span",
+                                                attrs: { class: "sr-sub" },
+                                                children: [item === undefined ? "" : summaryOf(item)],
+                                            }),
+                                        ],
+                                    }),
+                                ],
+                            });
                         }),
                     ];
             });

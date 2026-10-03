@@ -192,9 +192,16 @@ var MindmapPreview;
     function graphScreen({ index, on, selected = null, }) {
         // ===== 状態 =====
         const shownKinds = new Set(MindmapPreview.KIND_KEYS);
-        const canvas = MindmapPreview.h("canvas", { class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" });
-        const kindToggles = MindmapPreview.h("div", { class: "legend", role: "group", "aria-label": "表示する種類" });
-        const root = MindmapPreview.h("div", { class: "screen graph" }, MindmapPreview.h("div", { class: "map-tools" }, kindToggles), MindmapPreview.h("div", { class: "map-frame space" }, canvas));
+        const canvas = MindmapPreview.h({ tag: "canvas", attrs: { class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
+        const kindToggles = MindmapPreview.h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
+        const root = MindmapPreview.h({
+            tag: "div",
+            attrs: { class: "screen graph" },
+            children: [
+                MindmapPreview.h({ tag: "div", attrs: { class: "map-tools" }, children: [kindToggles] }),
+                MindmapPreview.h({ tag: "div", attrs: { class: "map-frame space" }, children: [canvas] }),
+            ],
+        });
         const labelCache = new Map();
         let colors = readColors();
         let balls = [];
@@ -270,20 +277,31 @@ var MindmapPreview;
         };
         /** 項目の種類ごとの表示 / 非表示の切り替え */
         const drawToggles = () => {
-            kindToggles.replaceChildren(...MindmapPreview.KIND_KEYS.map((kind) => MindmapPreview.h("label", null, MindmapPreview.h("input", {
-                type: "checkbox",
-                value: kind,
-                checked: shownKinds.has(kind),
-                "aria-label": MindmapPreview.KIND_LABEL[kind],
-                onchange: (event) => {
-                    if (event.target.checked)
-                        shownKinds.add(kind);
-                    else
-                        shownKinds.delete(kind);
-                    drawToggles();
-                    rebuild();
-                },
-            }), MindmapPreview.h("span", { class: "kdot", style: `background:var(${KIND_COLOR_VAR[kind]})` }), MindmapPreview.KIND_LABEL[kind], MindmapPreview.h("span", { class: "n" }, index.data[kind].length))));
+            kindToggles.replaceChildren(...MindmapPreview.KIND_KEYS.map((kind) => MindmapPreview.h({
+                tag: "label",
+                children: [
+                    MindmapPreview.h({
+                        tag: "input",
+                        attrs: {
+                            type: "checkbox",
+                            value: kind,
+                            checked: shownKinds.has(kind),
+                            "aria-label": MindmapPreview.KIND_LABEL[kind],
+                            onchange: (event) => {
+                                if (event.target.checked)
+                                    shownKinds.add(kind);
+                                else
+                                    shownKinds.delete(kind);
+                                drawToggles();
+                                rebuild();
+                            },
+                        },
+                    }),
+                    MindmapPreview.h({ tag: "span", attrs: { class: "kdot", style: `background:var(${KIND_COLOR_VAR[kind]})` } }),
+                    MindmapPreview.KIND_LABEL[kind],
+                    MindmapPreview.h({ tag: "span", attrs: { class: "n" }, children: [index.data[kind].length] }),
+                ],
+            })));
         };
         /** 項目を選ぶ（その玉へゆっくり寄る）。選ぶのをやめたら、全体を見る位置へ戻す */
         const select = (id) => {

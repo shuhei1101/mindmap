@@ -253,14 +253,16 @@ namespace MindmapPreview {
   }): HTMLElement {
     // ===== 状態 =====
     const shownKinds = new Set<string>(KIND_KEYS);
-    const canvas = h("canvas", { class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" });
-    const kindToggles = h("div", { class: "legend", role: "group", "aria-label": "表示する種類" });
-    const root = h(
-      "div",
-      { class: "screen graph" },
-      h("div", { class: "map-tools" }, kindToggles),
-      h("div", { class: "map-frame space" }, canvas),
-    );
+    const canvas = h({ tag: "canvas", attrs: { class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
+    const kindToggles = h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
+    const root = h({
+      tag: "div",
+      attrs: { class: "screen graph" },
+      children: [
+        h({ tag: "div", attrs: { class: "map-tools" }, children: [kindToggles] }),
+        h({ tag: "div", attrs: { class: "map-frame space" }, children: [canvas] }),
+      ],
+    });
     const labelCache = new Map<string, HTMLCanvasElement>();
     let colors = readColors();
     let balls: Ball[] = [];
@@ -340,25 +342,29 @@ namespace MindmapPreview {
     const drawToggles = (): void => {
       kindToggles.replaceChildren(
         ...KIND_KEYS.map((kind) =>
-          h(
-            "label",
-            null,
-            h("input", {
-              type: "checkbox",
-              value: kind,
-              checked: shownKinds.has(kind),
-              "aria-label": KIND_LABEL[kind],
-              onchange: (event: Event) => {
-                if ((event.target as HTMLInputElement).checked) shownKinds.add(kind);
-                else shownKinds.delete(kind);
-                drawToggles();
-                rebuild();
-              },
-            }),
-            h("span", { class: "kdot", style: `background:var(${KIND_COLOR_VAR[kind]})` }),
-            KIND_LABEL[kind],
-            h("span", { class: "n" }, index.data[kind].length),
-          ),
+          h({
+            tag: "label",
+            children: [
+              h({
+                tag: "input",
+                attrs: {
+                  type: "checkbox",
+                  value: kind,
+                  checked: shownKinds.has(kind),
+                  "aria-label": KIND_LABEL[kind],
+                  onchange: (event: Event) => {
+                    if ((event.target as HTMLInputElement).checked) shownKinds.add(kind);
+                    else shownKinds.delete(kind);
+                    drawToggles();
+                    rebuild();
+                  },
+                },
+              }),
+              h({ tag: "span", attrs: { class: "kdot", style: `background:var(${KIND_COLOR_VAR[kind]})` } }),
+              KIND_LABEL[kind],
+              h({ tag: "span", attrs: { class: "n" }, children: [index.data[kind].length] }),
+            ],
+          }),
         ),
       );
     };

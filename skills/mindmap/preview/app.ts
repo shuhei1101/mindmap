@@ -93,7 +93,7 @@ namespace MindmapPreview {
     try {
       data = readEmbeddedData(document);
     } catch (error) {
-      document.body.prepend(h("p", { class: "md-error" }, (error as Error).message));
+      document.body.prepend(h({ tag: "p", attrs: { class: "md-error" }, children: [(error as Error).message] }));
       return;
     }
     const index = buildIndex(data);
@@ -112,8 +112,8 @@ namespace MindmapPreview {
     document.documentElement.dataset["theme"] = theme;
 
     // ===== 画面の土台 =====
-    const top = h("div", { id: "top" });
-    const main = h("main", { class: "content", id: "main" });
+    const top = h({ tag: "div", attrs: { id: "top" } });
+    const main = h({ tag: "main", attrs: { class: "content", id: "main" } });
     document.body.prepend(top, main);
     let route = parseHash({ hash: location.hash, index });
     let fullViewer: HTMLElement | null = null;
@@ -297,12 +297,16 @@ namespace MindmapPreview {
         const body = dialog?.querySelector<HTMLElement>(".panel-body");
         if (dialog === null || dialog === undefined || body === null || body === undefined) return;
         body.hidden = true;
-        const viewer = h("div", { class: "full-viewer" }, diagramViewer({ svg, on: { close: closeFullViewer } }));
+        const viewer = h({
+          tag: "div",
+          attrs: { class: "full-viewer" },
+          children: [diagramViewer({ svg, on: { close: closeFullViewer } })],
+        });
         body.after(viewer);
         fullViewer = viewer;
         return;
       }
-      const modal = h("dialog", { class: "viewer", "aria-label": "図の拡大" });
+      const modal = h({ tag: "dialog", attrs: { class: "viewer", "aria-label": "図の拡大" } });
       modal.append(diagramViewer({ svg, on: { close: () => modal.close() } }));
       modal.addEventListener("close", () => modal.remove());
       document.body.append(modal);

@@ -11,17 +11,25 @@ var MindmapPreview;
     };
     /** 表示形式を切り替えるセグメントを返す（描き直しは使う側が行う） */
     function viewSwitch({ views, current, onChange }) {
-        const buttons = views.map(({ key, label }) => MindmapPreview.h("button", {
-            type: "button",
-            "data-view": key,
-            "aria-pressed": String(key === current),
-            onclick: () => {
-                // 選んでいる形式を押しても何もしない
-                if (key !== current)
-                    onChange(key);
+        const buttons = views.map(({ key, label }) => MindmapPreview.h({
+            tag: "button",
+            attrs: {
+                type: "button",
+                "data-view": key,
+                "aria-pressed": String(key === current),
+                onclick: () => {
+                    // 選んでいる形式を押しても何もしない
+                    if (key !== current)
+                        onChange(key);
+                },
             },
-        }, MindmapPreview.icon(VIEW_ICON[key]), label));
-        return MindmapPreview.h("div", { class: "segment", role: "group", "aria-label": "表示形式" }, ...buttons);
+            children: [MindmapPreview.icon(VIEW_ICON[key]), label],
+        }));
+        return MindmapPreview.h({
+            tag: "div",
+            attrs: { class: "segment", role: "group", "aria-label": "表示形式" },
+            children: [...buttons],
+        });
     }
     MindmapPreview.viewSwitch = viewSwitch;
 })(MindmapPreview || (MindmapPreview = {}));

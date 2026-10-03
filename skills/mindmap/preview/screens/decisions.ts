@@ -279,17 +279,17 @@ namespace MindmapPreview {
       const style = `left:${node.x ?? 0}px;top:${node.y ?? 0}px;width:${node.width}px;height:${node.height}px`;
       const rel = near.has(node.id) ? " rel" : "";
       if (node.kind !== "item" || node.item === undefined) {
-        return h(
-          "div",
-          { class: `map-node n-${node.kind}${rel}`, "data-node": node.id, style },
-          h("span", { class: "lbl" }, node.label),
-        );
+        return h({
+          tag: "div",
+          attrs: { class: `map-node n-${node.kind}${rel}`, "data-node": node.id, style },
+          children: [h({ tag: "span", attrs: { class: "lbl" }, children: [node.label] })],
+        });
       }
       const item = node.item;
       const hit = keyword !== "" && item.title.toLowerCase().includes(keyword);
-      return h(
-        "button",
-        {
+      return h({
+        tag: "button",
+        attrs: {
           class: `map-node n-item${selected === item.id ? " sel" : ""}${hit ? " hit" : ""}${rel}`,
           type: "button",
           "data-node": item.id,
@@ -297,15 +297,26 @@ namespace MindmapPreview {
           title: `${item.title}（${item.status ?? ""}）`,
           onclick: () => open(item.id),
         },
-        h("span", { class: "r1" }, statusMark(item.status), h("span", { class: "lbl" }, item.title)),
-        h(
-          "span",
-          { class: "r2" },
-          h("span", { class: "mono" }, item.id),
-          h("span", null, item.status ?? ""),
-          item.weight === undefined ? null : h("span", null, `影響度 ${item.weight}`),
-        ),
-      );
+        children: [
+          h({
+            tag: "span",
+            attrs: { class: "r1" },
+            children: [
+              statusMark(item.status),
+              h({ tag: "span", attrs: { class: "lbl" }, children: [item.title] }),
+            ],
+          }),
+          h({
+            tag: "span",
+            attrs: { class: "r2" },
+            children: [
+              h({ tag: "span", attrs: { class: "mono" }, children: [item.id] }),
+              h({ tag: "span", children: [item.status ?? ""] }),
+              item.weight === undefined ? null : h({ tag: "span", children: [`影響度 ${item.weight}`] }),
+            ],
+          }),
+        ],
+      });
     });
     canvas.classList.toggle("focusing", selected !== null);
     canvas.style.width = `${laid.width ?? 0}px`;
@@ -334,37 +345,42 @@ namespace MindmapPreview {
     const entry = (node: MapNode): HTMLElement => {
       const label =
         node.kind === "item" && node.item !== undefined
-          ? h(
-              "button",
-              { type: "button", "data-id": node.id, onclick: () => open(node.id) },
-              statusMark(node.item.status),
-              h("span", null, node.label),
-            )
-          : h("div", { class: `o-${node.kind}` }, node.label);
+          ? h({
+            tag: "button",
+            attrs: { type: "button", "data-id": node.id, onclick: () => open(node.id) },
+            children: [statusMark(node.item.status), h({ tag: "span", children: [node.label] })],
+          })
+          : h({ tag: "div", attrs: { class: `o-${node.kind}` }, children: [node.label] });
       const below = childrenOf.get(node.id) ?? [];
-      return h("li", null, label, below.length > 0 ? h("ul", null, ...below.map(entry)) : null);
+      return h({
+        tag: "li",
+        children: [
+          label,
+          below.length > 0 ? h({ tag: "ul", children: [...below.map(entry)] }) : null,
+        ],
+      });
     };
     const roots = tree.children.filter((node) => node.kind === "target");
-    return h(
-      "nav",
-      { class: "map-outline", "aria-label": "検討事項の一覧" },
-      h("ul", null, ...roots.map(entry)),
-    );
+    return h({
+      tag: "nav",
+      attrs: { class: "map-outline", "aria-label": "検討事項の一覧" },
+      children: [h({ tag: "ul", children: [...roots.map(entry)] })],
+    });
   }
 
   /** マップの道具の行（状態の印・キーワード）と、マップの枠・拡大の道具を作る */
   function mapView({ index, route, on }: ScreenProps): HTMLElement {
-    const root = h("div", { class: "map-view-root" });
+    const root = h({ tag: "div", attrs: { class: "map-view-root" } });
     const decisions = index.data.decisions;
-    const legend = h("div", { class: "legend", role: "group", "aria-label": "表示する状態" });
-    const frame = h("div", { class: "map-frame" });
-    const canvas = h("div", { class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" });
-    const sizer = h("div", { class: "map-sizer" }, canvas);
-    const wrap = h("div", { class: "map-wrap" }, sizer);
+    const legend = h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する状態" } });
+    const frame = h({ tag: "div", attrs: { class: "map-frame" } });
+    const canvas = h({ tag: "div", attrs: { class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" } });
+    const sizer = h({ tag: "div", attrs: { class: "map-sizer" }, children: [canvas] });
+    const wrap = h({ tag: "div", attrs: { class: "map-wrap" }, children: [sizer] });
     // 全体を表示のボタン（押された状態を見た目に出す）
-    const fitButton = h(
-      "button",
-      {
+    const fitButton = h({
+      tag: "button",
+      attrs: {
         class: "btn ghost",
         type: "button",
         "aria-pressed": "false",
@@ -373,8 +389,8 @@ namespace MindmapPreview {
           applyZoom();
         },
       },
-      "全体を表示",
-    );
+      children: ["全体を表示"],
+    });
     let outlineElement = outline({ index, open: on.open });
     let current: MapGraph | null = null;
 
@@ -389,26 +405,34 @@ namespace MindmapPreview {
           (status) => {
             const total = decisions.filter((item) => item.status === status).length;
             const hits = decisions.filter((item) => item.status === status && isHit(item)).length;
-            return h(
-              "label",
-              null,
-              h("input", {
-                type: "checkbox",
-                value: status,
-                checked: mapState.shownStatuses.has(status),
-                onchange: (event: Event) => {
-                  if ((event.target as HTMLInputElement).checked) mapState.shownStatuses.add(status);
-                  else mapState.shownStatuses.delete(status);
-                  void draw(false);
-                },
-              }),
-              statusMark(status),
-              status,
-              h("span", { class: "n" }, total),
-              hits > 0
-                ? h("span", { class: "hit-n", "aria-label": `キーワードに当たった項目 ${hits} 件` }, hits)
-                : null,
-            );
+            return h({
+              tag: "label",
+              children: [
+                h({
+                  tag: "input",
+                  attrs: {
+                    type: "checkbox",
+                    value: status,
+                    checked: mapState.shownStatuses.has(status),
+                    onchange: (event: Event) => {
+                      if ((event.target as HTMLInputElement).checked) mapState.shownStatuses.add(status);
+                      else mapState.shownStatuses.delete(status);
+                      void draw(false);
+                    },
+                  },
+                }),
+                statusMark(status),
+                status,
+                h({ tag: "span", attrs: { class: "n" }, children: [total] }),
+                hits > 0
+                  ? h({
+                    tag: "span",
+                    attrs: { class: "hit-n", "aria-label": `キーワードに当たった項目 ${hits} 件` },
+                    children: [hits],
+                  })
+                  : null,
+              ],
+            });
           },
         ),
       );
@@ -456,12 +480,15 @@ namespace MindmapPreview {
     };
 
     // ===== 道具の行 =====
-    const keyword = h("input", {
-      class: "input map-q",
-      type: "search",
-      placeholder: "名前で強調",
-      value: mapState.keyword,
-      "aria-label": "名前で強調するキーワード",
+    const keyword = h({
+      tag: "input",
+      attrs: {
+        class: "input map-q",
+        type: "search",
+        placeholder: "名前で強調",
+        value: mapState.keyword,
+        "aria-label": "名前で強調するキーワード",
+      },
     });
     let timer: number | undefined;
     keyword.addEventListener("input", () => {
@@ -488,39 +515,41 @@ namespace MindmapPreview {
     toolbarElement.append(keyword);
 
     /** 拡大・縮小・全体を表示のボタン（マップの枠の外に置く） */
-    const zoomBar = h(
-      "div",
-      { class: "zoom", role: "group", "aria-label": "拡大率" },
-      h(
-        "button",
-        {
-          class: "icon-btn",
-          type: "button",
-          "aria-label": "縮小",
-          onclick: () => {
-            const base = mapState.zoom === "fit" ? 0.6 : mapState.zoom;
-            mapState.zoom = Math.max(ZOOM_MIN, Math.round((base - ZOOM_STEP) * 100) / 100);
-            applyZoom();
+    const zoomBar = h({
+      tag: "div",
+      attrs: { class: "zoom", role: "group", "aria-label": "拡大率" },
+      children: [
+        h({
+          tag: "button",
+          attrs: {
+            class: "icon-btn",
+            type: "button",
+            "aria-label": "縮小",
+            onclick: () => {
+              const base = mapState.zoom === "fit" ? 0.6 : mapState.zoom;
+              mapState.zoom = Math.max(ZOOM_MIN, Math.round((base - ZOOM_STEP) * 100) / 100);
+              applyZoom();
+            },
           },
-        },
-        "−",
-      ),
-      fitButton,
-      h(
-        "button",
-        {
-          class: "icon-btn",
-          type: "button",
-          "aria-label": "拡大",
-          onclick: () => {
-            const base = mapState.zoom === "fit" ? 0.6 : mapState.zoom;
-            mapState.zoom = Math.min(ZOOM_MAX, Math.round((base + ZOOM_STEP) * 100) / 100);
-            applyZoom();
+          children: ["−"],
+        }),
+        fitButton,
+        h({
+          tag: "button",
+          attrs: {
+            class: "icon-btn",
+            type: "button",
+            "aria-label": "拡大",
+            onclick: () => {
+              const base = mapState.zoom === "fit" ? 0.6 : mapState.zoom;
+              mapState.zoom = Math.min(ZOOM_MAX, Math.round((base + ZOOM_STEP) * 100) / 100);
+              applyZoom();
+            },
           },
-        },
-        "＋",
-      ),
-    );
+          children: ["＋"],
+        }),
+      ],
+    });
     wrap.addEventListener("scroll", () => {
       mapState.scroll = { left: wrap.scrollLeft, top: wrap.scrollTop };
     });
@@ -529,17 +558,28 @@ namespace MindmapPreview {
     // elkjs が読めない: 知らせを出し、表示形式を表に切り替えると読めることを伝える
     const notice =
       missingLibraries(["elkjs"]).length > 0
-        ? h(
-            "div",
-            null,
+        ? h({
+          tag: "div",
+          children: [
             libraryNotice({ names: ["elkjs"], what: "マップ" }),
             emptyNote("表示形式を表に切り替えると、検討事項を読めます。"),
-          )
+          ],
+        })
         : null;
     frame.append(wrap);
     if (notice !== null) frame.hidden = true;
 
-    append(root, toolbarElement, h("div", { class: "map-tools" }, legend), notice, frame, zoomBar, outlineElement);
+    append({
+      parent: root,
+      children: [
+        toolbarElement,
+        h({ tag: "div", attrs: { class: "map-tools" }, children: [legend] }),
+        notice,
+        frame,
+        zoomBar,
+        outlineElement,
+      ],
+    });
     // 拡大率が「全体を表示」のときは、枠の大きさが変わるたびに倍率を求め直す
     new ResizeObserver(() => {
       if (mapState.zoom === "fit") applyZoom();
@@ -551,7 +591,7 @@ namespace MindmapPreview {
   /** 検討事項の画面を返す */
   export function decisionsScreen(props: ScreenProps): HTMLElement {
     const { index, route, on } = props;
-    if (route.view === "map") return h("div", { class: "screen decisions" }, mapView(props));
+    if (route.view === "map") return h({ tag: "div", attrs: { class: "screen decisions" }, children: [mapView(props)] });
     const toolbarElement = toolbar(
       [
         { key: "map", label: "マップ" },
@@ -562,22 +602,24 @@ namespace MindmapPreview {
       on.view,
     );
     if (route.view === "board") {
-      return h(
-        "div",
-        { class: "screen decisions" },
-        toolbarElement,
-        board({
-          columns: boardColumns({ items: index.data.decisions, statuses: [...DECISION_STATUSES] }),
-          card: (item) =>
-            boardCard({
-              index,
-              item,
-              meta: [item.category, item.phase],
-              links: item.depends_on ?? [],
-              open: on.open,
-            }),
-        }),
-      );
+      return h({
+        tag: "div",
+        attrs: { class: "screen decisions" },
+        children: [
+          toolbarElement,
+          board({
+            columns: boardColumns({ items: index.data.decisions, statuses: [...DECISION_STATUSES] }),
+            card: (item) =>
+              boardCard({
+                index,
+                item,
+                meta: [item.category, item.phase],
+                links: item.depends_on ?? [],
+                open: on.open,
+              }),
+          }),
+        ],
+      });
     }
     const common = commonColumns(index.data.settings);
     const columns: Column[] = [
@@ -616,17 +658,19 @@ namespace MindmapPreview {
       },
       common.tags,
     ];
-    return h(
-      "div",
-      { class: "screen decisions" },
-      toolbarElement,
-      managedTable({
-        kind: "decisions",
-        columns,
-        rows: index.data.decisions,
-        open: on.open,
-        initialFilters: route.filters,
-      }),
-    );
+    return h({
+      tag: "div",
+      attrs: { class: "screen decisions" },
+      children: [
+        toolbarElement,
+        managedTable({
+          kind: "decisions",
+          columns,
+          rows: index.data.decisions,
+          open: on.open,
+          initialFilters: route.filters,
+        }),
+      ],
+    });
   }
 }
