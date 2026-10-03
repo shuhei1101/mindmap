@@ -2,10 +2,10 @@ title: "全体の検索"
 elements:
   - name: 検索の言葉
     kind: input
-    description: 空白で区切った語を全て含む項目を探す（大文字・小文字を区別しない）
+    description: 空白で区切った語を全て含む項目を検索する（大文字・小文字を区別しない）。読み上げの名前は「検索キーワード」。空のときは結果の場所に「ID・タイトル・本文で、すべての項目を検索します。」
     io: 入力
     type: 文字列
-    placeholder: ID・タイトル・本文で探す
+    placeholder: ID・タイトル・本文で検索
     autofocus: true
     initial_value: 空
   - name: 検索の結果
@@ -17,6 +17,6 @@ elements:
   - name: 閉じる
     kind: button
     description: 検索を閉じる。Esc と外側の押下でも閉じる
-lead: 全種類の項目を ID・タイトル・本文で探すモーダル。トップバーの入口か `/` キーで開く。
+lead: 全種類の項目を ID・タイトル・本文で検索するモーダル。トップバーの入口か `/` キーで開く。
 mock: dev/mock/pages/search/21/standard/index.html
 test_file: tests/integration/preview/test_search_screen.py

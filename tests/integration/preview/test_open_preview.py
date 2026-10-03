@@ -87,8 +87,8 @@ def test_normal_when_filter_in_hash(
     assert _row_ids(page) == ["D-3", "D-4"]
     # 開いた後は、ハッシュから f. の引数が消えている
     assert "f." not in page.evaluate("location.hash")
-    # チップを外すと、D-1 の行も出る
-    page.click(".chips >> text=すべて外す")
+    # チップを解除すると、D-1 の行も出る
+    page.click(".chips >> text=すべて解除")
     page.wait_for_function("document.querySelectorAll('table.grid tbody tr').length === 3")
     assert _row_ids(page) == ["D-1", "D-3", "D-4"]
     assert "f." not in page.evaluate("location.hash")
@@ -152,7 +152,7 @@ def test_error_when_library_unavailable(
     make_item: MakeItem,
     page: Any,
 ) -> None:
-    """描画のライブラリの配信元に届かないと、使う箇所に読めなかったライブラリの名前を出す（異常系）。"""
+    """描画のライブラリの配信元に届かないと、使う箇所に読み込めなかったライブラリの名前を出す（異常系）。"""
     # 準備
     path = write_preview(
         make_item("D-3", status="要見直し", body="D-3.md"), bodies={"D-3.md": BODY_WITH_DIAGRAM}
@@ -163,11 +163,15 @@ def test_error_when_library_unavailable(
     page.wait_for_selector("aside.panel.open .md .lib-error")
     # 検証
     map_notice = page.inner_text("main .lib-error[role=alert]")
-    assert "elkjs" in map_notice
+    assert "読み込めなかったライブラリ: elkjs" in map_notice
+    assert "通信を確認して、ページを再読み込みしてください。" in map_notice
     body_notice = page.inner_text("aside.panel .md .lib-error[role=alert]")
+    assert "読み込めなかったライブラリ" in body_notice
     for name in ("marked", "DOMPurify", "mermaid"):
         assert name in body_notice
     assert "本文の段落" in page.inner_text("aside.panel .md-raw")
+    # 配置できない案内は、表への切り替えを促す
+    assert "表示形式を「表」に切り替えると、検討事項を表示できます。" in page.inner_text("main")
     # 表示形式を表に切り替えると、D-3 の行がある
     page.click('.segment button[data-view="table"]')
     page.wait_for_selector("table.grid tbody tr")

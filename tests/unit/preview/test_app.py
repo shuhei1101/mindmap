@@ -54,7 +54,7 @@ def test_read_embedded_data_when_missing(
     # 検証
     assert error is not None
     assert error["isError"] is True
-    assert "書き出し直してください" in error["message"]
+    assert error["message"] == "記録を読み込めませんでした。preview.html をもう一度書き出してください。"
 
 
 @pytest.mark.parametrize(

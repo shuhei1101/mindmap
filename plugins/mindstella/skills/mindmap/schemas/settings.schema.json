@@ -115,7 +115,7 @@
             "properties": {
               "title": {
                 "type": "string",
-                "description": "納品物の題"
+                "description": "納品物のタイトル"
               },
               "doc": {
                 "type": "string",
@@ -141,7 +141,7 @@
         "properties": {
           "title": {
             "type": "string",
-            "description": "リンクの題"
+            "description": "リンクのタイトル"
           },
           "url": {
             "type": "string",
@@ -152,7 +152,7 @@
     },
     "summary": {
       "type": "string",
-      "description": "話し合いの題名（何についての話し合いかを 1 文で）。プレビューのトップバーに出す",
+      "description": "話し合いのタイトル（何についての話し合いかを 1 文で）。プレビューのトップバーに出す",
       "minLength": 1
     }
   }

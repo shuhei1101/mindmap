@@ -102,19 +102,26 @@ def test_normal(
     assert related["後続の項目"] == ["D-5"]
     assert related["関連タスク"] == ["T-2"]
     assert related["関連"] == ["R-1"]
-    assert related["この項目を参照している項目"] == ["N-1"]
+    assert related["参照元"] == ["N-1"]
     # 検証（本文と図）
     assert page.inner_text('aside.panel .md [data-md-level="1"]') == "要件"
     for action in ("diagram-zoom", "diagram-raw", "diagram-copy"):
         assert page.locator(f'aside.panel button[data-act="{action}"]').count() == 1
+    zoom_button = 'aside.panel button[data-act="diagram-zoom"]'
+    assert page.get_attribute(zoom_button, "aria-label") == "図を拡大表示"
+    assert page.get_attribute(zoom_button, "title") == "拡大表示"
     # 幅 1920px では、パネルを開いている間、本文がパネルの分だけ左へ寄り、パネルに重ならない
     left_after, right_after = page.evaluate(box_script)
     panel_left = page.evaluate("document.querySelector('aside.panel').getBoundingClientRect().left")
     assert left_after < left_before
     assert right_after <= panel_left
-    # 全画面に切り替え、図の拡大は中身の切り替えで、モーダルが 2 枚重ならない
+    # 「全画面表示」を押し、図の拡大は中身の切り替えで、モーダルが 2 枚重ならない
+    assert page.get_attribute('aside.panel button[data-act="full"]', "aria-label") == "全画面表示"
     page.click('aside.panel button[data-act="full"]')
     page.wait_for_selector("dialog.full[open] .mermaid svg", timeout=DIAGRAM_TIMEOUT_MS)
+    # ラベルは変えず、押された状態（aria-pressed）で全画面を示す
+    assert page.get_attribute('dialog.full button[data-act="full"]', "aria-label") == "全画面表示"
+    assert page.get_attribute('dialog.full button[data-act="full"]', "aria-pressed") == "true"
     page.click('dialog.full button[data-act="diagram-zoom"]')
     page.wait_for_selector("dialog.full .full-viewer .v-stage svg")
     assert page.locator("dialog[open]").count() == 1

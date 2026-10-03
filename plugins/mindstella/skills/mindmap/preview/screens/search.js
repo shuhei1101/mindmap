@@ -12,9 +12,9 @@ var MindmapPreview;
             tag: "input",
             attrs: {
                 type: "text",
-                placeholder: "ID・タイトル・本文で探す",
+                placeholder: "ID・タイトル・本文で検索",
                 autocomplete: "off",
-                "aria-label": "検索する語",
+                "aria-label": "検索キーワード",
             },
         });
         const results = MindmapPreview.h({ tag: "div", attrs: { class: "search-results" } });
@@ -44,7 +44,7 @@ var MindmapPreview;
         const render = () => {
             const query = input.value.trim();
             if (query === "") {
-                results.replaceChildren(MindmapPreview.emptyNote("ID・タイトル・本文の語で、すべての項目を探します。"));
+                results.replaceChildren(MindmapPreview.emptyNote("ID・タイトル・本文で、すべての項目を検索します。"));
                 return;
             }
             const hits = MindmapPreview.searchItems({ query, index });

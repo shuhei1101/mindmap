@@ -131,7 +131,7 @@ var MindmapPreview;
                             tag: "button",
                             attrs: {
                                 type: "button",
-                                "aria-label": `${column?.label ?? key}: ${value} の条件を外す`,
+                                "aria-label": `${column?.label ?? key}: ${value} の条件を解除`,
                                 onclick: () => {
                                     on.filter({ key, values: values.filter((candidate) => candidate !== value) });
                                 },
@@ -152,7 +152,7 @@ var MindmapPreview;
                         on.filter({ key: null, values: [] });
                     },
                 },
-                children: ["すべて外す"],
+                children: ["すべて解除"],
             }));
         }
         // ポップオーバーの題の要素の id（`aria-labelledby` が指す。置かれる画面の見出しの深さを知らないので、見出しの要素にはしない）

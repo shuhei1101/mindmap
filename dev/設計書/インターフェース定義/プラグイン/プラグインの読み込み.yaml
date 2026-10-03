@@ -84,7 +84,7 @@ request_example: |-
   ```json
   {
     "name": "mindstella",
-    "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
+    "description": "話し合いを記録しながら、要件・調査・資料作りで決めたことを形にしていく Claude Code のスキル",
     "author": { "name": "shuhei1101", "url": "https://github.com/shuhei1101" },
     "license": "MIT",
     "homepage": "https://github.com/shuhei1101/mindstella",

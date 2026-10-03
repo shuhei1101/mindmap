@@ -1,5 +1,5 @@
 "use strict";
-// 記録の索引・関係する項目・検索。次の候補・ゴールまで・進み具合は build が計算した `derived` を使い、画面で計算し直さない。
+// 記録の索引・関係する項目・検索。次の候補・ゴールまでの進捗・カテゴリー別の進捗は build が計算した `derived` を使い、画面で計算し直さない。
 var MindmapPreview;
 (function (MindmapPreview) {
     /** 項目の種類の並び（ID の頭の文字の順と同じ） */

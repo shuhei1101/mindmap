@@ -29,7 +29,7 @@ TOGGLE_ALL_BOX = ".legend .legend-all-check input"
 STATUS_INPUTS = ".legend label:not(.legend-all-check) input"
 
 # 全ての状態を隠したときに出す文
-NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません"
+NO_SHOWN_STATUS_TEXT = "表示する検討事項はありません。"
 
 # マップに検討事項が 1 件も描かれていない
 NO_MAP_ITEM_SCRIPT = "!document.querySelector('#decision-map button.n-item')"
@@ -154,12 +154,12 @@ def test_normal(
     ready = page.evaluate(
         """() => {
             const header = [...document.querySelectorAll('table.grid thead th')]
-                .find(th => th.querySelector('.th-sort').textContent === '着手できる');
+                .find(th => th.querySelector('.th-sort').textContent === '着手可否');
             const column = header.dataset.col;
             return document.querySelector(`table.grid tr[data-id="D-5"] td[data-col="${column}"]`).textContent;
         }"""
     )
-    assert ready == "いいえ"
+    assert ready == "前提待ち"
 
 
 def test_normal_when_keyword(
@@ -168,7 +168,7 @@ def test_normal_when_keyword(
     make_item: MakeItem,
     valid_settings: dict[str, Any],
 ) -> None:
-    """キーワードを名前に含む項目を強調し、状態の印に当たった件数のバッジを付ける（正常系）。"""
+    """キーワードをタイトルに含む項目を強調し、状態の印に一致した件数のバッジを付ける（正常系）。"""
     # 準備
     common: dict[str, Any] = {"target": "mindmap", "category": "データ構造", "phase": "要件"}
     path = build_preview(
