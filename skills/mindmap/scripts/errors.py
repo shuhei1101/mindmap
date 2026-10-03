@@ -44,3 +44,11 @@ class WriteFailedError(MindmapError):
 
 class SummaryRequiredError(MindmapError):
     """題名を持たないワークスペースを `--summary` 無しで移そうとした（入口は終了コード 2）。"""
+
+
+class OutPathError(MindmapError):
+    """`export` の `--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す（入口は終了コード 2）。"""
+
+
+class DownloadFailedError(MindmapError):
+    """配る書き出しで jsDelivr から配布ファイルかライセンスの本文を取れないか、配布ファイルが `integrity` と合わない。"""
