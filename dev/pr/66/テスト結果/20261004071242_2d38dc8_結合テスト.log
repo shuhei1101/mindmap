@@ -1,0 +1,36 @@
+$ python3 -m pytest tests/integration/scripts tests/integration/skill tests/integration/plugin -rs
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-workspace-versioned-migration
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 87 items
+
+tests/integration/scripts/test_add.py .....                              [  5%]
+tests/integration/scripts/test_adopt.py ......                           [ 12%]
+tests/integration/scripts/test_attrs.py ..                               [ 14%]
+tests/integration/scripts/test_build.py ....                             [ 19%]
+tests/integration/scripts/test_check.py ....                             [ 24%]
+tests/integration/scripts/test_check_env.py ..s.s                        [ 29%]
+tests/integration/scripts/test_clear_release.py ....                     [ 34%]
+tests/integration/scripts/test_export.py ......                          [ 41%]
+tests/integration/scripts/test_find.py ...                               [ 44%]
+tests/integration/scripts/test_goal.py ...                               [ 48%]
+tests/integration/scripts/test_impact.py ...                             [ 51%]
+tests/integration/scripts/test_init.py ....                              [ 56%]
+tests/integration/scripts/test_launch.py ......                          [ 63%]
+tests/integration/scripts/test_migrate.py .............                  [ 78%]
+tests/integration/scripts/test_next.py ...                               [ 81%]
+tests/integration/scripts/test_show.py ...                               [ 85%]
+tests/integration/scripts/test_status.py ..                              [ 87%]
+tests/integration/scripts/test_update.py ......                          [ 94%]
+tests/integration/skill/test_session.py .                                [ 95%]
+tests/integration/skill/test_setup.py .                                  [ 96%]
+tests/integration/skill/test_upgrade.py .                                [ 97%]
+tests/integration/plugin/test_marketplace_registration.py .              [ 98%]
+tests/integration/plugin/test_plugin_loading.py .                        [100%]
+
+=========================== short test summary info ============================
+SKIPPED [2] tests/integration/scripts/conftest.py:53: 手元に 3.8〜3.11 の Python が無い
+================== 85 passed, 2 skipped in 151.27s (0:02:31) ===================
