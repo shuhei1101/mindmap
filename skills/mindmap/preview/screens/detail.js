@@ -116,6 +116,7 @@ var MindmapPreview;
             if (source === undefined)
                 return null;
             const rendered = MindmapPreview.renderMarkdown(source);
+            lowerHeadings(rendered);
             void MindmapPreview.renderDiagrams(rendered);
             rendered.addEventListener("click", (event) => {
                 const button = event.target.closest("[data-act]");
@@ -322,6 +323,27 @@ var MindmapPreview;
                     }),
             ],
         });
+    }
+    /** 詳細パネルの節の見出し（h3）の下に、本文の見出し（h1〜h6）を並べるための段の差 */
+    const BODY_HEADING_OFFSET = 3;
+    /** 見出しの要素の最も下の段（h6） */
+    const LOWEST_HEADING_LEVEL = 6;
+    /** 本文の見出しを、パネルの節の見出しより下の段（h4〜h6）に下げる。見た目は元の段のまま（`data-md-level`） */
+    function lowerHeadings(root) {
+        for (const heading of root.querySelectorAll("h1, h2, h3, h4, h5, h6")) {
+            const level = Number(heading.tagName.slice(1));
+            const lowered = Math.min(level + BODY_HEADING_OFFSET, LOWEST_HEADING_LEVEL);
+            const replacement = MindmapPreview.h({
+                tag: `h${lowered}`,
+                attrs: {
+                    "data-md-level": level,
+                    // h6 を超える段は、読み上げの段で伝える
+                    "aria-level": level + BODY_HEADING_OFFSET > LOWEST_HEADING_LEVEL ? level + BODY_HEADING_OFFSET : null,
+                },
+                children: [...heading.childNodes],
+            });
+            heading.replaceWith(replacement);
+        }
     }
     /** 詳細パネル（全画面のときは中央のモーダル）を返す。文書に入れた後、全画面は `showModal()` で開く */
     function detailPanel(props) {

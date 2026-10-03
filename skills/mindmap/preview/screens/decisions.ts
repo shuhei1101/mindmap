@@ -374,7 +374,7 @@ namespace MindmapPreview {
     const decisions = index.data.decisions;
     const legend = h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する状態" } });
     const frame = h({ tag: "div", attrs: { class: "map-frame" } });
-    const canvas = h({ tag: "div", attrs: { class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" } });
+    const canvas = h({ tag: "div", attrs: { id: "decision-map", class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" } });
     const sizer = h({ tag: "div", attrs: { class: "map-sizer" }, children: [canvas] });
     const wrap = h({ tag: "div", attrs: { class: "map-wrap" }, children: [sizer] });
     // 全体を表示のボタン（押された状態を見た目に出す）

@@ -273,7 +273,7 @@ var MindmapPreview;
         const decisions = index.data.decisions;
         const legend = MindmapPreview.h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する状態" } });
         const frame = MindmapPreview.h({ tag: "div", attrs: { class: "map-frame" } });
-        const canvas = MindmapPreview.h({ tag: "div", attrs: { class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" } });
+        const canvas = MindmapPreview.h({ tag: "div", attrs: { id: "decision-map", class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" } });
         const sizer = MindmapPreview.h({ tag: "div", attrs: { class: "map-sizer" }, children: [canvas] });
         const wrap = MindmapPreview.h({ tag: "div", attrs: { class: "map-wrap" }, children: [sizer] });
         // 全体を表示のボタン（押された状態を見た目に出す）

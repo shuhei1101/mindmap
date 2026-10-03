@@ -253,7 +253,7 @@ namespace MindmapPreview {
   }): HTMLElement {
     // ===== 状態 =====
     const shownKinds = new Set<string>(KIND_KEYS);
-    const canvas = h({ tag: "canvas", attrs: { class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
+    const canvas = h({ tag: "canvas", attrs: { id: "graph-canvas", class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
     const kindToggles = h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
     const root = h({
       tag: "div",

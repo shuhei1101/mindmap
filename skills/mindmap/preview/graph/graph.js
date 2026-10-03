@@ -192,7 +192,7 @@ var MindmapPreview;
     function graphScreen({ index, on, selected = null, }) {
         // ===== 状態 =====
         const shownKinds = new Set(MindmapPreview.KIND_KEYS);
-        const canvas = MindmapPreview.h({ tag: "canvas", attrs: { class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
+        const canvas = MindmapPreview.h({ tag: "canvas", attrs: { id: "graph-canvas", class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
         const kindToggles = MindmapPreview.h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
         const root = MindmapPreview.h({
             tag: "div",

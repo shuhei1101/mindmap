@@ -124,7 +124,7 @@ namespace MindmapPreview {
     });
     const tile = h({
       tag: "section",
-      attrs: { class: "tile t-next", "aria-labelledby": "h-next" },
+      attrs: { id: "tile-next", class: "tile t-next", "aria-labelledby": "h-next" },
       children: [
         tileHead(
           "h-next",
@@ -183,7 +183,7 @@ namespace MindmapPreview {
     });
     return h({
       tag: "section",
-      attrs: { class: "tile t-goal", "aria-labelledby": "h-goal" },
+      attrs: { id: "tile-goal", class: "tile t-goal", "aria-labelledby": "h-goal" },
       children: [
         h({ tag: "h2", attrs: { id: "h-goal" }, children: [icon("flag"), "ゴールまで"] }),
         h({
@@ -235,6 +235,7 @@ namespace MindmapPreview {
 
   /** 件数と名前の小さなタイル（要見直し・保留・進行中のタスク） */
   function smallTile({
+    tileId,
     id,
     iconName,
     title,
@@ -242,6 +243,9 @@ namespace MindmapPreview {
     link,
     open,
   }: {
+    /** タイルの項目 ID（画面設計） */
+    tileId: string;
+    /** タイルの見出しの要素の id */
     id: string;
     iconName: IconName;
     title: string;
@@ -251,7 +255,7 @@ namespace MindmapPreview {
   }): HTMLElement {
     return h({
       tag: "section",
-      attrs: { class: "tile t-small", "aria-labelledby": id },
+      attrs: { id: tileId, class: "tile t-small", "aria-labelledby": id },
       children: [
         tileHead(id, iconName, title, items.length > 0 ? showAll(items.length, link) : null),
         h({ tag: "p", attrs: { class: "num" }, children: [items.length] }),
@@ -346,7 +350,7 @@ namespace MindmapPreview {
     });
     return h({
       tag: "section",
-      attrs: { class: "tile t-cat", "aria-labelledby": "h-cat" },
+      attrs: { id: "tile-progress", class: "tile t-cat", "aria-labelledby": "h-cat" },
       children: [
         h({ tag: "h2", attrs: { id: "h-cat" }, children: [icon("layers"), "カテゴリー別の進み具合"] }),
         h({
@@ -410,6 +414,7 @@ namespace MindmapPreview {
             nextTile(props),
             goalTile(props),
             smallTile({
+              tileId: "tile-review",
               id: "h-review",
               iconName: "alert",
               title: "要見直し",
@@ -418,6 +423,7 @@ namespace MindmapPreview {
               open: on.open,
             }),
             smallTile({
+              tileId: "tile-hold",
               id: "h-hold",
               iconName: "pause",
               title: "保留",
@@ -426,6 +432,7 @@ namespace MindmapPreview {
               open: on.open,
             }),
             smallTile({
+              tileId: "tile-running",
               id: "h-run",
               iconName: "play",
               title: "進行中のタスク",

@@ -227,6 +227,14 @@ button.n-item.off { color: var(--text-3); border-style: dashed; }
 .opt dt { color: var(--text-3); }
 .opt dd { margin: 0; }
 .md { font-size: var(--fs-small); line-height: 1.8; }
+/* 本文の見出し: 段を下げて差し込んでも、元の段の大きさと余白で見せる */
+.md [data-md-level] { font-weight: 700; }
+.md [data-md-level="1"] { font-size: 2em; margin: .67em 0; }
+.md [data-md-level="2"] { font-size: 1.5em; margin: .83em 0; }
+.md [data-md-level="3"] { font-size: 1.17em; margin: 1em 0; }
+.md [data-md-level="4"] { font-size: 1em; margin: 1.33em 0; }
+.md [data-md-level="5"] { font-size: .83em; margin: 1.67em 0; }
+.md [data-md-level="6"] { font-size: .67em; margin: 2.33em 0; }
 .md table { border-collapse: collapse; margin: 8px 0; width: 100%; }
 .md th, .md td { border: 1px solid var(--border-soft); padding: 4px 8px; text-align: left; vertical-align: top; }
 .md th { background: var(--surface-2); }

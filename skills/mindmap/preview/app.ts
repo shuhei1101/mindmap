@@ -35,6 +35,11 @@ namespace MindmapPreview {
     return key === "overview" ? "概要" : KIND_LABEL[key];
   }
 
+  /** 画面の名前（つながりは種類のタブに無いので、ここで持つ） */
+  function screenName(tab: Tab): string {
+    return tab === "graph" ? "つながり" : tabLabel(tab);
+  }
+
   /** `mindmap-data` の要素の中身を `JSON.parse` して返す */
   export function readEmbeddedData(doc: Document): MindmapData {
     try {
@@ -219,7 +224,13 @@ namespace MindmapPreview {
     /** 本文の領域を描く。画面（タブ・表示形式）が変わったときだけ描き直す */
     const renderMain = (): void => {
       main.classList.toggle("map-view", route.tab === "decisions" && route.view === "map");
-      main.replaceChildren(screenElement());
+      // 概要は題名が h1。それ以外の画面は、画面の名前を見えない h1 にする（見出しで画面を探せるように）
+      main.replaceChildren(
+        ...(route.tab === "overview"
+          ? []
+          : [h({ tag: "h1", attrs: { class: "sr-only" }, children: [screenName(route.tab)] })]),
+        screenElement(),
+      );
       // 開いたときの絞り込みは一度だけ使い、描き直しで使い回さない
       route = { ...route, filters: {} };
       if (route.tab === "graph") selectGraphItem(route.id);

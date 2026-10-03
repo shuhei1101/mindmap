@@ -100,7 +100,7 @@ var MindmapPreview;
         });
         const tile = MindmapPreview.h({
             tag: "section",
-            attrs: { class: "tile t-next", "aria-labelledby": "h-next" },
+            attrs: { id: "tile-next", class: "tile t-next", "aria-labelledby": "h-next" },
             children: [
                 tileHead("h-next", "next", "次に検討する項目", candidates.length > 0
                     ? showAll(candidates.length, () => on.navigate(tableRoute("decisions", { status: ["未決定"], ready: ["はい"] })))
@@ -153,7 +153,7 @@ var MindmapPreview;
         });
         return MindmapPreview.h({
             tag: "section",
-            attrs: { class: "tile t-goal", "aria-labelledby": "h-goal" },
+            attrs: { id: "tile-goal", class: "tile t-goal", "aria-labelledby": "h-goal" },
             children: [
                 MindmapPreview.h({ tag: "h2", attrs: { id: "h-goal" }, children: [MindmapPreview.icon("flag"), "ゴールまで"] }),
                 MindmapPreview.h({
@@ -199,10 +199,10 @@ var MindmapPreview;
         });
     }
     /** 件数と名前の小さなタイル（要見直し・保留・進行中のタスク） */
-    function smallTile({ id, iconName, title, items, link, open, }) {
+    function smallTile({ tileId, id, iconName, title, items, link, open, }) {
         return MindmapPreview.h({
             tag: "section",
-            attrs: { class: "tile t-small", "aria-labelledby": id },
+            attrs: { id: tileId, class: "tile t-small", "aria-labelledby": id },
             children: [
                 tileHead(id, iconName, title, items.length > 0 ? showAll(items.length, link) : null),
                 MindmapPreview.h({ tag: "p", attrs: { class: "num" }, children: [items.length] }),
@@ -285,7 +285,7 @@ var MindmapPreview;
         });
         return MindmapPreview.h({
             tag: "section",
-            attrs: { class: "tile t-cat", "aria-labelledby": "h-cat" },
+            attrs: { id: "tile-progress", class: "tile t-cat", "aria-labelledby": "h-cat" },
             children: [
                 MindmapPreview.h({ tag: "h2", attrs: { id: "h-cat" }, children: [MindmapPreview.icon("layers"), "カテゴリー別の進み具合"] }),
                 MindmapPreview.h({
@@ -348,6 +348,7 @@ var MindmapPreview;
                         nextTile(props),
                         goalTile(props),
                         smallTile({
+                            tileId: "tile-review",
                             id: "h-review",
                             iconName: "alert",
                             title: "要見直し",
@@ -356,6 +357,7 @@ var MindmapPreview;
                             open: on.open,
                         }),
                         smallTile({
+                            tileId: "tile-hold",
                             id: "h-hold",
                             iconName: "pause",
                             title: "保留",
@@ -364,6 +366,7 @@ var MindmapPreview;
                             open: on.open,
                         }),
                         smallTile({
+                            tileId: "tile-running",
                             id: "h-run",
                             iconName: "play",
                             title: "進行中のタスク",
