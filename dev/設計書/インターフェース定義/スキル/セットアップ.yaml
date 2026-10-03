@@ -1,7 +1,7 @@
 title: "セットアップ"
 entry:
   kind: operation
-  value: '`/mindmap:setup [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `skills/setup/SKILL.md`）'
+  value: '`/mindstella:setup [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `plugins/mindstella/skills/setup/SKILL.md`）'
 flows:
   - name: 正常系
     summary: スキル setup のファイルが制約どおりの形で、プラグインの検証を通る
@@ -29,7 +29,7 @@ flows:
       - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
       - '`claude plugin validate` が終了コード 0'
     test: test_normal
-lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindmap:session` へ渡すスキルの入口と、そのファイルの形。
+lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindstella:session` へ渡すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/単一ユースケース/話し合いのセットアップ#
 side_effects: スクリプトの `init`・`build` でワークスペースを作る（新しいワークスペースのときだけ）。スキルが自分でファイルを書くことはない
@@ -62,7 +62,7 @@ constraints:
   - item: 編集の後
     constraint: ワークスペースを作ったら最後に `build` を流す（hooks は使わない）
   - item: 引き継ぎ
-    constraint: 最後に `/mindmap:session {ワークスペースのフォルダ}` で続けるよう案内する
+    constraint: 最後に `/mindstella:session {ワークスペースのフォルダ}` で続けるよう案内する
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:

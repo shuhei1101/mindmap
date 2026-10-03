@@ -1,7 +1,7 @@
 title: "プレビューを開く"
 entry:
   kind: screen
-  value: '`build` が書き出した `preview.html`（雛形は `skills/mindmap/preview/`）。`export` が書き出した配る書き出しも同じ画面を開く'
+  value: '`build` が書き出した `preview.html`（雛形は `plugins/mindstella/skills/mindmap/preview/`）。`export` が書き出した配る書き出しも同じ画面を開く'
   api: なし（記録は `mindmap-data` の要素から読む。通信は描画のライブラリと文字の読み込みだけ）
 flows:
   - name: 正常系

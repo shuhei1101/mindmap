@@ -2,6 +2,6 @@ summary: "利用者が呼ぶスキルの入口（引数・許可・ファイル�
 docs_index: true
 items:
   - page: セットアップ.yaml
-    summary: '/mindmap:setup: 依存を確かめ、ワークスペースを作るか状況を示して session へ渡す'
+    summary: '/mindstella:setup: 依存を確かめ、ワークスペースを作るか状況を示して session へ渡す'
   - page: 話し合いの進行.yaml
-    summary: '/mindmap:session: 取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定を回す'
+    summary: '/mindstella:session: 取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定を回す'
