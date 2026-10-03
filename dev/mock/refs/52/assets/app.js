@@ -58,6 +58,8 @@
     return !!e && (e.it.status === undefined || RESOLVED.has(e.it.status));
   };
   const isReady = (it) => (it.depends_on || []).every(isResolved);
+  // 着手可否: 未決定だけが前提の揃い方で 2 値を持ち、未決定以外は「なし」
+  const readyOf = (it) => it.status !== "未決定" ? "なし" : isReady(it) ? "着手可能" : "前提待ち";
   // 後続の件数: 依存をたどった先の、終わっていない項目の数
   const followers = (id) => {
     const seen = new Set();
@@ -181,7 +183,7 @@
   const COLUMNS = {
     decisions: [
       C.id, C.title(), C.status,
-      { key: "ready", label: "着手可否", pri: 2, nowrap: true, filter: true, order: ["着手可能", "前提待ち"], get: (r) => (isReady(r) ? "着手可能" : "前提待ち"), cell: (r) => (isReady(r) ? "着手可能" : '<span class="muted">前提待ち</span>') },
+      { key: "ready", label: "着手可否", pri: 2, nowrap: true, filter: true, order: ["着手可能", "前提待ち", "なし"], get: (r) => readyOf(r), cell: (r) => (readyOf(r) === "着手可能" ? "着手可能" : `<span class="muted">${readyOf(r)}</span>`) },
       { key: "answer", label: "決定内容", pri: 3, min: "16em", get: (r) => r.answer || "", cell: (r) => (r.answer ? esc(r.answer) : '<span class="muted">—</span>') },
       C.target, C.category, C.stage,
       { key: "weight", label: "影響度", pri: 3, nowrap: true, filter: true, order: IMPACT, get: (r) => r.weight, cell: (r) => impact(r.weight) },
