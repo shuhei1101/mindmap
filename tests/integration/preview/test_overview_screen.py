@@ -82,7 +82,7 @@ def test_next_tile_when_nothing_to_discuss(
 
 
 def test_goal_tile(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
-    """ゴールのフェーズまでの決定済みの数・フェーズごとの棒・成果物のチェックリストを出す（正常系）。"""
+    """ゴールのフェーズまでの決定済みの数・フェーズごとの棒・納品物のチェックリストを出す（正常系）。"""
     # 準備
     path = write_sample_preview()
     # 実行
@@ -95,10 +95,10 @@ def test_goal_tile(write_sample_preview: WriteSamplePreview, open_preview: OpenP
     assert stages == ["目的1/1", "要件0/2"]
     assert page.locator("#tile-goal .checklist li.done").count() == 1
     assert "1/1" in page.inner_text("#tile-goal .deliv-head")
-    # 成果物を押すと、その資料の詳細パネルを開く
+    # 納品物を押すと、その資料の詳細パネルを開く
     page.click("#tile-goal .checklist button")
     page.wait_for_selector("aside.panel.open")
-    assert page.inner_text("aside.panel .d-title") == "A-1の題\n成果物"
+    assert page.inner_text("aside.panel .d-title") == "A-1の題\n納品物"
 
 
 def test_small_tiles(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
