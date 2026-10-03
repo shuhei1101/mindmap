@@ -1,0 +1,53 @@
+$ python3 -m pytest tests/integration
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/design-preview-narrow-board-columns
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 183 items
+
+tests/integration/plugin/test_marketplace_registration.py .              [  0%]
+tests/integration/plugin/test_plugin_loading.py .                        [  1%]
+tests/integration/preview/test_decisions_screen.py ................      [  9%]
+tests/integration/preview/test_detail_full_screen.py .....               [ 12%]
+tests/integration/preview/test_detail_panel_screen.py ...........        [ 18%]
+tests/integration/preview/test_diagram_viewer_screen.py ....             [ 20%]
+tests/integration/preview/test_docs_screen.py ............               [ 27%]
+tests/integration/preview/test_graph_screen.py ......                    [ 30%]
+tests/integration/preview/test_open_preview.py ......                    [ 33%]
+tests/integration/preview/test_overview_screen.py ..........             [ 39%]
+tests/integration/preview/test_records_screen.py .                       [ 39%]
+tests/integration/preview/test_search_screen.py .....                    [ 42%]
+tests/integration/preview/test_tasks_screen.py .....                     [ 45%]
+tests/integration/preview/test_topbar_screen.py ...                      [ 46%]
+tests/integration/storybook/test_table_stories.py ........               [ 51%]
+tests/integration/storybook/test_topbar_stories.py .....                 [ 54%]
+tests/integration/storybook/test_view_switch_stories.py ..               [ 55%]
+tests/integration/preview/test_records_screen.py .                       [ 55%]
+tests/integration/storybook/test_view_switch_stories.py .                [ 56%]
+tests/integration/preview/test_records_screen.py .                       [ 56%]
+tests/integration/storybook/test_view_switch_stories.py .                [ 57%]
+tests/integration/preview/test_records_screen.py .                       [ 57%]
+tests/integration/scripts/test_add.py .....                              [ 60%]
+tests/integration/scripts/test_adopt.py ......                           [ 63%]
+tests/integration/scripts/test_attrs.py ..                               [ 65%]
+tests/integration/scripts/test_build.py ....                             [ 67%]
+tests/integration/scripts/test_check.py ....                             [ 69%]
+tests/integration/scripts/test_check_env.py ..s.s                        [ 72%]
+tests/integration/scripts/test_clear_release.py ....                     [ 74%]
+tests/integration/scripts/test_export.py ......                          [ 77%]
+tests/integration/scripts/test_find.py ...                               [ 79%]
+tests/integration/scripts/test_goal.py ...                               [ 80%]
+tests/integration/scripts/test_impact.py ...                             [ 82%]
+tests/integration/scripts/test_init.py ....                              [ 84%]
+tests/integration/scripts/test_launch.py ......                          [ 87%]
+tests/integration/scripts/test_migrate.py ......                         [ 91%]
+tests/integration/scripts/test_next.py ...                               [ 92%]
+tests/integration/scripts/test_show.py ...                               [ 94%]
+tests/integration/scripts/test_status.py ..                              [ 95%]
+tests/integration/scripts/test_update.py ......                          [ 98%]
+tests/integration/skill/test_session.py .                                [ 99%]
+tests/integration/skill/test_setup.py .                                  [100%]
+
+================== 181 passed, 2 skipped in 374.53s (0:06:14) ==================
