@@ -1,6 +1,6 @@
 # 実行したコマンド
 python3 -m pytest tests/unit -v
-# コミット: 8678df285a23c09e320fc98b68dac669632b7e34
+# コミット: f6110783dc7779e27adef77f4f93ce67ab752037
 
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
@@ -8,7 +8,7 @@ rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-preview-standalo
 configfile: pytest.ini
 plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
 asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
-collecting ... collected 302 items
+collecting ... collected 303 items
 
 tests/unit/preview/test_app.py::test_read_embedded_data[chromium] PASSED [  0%]
 tests/unit/preview/test_app.py::test_read_embedded_data_when_missing[chromium] PASSED [  0%]
@@ -106,9 +106,10 @@ tests/unit/scripts/test_builder.py::test_template_matches_vendor_libraries PASSE
 tests/unit/scripts/test_builder.py::test_fetch_url PASSED                [ 31%]
 tests/unit/scripts/test_builder.py::test_fetch_url_when_unreachable[closed_port] PASSED [ 31%]
 tests/unit/scripts/test_builder.py::test_fetch_url_when_unreachable[not_found] PASSED [ 31%]
+tests/unit/scripts/test_builder.py::test_fetch_url_when_unreachable[no_content] PASSED [ 32%]
 tests/unit/scripts/test_builder.py::test_assemble_standalone_template PASSED [ 32%]
 tests/unit/scripts/test_builder.py::test_assemble_standalone_template_when_integrity_mismatch PASSED [ 32%]
-tests/unit/scripts/test_builder.py::test_assemble_standalone_template_when_tag_inside[dist_closing] PASSED [ 32%]
+tests/unit/scripts/test_builder.py::test_assemble_standalone_template_when_tag_inside[dist_closing] PASSED [ 33%]
 tests/unit/scripts/test_builder.py::test_assemble_standalone_template_when_tag_inside[dist_opening] PASSED [ 33%]
 tests/unit/scripts/test_builder.py::test_assemble_standalone_template_when_tag_inside[license] PASSED [ 33%]
 tests/unit/scripts/test_builder.py::test_assemble_standalone_template_when_tag_inside[bundled] PASSED [ 33%]
@@ -163,52 +164,52 @@ tests/unit/scripts/test_commands.py::test_run_add PASSED                 [ 49%]
 tests/unit/scripts/test_commands.py::test_run_add_when_no_body PASSED    [ 50%]
 tests/unit/scripts/test_commands.py::test_run_update PASSED              [ 50%]
 tests/unit/scripts/test_commands.py::test_run_adopt PASSED               [ 50%]
-tests/unit/scripts/test_commands.py::test_run_adopt_when_not_decision PASSED [ 50%]
+tests/unit/scripts/test_commands.py::test_run_adopt_when_not_decision PASSED [ 51%]
 tests/unit/scripts/test_commands.py::test_run_check PASSED               [ 51%]
 tests/unit/scripts/test_commands.py::test_run_check_when_problems PASSED [ 51%]
-tests/unit/scripts/test_commands.py::test_run_check_when_legacy_format PASSED [ 51%]
+tests/unit/scripts/test_commands.py::test_run_check_when_legacy_format PASSED [ 52%]
 tests/unit/scripts/test_commands.py::test_run_build PASSED               [ 52%]
 tests/unit/scripts/test_commands.py::test_run_impact PASSED              [ 52%]
-tests/unit/scripts/test_commands.py::test_run_next PASSED                [ 52%]
+tests/unit/scripts/test_commands.py::test_run_next PASSED                [ 53%]
 tests/unit/scripts/test_commands.py::test_run_status PASSED              [ 53%]
 tests/unit/scripts/test_commands.py::test_run_find PASSED                [ 53%]
-tests/unit/scripts/test_commands.py::test_run_show PASSED                [ 53%]
+tests/unit/scripts/test_commands.py::test_run_show PASSED                [ 54%]
 tests/unit/scripts/test_commands.py::test_run_attrs PASSED               [ 54%]
 tests/unit/scripts/test_commands.py::test_run_goal PASSED                [ 54%]
-tests/unit/scripts/test_commands.py::test_run_migrate PASSED             [ 54%]
+tests/unit/scripts/test_commands.py::test_run_migrate PASSED             [ 55%]
 tests/unit/scripts/test_commands.py::test_run_export PASSED              [ 55%]
 tests/unit/scripts/test_commands.py::test_run_export_when_out_is_preview PASSED [ 55%]
-tests/unit/scripts/test_graph.py::test_build_reverse_edges PASSED        [ 55%]
+tests/unit/scripts/test_graph.py::test_build_reverse_edges PASSED        [ 56%]
 tests/unit/scripts/test_graph.py::test_trace_impact PASSED               [ 56%]
 tests/unit/scripts/test_graph.py::test_trace_impact_when_cycle PASSED    [ 56%]
-tests/unit/scripts/test_graph.py::test_is_settled[decision_settled] PASSED [ 56%]
+tests/unit/scripts/test_graph.py::test_is_settled[decision_settled] PASSED [ 57%]
 tests/unit/scripts/test_graph.py::test_is_settled[decision_on_hold] PASSED [ 57%]
 tests/unit/scripts/test_graph.py::test_is_settled[task_cancelled] PASSED [ 57%]
-tests/unit/scripts/test_graph.py::test_is_settled[task_in_progress] PASSED [ 57%]
+tests/unit/scripts/test_graph.py::test_is_settled[task_in_progress] PASSED [ 58%]
 tests/unit/scripts/test_graph.py::test_is_settled_when_missing PASSED    [ 58%]
 tests/unit/scripts/test_graph.py::test_count_followers PASSED            [ 58%]
-tests/unit/scripts/test_graph.py::test_list_next_candidates PASSED       [ 58%]
+tests/unit/scripts/test_graph.py::test_list_next_candidates PASSED       [ 59%]
 tests/unit/scripts/test_graph.py::test_list_next_candidates_when_phase_unknown PASSED [ 59%]
 tests/unit/scripts/test_graph.py::test_list_next_candidates_when_limited PASSED [ 59%]
-tests/unit/scripts/test_graph.py::test_summarize_status PASSED           [ 59%]
+tests/unit/scripts/test_graph.py::test_summarize_status PASSED           [ 60%]
 tests/unit/scripts/test_graph.py::test_judge_goal PASSED                 [ 60%]
 tests/unit/scripts/test_graph.py::test_judge_goal_when_remaining PASSED  [ 60%]
-tests/unit/scripts/test_graph.py::test_judge_goal_when_goal_phase_unknown PASSED [ 60%]
+tests/unit/scripts/test_graph.py::test_judge_goal_when_goal_phase_unknown PASSED [ 61%]
 tests/unit/scripts/test_kinds.py::test_kind_of_id_when_known_prefix[decision] PASSED [ 61%]
 tests/unit/scripts/test_kinds.py::test_kind_of_id_when_known_prefix[log] PASSED [ 61%]
-tests/unit/scripts/test_kinds.py::test_kind_of_id_when_unknown[unknown_prefix] PASSED [ 61%]
+tests/unit/scripts/test_kinds.py::test_kind_of_id_when_unknown[unknown_prefix] PASSED [ 62%]
 tests/unit/scripts/test_kinds.py::test_kind_of_id_when_unknown[no_number] PASSED [ 62%]
 tests/unit/scripts/test_kinds.py::test_kind_of_id_when_unknown[not_digits] PASSED [ 62%]
-tests/unit/scripts/test_kinds.py::test_kind_of_id_when_unknown[lowercase] PASSED [ 62%]
+tests/unit/scripts/test_kinds.py::test_kind_of_id_when_unknown[lowercase] PASSED [ 63%]
 tests/unit/scripts/test_launcher.py::test_current_python_ready PASSED    [ 63%]
 tests/unit/scripts/test_launcher.py::test_current_python_ready_when_not_ready[old_python] PASSED [ 63%]
-tests/unit/scripts/test_launcher.py::test_current_python_ready_when_not_ready[missing_package] PASSED [ 63%]
+tests/unit/scripts/test_launcher.py::test_current_python_ready_when_not_ready[missing_package] PASSED [ 64%]
 tests/unit/scripts/test_launcher.py::test_current_python_ready_when_not_ready[old_package] PASSED [ 64%]
 tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_ready[ready] PASSED [ 64%]
-tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_ready[check_env] PASSED [ 64%]
+tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_ready[check_env] PASSED [ 65%]
 tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_ready[empty_argv] PASSED [ 65%]
 tests/unit/scripts/test_launcher.py::test_relaunch_if_needed PASSED      [ 65%]
-tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_same_interpreter PASSED [ 65%]
+tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_same_interpreter PASSED [ 66%]
 tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_venv_missing PASSED [ 66%]
 tests/unit/scripts/test_launcher.py::test_relaunch_if_needed_when_already_venv PASSED [ 66%]
 tests/unit/scripts/test_launcher.py::test_format_relaunch_error[venv_not_found] PASSED [ 66%]
@@ -313,4 +314,4 @@ tests/unit/scripts/test_store.py::test_save_change_when_item_value_fixed PASSED 
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[copy_from_target] PASSED [ 99%]
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[from_umask] PASSED [100%]
 
-============================= 302 passed in 54.68s =============================
+============================= 303 passed in 44.21s =============================
