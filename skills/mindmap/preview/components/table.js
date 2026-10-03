@@ -154,7 +154,14 @@ var MindmapPreview;
                 children: ["すべて外す"],
             }));
         }
-        const pop = MindmapPreview.h({ tag: "div", attrs: { class: "pop", popover: "auto" } });
+        // ポップオーバーの題の要素の id（`aria-labelledby` が指す。置かれる画面の見出しの深さを知らないので、見出しの要素にはしない）
+        const popTitleId = `pop-title-${kind}`;
+        const pop = MindmapPreview.h({
+            tag: "div",
+            attrs: { class: "pop", popover: "auto", "aria-labelledby": popTitleId },
+        });
+        /** ポップオーバーの題 */
+        const popoverTitle = (text) => MindmapPreview.h({ tag: "p", attrs: { class: "pop-title", id: popTitleId }, children: [text] });
         // 開いたポップオーバーの元のボタンを探す
         const anchorOf = (spec) => root.querySelector(spec.type === "columns" ? '[data-popover="columns"]' : `[data-popover="filter:${spec.key}"]`);
         /** ポップオーバーの中身を作って開く */
@@ -194,7 +201,7 @@ var MindmapPreview;
             return MindmapPreview.h({
                 tag: "div",
                 children: [
-                    MindmapPreview.h({ tag: "h3", children: ["表示する列"] }),
+                    popoverTitle("表示する列"),
                     ...boxes,
                     MindmapPreview.h({
                         tag: "div",
@@ -246,7 +253,7 @@ var MindmapPreview;
             }));
             return MindmapPreview.h({
                 tag: "div",
-                children: [MindmapPreview.h({ tag: "h3", children: [`${column?.label ?? key}で絞り込み`] }), ...options],
+                children: [popoverTitle(`${column?.label ?? key}で絞り込み`), ...options],
             });
         };
         // ポップオーバーを閉じたら、使う側にも知らせる（描き直しで消えたときは知らせない）
