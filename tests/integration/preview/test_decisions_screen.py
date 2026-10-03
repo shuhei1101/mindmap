@@ -14,6 +14,22 @@ NARROW_HEIGHT = 700
 # 状態の順（ボードの列の並び）
 DECISION_STATUSES = ["要見直し", "未決定", "保留", "未整理", "決定済み", "対象外", "取り下げ"]
 
+# サンプルの記録が持つ状態（状態の印の並びの順）
+SAMPLE_STATUSES = ["要見直し", "未決定", "保留", "決定済み"]
+
+# まとめて切り替える箱（状態の印の並びの右端）と、その読み上げの名前
+TOGGLE_ALL_BOX = ".legend .legend-all-check input"
+TOGGLE_ALL_LABEL = "すべての状態を表示"
+
+# 全ての状態を隠したときに出す文
+NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません"
+
+# 状態の印のチェックボックス（まとめて切り替える箱を除く）
+STATUS_INPUTS = ".legend label:not(.legend-all-check) input"
+
+# マップに検討事項が 1 件も描かれていない
+NO_MAP_ITEM_SCRIPT = "!document.querySelector('#decision-map .map-node.n-item')"
+
 
 def _view_pressed(page: Page, view: str) -> str | None:
     """表示形式の切り替えで、その形式のボタンが押されているかを返す。"""
@@ -189,3 +205,170 @@ def test_table_ready_column(
     page.click('table.grid button.row-open[data-id="D-4"]')
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-4の題"
+
+
+def _toggle_all_box(page: Page) -> dict[str, object]:
+    """まとめて切り替える箱の、チェック・横棒・読み上げの名前・並びの右端かを返す。"""
+    return page.eval_on_selector(
+        TOGGLE_ALL_BOX,
+        """box => ({
+            checked: box.checked,
+            indeterminate: box.indeterminate,
+            ariaLabel: box.getAttribute('aria-label'),
+            last: box.closest('.legend').lastElementChild === box.closest('label'),
+        })""",
+    )
+
+
+def _status_checks(page: Page) -> list[bool]:
+    """状態の印のチェックを、並びの順に返す。"""
+    return page.eval_on_selector_all(STATUS_INPUTS, "inputs => inputs.map(i => i.checked)")
+
+
+def _border_style(page: Page, selector: str) -> str:
+    """要素の枠線の種類（実線・点線・なし）を返す。"""
+    return page.evaluate(
+        "selector => getComputedStyle(document.querySelector(selector)).borderTopStyle", selector
+    )
+
+
+def test_map_toggle_all_box(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """状態の印の右端の箱を押すと、全ての状態を出し・隠し、各状態の印のチェックをそろえる（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=map")
+    page.wait_for_selector("#decision-map .map-node.n-item")
+    initial = _toggle_all_box(page)
+    initial_checks = _status_checks(page)
+    # 実行・検証（横棒のとき: 全ての状態を表示）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_selector('#decision-map button[data-node="D-1"]')
+    after_all_shown = _toggle_all_box(page)
+    all_shown_checks = _status_checks(page)
+    # 実行・検証（チェックのとき: 全て隠す）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_function(NO_MAP_ITEM_SCRIPT)
+    after_all_hidden = _toggle_all_box(page)
+    all_hidden_checks = _status_checks(page)
+    # 実行・検証（空のとき: 全ての状態を表示）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_selector('#decision-map button[data-node="D-1"]')
+    after_all_shown_again = _toggle_all_box(page)
+    # 実行・検証（1 つだけ隠すと横棒）
+    page.click('.legend label:has(input[value="保留"])')
+    page.wait_for_function("!document.querySelector('#decision-map [data-node=\"D-4\"]')")
+    after_one_hidden = _toggle_all_box(page)
+    # 検証
+    assert initial == {
+        "checked": False,
+        "indeterminate": True,
+        "ariaLabel": TOGGLE_ALL_LABEL,
+        "last": True,
+    }
+    assert initial_checks == [True, True, True, False]
+    assert (after_all_shown["checked"], after_all_shown["indeterminate"]) == (True, False)
+    assert all_shown_checks == [True, True, True, True]
+    assert (after_all_hidden["checked"], after_all_hidden["indeterminate"]) == (False, False)
+    assert all_hidden_checks == [False, False, False, False]
+    assert (after_all_shown_again["checked"], after_all_shown_again["indeterminate"]) == (True, False)
+    assert (after_one_hidden["checked"], after_one_hidden["indeterminate"]) == (False, True)
+
+
+def test_map_no_shown_status_note(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """全ての状態を隠すと、幅 901px 以上はマップの枠の中央、900px 以下は字下げの一覧に空の旨を出す（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=map")
+    page.wait_for_selector("#decision-map .map-node.n-item")
+    shown_before = page.is_visible("p.map-empty")
+    # 実行（全ての状態を隠す。横棒 → 全て表示 → 全て隠す）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_selector('#decision-map button[data-node="D-1"]')
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_function(NO_MAP_ITEM_SCRIPT)
+    # 検証（広い幅: マップの枠の中央）
+    assert shown_before is False
+    assert page.inner_text("p.map-empty") == NO_SHOWN_STATUS_TEXT
+    assert not page.is_visible("nav.map-outline")
+    # 実行（狭い幅へ）
+    page.set_viewport_size({"width": NARROW_WIDTH, "height": NARROW_HEIGHT})
+    page.wait_for_selector("nav.map-outline", state="visible")
+    # 検証（狭い幅: 字下げの一覧）
+    assert page.inner_text("nav.map-outline p.empty") == NO_SHOWN_STATUS_TEXT
+    assert not page.is_visible("p.map-empty")
+    # 実行（1 つ戻すと、空の旨を消す）
+    page.click('.legend label:has(input[value="未決定"])')
+    page.wait_for_selector('nav.map-outline button[data-id="D-2"]')
+    # 検証
+    assert page.locator("nav.map-outline p.empty").count() == 0
+
+
+def test_map_status_chip_border(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """非表示の状態の印は枠を点線にして、表示中と見分ける。まとめて切り替える箱の枠は点線にしない（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=map")
+    page.wait_for_selector("#decision-map .map-node.n-item")
+    # 実行
+    shown_style = _border_style(page, '.legend label:has(input[value="未決定"])')
+    hidden_style = _border_style(page, '.legend label:has(input[value="決定済み"])')
+    box_label_style = _border_style(page, ".legend .legend-all-check")
+    # 検証
+    assert shown_style == "solid"
+    assert hidden_style == "dashed"
+    assert box_label_style == "none"
+
+
+def test_map_toggle_all_box_appearance(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """箱は背景を透過にして枠と記号だけで描き、枠は印の枠と同じ色、横棒も枠線で描き、チェックは箱の中心に置く（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=map")
+    page.wait_for_selector("#decision-map .map-node.n-item")
+    # 実行（初期は横棒）
+    box = page.evaluate(
+        """box => {
+            const input = document.querySelector(box);
+            const chip = document.querySelector('.legend label:has(input[value="未決定"])');
+            const bar = getComputedStyle(input, '::after');
+            return {
+                background: getComputedStyle(input).backgroundColor,
+                borderWidth: getComputedStyle(input).borderTopWidth,
+                borderColor: getComputedStyle(input).borderTopColor,
+                chipBorderColor: getComputedStyle(chip).borderTopColor,
+                barStyle: bar.borderTopStyle,
+                barWidth: bar.borderTopWidth,
+            };
+        }""",
+        TOGGLE_ALL_BOX,
+    )
+    # 実行（押して全部表示にし、チェックの記号の位置を測る）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_selector('#decision-map button[data-node="D-1"]')
+    check = page.evaluate(
+        """box => {
+            const input = document.querySelector(box);
+            const mark = getComputedStyle(input, '::after');
+            return {
+                left: parseFloat(mark.left) - input.clientWidth / 2,
+                top: parseFloat(mark.top) - input.clientHeight / 2,
+            };
+        }""",
+        TOGGLE_ALL_BOX,
+    )
+    # 検証
+    assert box["background"] == "rgba(0, 0, 0, 0)"
+    assert box["borderWidth"] == "1px"
+    assert box["borderColor"] == box["chipBorderColor"]
+    # 横棒は枠線で描く（線の太さは画面の倍率で丸められるため、線があることだけを確かめる）
+    assert box["barStyle"] == "solid"
+    assert box["barWidth"] != "0px"
+    assert check == {"left": 0, "top": 0}
