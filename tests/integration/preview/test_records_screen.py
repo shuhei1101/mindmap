@@ -3,7 +3,14 @@
 from __future__ import annotations
 
 import pytest
-from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WritePreview,
+    WriteSamplePreview,
+)
+from workspace_fixtures import MakeItem
 
 
 @pytest.mark.parametrize(
@@ -46,3 +53,20 @@ def test_table(
     page.click(f'table.grid tr[data-id="{row_id}"] button.row-open')
     page.wait_for_selector("aside.panel.open")
     assert row_id in page.inner_text("aside.panel .panel-kind")
+
+
+def test_notes_id_button_size(
+    write_preview: WritePreview, open_preview: OpenPreview, make_item: MakeItem
+) -> None:
+    """メモの表の「関連」の列の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_preview(
+        make_item("D-1", status="決定済み"),
+        make_item("N-1", related=["D-1"]),
+    )
+    page = open_preview(path, "#tab=notes")
+    # 実行
+    sizes = page.eval_on_selector_all("table.grid td button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX

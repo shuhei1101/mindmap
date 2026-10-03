@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 from playwright.sync_api import Page
-from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WriteSamplePreview,
+)
 
 # 図を描き終わるまで待つ上限ミリ秒
 DIAGRAM_TIMEOUT_MS = 20_000
@@ -113,3 +118,18 @@ def test_diagram_zoom_switches_content(
     page.click('dialog.full button[data-act="diagram-close"]')
     page.wait_for_selector("dialog.full .panel-body", state="visible")
     assert page.locator("dialog.full .full-viewer").count() == 0
+
+
+def test_id_button_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """関係する項目（前提・後続の項目・関連タスク）の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table&id=D-2&full=1")
+    page.wait_for_selector("dialog.full[open]")
+    # 実行
+    sizes = page.eval_on_selector_all("dialog.full .d-sec button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX

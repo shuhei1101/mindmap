@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 from playwright.sync_api import Page
-from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WritePreview,
+    WriteSamplePreview,
+)
 from workspace_fixtures import MakeItem
 
 # マップを字下げの一覧に切り替える幅の境（これ以下）
@@ -406,3 +412,17 @@ def test_map_toggle_all_box_appearance(
     assert box["barWidth"] != "0px"
     assert abs(check["dx"]) <= CHECK_CENTER_TOLERANCE
     assert abs(check["dy"]) <= CHECK_CENTER_TOLERANCE
+
+
+def test_table_id_button_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """表の「前提」の列の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table")
+    # 実行
+    sizes = page.eval_on_selector_all("table.grid td button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX

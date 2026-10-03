@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
-from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WriteSamplePreview,
+)
 
 
 def test_board(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
@@ -58,3 +63,17 @@ def test_table(write_sample_preview: WriteSamplePreview, open_preview: OpenPrevi
     # 検証
     page.wait_for_selector("aside.panel.open")
     assert page.inner_text("aside.panel .d-title") == "D-2の題"
+
+
+def test_table_id_button_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """表の「進める検討事項」の列の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=tasks&view=table")
+    # 実行
+    sizes = page.eval_on_selector_all("table.grid td button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX
