@@ -162,7 +162,7 @@ response:
     description: 『プレビューの書き出し』の埋め込みのデータと同じ形で、`<script type="application/json" id="mindmap-data">` の中身に入る
   - name: ライセンスの表示
     type: str
-    description: '`<script type="text/plain" id="mindmap-licenses">` の中身。中に持つライブラリごとに、名前・版・著作権の表示・ライセンスの名前と本文を並べる。elkjs は EPL-2.0 を選んだ旨と、ソースコードの入手先（リポジトリと版のタグの URL）を持つ。画面には出さない'
+    description: '`<script type="text/plain" id="mindmap-licenses">` の中身。中に持つライブラリごとに、名前・版・著作権の表示・ライセンスの名前と本文を並べる。elkjs は EPL-2.0 を選んだ旨と、ソースコードの入手先（リポジトリと版のタグの URL）を持つ。DOMPurify は Apache-2.0 を選ぶ。mermaid は、配布ファイルが中に束ねた依存ごとの名前・版とライセンスの本文も続ける。画面には出さない'
 exceptions:
   - name: なし（正常終了）
     condition: 書き出せた
@@ -188,7 +188,7 @@ constraints:
   - item: 雛形
     constraint: '`build` と同じ `template.html` と画面の CSS・JavaScript を使う。雛形の描画のライブラリの `<script src>` と文字の `<link>` を外し、同梱したライブラリの配布ファイルの中身を画面の JavaScript より前の `<script>` の中身として差し込む'
   - item: 埋め込みの安全
-    constraint: 『プレビューの書き出し』と同じ。差し込むライブラリ・ライセンスの本文が `</script`・`</style` を含むときは、同梱の誤りとして書き出さずにエラーにする
+    constraint: 『プレビューの書き出し』と同じ。差し込むライブラリ・ライセンスの本文が `</script`・`<script` を含むときは、同梱の誤りとして書き出さずにエラーにする（大文字・小文字を区別しない）
   - item: 読み込むファイル
     constraint: 書き出した HTML は外のファイルも URL も指さない（`script`・`link`・`img` に `src`・`href` を持たない）。文字は端末の文字で描く
   - item: 見るだけ

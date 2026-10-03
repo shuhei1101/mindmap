@@ -9,7 +9,8 @@ directory: |-
       vendor/
         marked.umd.js・purify.min.js・elk.bundled.js・mermaid.min.js  配る書き出しに差し込む描画のライブラリの配布ファイル（package.json と同じ版の npm のパッケージから改変せずに写す）
         licenses/
-          marked.txt・DOMPurify.txt・elkjs.txt・mermaid.txt  各パッケージの LICENSE の写（DOMPurify は LICENSE と LICENSE-MPL をつなぐ）
+          marked.txt・DOMPurify.txt・elkjs.txt・mermaid.txt  各パッケージの LICENSE の写（DOMPurify は Apache-2.0 の LICENSE）
+          mermaid-bundled.txt  mermaid.min.js が中に束ねた依存（mermaid の本番の依存を node_modules から辿った全てのパッケージ）ごとの、名前・版と LICENSE の写。mermaid の版を上げたら集め直す
     scripts/
       builder.py      雛形の組み立て・データの収集・埋め込み・書き出しと、配る書き出し
   ```
@@ -61,7 +62,7 @@ constants:
     container: skills/mindmap/scripts/builder.py
     usecase: 配る書き出し
     summary: 配る書き出しに差し込む順の `VendorLibrary`。並びは `template.html` の `<script src>` と同じ（marked・DOMPurify・elkjs・mermaid）
-    value: (VendorLibrary(name="marked", version="18.0.14", script="vendor/marked.umd.js", notice="Copyright (c) 2018+, MarkedJS / Copyright (c) 2011-2018, Christopher Jeffrey", license="MIT", license_file="vendor/licenses/marked.txt", source="https://github.com/markedjs/marked/tree/v18.0.14"), VendorLibrary(name="DOMPurify", version="3.4.16", script="vendor/purify.min.js", notice="(c) Cure53 and other contributors", license="MPL-2.0 OR Apache-2.0", license_file="vendor/licenses/DOMPurify.txt", source="https://github.com/cure53/DOMPurify/tree/3.4.16"), VendorLibrary(name="elkjs", version="0.12.0", script="vendor/elk.bundled.js", notice="(c) Kiel University and others", license="EPL-2.0", license_file="vendor/licenses/elkjs.txt", source="https://github.com/kieler/elkjs/tree/0.12.0"), VendorLibrary(name="mermaid", version="12.1.0", script="vendor/mermaid.min.js", notice="Copyright (c) 2014 - 2022 Knut Sveidqvist", license="MIT", license_file="vendor/licenses/mermaid.txt", source="https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0"))
+    value: (VendorLibrary(name="marked", version="18.0.14", script="vendor/marked.umd.js", notice="Copyright (c) 2018+, MarkedJS / Copyright (c) 2011-2018, Christopher Jeffrey", license="MIT", license_file="vendor/licenses/marked.txt", bundled_license_file=None, source="https://github.com/markedjs/marked/tree/v18.0.14"), VendorLibrary(name="DOMPurify", version="3.4.16", script="vendor/purify.min.js", notice="(c) Cure53 and other contributors", license="Apache-2.0", license_file="vendor/licenses/DOMPurify.txt", bundled_license_file=None, source="https://github.com/cure53/DOMPurify/tree/3.4.16"), VendorLibrary(name="elkjs", version="0.12.0", script="vendor/elk.bundled.js", notice="(c) Kiel University and others", license="EPL-2.0", license_file="vendor/licenses/elkjs.txt", bundled_license_file=None, source="https://github.com/kieler/elkjs/tree/0.12.0"), VendorLibrary(name="mermaid", version="12.1.0", script="vendor/mermaid.min.js", notice="Copyright (c) 2014 - 2022 Knut Sveidqvist", license="MIT", license_file="vendor/licenses/mermaid.txt", bundled_license_file="vendor/licenses/mermaid-bundled.txt", source="https://github.com/mermaid-js/mermaid/tree/mermaid@12.1.0"))
   - name: EXTERNAL_START
     title: 外の読み込みの始まり
     container: skills/mindmap/scripts/builder.py
@@ -498,13 +499,13 @@ functions:
       1. 雛形を組み立てる（`assemble_template`）
       2. `EXTERNAL_START`・`EXTERNAL_END` がそれぞれちょうど 1 つあり、`EXTERNAL_START` が前にあることを確かめる
          - そうでない場合、`ValueError` を送る（同梱の雛形の誤り）
-      3. 各ライブラリの `script` と `license_file` を UTF-8 で読み、`</script` を含まないことを確かめる（大文字・小文字を区別しない）
+      3. 各ライブラリの `script`・`license_file`・`bundled_license_file`（あれば）を UTF-8 で読み、`</script` と `<script` を含まないことを確かめる（大文字・小文字を区別しない。`<!--` の後の `<script` は script 要素を閉じさせなくする）
          - 含む場合、`ValueError` を送る（同梱の誤り）
       4. `EXTERNAL_START` から `EXTERNAL_END` まで（両方を含む）を、ライブラリごとの `<script>{配布ファイルの中身}</script>` を並びの順につないだものと、`LICENSES_OPEN` + ライセンスの表示（`format_licenses`）+ `</script>` に置き換える
     exceptions:
       - name: ValueError
-        condition: 外の読み込みの印が 1 つずつでないか順が逆、または配布ファイル・ライセンスの本文が `</script` を含む
-        message: 雛形に外の読み込みの印が 1 つずつありません / 同梱の {ファイル名} が </script を含みます
+        condition: 外の読み込みの印が 1 つずつでないか順が逆、または配布ファイル・ライセンスの本文が `</script` か `<script` を含む
+        message: 雛形に外の読み込みの印が 1 つずつありません / 同梱の {ファイル名} が {タグ} を含みます
     unit_tests:
       - name: test_assemble_standalone_template
         case: 正常
@@ -515,7 +516,7 @@ functions:
       - name: test_assemble_standalone_template_when_closing_tag
         case: 異常
         summary: 閉じタグを含む同梱のファイルは差し込まない
-        condition: '`parametrize`: 配布ファイルに `</SCRIPT>` / ライセンスの本文に `</script>`'
+        condition: '`parametrize`: 配布ファイルに `</SCRIPT>` / 配布ファイルに `<!--<script` / ライセンスの本文に `</script>` / 束ねた依存のライセンスに `<Script`'
         mock: なし
         expected: '`ValueError`（`match` にそのファイル名）'
         exception: 印が 1 つずつでないか閉じタグを含む
@@ -531,7 +532,7 @@ functions:
         summary: 同梱のライブラリが雛形の CDN の版と一致し、ファイルがある
         condition: 本物の `PREVIEW_DIR` と `VENDOR_LIBRARIES`
         mock: なし
-        expected: '`template.html` の jsDelivr の URL の `{パッケージ}@{版}` が、`VENDOR_LIBRARIES` の並びと版に一致する。各 `script` と `license_file` がある'
+        expected: '`template.html` の jsDelivr の URL の `{パッケージ}@{版}` が、`VENDOR_LIBRARIES` の並びと版に一致する。各 `script`・`license_file`・`bundled_license_file`（`None` 以外）がある'
   - name: format_licenses
     title: ライセンスの表示の組み立て
     kind: 関数
@@ -554,15 +555,15 @@ functions:
       type: str
       description: ライブラリごとの塊を空行で区切った文字列
     process: |-
-      1. ライブラリごとに、`{name} {version}`・`notice`・`License: {license}`・`Source: {source}` の行と、`license_file` の本文をこの順に並べる
+      1. ライブラリごとに、`{name} {version}`・`notice`・`License: {license}`・`Source: {source}` の行と、`license_file` の本文と、`bundled_license_file` があればその本文（見出しの行 `{name} が中に持つライブラリ` の後）をこの順に並べる
       2. 塊を並びの順に空行でつなぐ
     unit_tests:
       - name: test_format_licenses
         case: 正常
         summary: ライブラリごとに名前・版・著作権・ライセンス・入手先・本文を並べる
-        condition: '2 つの `VendorLibrary`（ライセンスの本文は `本文 A`・`本文 B`）'
+        condition: '2 つの `VendorLibrary`（ライセンスの本文は `本文 A`・`本文 B`。2 つ目だけ `bundled_license_file` を持ち、中身は `束ねた本文`）'
         mock: なし
-        expected: 1 つ目の名前と版・`notice`・`License:`・`Source:`・`本文 A` がこの順にあり、その後に 2 つ目の塊が空行を挟んで続く
+        expected: 1 つ目の名前と版・`notice`・`License:`・`Source:`・`本文 A` がこの順にあり、その後に 2 つ目の塊が空行を挟んで続き、2 つ目の `本文 B` の後に見出しの行と `束ねた本文` がある。1 つ目の塊には見出しの行が無い
 test_files:
   - tests/unit/scripts/test_builder.py
 data_models:
@@ -597,6 +598,10 @@ data_models:
         type: str
         description: ライセンスの本文の、雛形のフォルダからの相対パス
         example: vendor/licenses/elkjs.txt
+      - name: bundled_license_file
+        type: str | None
+        description: 配布ファイルが中に束ねた依存の、名前・版とライセンスの本文を並べたファイルの、雛形のフォルダからの相対パス。束ねた依存が無いライブラリは `None`
+        example: vendor/licenses/mermaid-bundled.txt
       - name: source
         type: str
         description: ソースコードの入手先（リポジトリの、その版のタグの URL）
