@@ -75,7 +75,7 @@ def test_map_status_legend(
     page = open_preview(path, "#tab=decisions&view=map")
     page.wait_for_selector("#decision-map .map-node.n-item")
     initial = page.eval_on_selector_all(
-        ".legend input", "inputs => inputs.map(i => [i.value, i.checked])"
+        ".legend label:not(.legend-all-check) input", "inputs => inputs.map(i => [i.value, i.checked])"
     )
     # 実行
     page.click('.legend label:has(input[value="決定済み"])')

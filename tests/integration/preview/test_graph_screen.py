@@ -36,7 +36,7 @@ def test_kind_toggles(write_sample_preview: WriteSamplePreview, open_preview: Op
     page = open_preview(path, "#tab=graph")
     page.wait_for_function(HAS_DRAWING_SCRIPT)
     toggles = page.eval_on_selector_all(
-        ".legend label", "labels => labels.map(l => [l.querySelector('input').value, l.querySelector('.n').textContent, l.querySelector('input').checked])"
+        ".legend label:not(.legend-all-check)", "labels => labels.map(l => [l.querySelector('input').value, l.querySelector('.n').textContent, l.querySelector('input').checked])"
     )
     # 実行
     page.click('.legend label:has(input[value="logs"])')
@@ -55,7 +55,7 @@ def test_kind_toggles(write_sample_preview: WriteSamplePreview, open_preview: Op
     # 非表示の種類は、見た目も変わる（種類の色の点が薄くなる）
     assert page.evaluate(
         "getComputedStyle(document.querySelector('.legend label:has(input[value=\"logs\"]) .kdot')).opacity"
-    ) == "0.25"
+    ) == "0.35"
     assert page.is_checked('.legend input[value="decisions"]') is True
 
 
