@@ -1,5 +1,5 @@
 title: "スクリプト / ゴール判定"
-lead: ゴールのフェーズまでの検討事項とゴールの成果物から、ゴールに届いたかを判定する `goal` の処理。判定は依存と影響（`graph.py`）、出力の形はコマンドの処理（`commands.py`）に置く。
+lead: ゴールのフェーズまでの検討事項とゴールの納品物から、ゴールに届いたかを判定する `goal` の処理。判定は依存と影響（`graph.py`）、出力の形はコマンドの処理（`commands.py`）に置く。
 directory: |-
   ```
   skills/mindmap/scripts/
@@ -12,7 +12,7 @@ data_models:
     container: skills/mindmap/scripts/graph.py
     usecase: ゴール判定
     role: DTO
-    summary: ゴールに届いたかと、残りの検討事項・成果物
+    summary: ゴールに届いたかと、残りの検討事項・納品物
     description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。インターフェース定義『ゴール判定』のレスポンスの形。'
     properties:
       - name: reached
@@ -29,7 +29,7 @@ data_models:
         description: 決着していない検討事項（`id`・`title`・`phase`・`status`）
       - name: remaining_deliverables
         type: list[dict[str, str | None]]
-        description: 揃っていない成果物（`title`・`doc`）
+        description: 揃っていない納品物（`title`・`doc`）
 functions:
   - name: judge_goal
     title: ゴールの判定
@@ -37,7 +37,7 @@ functions:
     container: skills/mindmap/scripts/graph.py
     usecase: ゴール判定
     scope: public
-    summary: ゴールのフェーズまでの検討事項が決着し、ゴールの成果物が揃ったかを判定する
+    summary: ゴールのフェーズまでの検討事項が決着し、ゴールの納品物が揃ったかを判定する
     args:
       - name: workspace
         type: Workspace
@@ -63,7 +63,7 @@ functions:
         expected: '`reached` 真、`phases` が `[目的, 要件]`、残りがどちらも空'
       - name: test_judge_goal_when_remaining
         case: 正常
-        summary: 決着していない検討事項と揃っていない成果物を集める
+        summary: 決着していない検討事項と揃っていない納品物を集める
         condition: 'D-2 `要件`・`要見直し`／D-1 `目的`・`未決定`、`deliverables` が「要件定義書」（`doc: A-1`、`status: 確認中`）・「用語集」（`doc` なし）・「図」（`doc: A-9`、資料が無い）'
         mock: なし
         expected: '`reached` 偽、`remaining_decisions` が D-1・D-2 の順（`phase`・`status` つき）、`remaining_deliverables` が 3 件とも並びのまま'

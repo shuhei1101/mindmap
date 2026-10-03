@@ -18,6 +18,7 @@ from query import SearchFilter, list_attrs, search_items, show_item
 from store import (
     BodyWrite,
     Change,
+    clear_release,
     create_workspace,
     find_item,
     is_legacy_problem,
@@ -109,6 +110,11 @@ def run_init(root: Path, stdin_text: str) -> Result:
     settings = read_json_object(stdin_text)
     files = create_workspace(root, settings)
     return {"workspace": str(root.resolve()), "files": files}, 0
+
+
+def run_clear_release(root: Path) -> Result:
+    """`release/` の中身を消し、消したものを返す。"""
+    return {"removed": clear_release(root)}, 0
 
 
 def run_add(root: Path, kind: Kind, stdin_text: str, now: NowFn = now_utc) -> Result:

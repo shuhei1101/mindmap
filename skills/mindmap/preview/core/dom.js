@@ -149,9 +149,9 @@ var MindmapPreview;
         return fragment;
     }
     MindmapPreview.tagList = tagList;
-    /** 成果物の印（箱のアイコンと文字） */
+    /** 納品物の印（箱のアイコンと文字） */
     function deliverableBadge() {
-        return h({ tag: "span", attrs: { class: "deliv-badge" }, children: [icon("box"), "成果物"] });
+        return h({ tag: "span", attrs: { class: "deliv-badge" }, children: [icon("box"), "納品物"] });
     }
     MindmapPreview.deliverableBadge = deliverableBadge;
     /** 「該当なし」など、空のときの 1 行 */

@@ -1,4 +1,4 @@
-"""資料を読む（成果物を先頭にしたカードとボードで見て、絞り込み、カードから本文を開く）の E2E テスト。"""
+"""資料を読む（納品物を先頭にしたカードとボードで見て、絞り込み、カードから本文を開く）の E2E テスト。"""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def test_normal(
     make_item: MakeItem,
     valid_settings: dict[str, Any],
 ) -> None:
-    """成果物を先頭にカードを並べ、ボードで状態の列に分けて本文を読み、カードに戻して種類で絞り込み、本文を見出しと表で読む（正常系）。"""
+    """納品物を先頭にカードを並べ、ボードで状態の列に分けて本文を読み、カードに戻して種類で絞り込み、本文を見出しと表で読む（正常系）。"""
     # 準備
     path = build_preview(
         make_item("A-1", deliverable=False, kind="メモ書き", status="下書き"),
@@ -59,7 +59,7 @@ def test_normal(
     page.wait_for_function(
         "document.querySelector('aside.panel .md')?.textContent.includes('メモ書きの本文')"
     )
-    # 表示形式をカードに戻すと、成果物を先頭にしたカードが出る
+    # 表示形式をカードに戻すと、納品物を先頭にしたカードが出る
     page.click('.segment button[data-view="cards"]')
     page.wait_for_selector(".doc-grid")
     assert page.eval_on_selector_all(".doc-card", "cards => cards.map(c => c.dataset.id)") == [

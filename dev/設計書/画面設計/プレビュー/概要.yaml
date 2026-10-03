@@ -33,19 +33,19 @@ elements:
     io: 表示
     source: プレビューを開く.mindmap-data.derived.goal
     visible_when: 常時
-  - name: 成果物のチェックリスト
+  - name: 納品物のチェックリスト
     kind: list
     position: ゴールまで
-    description: ゴールの成果物。`derived.goal.remaining_deliverables` に無い成果物をチェック済みにする（判定は `goal` と同じ。`doc` の資料の状態が完成）。押すとその資料の詳細パネルを開く
+    description: ゴールの納品物。`derived.goal.remaining_deliverables` に無い納品物をチェック済みにする（判定は `goal` と同じ。`doc` の資料の状態が完成）。押すとその資料の詳細パネルを開く
     io: 表示
     source: プレビューを開く.mindmap-data.settings.goal.deliverables・プレビューを開く.mindmap-data.derived.goal.remaining_deliverables
-    visible_when: 成果物が 5 件以下のとき全て、5 件を超えたら先頭 5 件
-  - name: 成果物のすべて表示
+    visible_when: 納品物が 5 件以下のとき全て、5 件を超えたら先頭 5 件
+  - name: 納品物のすべて表示
     kind: link
     position: ゴールまで
-    description: 資料を成果物で絞ってカードで開く（`#tab=docs&f.deliverable=成果物`）
+    description: 資料を納品物で絞ってカードで開く（`#tab=docs&f.deliverable=納品物`）
     label: すべて表示（{件数} 件）
-    visible_when: 成果物が 5 件を超える
+    visible_when: 納品物が 5 件を超える
   - name: 要見直し
     id: tile-review
     kind: list

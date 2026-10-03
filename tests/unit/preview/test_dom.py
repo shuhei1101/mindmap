@@ -268,7 +268,7 @@ def test_tag_list(
 
 
 def test_deliverable_badge(preview_page: Page, load_preview_scripts: LoadPreviewScripts) -> None:
-    """箱のアイコンと「成果物」を持つ印を返す（正常系）。"""
+    """箱のアイコンと「納品物」を持つ印を返す（正常系）。"""
     # 準備
     load_preview_scripts()
     # 実行
@@ -284,7 +284,7 @@ def test_deliverable_badge(preview_page: Page, load_preview_scripts: LoadPreview
         }"""
     )
     # 検証
-    assert result == {"tag": "SPAN", "className": "deliv-badge", "icons": 1, "text": "成果物"}
+    assert result == {"tag": "SPAN", "className": "deliv-badge", "icons": 1, "text": "納品物"}
 
 
 def test_empty_note(preview_page: Page, load_preview_scripts: LoadPreviewScripts) -> None:

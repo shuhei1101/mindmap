@@ -135,7 +135,7 @@ def make_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> MakeWorksp
         """項目のある種類の YAML だけを置いたワークスペースを作り、そのフォルダを返す。"""
         root = tmp_path / name
         (root / "docs").mkdir(parents=True)
-        (root / "handoff").mkdir()
+        (root / "release").mkdir()
         write_yaml(root / "mindmap.yaml", valid_settings if settings is None else settings)
         # 項目のある種類だけ、渡した並びのまま 1 つの YAML にまとめる
         for prefix, file_name in KIND_FILES.items():

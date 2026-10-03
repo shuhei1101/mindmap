@@ -10,7 +10,7 @@ from .fixture_types import LoadPreviewScripts, MakeItem
 def test_order_docs(
     preview_page: Page, load_preview_scripts: LoadPreviewScripts, make_item: MakeItem
 ) -> None:
-    """成果物が先（正常系）。"""
+    """納品物が先（正常系）。"""
     # 準備
     docs = [
         make_item("A-1", deliverable=False),

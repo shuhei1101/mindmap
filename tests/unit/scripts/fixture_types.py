@@ -15,6 +15,7 @@ from workspace_fixtures import (
 
 __all__ = [
     "FailingReplace",
+    "FailingUnlink",
     "FailingWriteText",
     "MakeItem",
     "MakeLegacyItem",
@@ -24,4 +25,5 @@ __all__ = [
 ]
 
 type FailingReplace = Callable[[str], Callable[[Any, Any], None]]
+type FailingUnlink = Callable[[str], None]
 type FailingWriteText = Callable[[str], None]
