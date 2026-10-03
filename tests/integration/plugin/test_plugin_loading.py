@@ -1,4 +1,4 @@
-"""プラグインの読み込み（plugins/mindstella/ の .claude-plugin/plugin.json と skills/）の結合テスト。"""
+"""プラグインの読み込み（plugins/mindstella/ の .claude-plugin/plugin.json・skills/・LICENSE）の結合テスト。"""
 
 from __future__ import annotations
 
