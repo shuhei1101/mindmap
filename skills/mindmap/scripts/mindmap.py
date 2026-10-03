@@ -72,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """16 のコマンドと引数を持つ ArgumentParser を作る。"""
+    """コマンドと引数を持つ ArgumentParser を作る。"""
     parser = argparse.ArgumentParser(
         prog="mindmap.py", description="ワークスペースの YAML を読み書き・検索・点検する"
     )
