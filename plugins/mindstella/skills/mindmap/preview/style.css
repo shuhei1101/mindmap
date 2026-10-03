@@ -63,7 +63,8 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 .impact { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); color: var(--text-2); white-space: nowrap; }
 .impact i { display: inline-block; width: 4px; height: 10px; background: var(--border); border-radius: 1px; }
 .impact i.on { background: var(--text-2); }
-.idlink { padding: 0 4px; margin: 0 4px 2px 0; border: 1px solid var(--border-soft); border-radius: 3px; background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: 11.5px; }
+/* 項目の ID のボタン: 見えている枠そのものを縦横 --target-min 以上にし、ID の文字を縦横の中央に置く */
+.idlink { padding: 0 4px; margin: 0 4px 2px 0; border: 1px solid var(--border-soft); border-radius: 3px; background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: 11.5px; display: inline-flex; align-items: center; justify-content: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); line-height: 1; vertical-align: middle; }
 .idlink:hover { border-color: var(--accent); color: var(--accent); }
 .muted { color: var(--text-3); }
 .empty { color: var(--text-3); margin: 6px 0; }
