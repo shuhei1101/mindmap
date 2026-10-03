@@ -27,6 +27,7 @@ flows:
       - 本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
       - 本文が指す `steps/` のファイルが全てある
       - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
+      - 本文が `migrate --workspace {フォルダ} --plan` を呼ぶ
       - '`claude plugin validate` が終了コード 0'
     test: test_normal
 lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindstella:session` へ渡すスキルの入口と、そのファイルの形。

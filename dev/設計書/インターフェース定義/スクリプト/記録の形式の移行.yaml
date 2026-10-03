@@ -29,6 +29,7 @@ flows:
       - '`steps` が全て `version: v0.3.0` で、`destructive` が全て `false`'
       - '`needs_values` に `mindmap.yaml` の `summary` がある'
       - ワークスペースの全てのファイルの中身と更新日時が呼ぶ前と同じ
+    test: test_normal_when_plan
   - name: 正常系（手順を当てる）
     summary: 写しを取って v0.3.0 の手順を当て、版のファイルは書かない
     setup:
@@ -54,6 +55,7 @@ flows:
       - '`needs_values` に `mindmap.yaml` の `summary` がある'
       - '`backup.kind` が `copy` で、`backup.ref` のフォルダに呼ぶ前の `docs.yaml` がある'
       - '`mindstella-version.ini` が無いまま'
+    test: test_normal_when_apply
   - name: 正常系（写しを git のコミットで取る）
     summary: git の作業ツリーの中のワークスペースでは、ワークスペースのパスだけをコミットして写しにする
     setup:
@@ -79,6 +81,7 @@ flows:
       - '`backup.kind` が `git`、`backup.ref` が新しいコミットの ID'
       - そのコミットがワークスペースのパスのファイルだけを持ち、`other.txt`・`staged.txt` を持たない
       - '`staged.txt` がステージされたままである'
+    test: test_normal_when_backup_git
   - name: 正常系（値を入れる）
     summary: --set で値が要るキーに値を入れる
     setup:
@@ -102,6 +105,7 @@ flows:
       - 終了コード 0
       - '`mindmap.yaml` の `summary` が渡した題名'
       - '`mindstella-version.ini` が無いまま'
+    test: test_normal_when_set
   - name: 正常系（版を書く）
     summary: 点検に合うワークスペースで --record が版のファイルを書く
     setup:
@@ -125,6 +129,7 @@ flows:
       - 終了コード 0
       - '`recorded` が `v0.3.0`'
       - '`mindstella-version.ini` の 1 行目が `v0.3.0`'
+    test: test_normal_when_record
   - name: 正常系（版が同じ）
     summary: 今の版のワークスペースでは並べる手順が無い
     setup:
@@ -147,6 +152,7 @@ flows:
     expected:
       - 終了コード 0
       - '`relation` が `same`、`steps` と `needs_values` が空'
+    test: test_normal_when_same
   - name: 正常系（版が新しいワークスペースを並べる）
     summary: --plan はエラーにせず newer を返す
     setup:
@@ -169,6 +175,7 @@ flows:
     expected:
       - 終了コード 0
       - '`workspace_version` が `v99.0.0`、`relation` が `newer`、`steps` が空'
+    test: test_normal_when_plan_newer
   - name: 正常系（ignore されたワークスペースは複製で写しを取る）
     summary: git の作業ツリーの中でも、ignore されたファイルを持つワークスペースは隣のフォルダへ複製して写しにする
     setup:
@@ -195,6 +202,7 @@ flows:
       - 終了コード 0
       - '`backup.kind` が `copy` で、`backup.ref` のフォルダに呼ぶ前の `docs.yaml` がある'
       - 作業ツリーにコミットが増えていない
+    test: test_normal_when_backup_ignored
   - name: 正常系（既に今の形のワークスペースに当てる）
     summary: v0.2.0 で作った形（版のファイルが無く、資料が status、題名がある）に当てても何も変えずに成功する
     setup:
@@ -219,6 +227,7 @@ flows:
       - 終了コード 0
       - '`needs_values` が空'
       - '`mindmap.yaml`・`docs.yaml` の中身と更新日時が呼ぶ前と同じ'
+    test: test_normal_when_already_current
   - name: 異常系（版が新しい・WorkspaceNewerError）
     summary: 版が新しいワークスペースには手順を当てない
     setup:
@@ -241,6 +250,7 @@ flows:
       - 終了コード 1
       - 標準エラーに `v99.0.0` と `v0.3.0` がある
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、写しのフォルダが作られていない
+    test: test_error_when_newer
   - name: 異常系（手順が失敗する・StepFailedError）
     summary: 手順が読めないファイルに当たると写しから戻して終わる
     setup:
@@ -266,6 +276,7 @@ flows:
       - '標準エラーが `エラー: v0.3.0 の手順 ` で始まり、`docs.yaml` がある'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
       - '`mindstella-version.ini` が無いまま'
+    test: test_error_when_step_fails
   - name: 異常系（点検に合わない・SchemaMismatchError）
     summary: 値が要るキーが無いままでは版を書かない
     setup:
@@ -289,6 +300,7 @@ flows:
       - 終了コード 1
       - '標準エラーに `mindmap.yaml: ` で始まり `summary` を含む行がある'
       - '`mindstella-version.ini` が無いまま'
+    test: test_error_when_schema_mismatch
   - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
     summary: mindmap.yaml が無いフォルダを指すと何も書かずに終わる
     setup:
@@ -311,6 +323,7 @@ flows:
       - 終了コード 1
       - 標準エラーにフォルダのパスがある
       - フォルダにファイルが増えていない
+    test: test_error_when_workspace_not_found
 lead: ワークスペースの版とプラグインの版を比べ、間の版の移し替えの手順（`migrations/{版}/steps.yaml`）を版の順に並べる・当てる。値が要るキーを入れ、点検に合えば版のファイルを書き換える。
 idempotent: false
 side_effects: '`--plan` は何も書かない。手順を当てるときは、当てる前に写しを取り（ワークスペースが git の作業ツリーの中ならワークスペースのパスだけをコミット、そうでなければフォルダの隣へ複製）、手順が書き換えるファイルを書く。失敗したら写しから戻す。`--set` は指したファイルの 1 キーを、`--record` は `mindstella-version.ini` を書く'

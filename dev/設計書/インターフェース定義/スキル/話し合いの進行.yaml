@@ -27,6 +27,7 @@ flows:
       - '`steps/` に 6 つのステップのファイルがあり、SKILL.md のステップの表がその全てを指す'
       - SKILL.md と `steps/` の本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
       - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
+      - 本文が `migrate --workspace {フォルダ} --plan` を呼ぶ
       - '`skills/mindmap/` に SKILL.md が無く、`references/`・`playbooks/` がある'
       - '`playbooks/` に システム開発・調査・資料作り・壁打ち の 4 つのガイドがあり、どれも制約の 6 つの節をその並びで持ち、`## ゴールの候補` に `（既定）` の行が 1 つだけある'
       - スキルの全ての Markdown に特定の開発基盤の名前が無い

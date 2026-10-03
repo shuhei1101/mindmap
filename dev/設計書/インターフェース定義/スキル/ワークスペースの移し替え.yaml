@@ -29,6 +29,7 @@ flows:
       - 本文のコマンドの一覧に `migrate --plan`・`migrate`・`migrate --set`・`migrate --record`・`check`・`build` がある
       - スキルの Markdown に特定の開発基盤の名前が無い
       - '`claude plugin validate` が終了コード 0'
+    test: test_normal
 lead: ワークスペースの版とプラグインの版を比べ、版ごとの手順を当てて今の版へ移し替えるスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/単一ユースケース/ワークスペースの移し替え#
@@ -64,3 +65,4 @@ constraints:
     constraint: 特定の開発基盤の名前を出さない（アーキテクチャ図の制約）
 refs:
   - dev/設計書/インターフェース定義/スクリプト/記録の形式の移行#
+test_file: tests/integration/skill/test_upgrade.py
