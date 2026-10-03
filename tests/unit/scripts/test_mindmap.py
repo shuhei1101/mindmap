@@ -86,7 +86,7 @@ def test_main_when_mindmap_error(tmp_path: Path, capsys: pytest.CaptureFixture[s
 def test_main_when_legacy_format(
     make_legacy_workspace: MakeLegacyWorkspace, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """前の版の形式のスキーマ違反には migrate を案内する（正常系）。"""
+    """前の版の形式のスキーマ違反には /mindstella:upgrade を案内する（正常系）。"""
     # 準備
     root = make_legacy_workspace(legacy_docs={"A-1": True})
     # 実行
@@ -95,23 +95,9 @@ def test_main_when_legacy_format(
     captured = capsys.readouterr()
     assert exit_code == 1
     assert (
-        captured.err.splitlines()[-1] == "ヒント: 前の版の形式の記録は migrate で今の形式に移せます"
+        captured.err.splitlines()[-1]
+        == "ヒント: 前の版の形式の記録は /mindstella:upgrade で今の形式に移せます"
     )
-
-
-def test_main_when_summary_required(
-    make_legacy_workspace: MakeLegacyWorkspace, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """題名が要る migrate は終了コード 2（正常系）。"""
-    # 準備
-    root = make_legacy_workspace(without_summary=True)
-    # 実行
-    exit_code = mindmap.main(["migrate", "--workspace", str(root)])
-    # 検証
-    captured = capsys.readouterr()
-    assert exit_code == 2
-    assert "--summary" in captured.err
-    assert captured.out == ""
 
 
 def test_main_when_out_invalid(
@@ -143,25 +129,55 @@ def test_main(make_workspace: MakeWorkspace, capsys: pytest.CaptureFixture[str])
 
 
 def test_build_parser() -> None:
-    """繰り返しの --attr と位置引数を解釈する（正常系）。"""
+    """繰り返しの --attr・--set と位置引数を解釈する（正常系）。"""
     # 準備
+    # 版のモジュールを読めない間も、このファイルの他のテストの収集を止めないよう、使うときに読む
+    from versions import Version
+
     parser = mindmap.build_parser()
     # 実行
     find_args = parser.parse_args(["find", "--workspace", "w", "--attr", "a=1", "--attr", "b"])
     adopt_args = parser.parse_args(["adopt", "D-1", "B", "--workspace", "w"])
+    set_args = parser.parse_args(
+        [
+            "migrate",
+            "--workspace",
+            "w",
+            "--set",
+            "mindmap.yaml:summary=題名",
+            "--set",
+            "docs.yaml:x=1",
+        ]
+    )
+    plan_args = parser.parse_args(
+        ["migrate", "--workspace", "w", "--plan", "--from", "v0.2.0", "--to", "v0.3.0"]
+    )
     # 検証
     assert find_args.attr == ["a=1", "b"]
     assert adopt_args.id == "D-1"
     assert adopt_args.key == "B"
+    assert set_args.set == [("mindmap.yaml", "summary", "題名"), ("docs.yaml", "x", "1")]
+    assert plan_args.plan is True
+    assert vars(plan_args)["from"] == Version(0, 2, 0)
+    assert plan_args.to == Version(0, 3, 0)
 
 
-def test_build_parser_when_limit_invalid() -> None:
-    """1 より小さい --limit は引数の誤りにする（異常系）。"""
+@pytest.mark.parametrize(
+    "argv",
+    [
+        pytest.param(["next", "--workspace", "w", "--limit", "0"], id="limit_zero"),
+        pytest.param(["migrate", "--workspace", "w", "--to", "0.3"], id="version_invalid"),
+        pytest.param(["migrate", "--workspace", "w", "--set", "summary"], id="set_invalid"),
+        pytest.param(["migrate", "--workspace", "w", "--plan", "--record"], id="plan_and_record"),
+    ],
+)
+def test_build_parser_when_limit_invalid(argv: list[str]) -> None:
+    """引数の誤りは終了コード 2 にする（異常系）。"""
     # 準備
     parser = mindmap.build_parser()
     # 実行・検証
     with pytest.raises(SystemExit) as exc_info:
-        parser.parse_args(["next", "--workspace", "w", "--limit", "0"])
+        parser.parse_args(argv)
     assert exc_info.value.code == 2
 
 

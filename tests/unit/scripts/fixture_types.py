@@ -21,9 +21,11 @@ __all__ = [
     "MakeLegacyItem",
     "MakeLegacyWorkspace",
     "MakeWorkspace",
+    "PatchPluginVersion",
     "SnapshotTree",
 ]
 
+type PatchPluginVersion = Callable[[str], None]
 type FailingReplace = Callable[[str], Callable[[Any, Any], None]]
 type FailingUnlink = Callable[[str], None]
 type FailingWriteText = Callable[[str], None]
