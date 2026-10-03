@@ -2,6 +2,7 @@ title: 表
 lead: 項目の一覧の表。列の見出しで並べ替え・絞り込み・ピン留めでき、表の上に絞り込みの条件のチップを並べる。表示する列の選択と初期設定に戻すのポップオーバーを持つ。
 implementation: skills/mindmap/preview/components/table.ts#MindmapPreview.table
 story: Preview/Table
+test_file: tests/integration/storybook/test_table_stories.py
 args:
   - name: kind
     type: 列挙
