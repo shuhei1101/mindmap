@@ -138,7 +138,7 @@ flows:
         IF-->>ユーザー: 読めなかったライブラリの知らせと本文の原文
       ```
     expected:
-      - マップの箇所に、読めなかったライブラリ elkjs の名前が `role="alert"` で出る
+      - 'マップの箇所に、「読み込めなかったライブラリ: elkjs」が `role="alert"` で出る'
       - 詳細パネルの本文の箇所に、marked・DOMPurify・mermaid の名前と本文の原文が出る
       - 表示形式を表に切り替えると、D-3 の行がある
     test: test_error_when_library_unavailable
