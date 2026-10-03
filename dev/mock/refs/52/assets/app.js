@@ -1207,8 +1207,9 @@
   prefs.theme ??= matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   const applyTheme = () => {
     document.documentElement.dataset.theme = prefs.theme;
-    // ラベル「ダーク」は変えず、オン / オフだけを aria-checked で持つ
-    document.getElementById("theme-btn").setAttribute("aria-checked", prefs.theme === "dark");
+    const b = document.getElementById("theme-btn");
+    b.innerHTML = icon(prefs.theme === "dark" ? "sun" : "moon");
+    b.setAttribute("aria-label", prefs.theme === "dark" ? "ライトに切り替え" : "ダークに切り替え");
   };
 
   // ===== 操作 =====

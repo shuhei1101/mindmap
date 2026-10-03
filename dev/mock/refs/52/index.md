@@ -18,5 +18,4 @@
 
 | 部品 | 中身 |
 | --- | --- |
-| [theme-switch](../../components/theme-switch/index.html) | ライト / ダークの切り替え（案 A: スイッチ・案 B: チェックボックス、狭い幅） |
 | [fullscreen-button](../../components/fullscreen-button/index.html) | 全画面表示のボタン（押していない・押されている） |
