@@ -235,13 +235,6 @@ classes:
     summary: ファイルの書き込み・置き換えで `OSError` が起きた。後始末をした後に送る。メッセージに置き換え先のパスと `OSError` の理由（`raise ... from` で元の例外をつなぐ）
     kind: クラス
     inherits: MindmapError
-  - name: SummaryRequiredError
-    title: 題名が要る
-    container: plugins/mindstella/skills/mindmap/scripts/errors.py
-    usecase: 記録の形式の移行
-    summary: 題名を持たないワークスペースを `--summary` 無しで移そうとした。入口は終了コード 2（引数の誤り）にする
-    kind: クラス
-    inherits: MindmapError
   - name: OutPathError
     title: 書き出す先の誤り
     container: plugins/mindstella/skills/mindmap/scripts/errors.py
@@ -254,6 +247,27 @@ classes:
     container: plugins/mindstella/skills/mindmap/scripts/errors.py
     usecase: 配る書き出し
     summary: 配る書き出しで jsDelivr から配布ファイルかライセンスの本文を取れないか、配布ファイルが雛形の `integrity` と合わない。メッセージに URL と理由（`raise ... from` で元の例外をつなぐ）
+    kind: クラス
+    inherits: MindmapError
+  - name: WorkspaceNewerError
+    title: ワークスペースの版が新しい
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
+    usecase: 記録の形式の移行
+    summary: ワークスペースの版がプラグインの版より新しいのに手順を当てる・版を書く。メッセージに 2 つの版とプラグインの更新の案内
+    kind: クラス
+    inherits: MindmapError
+  - name: StepFailedError
+    title: 手順が失敗した
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
+    usecase: 記録の形式の移行
+    summary: '移し替えの手順が失敗し、写しから戻した。メッセージは `{版} の手順 {番号}（{操作}）: {理由}`'
+    kind: クラス
+    inherits: MindmapError
+  - name: StepsInvalidError
+    title: 手順の形が違う
+    container: plugins/mindstella/skills/mindmap/scripts/errors.py
+    usecase: 記録の形式の移行
+    summary: プラグインの `steps.yaml` が読めないか、手順の形のスキーマに合わない。`lines` は合わない箇所
     kind: クラス
     inherits: MindmapError
 constants:
@@ -331,7 +345,13 @@ constants:
     container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: 記録の形式の移行
     summary: 前の版の形式でスキーマに合わないときに続ける 1 行
-    value: '"ヒント: 前の版の形式の記録は migrate で今の形式に移せます"'
+    value: '"ヒント: 前の版の形式の記録は /mindstella:upgrade で今の形式に移せます"'
+  - name: VERSION_FILE
+    title: 版のファイル
+    container: plugins/mindstella/skills/mindmap/scripts/store.py
+    usecase: 共通
+    summary: ワークスペースの版を持つファイルの名前
+    value: '"mindstella-version.ini"'
 functions:
   - name: kind_of_id
     title: ID の種類
@@ -702,7 +722,7 @@ functions:
     container: plugins/mindstella/skills/mindmap/scripts/store.py
     usecase: ワークスペースの作成
     scope: public
-    summary: 設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`release/` を作る
+    summary: 設定を検証してから、設定・空の 7 種類の YAML・版のファイル・`docs/`・`release/` を作る
     side_effects: フォルダとファイルを作る
     args:
       - name: root
@@ -715,6 +735,11 @@ functions:
         required: true
         passing: positional
         description: 設定の中身
+      - name: version
+        type: str
+        required: true
+        passing: keyword
+        description: 版のファイルに書くプラグインの版（`v0.3.0` の形。入口が `read_plugin_version` で読んで渡す）
     returns:
       type: list[str]
       description: 作ったファイルとフォルダ（ワークスペースからの相対パス。フォルダは末尾に `/`）
@@ -722,7 +747,7 @@ functions:
       1. `root/mindmap.yaml` があれば `WorkspaceExistsError` を送る
       2. 設定と空の 7 種類で `Workspace` を組み、検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（フォルダも作らない）
-      3. フォルダと `docs/`・`release/` を作り、7 種類の YAML（`items: []`）を書き、最後に `mindmap.yaml` を書く（`dump_yaml`）
+      3. フォルダと `docs/`・`release/` を作り、7 種類の YAML（`items: []`）と `VERSION_FILE`（`version` と改行）を書き、最後に `mindmap.yaml` を書く（`dump_yaml`）
          - `OSError` が起きた場合、この関数が作ったファイルとフォルダを消して `WriteFailedError` を送る（`mindmap.yaml` を最後に書くので、途中で止まってもワークスペースとして扱われない）
     exceptions:
       - name: WorkspaceExistsError
@@ -737,9 +762,9 @@ functions:
       - name: test_create_workspace
         case: 正常
         summary: まだ無いフォルダにワークスペースを作る
-        condition: '`tmp_path / "ws"`（無い）と正しい設定'
+        condition: '`tmp_path / "ws"`（無い）と正しい設定、`version="v0.3.0"`'
         mock: なし
-        expected: 戻り値が 8 つの YAML と `docs/`・`release/`。`mindmap.yaml` を読むと渡した設定
+        expected: 戻り値が 8 つの YAMLと `mindstella-version.ini`・`docs/`・`release/`。`mindmap.yaml` を読むと渡した設定。`mindstella-version.ini` が `v0.3.0\n`
       - name: test_create_workspace_when_exists
         case: 異常
         summary: mindmap.yaml があるフォルダには作らない

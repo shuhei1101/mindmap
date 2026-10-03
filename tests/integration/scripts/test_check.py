@@ -65,7 +65,7 @@ def test_normal_when_problems_found(
 def test_normal_when_legacy_format(
     make_item: MakeItem, make_legacy_workspace: MakeLegacyWorkspace, run_mindmap: RunMindmap
 ) -> None:
-    """前の形式の資料は、migrate で移せることを添えたスキーマ違反として返す（正常系）。"""
+    """前の形式の資料は、/mindstella:upgrade で移せることを添えたスキーマ違反として返す（正常系）。"""
     # 準備
     root = make_legacy_workspace(make_item("D-1"), legacy_docs={"A-1": True})
     # 実行
@@ -75,7 +75,10 @@ def test_normal_when_legacy_format(
     problems = json.loads(result.stdout)["problems"]
     legacy = [row for row in problems if row["file"] == "docs.yaml"]
     assert [row["kind"] for row in legacy] == ["schema", "schema"]
-    assert all(row["id"] == "A-1" and "migrate で今の形式に移せます" in row["detail"] for row in legacy)
+    assert all(
+        row["id"] == "A-1" and "/mindstella:upgrade で今の形式に移せます" in row["detail"]
+        for row in legacy
+    )
 
 
 def test_error_when_workspace_not_found(tmp_path: Path, run_mindmap: RunMindmap) -> None:

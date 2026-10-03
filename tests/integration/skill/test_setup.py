@@ -19,6 +19,9 @@ if TYPE_CHECKING:
 
     from conftest import RunClaude
 
+# 版を比べるコマンド
+PLAN_COMMAND = "migrate --workspace {フォルダ} --plan"
+
 # スキル setup の steps/ のファイル
 SETUP_STEP_FILES = ["新しいワークスペース.md", "既存のワークスペース.md"]
 
@@ -41,5 +44,7 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert step_files_in("setup") == SETUP_STEP_FILES
     # 本文のスクリプトの起動が全て python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py で始まる
     assert launches_not_in_form(texts) == []
+    # 本文が migrate --plan を呼んで版を比べる
+    assert any(PLAN_COMMAND in text for text in texts)
     # claude plugin validate が終了コード 0（失敗すれば run_claude が例外にする）
     assert validate.returncode == 0

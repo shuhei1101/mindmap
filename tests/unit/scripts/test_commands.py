@@ -19,7 +19,7 @@ from export_helpers import (
     make_responses,
     write_preview_dir,
 )
-from fixture_types import MakeItem, MakeLegacyWorkspace, MakeWorkspace
+from fixture_types import MakeItem, MakeLegacyWorkspace, MakeWorkspace, PatchPluginVersion
 from query import SearchFilter
 
 # now の代わりに返す日時
@@ -158,15 +158,19 @@ def test_switch_adopted_when_option_missing() -> None:
     assert "B" in message
 
 
-def test_run_init(tmp_path: Path, valid_settings: dict[str, Any]) -> None:
+def test_run_init(tmp_path: Path, valid_settings: dict[str, Any], scripts_dir: Path) -> None:
     """作ったワークスペースとファイルを返す（正常系）。"""
     # 準備
     root = tmp_path / "ws"
+    plugin_version = (scripts_dir.parents[2] / "version.ini").read_text(encoding="utf-8")
     # 実行
     payload, exit_code = commands.run_init(root, json.dumps(valid_settings, ensure_ascii=False))
     # 検証
     assert payload["workspace"] == str(root)
-    assert len(payload["files"]) == 10
+    assert len(payload["files"]) == 11
+    assert (root / "mindstella-version.ini").read_text(
+        encoding="utf-8"
+    ) == f"{plugin_version.splitlines()[0]}\n"
     assert exit_code == 0
 
 
@@ -296,7 +300,7 @@ def test_run_check_when_problems(make_workspace: MakeWorkspace, make_item: MakeI
 
 
 def test_run_check_when_legacy_format(make_legacy_workspace: MakeLegacyWorkspace) -> None:
-    """前の版の形式の問題に migrate を案内する（正常系）。"""
+    """前の版の形式の問題に /mindstella:upgrade を案内する（正常系）。"""
     # 準備
     root = make_legacy_workspace(legacy_docs={"A-1": True})
     # 実行
@@ -306,7 +310,9 @@ def test_run_check_when_legacy_format(make_legacy_workspace: MakeLegacyWorkspace
     assert exit_code == 1
     details = [problem["detail"] for problem in payload["problems"] if problem["id"] == "A-1"]
     assert details != []
-    assert all(detail.endswith("（migrate で今の形式に移せます）") for detail in details)
+    assert all(
+        detail.endswith("（/mindstella:upgrade で今の形式に移せます）") for detail in details
+    )
 
 
 def test_run_build(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
@@ -430,17 +436,33 @@ def test_run_goal(make_workspace: MakeWorkspace, make_item: MakeItem) -> None:
     } <= set(payload)
 
 
-def test_run_migrate(make_legacy_workspace: MakeLegacyWorkspace) -> None:
-    """移したものを返す（正常系）。"""
+def test_run_migrate(
+    make_legacy_workspace: MakeLegacyWorkspace, patch_plugin_version: PatchPluginVersion
+) -> None:
+    """手順を並べて出力の形にする（正常系）。"""
     # 準備
-    root = make_legacy_workspace(legacy_docs={"A-1": False})
+    root = make_legacy_workspace(legacy_docs={"A-1": True}, without_summary=True)
+    patch_plugin_version("v0.3.0")
     # 実行
-    payload, exit_code = commands.run_migrate(root, summary=None)
+    payload, exit_code = commands.run_migrate(
+        root, plan=True, record=False, assignments=None, from_version=None, to_version=None
+    )
     # 検証
     assert exit_code == 0
-    assert payload == {
-        "migrated": [{"id": "A-1", "file": "docs.yaml", "change": "done: false → status: 下書き"}]
+    assert payload["workspace_version"] is None
+    assert payload["plugin_version"] == "v0.3.0"
+    assert payload["relation"] == "older"
+    assert payload["steps"][0] == {
+        "version": "v0.3.0",
+        "index": 1,
+        "op": "rename_key",
+        "destructive": False,
+        "summary": "docs.yaml の items[].done を status に名前を変える",
     }
+    assert payload["needs_values"] == [
+        {"file": "mindmap.yaml", "key": "summary", "description": "話し合いの題名"}
+    ]
+    assert payload["backup"] is None
 
 
 def _patch_export_offline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:

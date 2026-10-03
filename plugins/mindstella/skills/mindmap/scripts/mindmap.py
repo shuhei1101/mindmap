@@ -42,20 +42,24 @@ def main(argv: list[str] | None = None) -> int:
     if relaunched is not None:
         return relaunched
 
-    args = build_parser().parse_args(arguments)
+    parser = build_parser()
+    args = parser.parse_args(arguments)
+    # migrate: 版を逆向きに渡した
+    if args.command == "migrate" and _is_reversed(vars(args)["from"], args.to):
+        parser.error("--to は --from より前の版にできません")
     # check-env: ライブラリを読み込まずに、仮想環境の状態を答える
     if args.command == "check-env":
         return _run_check_env_command(args.venv)
 
     # それ以外: 依存の確認を通った環境で動くので、3.12 の書き方のモジュールをここで読む
     import commands
-    from errors import MindmapError, OutPathError, SchemaMismatchError, SummaryRequiredError
+    from errors import MindmapError, OutPathError, SchemaMismatchError
     from store import LEGACY_HINT
 
     try:
         payload, exit_code = _run_command(commands, args)
-    except (SummaryRequiredError, OutPathError) as error:
-        # 題名が要る・書き出す先が誤り（引数の誤り）: 標準エラーに出して終了コード 2
+    except OutPathError as error:
+        # 書き出す先が誤り（引数の誤り）: 標準エラーに出して終了コード 2
         print(f"エラー: {error}", file=sys.stderr)
         return 2
     except MindmapError as error:
@@ -63,7 +67,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"エラー: {error}", file=sys.stderr)
         for line in error.lines:
             print(line, file=sys.stderr)
-        # 前の版の形式のスキーマ違反: 最後に migrate を案内する
+        # 前の版の形式のスキーマ違反: 最後に移し替えのスキルを案内する
         if isinstance(error, SchemaMismatchError) and error.legacy:
             print(LEGACY_HINT, file=sys.stderr)
         return 1
@@ -129,9 +133,24 @@ def build_parser() -> argparse.ArgumentParser:
     )
     add_command("goal", "ゴールに届いたかと残りを返す")
     add_command("clear-release", "リリースの資料を書き出す前に release/ の中身を消す")
-    migrate_parser = add_command("migrate", "前の版の形式を今の形式に移す")
+    migrate_parser = add_command(
+        "migrate", "ワークスペースの版を比べ、版ごとの手順を並べる・当てる"
+    )
     migrate_parser.add_argument(
-        "--summary", default=None, help="設定に足す題名（設定が題名を持たないときに渡す）"
+        "--from", type=_version_argument, default=None, help="この版より後の手順を当てる"
+    )
+    migrate_parser.add_argument(
+        "--to", type=_version_argument, default=None, help="この版以下の手順を当てる"
+    )
+    # 並べる・値を入れる・版を書くは、どれか 1 つだけ
+    mode = migrate_parser.add_mutually_exclusive_group()
+    mode.add_argument("--plan", action="store_true", help="当てずに、当てる手順を並べる")
+    mode.add_argument("--record", action="store_true", help="点検して、版のファイルを書く")
+    mode.add_argument(
+        "--set",
+        type=_assignment_argument,
+        action="append",
+        help="値が要るキーに入れる値（{ファイル}:{キーのパス}={値}。繰り返し渡せる）",
     )
     return parser
 
@@ -144,6 +163,31 @@ def _add_json_argument(parser: argparse.ArgumentParser, what: str) -> None:
 def _read_json_input(args: argparse.Namespace) -> str:
     """`--json` があればその値を、無ければ標準入力を読んで返す。"""
     return args.json if args.json is not None else sys.stdin.read()
+
+
+def _version_argument(text: str) -> Any:
+    """`--from`・`--to` の版を解釈する。版のモジュールは 3.12 の書き方なので、使うときに読む。"""
+    from versions import parse_release_version
+
+    try:
+        return parse_release_version(text)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from None
+
+
+def _assignment_argument(text: str) -> tuple[str, str, str]:
+    """`--set` の `{ファイル}:{キーのパス}={値}` を解釈する。移し替えのモジュールは使うときに読む。"""
+    from migrator import parse_assignment
+
+    try:
+        return parse_assignment(text)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError(str(error)) from None
+
+
+def _is_reversed(from_version: Any, to_version: Any) -> bool:
+    """`--from` と `--to` の両方があり、`--to` の方が前の版か。"""
+    return from_version is not None and to_version is not None and to_version < from_version
 
 
 def _positive_int(text: str) -> int:
@@ -203,7 +247,14 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
         "export": lambda: commands.run_export(root, args.out),
         "goal": lambda: commands.run_goal(root),
         "clear-release": lambda: commands.run_clear_release(root),
-        "migrate": lambda: commands.run_migrate(root, summary=args.summary),
+        "migrate": lambda: commands.run_migrate(
+            root,
+            plan=args.plan,
+            record=args.record,
+            assignments=args.set,
+            from_version=vars(args)["from"],
+            to_version=args.to,
+        ),
     }
     return handlers[args.command]()
 

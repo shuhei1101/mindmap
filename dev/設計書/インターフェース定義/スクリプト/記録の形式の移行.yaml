@@ -3,14 +3,14 @@ entry:
   kind: operation
   value: '`python3 {スキルのフォルダ}/scripts/mindmap.py migrate`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
-  - name: 正常系
-    summary: 題名を足し、資料の done を status に移す
+  - name: 正常系（手順を並べる）
+    summary: 版を記録する前の形式のワークスペースで、v0.3.0 の手順と値が要るキーを返す
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: make_workspace
-        description: '`summary` を持たない `mindmap.yaml` と、資料 A-1（`done: true`）・A-2（`done: false`）・A-3（`status: 確認中`）を持つワークスペース'
-        notes: '`mindmap.yaml` と A-1・A-2 は YAML を直接書いて作る。引数は `--summary 要件出しのスキルを設計する`'
+        description: '版のファイルを持たず、`summary` を持たない `mindmap.yaml` と、資料 A-1（`done: true`）を持つワークスペース'
+        notes: YAML を直接書いて作る。引数は `--plan`
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -18,27 +18,25 @@ flows:
         participant IF as mindmap.py migrate
         participant WS as ワークスペース
 
-        クライアント->>IF: migrate --workspace --summary
-        IF-->>WS: 全ての YAML を読む
-        IF->>IF: 題名を足し、done を status に書き換え、スキーマと突き合わせる
-        IF->>WS: mindmap.yaml と docs.yaml を置き換える
-        IF-->>クライアント: JSON（migrated）
+        クライアント->>IF: migrate --workspace --plan
+        IF-->>WS: 版のファイルを読む（無い）
+        IF->>IF: プラグインの版までの手順を並べる
+        IF-->>クライアント: JSON（relation・steps・needs_values）
       ```
     expected:
-      - 終了コードが 0
-      - '`migrated` が `mindmap.yaml`（`summary` を足した）と A-1（`done: true → status: 完成`）と A-2（`done: false → status: 下書き`）の 3 件'
-      - '`mindmap.yaml` の `summary` が渡した題名'
-      - '`docs.yaml` の A-1 が `status: 完成`、A-2 が `status: 下書き` で、どちらも `done` を持たず、`updated` が呼ぶ前と同じ'
-      - A-3 が呼ぶ前と同じ
-      - 続けて `check` がスキーマ違反を返さない
-    test: test_normal
-  - name: 正常系（移す項目が無い）
-    summary: 今の形式のワークスペースでは何も書かない
+      - 終了コード 0
+      - '`workspace_version` が `null`、`plugin_version` が `v0.3.0`、`relation` が `older`'
+      - '`steps` が全て `version: v0.3.0` で、`destructive` が全て `false`'
+      - '`needs_values` に `mindmap.yaml` の `summary` がある'
+      - ワークスペースの全てのファイルの中身と更新日時が呼ぶ前と同じ
+    test: test_normal_when_plan
+  - name: 正常系（手順を当てる）
+    summary: 写しを取って v0.3.0 の手順を当て、版のファイルは書かない
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: make_workspace
-        description: '資料 A-1（`status: 完成`）を持つワークスペース'
+        description: '版のファイルを持たず、`summary` を持たない `mindmap.yaml` と、資料 A-1（`done: true`）・A-2（`done: false`）を持つ、git の作業ツリーではないワークスペース'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -47,14 +45,263 @@ flows:
         participant WS as ワークスペース
 
         クライアント->>IF: migrate --workspace
-        IF-->>WS: 全ての YAML を読む
-        IF-->>クライアント: JSON（migrated は空）
+        IF->>WS: 隣のフォルダへ複製する
+        IF->>WS: v0.3.0 の手順を並びの順に当てる
+        IF-->>クライアント: JSON（steps・needs_values・backup）
       ```
     expected:
-      - 終了コードが 0
-      - '`migrated` が空'
-      - '`docs.yaml` の中身と更新日時が呼ぶ前と同じ'
-    test: test_normal_when_nothing_to_migrate
+      - 終了コード 0
+      - '`docs.yaml` の A-1 が `status: 完成`、A-2 が `status: 下書き` で、どちらも `done` を持たず、`updated` が呼ぶ前と同じ'
+      - '`needs_values` に `mindmap.yaml` の `summary` がある'
+      - '`backup.kind` が `copy` で、`backup.ref` のフォルダに呼ぶ前の `docs.yaml` がある'
+      - '`mindstella-version.ini` が無いまま'
+    test: test_normal_when_apply
+  - name: 正常系（写しを git のコミットで取る）
+    summary: git の作業ツリーの中のワークスペースでは、ワークスペースのパスだけをコミットして写しにする
+    setup:
+      - name: Mock
+        description: なし（実際の Python と git で起動する）
+      - name: git の作業ツリー
+        description: テストごとの一時フォルダで `git init` し、その下に版を記録する前の形式のワークスペースと、ワークスペースの外のファイル `other.txt`・`staged.txt` を置く
+        notes: どれもコミットしない。`staged.txt` だけ `git add` しておく
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant G as git
+
+        クライアント->>IF: migrate --workspace
+        IF->>G: ワークスペースのパスだけを add してコミットする
+        IF->>IF: 手順を当てる
+        IF-->>クライアント: JSON（backup.kind: git）
+      ```
+    expected:
+      - 終了コード 0
+      - '`backup.kind` が `git`、`backup.ref` が新しいコミットの ID'
+      - そのコミットがワークスペースのパスのファイルだけを持ち、`other.txt`・`staged.txt` を持たない
+      - '`staged.txt` がステージされたままである'
+    test: test_normal_when_backup_git
+  - name: 正常系（値を入れる）
+    summary: --set で値が要るキーに値を入れる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 手順を当てた後の、`summary` を持たない `mindmap.yaml` のワークスペース
+        notes: 引数は `--set mindmap.yaml:summary=要件出しのスキルを設計する`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace --set
+        IF->>WS: mindmap.yaml の summary を書く
+        IF-->>クライアント: JSON
+      ```
+    expected:
+      - 終了コード 0
+      - '`mindmap.yaml` の `summary` が渡した題名'
+      - '`mindstella-version.ini` が無いまま'
+    test: test_normal_when_set
+  - name: 正常系（版を書く）
+    summary: 点検に合うワークスペースで --record が版のファイルを書く
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 手順を当てて題名を入れた後の、版のファイルを持たないワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace --record
+        IF-->>WS: 全ての YAML を読み、スキーマと突き合わせる
+        IF->>WS: mindstella-version.ini を書く
+        IF-->>クライアント: JSON（recorded）
+      ```
+    expected:
+      - 終了コード 0
+      - '`recorded` が `v0.3.0`'
+      - '`mindstella-version.ini` の 1 行目が `v0.3.0`'
+    test: test_normal_when_record
+  - name: 正常系（版が同じ）
+    summary: 今の版のワークスペースでは並べる手順が無い
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '`init` で作ったワークスペース'
+        notes: 引数は `--plan`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace --plan
+        IF-->>WS: 版のファイルを読む
+        IF-->>クライアント: JSON（relation: same・steps は空）
+      ```
+    expected:
+      - 終了コード 0
+      - '`relation` が `same`、`steps` と `needs_values` が空'
+    test: test_normal_when_same
+  - name: 正常系（版が新しいワークスペースを並べる）
+    summary: --plan はエラーにせず newer を返す
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '`init` で作り、版のファイルを `v99.0.0` に書き換えたワークスペース'
+        notes: 引数は `--plan`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace --plan
+        IF-->>WS: 版のファイルを読む
+        IF-->>クライアント: JSON（relation: newer・steps は空）
+      ```
+    expected:
+      - 終了コード 0
+      - '`workspace_version` が `v99.0.0`、`relation` が `newer`、`steps` が空'
+    test: test_normal_when_plan_newer
+  - name: 正常系（ignore されたワークスペースは複製で写しを取る）
+    summary: git の作業ツリーの中でも、ignore されたファイルを持つワークスペースは隣のフォルダへ複製して写しにする
+    setup:
+      - name: Mock
+        description: なし（実際の Python と git で起動する）
+      - name: ignore されたワークスペース
+        description: テストごとの一時フォルダで `git init` し、`tmp/.gitignore` に `*` を書いて、`tmp/` の下に版を記録する前の形式のワークスペースを置く
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant G as git
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF->>G: ignore されたファイルがあるかを引く
+        G-->>IF: ある
+        IF->>WS: 隣のフォルダへ複製する
+        IF->>WS: 手順を当てる
+        IF-->>クライアント: JSON（backup.kind: copy）
+      ```
+    expected:
+      - 終了コード 0
+      - '`backup.kind` が `copy` で、`backup.ref` のフォルダに呼ぶ前の `docs.yaml` がある'
+      - 作業ツリーにコミットが増えていない
+    test: test_normal_when_backup_ignored
+  - name: 正常系（既に今の形のワークスペースに当てる）
+    summary: v0.2.0 で作った形（版のファイルが無く、資料が status、題名がある）に当てても何も変えずに成功する
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '版のファイルを持たず、`summary` を持つ `mindmap.yaml` と、資料 A-1（`status: 完成`）を持つ、git の作業ツリーではないワークスペース'
+        notes: 当て直し（手順を当てた後、版を書く前に止めたワークスペース）も同じ形になる
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF->>WS: 写しを取る
+        IF->>IF: 対象のキーが無い項目を飛ばして手順を当てる
+        IF-->>クライアント: JSON（needs_values は空）
+      ```
+    expected:
+      - 終了コード 0
+      - '`needs_values` が空'
+      - '`mindmap.yaml`・`docs.yaml` の中身と更新日時が呼ぶ前と同じ'
+    test: test_normal_when_already_current
+  - name: 異常系（版が新しい・WorkspaceNewerError）
+    summary: 版が新しいワークスペースには手順を当てない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '`init` で作り、版のファイルを `v99.0.0` に書き換えたワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF-->>WS: 版のファイルを読む
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コード 1
+      - 標準エラーに `v99.0.0` と `v0.3.0` がある
+      - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、写しのフォルダが作られていない
+    test: test_error_when_newer
+  - name: 異常系（手順が失敗する・StepFailedError）
+    summary: 手順が読めないファイルに当たると写しから戻して終わる
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: '版のファイルを持たず、資料 A-1（`done: true`）・A-2（`done: false`）を持ち、`mindmap.yaml` の中身が `field: [`（YAML として読めない）のワークスペース'
+        notes: 資料の手順 1・2 が `docs.yaml` を書き換えた後に、`mindmap.yaml` を読む手順 3 が失敗する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace
+        IF->>WS: 写しを取る
+        IF->>IF: v0.3.0 の手順が docs.yaml を読めない
+        IF->>WS: 写しから戻す
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コード 1
+      - '標準エラーが `エラー: v0.3.0 の手順 3（set_default）: ` で始まり、`mindmap.yaml` がある'
+      - 手順 1・2 が書き換えた `docs.yaml` を含め、ワークスペースの全てのファイルの中身が呼ぶ前と同じ
+      - '`mindstella-version.ini` が無いまま'
+    test: test_error_when_step_fails
+  - name: 異常系（点検に合わない・SchemaMismatchError）
+    summary: 値が要るキーが無いままでは版を書かない
+    setup:
+      - name: Mock
+        description: なし（実際の Python で起動する）
+      - name: make_workspace
+        description: 手順を当てた後の、`summary` を持たない `mindmap.yaml` のワークスペース
+        notes: 引数は `--record`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as mindmap.py migrate
+        participant WS as ワークスペース
+
+        クライアント->>IF: migrate --workspace --record
+        IF-->>WS: 全ての YAML を読み、スキーマと突き合わせる
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コード 1
+      - '標準エラーに `mindmap.yaml: ` で始まり `summary` を含む行がある'
+      - '`mindstella-version.ini` が無いまま'
+    test: test_error_when_schema_mismatch
   - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
     summary: mindmap.yaml が無いフォルダを指すと何も書かずに終わる
     setup:
@@ -69,90 +316,18 @@ flows:
         participant IF as mindmap.py migrate
         participant WS as フォルダ
 
-        クライアント->>IF: migrate --workspace
+        クライアント->>IF: migrate --workspace --plan
         IF-->>WS: mindmap.yaml が無い
         IF-->>クライアント: エラー、終了コード 1
       ```
     expected:
-      - 終了コードが 1
+      - 終了コード 1
       - 標準エラーにフォルダのパスがある
       - フォルダにファイルが増えていない
     test: test_error_when_workspace_not_found
-  - name: 異常系（別の理由でスキーマに合わない・SchemaMismatchError）
-    summary: 移してもスキーマに合わないと何も書かずに終わる
-    setup:
-      - name: Mock
-        description: なし（実際の Python で起動する）
-      - name: make_workspace
-        description: '資料 A-1（`done: true`）と、`status` を `完了` に直接書き換えた検討事項 D-1 を持つワークスペース'
-    flow: |-
-      ```mermaid
-      sequenceDiagram
-        participant クライアント
-        participant IF as mindmap.py migrate
-        participant WS as ワークスペース
-
-        クライアント->>IF: migrate --workspace
-        IF-->>WS: 全ての YAML を読む
-        IF->>IF: 移した後もスキーマに合わない
-        IF-->>クライアント: エラー、終了コード 1
-      ```
-    expected:
-      - 終了コードが 1
-      - '標準エラーに `decisions.yaml: items[0].status:` で始まる行がある'
-      - '`docs.yaml` の中身が呼ぶ前と同じ'
-    test: test_error_when_schema_mismatch
-  - name: 異常系（書き込めない・WriteFailedError）
-    summary: 書き込めないワークスペースでは前の mindmap.yaml・docs.yaml を残して終わる
-    setup:
-      - name: Mock
-        description: なし（実際の Python で起動する）
-      - name: make_workspace
-        description: '`summary` を持たない `mindmap.yaml` と資料 A-1（`done: true`）を持ち、フォルダの書き込みの権限を外したワークスペース'
-        notes: 引数は `--summary 題名`。root で動かすときは skip する
-    flow: |-
-      ```mermaid
-      sequenceDiagram
-        participant クライアント
-        participant IF as mindmap.py migrate
-        participant WS as ワークスペース
-
-        クライアント->>IF: migrate --workspace
-        IF-->>WS: 全ての YAML を読む
-        IF->>WS: 一時ファイルを書けない
-        IF-->>クライアント: エラー、終了コード 1
-      ```
-    expected:
-      - 終了コードが 1
-      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
-      - '`mindmap.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
-    test: test_error_when_write_fails
-  - name: 異常系（題名が無い・SummaryRequiredError）
-    summary: 題名を持たないワークスペースで --summary を渡さないと何も書かずに終わる
-    setup:
-      - name: Mock
-        description: なし（実際の Python で起動する）
-      - name: make_workspace
-        description: '`summary` を持たない `mindmap.yaml` と、資料 A-1（`done: true`）を持つワークスペース'
-    flow: |-
-      ```mermaid
-      sequenceDiagram
-        participant クライアント
-        participant IF as mindmap.py migrate
-        participant WS as ワークスペース
-
-        クライアント->>IF: migrate --workspace
-        IF-->>WS: mindmap.yaml を読む（summary が無い）
-        IF-->>クライアント: エラー、終了コード 2
-      ```
-    expected:
-      - 終了コードが 2
-      - 標準エラーに `--summary` がある
-      - '`mindmap.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
-    test: test_error_when_summary_required
-lead: 前の版の形式で書かれたワークスペースの YAML を、今のスキーマに合う形へ一度だけ書き換える。
-idempotent: true
-side_effects: 移すものがあるときだけ、`mindmap.yaml`・`docs.yaml` のうち書き換えるものの一時ファイルを全て書き終えてから、`docs.yaml` → `mindmap.yaml` の順に `os.replace` で置き換える。移すものが無いときは何も書かない
+lead: ワークスペースの版とプラグインの版を比べ、間の版の移し替えの手順（`migrations/{版}/steps.yaml`）を版の順に並べる・当てる。値が要るキーを入れ、点検に合えば版のファイルを書き換える。
+idempotent: false
+side_effects: '`--plan` は何も書かない。手順を当てるときは、当てる前に写しを取り（ワークスペースが git の作業ツリーの中ならワークスペースのパスだけをコミット、そうでなければフォルダの隣へ複製）、手順が書き換えるファイルを書く。失敗したら写しから戻す。`--set` は指したファイルの 1 キーを、`--record` は `mindstella-version.ini` を書く'
 exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
 request:
   - name: --workspace
@@ -161,58 +336,137 @@ request:
     location: argument
     description: ワークスペースのフォルダのパス
     constraints: '`mindmap.yaml` があるフォルダ'
-  - name: --summary
+  - name: --plan
+    type: bool
+    required: false
+    default: 'false'
+    location: argument
+    description: 当てずに、版の比べた結果と当てる手順を返す
+    constraints: '`--set`・`--record` と一緒に使わない'
+  - name: --from
     type: str
     required: false
-    default: なし（`mindmap.yaml` が `summary` を持つときだけ省ける）
+    default: なし（ワークスペースの `mindstella-version.ini` の版。無ければ版を記録する前の形式）
     location: argument
-    description: '`mindmap.yaml` に足す題名。`mindmap.yaml` が `summary` を持たないときに使う'
-    constraints: 空でない文字列。`mindmap.yaml` が `summary` を既に持つときは使わず、持っている題名を変えない
-    example: 要件出しのスキル mindmap を設計する
+    description: この版より後の手順を当てる
+    constraints: '`v{メジャー}.{マイナー}.{パッチ}`'
+  - name: --to
+    type: str
+    required: false
+    default: なし（プラグインの版。`plugins/mindstella/version.ini` の 1 行目）
+    location: argument
+    description: この版以下の手順を当てる。`--record` では書く版
+    constraints: '`v{メジャー}.{マイナー}.{パッチ}`。`--from` より前の版は渡さない'
+  - name: --set
+    type: list[str]
+    required: false
+    default: なし（値を入れない）
+    location: argument
+    description: 値が要るキーに入れる値。`{ファイル}:{キーのパス}={値}` を繰り返して渡す
+    example: mindmap.yaml:summary=要件出しのスキルを設計する
+    constraints: '`{ファイル}` はワークスペースからの相対パス、`{キーのパス}` は `.` 区切り。手順を当てる・`--record` と一緒に使わない'
+  - name: --record
+    type: bool
+    required: false
+    default: 'false'
+    location: argument
+    description: ワークスペースを点検し、問題が無ければ `mindstella-version.ini` を `--to` の版に書き換える
+    constraints: '`--plan`・`--set` と一緒に使わない'
 response:
-  - name: migrated[]
-    type: list[{id, file, change}]
-    description: 書き換えた項目。移す項目が無いときは空
-  - name: migrated[].id
+  - name: workspace_version
     type: str | None
-    description: 書き換えた項目の ID。`mindmap.yaml` の書き換えは `null`
-  - name: migrated[].file
+    description: ワークスペースの版。版を記録する前の形式は `null`
+  - name: plugin_version
     type: str
-    description: 書き換えた YAML（ワークスペースからの相対パス）
-  - name: migrated[].change
+    description: プラグインの版
+  - name: relation
+    type: Literal['older', 'same', 'newer']
+    description: プラグインの版と比べたワークスペースの版
+  - name: steps[]
+    type: list[{version, index, op, destructive, summary}]
+    description: 当てる（当てた）手順を版の順・並びの順に並べたもの。`--set`・`--record` では空
+  - name: steps[].version
     type: str
-    description: 書き換えの中身
-    example: 'done: true → status: 完成'
+    description: 手順の版（`migrations/` のフォルダ名）
+  - name: steps[].index
+    type: int
+    description: '`steps.yaml` の中の 1 始まりの番号'
+  - name: steps[].op
+    type: Literal['rename_file', 'move_dir', 'delete', 'rename_key', 'set_default', 'map_values', 'call']
+    description: 操作
+  - name: steps[].destructive
+    type: bool
+    description: 破壊的な操作（`rename_file`・`move_dir`・`delete`）か
+  - name: steps[].summary
+    type: str
+    description: 手順の中身の 1 行
+    example: docs.yaml の items[].done を status に名前を変える
+  - name: needs_values[]
+    type: list[{file, key, description}]
+    description: 手順を当てた後に値が要るキー（`set_default` の `ask`）。値を入れるまで点検に合わない。`--plan` でも返す
+  - name: backup
+    type: '{kind, ref} | None'
+    description: 取った写し。手順を当てたときだけ持つ
+  - name: backup.kind
+    type: Literal['git', 'copy']
+    description: git のコミットか、フォルダの複製か
+  - name: backup.ref
+    type: str
+    description: コミットの ID か、複製したフォルダの絶対パス
+  - name: recorded
+    type: str | None
+    description: '`--record` で書いた版'
 exceptions:
   - name: なし（正常終了）
-    condition: 移せた、または移す項目が無かった
+    condition: 並べた・当てた・値を入れた・版を書いた、または当てる手順が無かった
     notes: 終了コード 0
   - name: WorkspaceNotFoundError
     condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
     notes: 終了コード 1。何も書き込まない
+  - name: WorkspaceNewerError
+    condition: 手順を当てる・`--record` で、ワークスペースの版がプラグインの版より新しい
+    notes: '終了コード 1。標準エラーに 2 つの版と、プラグインを更新するよう書く。何も書き込まない。`--plan` はエラーにせず `relation: newer` を返す'
+  - name: StepFailedError
+    condition: 手順を当てる途中で、手順が対象のファイルを読めない・書けない、または `call` の変換が例外を送った
+    notes: 終了コード 1。写しから戻してから、標準エラーに失敗した版・手順の番号・操作・理由を書く
   - name: SchemaMismatchError
-    condition: 移した後のワークスペースのどれかの YAML が、移した箇所とは別の理由でスキーマに合わないか、YAML として読めない
-    notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+    condition: '`--record` で、ワークスペースのどれかの YAML がスキーマに合わない'
+    notes: 終了コード 1。標準エラーに合わない箇所。版のファイルを書かない
   - name: WriteFailedError
-    condition: 一時ファイルの書き込みか置き換えに失敗した
-    notes: 終了コード 1。標準エラーに書けなかったパスと理由。`mindmap.yaml`・`docs.yaml` とも前の中身を残す（部分成功を起こさない）
-  - name: SummaryRequiredError
-    condition: '`mindmap.yaml` が `summary` を持たず、`--summary` も渡されない'
-    notes: 終了コード 2（引数の誤り）。標準エラーに `--summary` で題名を渡すよう書く。何も書き込まない
-error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
+    condition: 写しを取れない、または `--set`・`--record` の書き込みに失敗した
+    notes: 終了コード 1。標準エラーに書けなかったパスと理由。写しを取れないときは手順を当てない
+  - name: 引数の誤り
+    condition: 版の形が違う・`--to` が `--from` より前・一緒に使わない引数を渡した・`--set` の形が違う
+    notes: 終了コード 2
+error_format: '標準エラーに `エラー: {内容}` の行を出す。手順の失敗は `エラー: {版} の手順 {番号}（{操作}）: {理由}`。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
 constraints:
   - item: 出力の形
     constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
-  - item: 移す中身
-    constraint: '資料の `done` を消し、`status` を足す。`done: true` は `status: 完成`、`done: false` は `status: 下書き`。`status` を既に持つ項目は触らない。`updated` は変えない。`mindmap.yaml` が `summary` を持たないときは `--summary` の題名を足す'
-  - item: 移す前の読み込み
-    constraint: YAML をスキーマと突き合わせずに読み、書き換えた後の全ての YAML をスキーマと突き合わせてから書く
+  - item: 版の比べ方
+    constraint: '`v` を落とした 3 つの整数を左から比べる。版を記録する前の形式（版のファイルが無い）はどの版よりも古い'
+  - item: 当てる手順
+    constraint: '`plugins/mindstella/skills/mindmap/migrations/` の版のフォルダのうち、`--from` より後で `--to` 以下のものを版の順に、各 `steps.yaml` の並びの順に当てる。`--from` が `--to` 以上なら手順は空'
+  - item: steps.yaml の形
+    constraint: '`steps:` の並び。1 つの手順は `op` と操作ごとの引数を持ち、`schemas/migration-steps.schema.json` で点検する。合わなければ当てずにエラー（終了コード 1）'
+  - item: 操作と引数
+    constraint: '`rename_file`（`from`・`to`）/ `move_dir`（`from`・`to`）/ `delete`（`path`）/ `rename_key`（`file`・`each_item`・`from`・`to`）/ `set_default`（`file`・`each_item`・`key`・`value` か `ask`）/ `map_values`（`file`・`each_item`・`key`・`map`）/ `call`（`script`。`scripts/{script}.py` の `migrate(root)` を呼ぶ）。パスはワークスペースからの相対、`each_item: true` は `items[]` の各項目に当てる'
+  - item: 値が要るキー
+    constraint: '`set_default` が `ask`（利用者に聞くことの説明）を持つときは、キーが無い項目に何も書かず `needs_values` に返す。値は `--set` で入れる'
+  - item: 手順を当てるときの検証
+    constraint: ワークスペース全体をスキーマと突き合わせない（突き合わせは `check` と `--record` が担う）。手順そのものが失敗したときだけエラーで終わる
+  - item: 写し
+    constraint: ワークスペースが git の作業ツリーの中にあり、ワークスペースの中に ignore されたファイル（`git ls-files --others --ignored --exclude-standard -- {ワークスペース}`）が 1 つも無いときだけ、ワークスペースのパスだけを `git add -A -- {ワークスペース}` して `git commit -- {ワークスペース}` でコミットする（変更が無ければ今の HEAD を写しにする。ワークスペースの外のステージされた変更はコミットに入れず、ステージされたまま残す）。そうでなければ、ワークスペースの隣の `{フォルダ名}.before-{--to の版}`（あれば末尾に `-{日時}`）へ複製する。写しは成功しても消さない
+  - item: 戻し方
+    constraint: git の写しは、ワークスペースのパスをコミットの中身に戻し、コミットに無いファイルを消す。複製の写しは、ワークスペースの中身を消して複製から書き戻す
+  - item: 版のファイルの書き換え
+    constraint: '`--record` だけが書く。手順を当てる・`--set` は書かない'
   - item: YAML の書き方
-    constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
-  - item: 部分成功
-    constraint: 起こさない。`docs.yaml` を置き換える前に前の中身を控え、`mindmap.yaml` の置き換えに失敗したら `docs.yaml` を控えに戻してからエラーで終わる（終了コード 1。残った一時ファイルも消す）
+    constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない。手順が触らない項目の `updated` は変えない'
+  - item: 対象が無い・既にあるとき
+    constraint: どの操作も、同じ手順を 2 度当てても結果が変わらないように振る舞う。`rename_key` は `from` が無い項目を飛ばし、`from` と `to` が両方ある項目は StepFailedError。`map_values` は `key` が無い項目と `map` に無い値を変えない。`set_default` は `key` を既に持つ項目を変えず、`ask` でも `needs_values` に返さない。`rename_file`・`move_dir` は `from` が無ければ飛ばし、`to` が既にあれば StepFailedError。`delete` は `path` が無ければ飛ばす。`call` の変換も同じ振る舞いで書く。手順が何も変えなかったファイルは書かない
 refs:
   - dev/設計書/ER図/ワークスペース#tables[docs.yaml]
+  - dev/設計書/ER図/ワークスペース#tables[mindstella-version.ini]
 test_file: tests/integration/scripts/test_migrate.py

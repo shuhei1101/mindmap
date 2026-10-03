@@ -10,7 +10,7 @@ from typing import Any
 
 import pytest
 
-from fixture_types import FailingReplace, FailingUnlink, FailingWriteText
+from fixture_types import FailingReplace, FailingUnlink, FailingWriteText, PatchPluginVersion
 
 # このファイルから見たリポジトリの直下（tests/unit/scripts の 3 つ上）
 REPO_ROOT_PARENT_DEPTH = 3
@@ -31,6 +31,29 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 def scripts_dir() -> Path:
     """スクリプトのフォルダ（plugins/mindstella/skills/mindmap/scripts）を返す。"""
     return SCRIPTS_DIR
+
+
+@pytest.fixture
+def patch_plugin_version(monkeypatch: pytest.MonkeyPatch) -> PatchPluginVersion:
+    """read_plugin_version を、渡した版を返す関数に差し替える関数を返す。"""
+
+    def _install(text: str) -> None:
+        """版の解釈・移し替えのモジュールが持つ read_plugin_version を、text の版を返すものに差し替える。"""
+        # 移し替えのモジュールを読み込めない間も、他のテストの収集を止めないよう、使うときに読む
+        import migrator
+        import versions
+
+        version = versions.parse_release_version(text)
+
+        def _read_plugin_version(*args: Any, **kwargs: Any) -> Any:
+            """プラグインの版のファイルを読まずに、決めた版を返す。"""
+            return version
+
+        # 版のモジュールの関数と、移し替えのモジュールが名前で取り込んだ関数の両方を差し替える
+        monkeypatch.setattr(versions, "read_plugin_version", _read_plugin_version)
+        monkeypatch.setattr(migrator, "read_plugin_version", _read_plugin_version, raising=False)
+
+    return _install
 
 
 @pytest.fixture

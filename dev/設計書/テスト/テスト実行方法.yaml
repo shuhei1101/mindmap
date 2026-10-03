@@ -10,6 +10,8 @@ layers:
       - Python 3.12 以上と pytest
       - PyYAML 5.1 以上と jsonschema 4.18.0 以上が、テストを動かす Python に入っている
       - 実行はリポジトリの直下で行う
+      - 開発側の点検（`tests/unit/scripts/test_migration_coverage.py`）は `v*` のタグを読む。タグを取っていない clone では `git fetch --tags` を先に流す（タグが 1 つも無ければ skip する）
+      - git の写しのテスト（`tests/unit/scripts/test_backup.py`）は git を使う。テストの中で一時フォルダに `git init` し、作者の名前とメールはそのリポジトリの設定に置く
     run_one:
       label: ファイル
       command: |-

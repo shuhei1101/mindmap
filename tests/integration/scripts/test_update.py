@@ -129,7 +129,7 @@ def test_error_when_legacy_format(
     run_mindmap: RunMindmap,
     snapshot_tree: SnapshotTree,
 ) -> None:
-    """資料の done が残るワークスペースでは何も書かず、migrate を案内して終わる（異常系）。"""
+    """資料の done が残るワークスペースでは何も書かず、/mindstella:upgrade を案内して終わる（異常系）。"""
     # 準備
     root = make_legacy_workspace(make_item("D-1"), legacy_docs={"A-1": True})
     before = snapshot_tree(root)
@@ -141,5 +141,5 @@ def test_error_when_legacy_format(
     assert result.returncode == 1
     lines = result.stderr.splitlines()
     assert any(line.startswith("docs.yaml: items[0]") for line in lines)
-    assert lines[-1] == "ヒント: 前の版の形式の記録は migrate で今の形式に移せます"
+    assert lines[-1] == "ヒント: 前の版の形式の記録は /mindstella:upgrade で今の形式に移せます"
     assert snapshot_tree(root) == before

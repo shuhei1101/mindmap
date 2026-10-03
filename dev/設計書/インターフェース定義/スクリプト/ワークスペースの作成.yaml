@@ -21,15 +21,16 @@ flows:
 
         クライアント->>IF: init --workspace（標準入力に設定）
         IF->>IF: 設定をスキーマと突き合わせる
-        IF->>WS: mindmap.yaml・種類ごとの YAML・docs/・release/ を作る
+        IF->>WS: mindmap.yaml・種類ごとの YAML・mindstella-version.ini・docs/・release/ を作る
         IF-->>クライアント: JSON（workspace・files）
       ```
     expected:
       - 終了コードが 0
       - '`mindmap.yaml` を読むと、渡した設定と同じ中身である'
       - '`decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` が `items: []` である'
+      - '`mindstella-version.ini` の 1 行目が `plugins/mindstella/version.ini` の 1 行目と同じ'
       - '`docs/` と `release/` がある'
-      - '`files` に作った 8 つの YAML と 2 つのフォルダがある'
+      - '`files` に作った 8 つの YAML、`mindstella-version.ini` と 2 つのフォルダがある'
     test: test_normal
   - name: 異常系（既にワークスペースがある・WorkspaceExistsError）
     summary: mindmap.yaml があるフォルダには作らず、何も書き換えない
@@ -100,9 +101,9 @@ flows:
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
       - '`--workspace` のフォルダが無い'
     test: test_error_when_write_fails
-lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`release/` を作る。
+lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`release/`・プラグインの版を書いた `mindstella-version.ini` を作る。
 idempotent: false
-side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`release/` を作る'
+side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）と `mindstella-version.ini` を書き、`docs/`・`release/` を作る'
 request:
   - name: --workspace
     type: str
