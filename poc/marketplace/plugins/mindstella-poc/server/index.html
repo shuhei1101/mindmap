@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mindstella PoC</title>
+</head>
+<body>
+  <!-- 記録: /data を読んで描く。書き換えの知らせ（/events）で読み直す -->
+  <main>
+    <h1>記録</h1>
+    <p id="workspace"></p>
+    <ul id="items"></ul>
+    <!-- 回答・意見の送信: 項目の ID と本文を /submit へ送る -->
+    <form id="submit-form">
+      <label>項目 <select id="target" name="target"></select></label>
+      <label>本文 <textarea id="body" name="body" required></textarea></label>
+      <button type="submit">送る</button>
+      <output id="result" aria-live="polite"></output>
+    </form>
+  </main>
+  <script>
+    // 描き直した時刻と件数を残す。計測の側がこの記録と書いた時刻を突き合わせる
+    window.__renders = [];
+
+    // 記録を読み直して描く
+    async function render() {
+      const data = await (await fetch("/data")).json();
+      document.getElementById("workspace").textContent = data.workspace;
+      const list = document.getElementById("items");
+      const select = document.getElementById("target");
+      list.replaceChildren(...data.items.map((item) => {
+        const li = document.createElement("li");
+        li.textContent = `${item.id} ${item.title}`;
+        return li;
+      }));
+      select.replaceChildren(...data.items.map((item) => new Option(item.id, item.id)));
+      window.__renders.push({ at: Date.now(), count: data.items.length, titles: data.items.map((i) => i.title) });
+    }
+
+    // 書き換えの知らせを受けたら描き直す
+    new EventSource("/events").addEventListener("changed", render);
+
+    // 送信して結果を出す
+    document.getElementById("submit-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const response = await fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target: form.get("target"), body: form.get("body") }),
+      });
+      document.getElementById("result").textContent = response.ok ? "送りました" : "送れませんでした";
+    });
+
+    render();
+  </script>
+</body>
+</html>

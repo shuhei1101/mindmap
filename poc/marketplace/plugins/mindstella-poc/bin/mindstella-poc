@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# PoC: tmux のセッションを立て、mindstella の MCP サーバーを渡した Claude Code を起動する
+set -euo pipefail
+
+PLUGIN_ID="mindstella-poc@mindstella-poc"
+
+workspace="$(realpath -- "${1:?ワークスペースのフォルダを渡してください}")"
+session="${MINDSTELLA_TMUX_SESSION:-mindstella-$(basename -- "$workspace")}"
+python_bin="${MINDSTELLA_PYTHON:?MCP サーバーを動かす Python を MINDSTELLA_PYTHON で渡してください}"
+
+# インストールしたプラグインの今の版の置き場所を、Claude Code に問い合わせる
+plugin_root="$(claude plugin list --json | "$python_bin" -c '
+import json, sys
+rows = [r for r in json.load(sys.stdin) if r["id"] == sys.argv[1]]
+if not rows:
+    sys.exit(f"{sys.argv[1]} がインストールされていません")
+print(rows[0]["installPath"])
+' "$PLUGIN_ID")"
+echo "[mindstella] plugin: $plugin_root" >&2
+
+# この起動だけに渡す MCP の設定を書く
+config_dir="$(mktemp -d)"
+config="$config_dir/mcp.json"
+"$python_bin" - "$config" "$python_bin" "$plugin_root/server/server.py" "$workspace" <<'PY'
+import json, sys
+config, python_bin, server, workspace = sys.argv[1:]
+servers = {"mindstella": {"command": python_bin, "args": [server], "env": {"MINDSTELLA_WORKSPACE": workspace}}}
+with open(config, "w", encoding="utf-8") as f:
+    json.dump({"mcpServers": servers}, f)
+PY
+echo "[mindstella] mcp config: $config" >&2
+
+# tmux のサーバーが先に立っていると呼び出し元の環境変数は渡らないため、Claude Code の設定のフォルダは明示して渡す
+tmux_env=()
+if [[ -n "${CLAUDE_CONFIG_DIR:-}" ]]; then
+  tmux_env+=(-e "CLAUDE_CONFIG_DIR=$CLAUDE_CONFIG_DIR")
+fi
+
+# tmux の中で Claude Code を起動する。MINDSTELLA_CLAUDE_ARGS は Claude Code へそのまま渡す
+# shellcheck disable=SC2086
+tmux new-session -d -s "$session" -c "$workspace" "${tmux_env[@]}" -- claude --mcp-config "$config" ${MINDSTELLA_CLAUDE_ARGS:-}
+
+# 計測の側から動かすときはつながずに終える
+if [[ -z "${MINDSTELLA_NO_ATTACH:-}" ]]; then
+  tmux attach-session -t "$session"
+fi

@@ -1,0 +1,12 @@
+{
+  "name": "mindstella-poc",
+  "owner": { "name": "shuhei1101" },
+  "description": "PoC: 起動スクリプトで立てる MCP サーバーとプレビューの配信",
+  "plugins": [
+    {
+      "name": "mindstella-poc",
+      "source": "./plugins/mindstella-poc",
+      "description": "PoC: 起動スクリプトで立てる MCP サーバーとプレビューの配信"
+    }
+  ]
+}
