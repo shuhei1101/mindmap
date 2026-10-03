@@ -59,6 +59,21 @@ request:
     required: true
     description: マーケットプレイスの説明
     notes: リポジトリの説明と同じ文言
+  - name: plugins[].license
+    type: '"MIT"'
+    required: true
+    description: プラグインのライセンス（SPDX の識別子）
+    notes: '`plugin.json` の `license` と同じ値'
+  - name: plugins[].homepage
+    type: '"https://github.com/shuhei1101/mindstella"'
+    required: true
+    description: プラグインの紹介先。リポジトリの URL
+    notes: '`plugin.json` の `homepage` と同じ値'
+  - name: plugins[].repository
+    type: '"https://github.com/shuhei1101/mindstella"'
+    required: true
+    description: プラグインのソースコードのリポジトリ
+    notes: '`plugin.json` の `repository` と同じ値'
 request_example: |-
   ```json
   {
@@ -69,7 +84,10 @@ request_example: |-
       {
         "name": "mindstella",
         "source": "./plugins/mindstella",
-        "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル"
+        "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
+        "license": "MIT",
+        "homepage": "https://github.com/shuhei1101/mindstella",
+        "repository": "https://github.com/shuhei1101/mindstella"
       }
     ]
   }

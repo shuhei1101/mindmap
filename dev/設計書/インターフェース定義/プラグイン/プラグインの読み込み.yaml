@@ -58,12 +58,32 @@ request:
     type: フォルダ
     required: true
     description: スキル session（`/mindstella:session`）。形はインターフェース定義『話し合いの進行』
+  - name: author.url
+    type: '"https://github.com/shuhei1101"'
+    required: true
+    description: 作者の GitHub のページ
+  - name: license
+    type: '"MIT"'
+    required: true
+    description: プラグインのライセンス（SPDX の識別子）
+    notes: 本文はリポジトリの直下の `LICENSE`
+  - name: homepage
+    type: '"https://github.com/shuhei1101/mindstella"'
+    required: true
+    description: プラグインの紹介先。リポジトリの URL
+  - name: repository
+    type: '"https://github.com/shuhei1101/mindstella"'
+    required: true
+    description: プラグインのソースコードのリポジトリ
 request_example: |-
   ```json
   {
     "name": "mindstella",
     "description": "話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル",
-    "author": { "name": "shuhei1101" }
+    "author": { "name": "shuhei1101", "url": "https://github.com/shuhei1101" },
+    "license": "MIT",
+    "homepage": "https://github.com/shuhei1101/mindstella",
+    "repository": "https://github.com/shuhei1101/mindstella"
   }
   ```
 constraints:
