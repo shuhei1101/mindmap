@@ -8,7 +8,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
-from builder import build_preview
+from builder import build_preview, export_preview, validate_export_out
 from checker import check_workspace
 from errors import ItemNotFoundError, OptionNotFoundError, SchemaMismatchError
 from graph import judge_goal, list_next_candidates, summarize_status, trace_impact
@@ -193,6 +193,14 @@ def run_check(root: Path) -> Result:
 def run_build(root: Path, now: NowFn = now_utc) -> Result:
     """プレビューを書き出してそのパスを返す。"""
     path = build_preview(load_workspace(root), built_at=now())
+    return {"path": str(path)}, 0
+
+
+def run_export(root: Path, out: Path, now: NowFn = now_utc) -> Result:
+    """書き出す先を確かめて配る書き出しを書き、そのパスを返す。"""
+    # ワークスペースを読む前に確かめる（誤った out では何も読まず、書かない）
+    resolved = validate_export_out(out, root=root)
+    path = export_preview(load_workspace(root), out=resolved, built_at=now())
     return {"path": str(path)}, 0
 
 
