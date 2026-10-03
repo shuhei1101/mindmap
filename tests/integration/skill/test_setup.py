@@ -1,4 +1,4 @@
-"""スキル setup（/mindmap:setup）のファイルの形の結合テスト。"""
+"""スキル setup（/mindstella:setup）のファイルの形の結合テスト。"""
 
 from __future__ import annotations
 

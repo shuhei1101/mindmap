@@ -12,8 +12,11 @@ import yaml
 REPO_ROOT_PARENT_DEPTH = 3
 REPO_ROOT = Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 
+# プラグインのフォルダ（`${CLAUDE_PLUGIN_ROOT}` の指す先）
+PLUGIN_DIR = REPO_ROOT / "plugins" / "mindstella"
+
 # スキルのフォルダの置き場所
-SKILLS_DIR = REPO_ROOT / "skills"
+SKILLS_DIR = PLUGIN_DIR / "skills"
 
 # 進め方ガイドの置き場所
 PLAYBOOKS_DIR = SKILLS_DIR / "mindmap" / "playbooks"
@@ -82,10 +85,10 @@ def skill_markdown_texts(skill_name: str) -> list[str]:
 
 
 def missing_plugin_paths(texts: list[str]) -> list[str]:
-    """本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスのうち、リポジトリの中に無いものを返す。"""
+    """本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスのうち、プラグインのフォルダの中に無いものを返す。"""
     paths = {match for text in texts for match in PLUGIN_PATH_PATTERN.findall(text)}
     # `{field}` のような置き換える箇所を含むパスは、実在を確かめられない
-    return sorted(path for path in paths if "{" not in path and not (REPO_ROOT / path).exists())
+    return sorted(path for path in paths if "{" not in path and not (PLUGIN_DIR / path).exists())
 
 
 def launches_not_in_form(texts: list[str]) -> list[str]:
