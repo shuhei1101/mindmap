@@ -1,0 +1,17 @@
+$ pytest tests/e2e/単一ユースケース/test_graph_trace_view.py tests/e2e/単一ユースケース/test_preview_export.py tests/e2e/複合ユースケース/test_preview_reread.py -v
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/fix-preview-graph-ball-of-each-kind
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 5 items
+
+tests/e2e/単一ユースケース/test_graph_trace_view.py::test_normal[chromium] PASSED [ 20%]
+tests/e2e/単一ユースケース/test_graph_trace_view.py::test_normal_when_toggle_all_kinds[chromium] PASSED [ 40%]
+tests/e2e/単一ユースケース/test_preview_export.py::test_normal[chromium] PASSED [ 60%]
+tests/e2e/複合ユースケース/test_preview_reread.py::test_normal[chromium] PASSED [ 80%]
+tests/e2e/単一ユースケース/test_preview_export.py::test_error_when_schema_mismatch PASSED [100%]
+
+======================== 5 passed in 199.99s (0:03:19) =========================
