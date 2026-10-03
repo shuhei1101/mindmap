@@ -194,12 +194,14 @@ var MindmapPreview;
         const shownKinds = new Set(MindmapPreview.KIND_KEYS);
         const canvas = MindmapPreview.h({ tag: "canvas", attrs: { id: "graph-canvas", class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
         const kindToggles = MindmapPreview.h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
+        // 表示する種類が 1 つも無いときに、枠の中央に出す文
+        const emptyNotice = MindmapPreview.h({ tag: "p", attrs: { class: "empty map-empty", hidden: shownKinds.size > 0 }, children: ["表示する種類の項目はありません"] });
         const root = MindmapPreview.h({
             tag: "div",
             attrs: { class: "screen graph" },
             children: [
                 MindmapPreview.h({ tag: "div", attrs: { class: "map-tools" }, children: [kindToggles] }),
-                MindmapPreview.h({ tag: "div", attrs: { class: "map-frame space" }, children: [canvas] }),
+                MindmapPreview.h({ tag: "div", attrs: { class: "map-frame space" }, children: [emptyNotice, canvas] }),
             ],
         });
         const labelCache = new Map();
@@ -255,6 +257,7 @@ var MindmapPreview;
         };
         /** 玉と線を作り直す（表示する種類が変わったとき） */
         const rebuild = () => {
+            emptyNotice.hidden = shownKinds.size > 0;
             const graph = buildGraph({ index, shownKinds });
             balls = placeBalls(index, graph);
             ballById = new Map(balls.map((ball) => [ball.id, ball]));
@@ -275,7 +278,7 @@ var MindmapPreview;
             birth = performance.now();
             select(current);
         };
-        /** 項目の種類ごとの表示 / 非表示の切り替え */
+        /** 項目の種類ごとの表示 / 非表示の切り替え（右端にまとめて切り替える箱） */
         const drawToggles = () => {
             kindToggles.replaceChildren(...MindmapPreview.KIND_KEYS.map((kind) => MindmapPreview.h({
                 tag: "label",
@@ -302,7 +305,18 @@ var MindmapPreview;
                     MindmapPreview.KIND_LABEL[kind],
                     MindmapPreview.h({ tag: "span", attrs: { class: "n" }, children: [index.data[kind].length] }),
                 ],
-            })));
+            })), MindmapPreview.toggleAllBox({
+                label: "すべての種類を表示",
+                shown: shownKinds,
+                all: [...MindmapPreview.KIND_KEYS],
+                onChange: (next) => {
+                    shownKinds.clear();
+                    for (const kind of next)
+                        shownKinds.add(kind);
+                    drawToggles();
+                    rebuild();
+                },
+            }));
         };
         /** 項目を選ぶ（その玉へゆっくり寄る）。選ぶのをやめたら、全体を見る位置へ戻す */
         const select = (id) => {

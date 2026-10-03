@@ -255,12 +255,14 @@ namespace MindmapPreview {
     const shownKinds = new Set<string>(KIND_KEYS);
     const canvas = h({ tag: "canvas", attrs: { id: "graph-canvas", class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
     const kindToggles = h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
+    // 表示する種類が 1 つも無いときに、枠の中央に出す文
+    const emptyNotice = h({ tag: "p", attrs: { class: "empty map-empty", hidden: shownKinds.size > 0 }, children: ["表示する種類の項目はありません"] });
     const root = h({
       tag: "div",
       attrs: { class: "screen graph" },
       children: [
         h({ tag: "div", attrs: { class: "map-tools" }, children: [kindToggles] }),
-        h({ tag: "div", attrs: { class: "map-frame space" }, children: [canvas] }),
+        h({ tag: "div", attrs: { class: "map-frame space" }, children: [emptyNotice, canvas] }),
       ],
     });
     const labelCache = new Map<string, HTMLCanvasElement>();
@@ -317,6 +319,7 @@ namespace MindmapPreview {
 
     /** 玉と線を作り直す（表示する種類が変わったとき） */
     const rebuild = (): void => {
+      emptyNotice.hidden = shownKinds.size > 0;
       const graph = buildGraph({ index, shownKinds });
       balls = placeBalls(index, graph);
       ballById = new Map(balls.map((ball) => [ball.id, ball]));
@@ -338,7 +341,7 @@ namespace MindmapPreview {
       select(current);
     };
 
-    /** 項目の種類ごとの表示 / 非表示の切り替え */
+    /** 項目の種類ごとの表示 / 非表示の切り替え（右端にまとめて切り替える箱） */
     const drawToggles = (): void => {
       kindToggles.replaceChildren(
         ...KIND_KEYS.map((kind) =>
@@ -367,6 +370,17 @@ namespace MindmapPreview {
             ],
           }),
         ),
+        toggleAllBox({
+          label: "すべての種類を表示",
+          shown: shownKinds,
+          all: [...KIND_KEYS],
+          onChange: (next) => {
+            shownKinds.clear();
+            for (const kind of next) shownKinds.add(kind);
+            drawToggles();
+            rebuild();
+          },
+        }),
       );
     };
 

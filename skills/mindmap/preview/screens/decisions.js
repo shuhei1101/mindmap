@@ -31,6 +31,8 @@ var MindmapPreview;
     const ZOOM_MAX = 1.5;
     /** マップの狭い幅の境（これ以下は字下げした縦の一覧） */
     const NARROW_QUERY = "(max-width: 900px)";
+    /** 表示する状態の検討事項が 1 件も無いときに、マップの枠と字下げの一覧に出す文 */
+    const NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません";
     /** 対象 → カテゴリー → フェーズ → 検討事項の木を、表示する状態で絞って返す（ELK に渡す節と枝の形） */
     function buildDecisionTree({ index, shownStatuses, }) {
         const { settings } = index.data;
@@ -264,7 +266,8 @@ var MindmapPreview;
         return MindmapPreview.h({
             tag: "nav",
             attrs: { class: "map-outline", "aria-label": "検討事項の一覧" },
-            children: [MindmapPreview.h({ tag: "ul", children: [...roots.map(entry)] })],
+            // 表示する状態の検討事項が無いときは、対象の見出しを並べず空の旨を出す
+            children: [roots.length > 0 ? MindmapPreview.h({ tag: "ul", children: [...roots.map(entry)] }) : MindmapPreview.emptyNote(NO_SHOWN_STATUS_TEXT)],
         });
     }
     /** マップの道具の行（状態の印・キーワード）と、マップの枠・拡大の道具を作る */
@@ -273,6 +276,8 @@ var MindmapPreview;
         const decisions = index.data.decisions;
         const legend = MindmapPreview.h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する状態" } });
         const frame = MindmapPreview.h({ tag: "div", attrs: { class: "map-frame" } });
+        // 表示する状態の検討事項が無いときに、マップの枠の中央に出す文
+        const emptyNotice = MindmapPreview.h({ tag: "p", attrs: { class: "empty map-empty", hidden: true }, children: [NO_SHOWN_STATUS_TEXT] });
         const canvas = MindmapPreview.h({ tag: "div", attrs: { id: "decision-map", class: "map-canvas", role: "group", "aria-label": "検討事項のマップ" } });
         const sizer = MindmapPreview.h({ tag: "div", attrs: { class: "map-sizer" }, children: [canvas] });
         const wrap = MindmapPreview.h({ tag: "div", attrs: { class: "map-wrap" }, children: [sizer] });
@@ -294,9 +299,10 @@ var MindmapPreview;
         let current = null;
         /** キーワードに当たった検討事項か */
         const isHit = (item) => mapState.keyword !== "" && item.title.toLowerCase().includes(mapState.keyword.toLowerCase());
-        /** 状態の印の行（表示 / 非表示の切り替えと、件数・キーワードに当たった件数のバッジ） */
+        /** 状態の印の行（表示 / 非表示の切り替えと、件数・キーワードに当たった件数のバッジ。右端にまとめて切り替える箱） */
         const drawLegend = () => {
-            legend.replaceChildren(...MindmapPreview.DECISION_STATUSES.filter((status) => decisions.some((item) => item.status === status)).map((status) => {
+            const bandStatuses = MindmapPreview.DECISION_STATUSES.filter((status) => decisions.some((item) => item.status === status));
+            legend.replaceChildren(...bandStatuses.map((status) => {
                 const total = decisions.filter((item) => item.status === status).length;
                 const hits = decisions.filter((item) => item.status === status && isHit(item)).length;
                 return MindmapPreview.h({
@@ -329,6 +335,14 @@ var MindmapPreview;
                             : null,
                     ],
                 });
+            }), MindmapPreview.toggleAllBox({
+                label: "すべての状態を表示",
+                shown: mapState.shownStatuses,
+                all: bandStatuses,
+                onChange: (next) => {
+                    mapState.shownStatuses = next;
+                    void draw(false);
+                },
             }));
         };
         /** 拡大率を決めて、マップの大きさと拡大を当てる（全体を表示は、枠に木の全体が収まる倍率） */
@@ -353,6 +367,7 @@ var MindmapPreview;
                 return;
             const key = [...mapState.shownStatuses].sort().join(",");
             const graph = buildDecisionTree({ index, shownStatuses: mapState.shownStatuses });
+            emptyNotice.hidden = graph.children.length > 0;
             current = await layoutOf(graph, key);
             const previous = { left: wrap.scrollLeft, top: wrap.scrollTop };
             drawMap({ laid: current, canvas, selected: route.id, open: on.open });
@@ -453,7 +468,7 @@ var MindmapPreview;
                 ],
             })
             : null;
-        frame.append(wrap);
+        frame.append(emptyNotice, wrap);
         if (notice !== null)
             frame.hidden = true;
         MindmapPreview.append({
