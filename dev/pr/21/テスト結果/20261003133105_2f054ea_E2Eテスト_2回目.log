@@ -1,6 +1,6 @@
 # 実行したコマンド
-pytest tests/e2e -v
-# コミット: f6a7110352e1b814b03b3f1f4294a99990819d66
+pytest tests/e2e -v（全体を続けて 3 回流した 2 回目）
+# コミット: 2f054eaeaeb1223837335b06afc1e80522c2ab4b
 
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
@@ -56,4 +56,4 @@ tests/e2e/単一ユースケース/test_workspace_create.py::test_error_when_wor
 tests/e2e/複合ユースケース/test_discussion_to_goal.py::test_normal_when_new_discussion PASSED [ 97%]
 tests/e2e/複合ユースケース/test_discussion_to_goal.py::test_normal_when_resume PASSED [100%]
 
-======================== 45 passed in 203.25s (0:03:23) ========================
+======================== 45 passed in 237.61s (0:03:57) ========================

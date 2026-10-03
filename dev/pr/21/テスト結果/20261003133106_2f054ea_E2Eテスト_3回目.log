@@ -1,0 +1,59 @@
+# 実行したコマンド
+pytest tests/e2e -v（全体を続けて 3 回流した 3 回目）
+# コミット: 2f054eaeaeb1223837335b06afc1e80522c2ab4b
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-preview-preview-screens
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 45 items
+
+tests/e2e/単一ユースケース/test_decision_map_view.py::test_normal[chromium] PASSED [  2%]
+tests/e2e/単一ユースケース/test_decision_map_view.py::test_normal_when_keyword[chromium] PASSED [  4%]
+tests/e2e/単一ユースケース/test_decision_map_view.py::test_normal_when_narrow[chromium] PASSED [  6%]
+tests/e2e/単一ユースケース/test_decision_map_view.py::test_error_when_layout_library_unavailable[chromium] PASSED [  8%]
+tests/e2e/単一ユースケース/test_doc_read_view.py::test_normal[chromium] PASSED [ 11%]
+tests/e2e/単一ユースケース/test_graph_trace_view.py::test_normal[chromium] PASSED [ 13%]
+tests/e2e/単一ユースケース/test_item_detail_view.py::test_normal[chromium] PASSED [ 15%]
+tests/e2e/単一ユースケース/test_item_detail_view.py::test_error_when_body_has_script[chromium] PASSED [ 17%]
+tests/e2e/単一ユースケース/test_item_detail_view.py::test_error_when_render_library_unavailable[chromium] PASSED [ 20%]
+tests/e2e/単一ユースケース/test_item_search_view.py::test_normal[chromium] PASSED [ 22%]
+tests/e2e/単一ユースケース/test_item_search_view.py::test_normal_when_no_match[chromium] PASSED [ 24%]
+tests/e2e/単一ユースケース/test_overview_view.py::test_normal[chromium] PASSED [ 26%]
+tests/e2e/単一ユースケース/test_overview_view.py::test_normal_when_show_all_holds[chromium] PASSED [ 28%]
+tests/e2e/単一ユースケース/test_overview_view.py::test_normal_when_many_deliverables[chromium] PASSED [ 31%]
+tests/e2e/単一ユースケース/test_table_filter_view.py::test_normal[chromium] PASSED [ 33%]
+tests/e2e/単一ユースケース/test_table_filter_view.py::test_normal_when_no_match[chromium] PASSED [ 35%]
+tests/e2e/単一ユースケース/test_task_board_view.py::test_normal[chromium] PASSED [ 37%]
+tests/e2e/複合ユースケース/test_preview_reread.py::test_normal[chromium] PASSED [ 40%]
+tests/e2e/単一ユースケース/test_goal_check.py::test_normal_when_reached PASSED [ 42%]
+tests/e2e/単一ユースケース/test_goal_check.py::test_normal_when_not_reached PASSED [ 44%]
+tests/e2e/単一ユースケース/test_hearing.py::test_normal PASSED           [ 46%]
+tests/e2e/単一ユースケース/test_option_adopt.py::test_normal PASSED      [ 48%]
+tests/e2e/単一ユースケース/test_option_adopt.py::test_error_when_option_not_found PASSED [ 51%]
+tests/e2e/単一ユースケース/test_plugin_install.py::test_normal PASSED    [ 53%]
+tests/e2e/単一ユースケース/test_policy_change.py::test_normal PASSED     [ 55%]
+tests/e2e/単一ユースケース/test_policy_change.py::test_normal_when_deliverable_no_longer_needed PASSED [ 57%]
+tests/e2e/単一ユースケース/test_preview_build.py::test_normal PASSED     [ 60%]
+tests/e2e/単一ユースケース/test_preview_build.py::test_error_when_schema_mismatch PASSED [ 62%]
+tests/e2e/単一ユースケース/test_record_add_update.py::test_normal PASSED [ 64%]
+tests/e2e/単一ユースケース/test_record_add_update.py::test_error_when_schema_mismatch PASSED [ 66%]
+tests/e2e/単一ユースケース/test_record_add_update.py::test_error_when_id_not_found PASSED [ 68%]
+tests/e2e/単一ユースケース/test_record_search.py::test_normal PASSED     [ 71%]
+tests/e2e/単一ユースケース/test_record_search.py::test_error_when_id_not_found PASSED [ 73%]
+tests/e2e/単一ユースケース/test_status.py::test_normal_when_resume PASSED [ 75%]
+tests/e2e/単一ユースケース/test_status.py::test_normal_when_next PASSED  [ 77%]
+tests/e2e/単一ユースケース/test_utterance_intake.py::test_normal PASSED  [ 80%]
+tests/e2e/単一ユースケース/test_utterance_intake.py::test_normal_when_diagram_kept_as_doc PASSED [ 82%]
+tests/e2e/単一ユースケース/test_utterance_intake.py::test_normal_when_off_topic_question PASSED [ 84%]
+tests/e2e/単一ユースケース/test_workspace_check.py::test_normal_when_clean PASSED [ 86%]
+tests/e2e/単一ユースケース/test_workspace_check.py::test_normal_when_problems_found PASSED [ 88%]
+tests/e2e/単一ユースケース/test_workspace_create.py::test_normal PASSED  [ 91%]
+tests/e2e/単一ユースケース/test_workspace_create.py::test_error_when_dependency_missing PASSED [ 93%]
+tests/e2e/単一ユースケース/test_workspace_create.py::test_error_when_workspace_exists PASSED [ 95%]
+tests/e2e/複合ユースケース/test_discussion_to_goal.py::test_normal_when_new_discussion PASSED [ 97%]
+tests/e2e/複合ユースケース/test_discussion_to_goal.py::test_normal_when_resume PASSED [100%]
+
+======================== 45 passed in 243.55s (0:04:03) ========================

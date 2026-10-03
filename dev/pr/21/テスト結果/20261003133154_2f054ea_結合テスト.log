@@ -1,6 +1,6 @@
 # 実行したコマンド
 pytest tests/integration -v
-# コミット: f6a7110352e1b814b03b3f1f4294a99990819d66
+# コミット: 2f054eaeaeb1223837335b06afc1e80522c2ab4b
 
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
@@ -159,4 +159,4 @@ tests/integration/scripts/test_update.py::test_error_when_legacy_format PASSED [
 tests/integration/skill/test_session.py::test_normal PASSED              [ 99%]
 tests/integration/skill/test_setup.py::test_normal PASSED                [100%]
 
-================== 146 passed, 2 skipped in 285.11s (0:04:45) ==================
+================== 146 passed, 2 skipped in 260.18s (0:04:20) ==================
