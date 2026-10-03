@@ -187,9 +187,9 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 /* 背景は塗らず、枠とチェック・横棒の記号だけで描く */
 .legend .legend-all-check input { position: relative; box-sizing: border-box; opacity: 1; pointer-events: auto; appearance: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--text-2); border-radius: 3px; background: transparent; cursor: pointer; }
 /* チェックの記号: 右下の 2 辺の枠を回してレ点にし、箱の中心に置く。線の太さは状態の印の線にそろえる */
-.legend .legend-all-check input:checked::after { content: ""; position: absolute; left: 50%; top: 50%; width: 3px; height: 6px; border: solid var(--text-2); border-width: 0 1.5px 1.5px 0; transform: translate(-50%, -60%) rotate(45deg); }
+.legend .legend-all-check input:checked::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 7px; border: solid var(--text); border-width: 0 1.5px 1.5px 0; transform: translate(-50%, -60%) rotate(45deg); }
 /* 横棒の記号: 一部だけを出しているとき。枠線で描き、ハイコントラストでも消えないようにする */
-.legend .legend-all-check input:indeterminate::after { content: ""; position: absolute; left: 3px; right: 3px; top: 50%; border-top: 1.5px solid var(--text-2); transform: translateY(-50%); }
+.legend .legend-all-check input:indeterminate::after { content: ""; position: absolute; left: 2.5px; right: 2.5px; top: calc(50% - .75px); border-top: 1.5px solid var(--text); }
 /* 表示する状態の検討事項が無いとき: マップの枠の中央に空の旨を出す */
 .map-empty { position: absolute; left: 0; right: 0; top: 40%; z-index: 1; margin: 0; text-align: center; pointer-events: none; }
 .map-wrap { position: relative; overflow: auto; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 150px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
