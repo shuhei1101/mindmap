@@ -93,3 +93,4 @@ trigger: 利用者がどれかの画面で項目を押すか、項目を指す U
 preconditions:
   - ワークスペースに記録があり、プレビューを書き出してある
 minimal_guarantee: 本文に書かれた HTML やスクリプトは実行しない。描画のライブラリが読めないときも、本文の文字は読める。
+test_file: tests/e2e/単一ユースケース/test_item_detail_view.py

@@ -80,7 +80,7 @@ layers:
       ```bash
       pytest tests/e2e
       ```
-    description: pytest で、シナリオ設計書の利用者の操作を通しで確かめる。プラグインは実際の Claude Code の CLI（`claude plugin ...`）を使い、スクリプトはスキルがコマンドを連ねて呼ぶ流れを実際の `mindmap.py` を子プロセスで起動して確かめる。Mock は使わない。
+    description: pytest で、シナリオ設計書の利用者の操作を通しで確かめる。プラグインは実際の Claude Code の CLI（`claude plugin ...`）を使い、スクリプトはスキルがコマンドを連ねて呼ぶ流れを実際の `mindmap.py` を子プロセスで起動して確かめる。プレビューのシナリオは、`build` で書き出した `preview.html` を pytest-playwright で開いて確かめる。Mock は使わない（描画のライブラリの配信元を失敗させる異常シナリオは、ブラウザの通信の差し替え）。
     prerequisites:
       - Python 3.12 以上と pytest
       - 'プラグインのシナリオ: Claude Code 2.1.287 以上（`claude` が PATH にある）。スクリプトのシナリオは `claude` を使わない'

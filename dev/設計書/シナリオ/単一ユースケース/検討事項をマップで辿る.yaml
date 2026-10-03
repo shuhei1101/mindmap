@@ -112,3 +112,4 @@ primary_actor: 利用者
 trigger: 利用者が検討事項のタブを開く
 preconditions:
   - ワークスペースに記録があり、プレビューを書き出してある
+test_file: tests/e2e/単一ユースケース/test_decision_map_view.py

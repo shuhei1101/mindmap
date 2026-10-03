@@ -45,3 +45,4 @@ success_guarantee: 利用者が開いた画面と項目が URL のハッシュ�
 minimal_guarantee: 描画のライブラリが読めないときも画面は開き、読めなかったライブラリの名前が出る。ワークスペースの記録は書き換えない。
 frequency: 話し合いの再開のたびと、記録を書き足した後
 priority: 高
+test_file: tests/e2e/複合ユースケース/test_preview_reread.py

@@ -66,3 +66,4 @@ primary_actor: 利用者
 trigger: 利用者がどれかのタブを表で開く
 preconditions:
   - ワークスペースに記録があり、プレビューを書き出してある
+test_file: tests/e2e/単一ユースケース/test_table_filter_view.py

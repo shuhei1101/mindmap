@@ -88,3 +88,4 @@ trigger: 利用者がプレビューを開く（概要は既定で開く画面�
 preconditions:
   - ワークスペースに記録があり、プレビューを書き出してある
   - ブラウザが CDN へ HTTPS で届く
+test_file: tests/e2e/単一ユースケース/test_overview_view.py

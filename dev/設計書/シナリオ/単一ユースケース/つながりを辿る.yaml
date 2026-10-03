@@ -38,3 +38,4 @@ primary_actor: 利用者
 trigger: 利用者がタブの帯の右端のつながりを押す
 preconditions:
   - ワークスペースに記録があり、プレビューを書き出してある
+test_file: tests/e2e/単一ユースケース/test_graph_trace_view.py
