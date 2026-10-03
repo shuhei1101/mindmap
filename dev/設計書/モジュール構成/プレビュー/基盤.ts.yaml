@@ -656,6 +656,70 @@ functions:
     returns:
       type: string | null
       description: 開いている項目の ID
+  - name: toggleAllState
+    title: まとめて切り替える箱の状態
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    summary: 帯に並ぶ値のうちいくつを表示しているかから、まとめて切り替える箱の状態を返す
+    kind: 関数
+    scope: public
+    status: planned
+    args:
+      - name: shown
+        type: Set<string>
+        required: true
+        passing: keyword
+        description: 表示している値（状態・種類）
+      - name: all
+        type: string[]
+        required: true
+        passing: keyword
+        description: 帯に並ぶ値。`shown` にあって `all` に無い値は数えない
+    returns:
+      type: '"all" | "some" | "none"'
+      description: '`all` を全て表示していれば `all`（チェック）、1 つも表示していなければ `none`（空）、それ以外は `some`（横棒）。`all` が空なら `none`'
+    notes:
+      単体テスト（単体テスト作成で `unit_tests` へ移す）: |-
+        | テスト名 | 正常/異常 | 概要 | 条件 | Mock | 期待値 |
+        | --- | --- | --- | --- | --- | --- |
+        | test_toggle_all_state | 正常 | 表示している数で状態を返す | `parametrize`: all = a・b・c で shown = a・b・c / a / 空 / a・b・c・z（`all` に無い値を含む）、all = 空で shown = 空 | なし | `all` / `some` / `none` / `all` / `none` |
+  - name: toggleAllBox
+    title: まとめて切り替える箱
+    container: skills/mindmap/preview/core/dom.ts
+    usecase: 共通
+    summary: 帯の右端に置く、文字を添えない三状態のチェックの箱を作る。検討事項の状態の印と、つながりの項目の種類で使う
+    kind: 関数
+    scope: public
+    status: planned
+    args:
+      - name: label
+        type: string
+        required: true
+        passing: keyword
+        description: 読み上げの名前（`aria-label` と `title`）。「すべての状態を表示」「すべての種類を表示」
+      - name: shown
+        type: Set<string>
+        required: true
+        passing: keyword
+        description: 表示している値
+      - name: all
+        type: string[]
+        required: true
+        passing: keyword
+        description: 帯に並ぶ値
+      - name: onChange
+        type: '(next: Set<string>) => void'
+        required: true
+        passing: keyword
+        description: 押した後に表示する値を受け取る。`toggleAllState` が `all` なら空、それ以外は `all` の全て
+    returns:
+      type: HTMLLabelElement
+      description: '`class="legend-all-check"` の label と、その中のネイティブの checkbox。状態が `all` なら `checked`、`some` なら `indeterminate`、`none` ならどちらも偽'
+    notes:
+      単体テスト（単体テスト作成で `unit_tests` へ移す）: |-
+        | テスト名 | 正常/異常 | 概要 | 条件 | Mock | 期待値 |
+        | --- | --- | --- | --- | --- | --- |
+        | test_toggle_all_box | 正常 | 状態に合わせて箱を作り、押すと次に表示する値を渡す | `parametrize`: all = a・b・c で shown = a・b・c / a / 空。作った箱の checkbox を 1 回押す | `onChange` を記録する関数 | checked・indeterminate が 真・偽 / 偽・真 / 偽・偽、`aria-label` が `label`。押した後の `onChange` の引数が 空 / a・b・c / a・b・c |
 test_files:
   - tests/unit/preview/test_records.py
   - tests/unit/preview/test_libs.py

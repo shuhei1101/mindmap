@@ -139,7 +139,7 @@ components:
     container: skills/mindmap/preview/screens/decisions.ts
     usecase: 検討事項をマップで辿る
     kind: 画面
-    summary: 画面設計『検討事項』を描く。マップは `buildDecisionTree` の木を `ELK.layout` で配置して SVG にし、幅 900px 以下では字下げの一覧にする。elkjs が読めないときは `libraryNotice`
+    summary: 画面設計『検討事項』を描く。マップは `buildDecisionTree` の木を `ELK.layout` で配置して SVG にし、幅 900px 以下では字下げの一覧にする。elkjs が読めないときは `libraryNotice`。状態の印の右端に `toggleAllBox` を置き、`shownStatuses` をまとめて入れ替えて描き直す。表示する状態の検討事項が 1 件も無いときは、マップの枠と字下げの一覧に空の旨を出す
     props:
       - name: index
         type: RecordIndex
@@ -281,7 +281,7 @@ components:
     container: skills/mindmap/preview/graph/graph.ts
     usecase: つながりを辿る
     kind: 画面
-    summary: 画面設計『つながり』をキャンバスに描く。玉と線は `buildGraph`、毎コマの描画は玉ごとに一度だけ画像にした文字を倍率をかけて置く（PoC の `opt-each-bitmap`）。画面の外は描かない
+    summary: 画面設計『つながり』をキャンバスに描く。玉と線は `buildGraph`、毎コマの描画は玉ごとに一度だけ画像にした文字を倍率をかけて置く（PoC の `opt-each-bitmap`）。画面の外は描かない。項目の種類の右端に `toggleAllBox` を置き、`shownKinds` をまとめて入れ替えて玉と線を作り直す。表示する種類が 1 つも無いときは、枠の中央に空の旨を出す
     props:
       - name: index
         type: RecordIndex
