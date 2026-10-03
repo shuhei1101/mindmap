@@ -195,7 +195,7 @@ var MindmapPreview;
         const canvas = MindmapPreview.h({ tag: "canvas", attrs: { id: "graph-canvas", class: "g3-wrap", role: "img", "aria-label": "すべての項目のつながり" } });
         const kindToggles = MindmapPreview.h({ tag: "div", attrs: { class: "legend", role: "group", "aria-label": "表示する種類" } });
         // 表示する種類が 1 つも無いときに、枠の中央に出す文
-        const emptyNotice = MindmapPreview.h({ tag: "p", attrs: { class: "empty map-empty", hidden: shownKinds.size > 0 }, children: ["表示する種類の項目はありません"] });
+        const emptyNotice = MindmapPreview.h({ tag: "p", attrs: { class: "empty map-empty", hidden: shownKinds.size > 0 }, children: ["表示する項目はありません。"] });
         const root = MindmapPreview.h({
             tag: "div",
             attrs: { class: "screen graph" },

@@ -26,8 +26,8 @@ namespace MindmapPreview {
       tag: "div",
       attrs: { class: "lib-error", role: "alert" },
       children: [
-        h({ tag: "span", children: [`${what}を表示できません。読めなかったライブラリ: ${names.join("・")}`] }),
-        h({ tag: "span", attrs: { class: "muted" }, children: ["通信を確かめて、ページを読み込み直してください。"] }),
+        h({ tag: "span", children: [`${what}を表示できません。読み込めなかったライブラリ: ${names.join("・")}`] }),
+        h({ tag: "span", attrs: { class: "muted" }, children: ["通信を確認して、ページを再読み込みしてください。"] }),
       ],
     });
   }
@@ -62,7 +62,7 @@ namespace MindmapPreview {
             children: [
               h({
                 tag: "button",
-                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大して見る", title: "拡大して見る" },
+                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大表示", title: "拡大表示" },
                 children: [icon("expand")],
               }),
               h({
@@ -156,7 +156,7 @@ namespace MindmapPreview {
         document.getElementById(`d${id}`)?.remove();
         document.getElementById(id)?.remove();
         container.replaceChildren(
-          h({ tag: "p", attrs: { class: "md-error" }, children: ["この図は描けませんでした。原文を表示します。"] }),
+          h({ tag: "p", attrs: { class: "md-error" }, children: ["この図は表示できませんでした。原文を表示します。"] }),
           h({ tag: "pre", attrs: { class: "dg-raw" }, children: [source] }),
         );
       }

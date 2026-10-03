@@ -87,9 +87,12 @@ namespace MindmapPreview {
   export function board({
     columns,
     card,
+    emptyText,
   }: {
     columns: { status: string; items: Item[] }[];
     card: (item: Item) => HTMLElement;
+    /** 0 件の列に出す文 */
+    emptyText: string;
   }): HTMLElement {
     const element = h({
       tag: "div",
@@ -108,7 +111,7 @@ namespace MindmapPreview {
                   h({ tag: "span", attrs: { class: "n" }, children: [items.length] }),
                 ],
               }),
-              ...(items.length > 0 ? items.map(card) : [emptyNote("なし")]),
+              ...(items.length > 0 ? items.map(card) : [emptyNote(emptyText)]),
             ],
           }),
         ),
@@ -159,6 +162,7 @@ namespace MindmapPreview {
                 links: item.for ?? [],
                 open: on.open,
               }),
+            emptyText: "タスクはありません。",
           })
         : managedTable({
             kind: "tasks",

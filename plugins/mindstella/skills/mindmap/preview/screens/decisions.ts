@@ -74,7 +74,7 @@ namespace MindmapPreview {
   const NARROW_QUERY = "(max-width: 900px)";
 
   /** 表示する状態の検討事項が 1 件も無いときに、マップの枠と字下げの一覧に出す文 */
-  const NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません";
+  const NO_SHOWN_STATUS_TEXT = "表示する検討事項はありません。";
 
   /** 対象 → カテゴリー → フェーズ → 検討事項の木を、表示する状態で絞って返す（ELK に渡す節と枝の形） */
   export function buildDecisionTree({
@@ -434,7 +434,7 @@ namespace MindmapPreview {
                 hits > 0
                   ? h({
                     tag: "span",
-                    attrs: { class: "hit-n", "aria-label": `キーワードに当たった項目 ${hits} 件` },
+                    attrs: { class: "hit-n", "aria-label": `キーワードに一致した項目 ${hits} 件` },
                     children: [hits],
                   })
                   : null,
@@ -502,9 +502,9 @@ namespace MindmapPreview {
       attrs: {
         class: "input map-q",
         type: "search",
-        placeholder: "名前で強調",
+        placeholder: "タイトルで強調",
         value: mapState.keyword,
-        "aria-label": "名前で強調するキーワード",
+        "aria-label": "タイトルで強調するキーワード",
       },
     });
     let timer: number | undefined;
@@ -579,7 +579,7 @@ namespace MindmapPreview {
           tag: "div",
           children: [
             libraryNotice({ names: ["elkjs"], what: "マップ" }),
-            emptyNote("表示形式を表に切り替えると、検討事項を読めます。"),
+            emptyNote("表示形式を「表」に切り替えると、検討事項を表示できます。"),
           ],
         })
         : null;
@@ -634,6 +634,7 @@ namespace MindmapPreview {
                 links: item.depends_on ?? [],
                 open: on.open,
               }),
+            emptyText: "検討事項はありません。",
           }),
         ],
       });
@@ -658,13 +659,13 @@ namespace MindmapPreview {
       },
       {
         key: "ready",
-        label: "着手できる",
+        label: "着手可否",
         nowrap: true,
         filterable: true,
-        order: ["はい", "いいえ"],
+        order: ["着手可能", "前提待ち", "なし"],
         priority: 2,
-        // 前提が全て決着した未決定の検討事項（build が計算した次の候補）
-        get: (row) => (index.readyIds.has(row.id) ? "はい" : "いいえ"),
+        // 前提が全て決着した未決定（build が計算した次の候補）は着手可能、ほかの未決定は前提待ち、未決定以外はなし
+        get: (row) => (row.status !== "未決定" ? "なし" : index.readyIds.has(row.id) ? "着手可能" : "前提待ち"),
       },
       {
         key: "depends_on",
