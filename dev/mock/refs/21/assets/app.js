@@ -617,13 +617,13 @@
     const legend = STATUS_ORDER.filter((s) => counts[s]).map((s) =>
       `<label><input type="checkbox" data-act="mapst" value="${s}" ${state.mapShow.has(s) ? "checked" : ""}>${mark(s)}${s}<span class="n">${counts[s]}</span>${hits[s] ? `<span class="hit-n" aria-label="キーワードに当たった項目 ${hits[s]} 件">${hits[s]}</span>` : ""}</label>`).join("");
     const toggle = `<button class="btn" data-act="deps" aria-pressed="${state.deps}" title="依存関係の線を表示">${icon("deps")}<span class="lbl">依存関係</span></button>`;
-    // 状態をまとめて切り替える操作: body の data-toggle-all で形を選ぶ（buttons = 帯の右にボタン 2 つ / check = 帯の先頭にチェックの箱 1 つ）
+    // 状態をまとめて切り替える操作: body の data-toggle-all で形を選ぶ（buttons = 帯の右にボタン 2 つ / check = 帯の右端に文字の無いチェックの箱 1 つ）
     const mode = document.body.dataset.toggleAll;
     const shown = STATUS_ORDER.filter((s) => counts[s]);
     const allButtons = mode === "buttons" ? `<div class="legend-all" role="group" aria-label="状態をまとめて切り替える"><button type="button" class="btn ghost" data-act="mapall" data-on="1">全選択</button><button type="button" class="btn ghost" data-act="mapall" data-on="0">全解除</button></div>` : "";
-    const allCheck = mode === "check" ? `<label class="legend-all-check"><input type="checkbox" data-act="mapallchk" ${shown.every((s) => state.mapShow.has(s)) ? "checked" : ""}>すべての状態</label>` : "";
+    const allCheck = mode === "check" ? `<label class="legend-all-check" title="すべての状態を表示"><input type="checkbox" data-act="mapallchk" aria-label="すべての状態を表示" ${shown.every((s) => state.mapShow.has(s)) ? "checked" : ""}></label>` : "";
     return `<div class="toolbar">${segment("decisions")}<label class="sr-only" for="map-q">名前で強調するキーワード</label><input class="input map-q" id="map-q" data-act="mapq" type="search" placeholder="名前で強調" value="${esc(state.mapQ)}"><span class="spacer"></span>${toggle}</div>
-      <div class="map-tools"><div class="legend" role="group" aria-label="表示する状態">${allCheck}${legend}${allButtons}</div></div>`;
+      <div class="map-tools"><div class="legend" role="group" aria-label="表示する状態">${legend}${allButtons}${allCheck}</div></div>`;
   };
   const renderMapShell = () => {
     // 狭い幅で使う、字下げした縦の一覧
@@ -635,7 +635,7 @@
           `<li><button data-act="open" data-id="${d.id}">${mark(d.status)}<span>${esc(d.title)}</span></button></li>`).join("")}</ul></li>`).join("")}</ul></li>`).join("")}</ul></li>`).join("")}</ul>`;
     return `${mapToolbar()}
       ${libOk("ELK") ? "" : libError(["elkjs"], "マップ", "表示形式を表に切り替えると、検討事項を読めます。")}
-      <div class="map-frame"${libOk("ELK") ? "" : " hidden"}><div class="map-wrap" id="map-wrap"><div class="map-sizer" id="map-sizer"><div class="map-canvas" id="map-canvas" role="group" aria-label="検討事項のマップ"></div></div></div>
+      <div class="map-frame"${libOk("ELK") ? "" : " hidden"}>${items.length ? "" : `<p class="empty map-empty">表示する状態の検討事項はありません</p>`}<div class="map-wrap" id="map-wrap"><div class="map-sizer" id="map-sizer"><div class="map-canvas" id="map-canvas" role="group" aria-label="検討事項のマップ"></div></div></div>
         <div class="zoom" role="group" aria-label="拡大率"><button class="icon-btn" data-act="zoom" data-z="out" aria-label="縮小">−</button><button class="btn ghost" data-act="zoom" data-z="fit" aria-pressed="${state.zoom === "fit"}">全体を表示</button><button class="icon-btn" data-act="zoom" data-z="in" aria-label="拡大">＋</button></div></div>
       <nav class="map-outline" aria-label="検討事項の一覧">${outline}</nav>`;
   };

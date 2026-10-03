@@ -181,10 +181,12 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .legend .legend-all { display: inline-flex; gap: 2px; margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--border-soft); }
 /* まとめて切り替えるボタン */
 .legend .legend-all .btn { height: 26px; padding: 0 8px; font-size: var(--fs-xs); }
-/* まとめて切り替えるチェックの箱: 状態の印の前に区切り線を挟んで置く。枠を持たず、チェック・横棒・空の見た目を出す */
-.legend .legend-all-check, .legend .legend-all-check:has(input:checked) { margin-right: 6px; padding-left: 0; padding-right: 12px; border: 0; border-right: 1px solid var(--border-soft); border-radius: 0; background: none; color: var(--text); }
+/* まとめて切り替えるチェックの箱: 状態の印の並びの右端に、文字を持たない箱だけを置く */
+.legend .legend-all-check, .legend .legend-all-check:has(input:checked) { margin-left: 6px; padding: 0 4px; border: 0; background: none; }
 /* まとめて切り替えるチェックの箱の本体: 状態の印と違い、箱そのものを見せる */
-.legend .legend-all-check input { position: static; opacity: 1; pointer-events: auto; margin: 0; accent-color: var(--accent); }
+.legend .legend-all-check input { position: static; opacity: 1; pointer-events: auto; width: 16px; height: 16px; margin: 0; accent-color: var(--text); }
+/* 表示する状態の検討事項が無いとき: マップの枠の中央に空の旨を出す */
+.map-empty { position: absolute; left: 0; right: 0; top: 40%; z-index: 1; margin: 0; text-align: center; pointer-events: none; }
 .map-wrap { position: relative; overflow: auto; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 150px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
   background-image: radial-gradient(var(--border-soft) 1px, transparent 1px); background-size: 20px 20px; }
 .map-sizer { position: relative; }
@@ -287,7 +289,7 @@ dialog.search::backdrop { background: var(--scrim); }
   .toolbar .btn .lbl { display: none; }
   .toolbar .grow { max-width: none; flex-basis: 100%; }
   /* 狭い幅のマップは、字下げした縦の一覧にする */
-  .map-wrap { display: none; }
+  .map-wrap, .map-empty { display: none; }
   .map-outline { display: block; }
   .board { grid-template-columns: 1fr; }
 }
