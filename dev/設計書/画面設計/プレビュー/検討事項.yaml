@@ -28,7 +28,7 @@ elements:
   - name: 状態の印
     kind: checkbox
     position: マップ > ツールバー
-    description: 状態ごとの印（色と形）を付けたチェックボックス。外すとその状態の項目を非表示にする。キーワードに当たった項目を含む印に件数のバッジ（非表示の状態の項目も数える）
+    description: 状態ごとの印（色と形）を付けたチェックボックス。外すとその状態の項目を非表示にする。非表示の印は薄い色と点線の枠で出す。キーワードに当たった項目を含む印に件数のバッジ（非表示の状態の項目も数える）
     initial_value: 要見直し・未決定・未整理・保留を表示、決定済み・対象外・取り下げを非表示
     visible_when: 表示形式がマップ
   - name: キーワード
@@ -78,6 +78,21 @@ elements:
         value: プレビューを開く.f.{列}（開いたときだけ）
     description: 検討事項の表。「着手できる」は `derived.next` にある検討事項か（はい / いいえ）
     visible_when: 表示形式が表
+  - name: すべての状態を表示
+    kind: checkbox
+    position: マップ > ツールバー > 状態の印の右端
+    description: 状態の印をまとめて切り替える、文字を添えないチェックの箱。帯に並ぶ全ての状態を表示していればチェック、一部なら横棒（`indeterminate`）、全て隠していれば空。空か横棒のときに押すと全ての状態を表示し、チェックのときに押すと全て隠す。押した後、各状態の印のチェックを結果にそろえる。箱は背景を透過にして枠と記号だけで描き、枠の色は印の枠と同じ、記号は箱の中心に置く。横棒も枠線で描き、ハイコントラストでも消えないようにする。読み上げの名前は `aria-label` の「すべての状態を表示」
+    io: 入力
+    type: 真偽値
+    visible_when: 表示形式がマップ
+    initial_value: 横棒（要見直し・未決定・未整理・保留を表示し、決定済み・対象外・取り下げを隠すため）
+  - name: 表示する状態の検討事項が無い旨
+    kind: label
+    position: マップの枠の中央（幅 901px 以上）・字下げの一覧（幅 900px 以下）
+    description: 全ての状態を隠したときに、隠したせいで空だと伝える文
+    label: 表示する状態の検討事項はありません
+    io: 表示
+    visible_when: 表示形式がマップで、表示する状態の検討事項が 1 件も無いとき
 lead: 検討事項をマップ（既定）・ボード・表で見る画面。
-mock: dev/mock/pages/decisions/21/standard/index.html
+mock: dev/mock/pages/decisions/38/b-check/index.html
 test_file: tests/integration/preview/test_decisions_screen.py
