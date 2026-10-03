@@ -1,6 +1,6 @@
 # 実行したコマンド
 pytest tests/unit -v
-# コミット: b6ea3185576eb3aebd0d810b99769374921fa045
+# コミット: 7a0cac0c2dc53082ddb62b48d190e2765e9e09c1
 
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
@@ -278,4 +278,4 @@ tests/unit/scripts/test_store.py::test_save_change_when_item_value_fixed PASSED 
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[copy_from_target] PASSED [ 99%]
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[from_umask] PASSED [100%]
 
-============================= 266 passed in 30.71s =============================
+============================= 266 passed in 31.08s =============================
