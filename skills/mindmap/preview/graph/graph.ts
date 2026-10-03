@@ -350,6 +350,7 @@ namespace MindmapPreview {
                 attrs: {
                   type: "checkbox",
                   value: kind,
+                  "data-act": "gkind",
                   checked: shownKinds.has(kind),
                   "aria-label": KIND_LABEL[kind],
                   onchange: (event: Event) => {

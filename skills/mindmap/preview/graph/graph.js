@@ -285,6 +285,7 @@ var MindmapPreview;
                         attrs: {
                             type: "checkbox",
                             value: kind,
+                            "data-act": "gkind",
                             checked: shownKinds.has(kind),
                             "aria-label": MindmapPreview.KIND_LABEL[kind],
                             onchange: (event) => {
