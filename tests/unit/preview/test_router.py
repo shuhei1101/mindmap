@@ -30,6 +30,7 @@ from .fixture_types import LoadPreviewScripts, MakeData, MakeItem
             "#tab=decisions&id=D-99&full=1", "decisions", "map", None, False, {}, id="unknown_id"
         ),
         pytest.param("#tab=tasks&view=map", "tasks", "board", None, False, {}, id="unknown_view"),
+        pytest.param("#tab=docs&view=board", "docs", "board", None, False, {}, id="docs_board"),
     ],
 )
 def test_parse_hash(
