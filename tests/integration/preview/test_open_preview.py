@@ -1,17 +1,24 @@
-"""プレビューを開く（`build` が書き出した `preview.html` を開く）の結合テスト。"""
+"""プレビューを開く（`build` が書き出した `preview.html` と、`export` が書き出した配る書き出しを開く）の結合テスト。"""
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from preview_fixture_types import BODY_WITH_DIAGRAM, OpenPreview, WritePreview
-from workspace_fixtures import MakeItem
+from workspace_fixtures import MakeItem, MakeWorkspace, RunMindmap
 
 # 描画のライブラリの配信元への要求（全て失敗させるときの URL の形）
 LIBRARY_HOST_PATTERN = "https://cdn.jsdelivr.net/**"
 
 # 描画のライブラリを描いた後の図（SVG）が出るまで待つ上限ミリ秒
 DIAGRAM_TIMEOUT_MS = 20_000
+
+
+# `file:` 以外の URL への要求（外への要求）を全て拾う条件
+def _is_not_file_url(url: str) -> bool:
+    """`file:` で始まらない URL かを返す。"""
+    return not url.startswith("file:")
 
 
 def _row_ids(page: Any) -> list[str]:
@@ -100,6 +107,43 @@ def test_normal_when_item_not_found(
     assert page.get_attribute('.segment button[data-view="map"]', "aria-pressed") == "true"
     assert page.locator("aside.panel").count() == 0
     assert "id=" not in page.evaluate("location.hash")
+
+
+def test_normal_when_exported_offline(
+    make_workspace: MakeWorkspace,
+    make_item: MakeItem,
+    run_mindmap: RunMindmap,
+    open_preview: OpenPreview,
+    page: Any,
+    tmp_path: Path,
+) -> None:
+    """描画のライブラリを中に持つ配る書き出しは、通信が無くても本文・図・マップを描く（正常系）。"""
+    # 準備
+    root = make_workspace(
+        make_item("D-3", status="要見直し", body="D-3.md"), bodies={"D-3.md": BODY_WITH_DIAGRAM}
+    )
+    out = tmp_path / "配る.html"
+    result = run_mindmap("export", "--workspace", str(root), "--out", str(out))
+    assert result.returncode == 0, result.stderr
+    # `file:` 以外への要求を全て失敗させ、数える
+    blocked: list[str] = []
+
+    def _block(route: Any) -> None:
+        """外への要求を数えて失敗させる。"""
+        blocked.append(route.request.url)
+        route.abort()
+
+    page.route(_is_not_file_url, _block)
+    # 実行
+    open_preview(out, "#tab=decisions&id=D-3")
+    page.wait_for_selector("aside.panel.open .mermaid svg", timeout=DIAGRAM_TIMEOUT_MS)
+    # 検証
+    assert blocked == []
+    assert page.locator('[role="alert"]').count() == 0
+    assert page.locator('#decision-map button[data-node="D-3"]').count() == 1
+    assert page.inner_text("aside.panel .d-title") == "D-3の題"
+    assert page.locator("aside.panel .md h4").count() == 1
+    assert page.locator("aside.panel .mermaid svg").count() == 1
 
 
 def test_error_when_library_unavailable(

@@ -302,7 +302,7 @@ SERVED_BODY = b"abc"
 
 
 class _Handler(http.server.BaseHTTPRequestHandler):
-    """/a.js だけ 200 で本文を返し、それ以外は 404 を返す手元の HTTP サーバーの処理。"""
+    """/a.js は 200 で本文を、/no-content は 204 を返し、それ以外は 404 を返す手元の HTTP サーバーの処理。"""
 
     def do_GET(self) -> None:
         """GET を受けて、パスで 200 か 404 かを決める。"""
@@ -311,6 +311,10 @@ class _Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(SERVED_BODY)
+        elif self.path == "/no-content":
+            # 200 以外の成功（本文が無い）
+            self.send_response(204)
+            self.end_headers()
         else:
             # それ以外は 404
             self.send_error(404)
@@ -620,6 +624,7 @@ def test_fetch_url(local_server: str) -> None:
     [
         pytest.param(lambda base, closed: closed, id="closed_port"),
         pytest.param(lambda base, closed: f"{base}/missing", id="not_found"),
+        pytest.param(lambda base, closed: f"{base}/no-content", id="no_content"),
     ],
 )
 def test_fetch_url_when_unreachable(
