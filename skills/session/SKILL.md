@@ -47,6 +47,6 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 | `status` | `status --workspace {フォルダ}` | `--workspace` |
 | `check` | `check --workspace {フォルダ}` | `--workspace` |
 | `build` | `build --workspace {フォルダ}` | `--workspace` |
-| `export` | `export --workspace {フォルダ} --out {パス}` | `パス`（書き出す HTML のファイル。末尾は `.html`） |
+| `export` | `export --workspace {フォルダ} --out {パス}` | `--workspace`・`--out` |
 | `goal` | `goal --workspace {フォルダ}` | `--workspace` |
 | `clear-release` | `clear-release --workspace {フォルダ}` | `--workspace` |
