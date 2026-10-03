@@ -5,3 +5,5 @@ items:
     summary: '/mindstella:setup: 依存を確かめ、ワークスペースを作るか状況を示して session へ渡す'
   - page: 話し合いの進行.yaml
     summary: '/mindstella:session: 取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定を回す'
+  - page: ワークスペースの移し替え.yaml
+    summary: '/mindstella:upgrade: ワークスペースの版とプラグインの版を比べ、版ごとの手順で今の版へ移し替える'

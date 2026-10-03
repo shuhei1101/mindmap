@@ -63,6 +63,9 @@ constraints:
     constraint: ワークスペースを作ったら最後に `build` を流す（hooks は使わない）
   - item: 引き継ぎ
     constraint: 最後に `/mindstella:session {ワークスペースのフォルダ}` で続けるよう案内する
+  - item: 版の比較
+    constraint: 既存のワークスペースでは `status` の前に `migrate --workspace {フォルダ} --plan` を呼ぶ。`relation` が `older` なら `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる。`same` のときだけ `status` へ進む
+    notes: インターフェース定義『記録の形式の移行』
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:

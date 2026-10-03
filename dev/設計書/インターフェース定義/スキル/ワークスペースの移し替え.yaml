@@ -1,0 +1,66 @@
+title: "ワークスペースの移し替え"
+entry:
+  kind: operation
+  value: '`/mindstella:upgrade [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `plugins/mindstella/skills/upgrade/SKILL.md`）'
+flows:
+  - name: 正常系
+    summary: スキル upgrade のファイルが制約どおりの形で、プラグインの検証を通る
+    setup:
+      - name: Mock
+        description: なし（リポジトリのファイルを読み、実際の Claude Code の `claude plugin validate` を起動する。モデルは呼ばない）
+      - name: 設定のフォルダ
+        description: テストごとの空の一時フォルダを Claude Code の設定のフォルダにする
+        notes: 環境変数 `CLAUDE_CONFIG_DIR`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as skills/upgrade/SKILL.md
+        participant C as Claude Code（claude plugin validate）
+
+        クライアント->>IF: front matter と本文のパスを読む
+        クライアント->>C: リポジトリの直下を検証する
+        C-->>クライアント: 終了コード 0
+      ```
+    expected:
+      - front matter の `name` が `upgrade`、`allowed-tools` が制約の値と一致する
+      - 本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
+      - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
+      - 本文のコマンドの一覧に `migrate --plan`・`migrate`・`migrate --set`・`migrate --record`・`check`・`build` がある
+      - スキルの Markdown に特定の開発基盤の名前が無い
+      - '`claude plugin validate` が終了コード 0'
+lead: ワークスペースの版とプラグインの版を比べ、版ごとの手順を当てて今の版へ移し替えるスキルの入口と、そのファイルの形。
+callers:
+  - dev/設計書/シナリオ/単一ユースケース/ワークスペースの移し替え#
+side_effects: スクリプトの `migrate` で写しを取って手順を当て、値を入れ、版のファイルを書き換える。最後に `build` を流す。スキルが自分でファイルを書くことはない
+request:
+  - name: $ARGUMENTS
+    type: str
+    required: false
+    default: なし（ワークスペースのフォルダの指定を求めて終える）
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ。無ければ書き込まず `/mindstella:setup` を案内する'
+exceptions:
+  - name: なし（正常終了）
+    condition: ファイルの形が制約どおりで、Claude Code がスキルとして読み込める
+constraints:
+  - item: ファイルの形
+    constraint: '`skills/upgrade/SKILL.md` だけ。入力・ステップの表・コマンドと引数の一覧を持つ'
+  - item: front matter の name
+    constraint: '`upgrade`'
+  - item: front matter の description
+    constraint: いつ使うか（プラグインを上げた後、ワークスペースの版が古いと案内されたとき）が分かる 1 文
+  - item: front matter の allowed-tools
+    constraint: '`Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。これ以外の Bash は許していない'
+    notes: 写しの git のコミットとフォルダの複製は `migrate` の中で行うため、git や複製のコマンドを許さない
+  - item: ステップ
+    constraint: 上から順に進む。(1) `check-env`。(2) `migrate --plan` で版を比べる。`relation` が `same` なら移し替えるものが無いと示して終える。`newer` ならプラグインの更新を案内して止まる。(3) `steps` を版の順に示す。`destructive` が `true` の手順があるときだけ、当ててよいかを確かめる。(4) `migrate` で写しを取って手順を当てる。終了コード 1 なら、標準エラーの失敗した版・手順・理由を示して止まる。(5) `check` で点検し、`needs_values` のキーだけを利用者に聞いて `migrate --set` で入れる。(6) `migrate --record` で版を書き換える。(7) `build` を流し、移し替えた版と写しの場所を示して `/mindstella:session` を案内する
+  - item: 共通のファイルの参照
+    constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
+  - item: スクリプトの起動
+    constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く（この形のまま起動したときだけ `allowed-tools` に当たる）
+  - item: スキルの中の名前
+    constraint: 特定の開発基盤の名前を出さない（アーキテクチャ図の制約）
+refs:
+  - dev/設計書/インターフェース定義/スクリプト/記録の形式の移行#

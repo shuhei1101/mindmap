@@ -77,6 +77,9 @@ constraints:
   - item: 配る書き出し
     constraint: 利用者が記録を人に渡したいと言ったときだけ、プレビューのステップで書き出す先のパスを利用者に聞き、`export --workspace {フォルダ} --out {パス}` を呼ぶ。書き出す先にワークスペースの `preview.html` と `release/` の中を指さない。書き出したら `path` の絶対パスと、ネットにつながらなくても開けて書き込む操作が無いことを示す。編集の後に流すのは `build` のまま
     notes: '`release/` は `clear-release` が中身を消す。インターフェース定義『配る書き出し』'
+  - item: 版の比較
+    constraint: 準備のステップで `mindmap.yaml` を読んだ後に `migrate --workspace {フォルダ} --plan` を呼ぶ。`relation` が `older` なら何も書き込まず `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる
+    notes: インターフェース定義『記録の形式の移行』
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:
