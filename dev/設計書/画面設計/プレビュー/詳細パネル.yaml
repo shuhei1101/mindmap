@@ -54,6 +54,6 @@ elements:
     io: 表示
     source: プレビューを開く.mindmap-data（`depends_on`・`for`・`related`・`sources` とその逆向き）
     visible_when: その種類の項目が 1 件以上
-lead: 項目 1 件の中身を本文の右に出すパネル。幅 1100px 以上（マップは 901px 以上）は本文を寄せて並べ、それより狭いと本文に重ねる。
-mock: dev/mock/pages/detail-panel/21/standard/index.html
+lead: 項目 1 件の中身を本文の右に出すパネル。幅 1100px 以上（マップは 901px 以上）は本文を寄せて並べ、それより狭いと本文に重ねる。本文の寄せは開閉と同時に切り替え、パネルだけがすべり込む。
+mock: dev/mock/pages/detail-panel/60/standard/index.html
 test_file: tests/integration/preview/test_detail_panel_screen.py

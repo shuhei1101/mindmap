@@ -4,7 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
 from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
+from preview_style_checks import (
+    BOARD_EDGE_GAP_PX,
+    TRANSPARENT,
+    board_edges,
+    pin_id_column,
+    table_cell_backgrounds,
+)
 from workspace_fixtures import MakeItem
 
 
@@ -225,3 +233,34 @@ def test_board_filter_from_url(
     assert page.eval_on_selector_all(".chips .chip", "c => c.map(x => x.textContent)") == [
         "状態: 完成"
     ]
+
+
+def test_board_edge_gap(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """資料のボードは、カードの左端をボードの左端から余白を空けて置き、ツールバーの左端に揃える（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=docs&view=board")
+    # 実行
+    edges = board_edges(page)
+    # 検証
+    assert edges["cardLeft"] - edges["boardLeft"] >= BOARD_EDGE_GAP_PX
+    assert edges["cardLeft"] == pytest.approx(edges["toolbarLeft"], abs=1)
+
+
+def test_table_cell_surface(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """資料の表のセルは静止時に面の色を持たず、面の色は表の枠と固定した列が持つ（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=docs&view=table")
+    pin_id_column(page)
+    # 実行
+    backgrounds = table_cell_backgrounds(page)
+    # 検証
+    assert backgrounds["wrap"] != TRANSPARENT
+    assert backgrounds["plain"] == [TRANSPARENT]
+    assert len(backgrounds["pinned"]) > 0
+    assert TRANSPARENT not in backgrounds["pinned"]

@@ -130,14 +130,15 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 /* ===== 表 ===== */
 .table-wrap { overflow: auto; max-height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 130px); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 table.grid { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--fs-small); }
-table.grid th, table.grid td { padding: var(--cell-py) 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; background: var(--surface); }
+table.grid th, table.grid td { padding: var(--cell-py) 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; }
+table.grid tbody .pinned { background: var(--surface); }
 table.grid tbody tr:last-child td { border-bottom: 0; }
 table.grid thead th { position: sticky; top: 0; z-index: 3; background: var(--thead-bg); color: var(--text-2); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 table.grid .pinned { position: sticky; z-index: 2; }
 table.grid thead th.pinned { z-index: 4; }
 table.grid .pin-edge { box-shadow: 6px 0 8px -6px var(--shadow-color); }
-table.grid tbody tr:hover td { background: var(--row-hover); }
-table.grid tbody tr.selected td { background: var(--row-selected); }
+table.grid tbody tr:not(.selected):hover td { background: var(--row-hover); }
+table.grid tbody tr.selected, table.grid tbody tr.selected .pinned { background: var(--row-selected); }
 table.grid tbody tr.dim td { color: var(--text-3); }
 table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.grid td.nowrap { white-space: nowrap; }
@@ -157,7 +158,7 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .row-open:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ===== ボード ===== */
-.board { display: grid; grid-template-columns: repeat(var(--cols), minmax(240px, 1fr)); gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+.board { display: grid; grid-template-columns: repeat(var(--cols), minmax(240px, 1fr)); gap: 16px; overflow-x: auto; padding: 8px 8px 8px; margin-inline: -8px; }
 .board-col h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--text); font-size: var(--fs-small); }
 .board-col h3 .n { font-family: var(--font-mono); color: var(--text-3); font-weight: 400; }
 .card { display: block; width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
@@ -213,7 +214,7 @@ button.n-item:hover { border-color: var(--accent); }
 button.n-item.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
 button.n-item.off { color: var(--text-3); border-style: dashed; }
 .n-item .r1 { display: flex; align-items: center; gap: 7px; font-weight: 600; min-width: 0; }
-.n-item .r2 { display: flex; gap: 8px; color: var(--text-3); font-size: 11px; padding-left: 17px; }
+.n-item .r2 { display: flex; gap: 8px; color: var(--text-3); font-size: var(--fs-xs); padding-left: 17px; }
 .map-outline { display: none; }
 .motion-btn[hidden] { display: none; }
 
@@ -391,7 +392,7 @@ button.n-item:hover, button.n-item:focus-visible { border-color: var(--accent); 
 button.n-item.sel { border-color: var(--accent); border-width: 2px; box-shadow: 0 0 0 4px var(--accent-weak); }
 /* 表: 行のどこかにフォーカスがあるときは行ごと示し、選択中の行は背景で示す */
 table.grid tbody tr:focus-within td { background: var(--row-selected); }
-table.grid tbody tr.selected td { background: var(--row-selected); box-shadow: inset 0 1px 0 var(--accent-line), inset 0 -1px 0 var(--accent-line); }
+table.grid tbody tr.selected td { box-shadow: inset 0 1px 0 var(--accent-line), inset 0 -1px 0 var(--accent-line); }
 .row-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 /* カード・タイルの中のボタン */
 .card:focus-visible, .next-list button:focus-visible, .mini button:focus-visible, .cat-rows button:focus-visible, .cell-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }
@@ -497,10 +498,9 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(ellipse at 50% 45%, var(--g-bg-center) 0%, var(--g-bg) 70%); }
 .g3-wrap { display: block; width: 100%; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 110px); min-height: 460px; cursor: grab; touch-action: none; }
 
-/* ===== 詳細パネル: ゆっくりすべり込む。本文の幅も同じ速さで変える ===== */
+/* ===== 詳細パネル: ゆっくりすべり込む。本文の寄せは同時に切り替える ===== */
 .panel { transform: translateX(102%); visibility: hidden; transition: transform .45s cubic-bezier(.22, .8, .24, 1), visibility 0s linear .45s; }
 .panel.open { transform: none; visibility: visible; transition: transform .45s cubic-bezier(.22, .8, .24, 1); }
-.content { transition: margin-right .45s cubic-bezier(.22, .8, .24, 1); }
 
 /* ===== つながりの入口: タブの帯の右端に、ほかのタブと分けて置く ===== */
 .tab-gap { flex: 1; min-width: 16px; }
