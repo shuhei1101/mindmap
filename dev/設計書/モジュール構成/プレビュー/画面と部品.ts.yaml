@@ -11,7 +11,7 @@ directory: |-
       overview.ts         概要
       decisions.ts        検討事項（マップ・ボード・表）
       tasks.ts            タスク（ボード・表）
-      docs.ts             資料（カード・表）
+      docs.ts             資料（カード・ボード・表）
       records.ts          調査・用語集・メモ・会話ログ（表）
       detail.ts           詳細パネルと詳細の全画面
       search.ts           全体の検索
@@ -190,7 +190,7 @@ components:
     container: skills/mindmap/preview/screens/docs.ts
     usecase: 資料を読む
     kind: 画面
-    summary: 画面設計『資料』を描く。カードの並びは `orderDocs`、絞り込みは `filterRows`
+    summary: 画面設計『資料』を描く。カードの並びは `orderDocs`、絞り込みは `filterRows`（カードとボードで同じ条件）。ボードは絞り込んだ資料を `boardColumns`（`DOC_STATUSES`）で列に分け、列ごとに `orderDocs` で並べ直して `board` に渡す。ボードのカードは資料のカードから状態の印を外したもの
     props:
       - name: index
         type: RecordIndex
@@ -415,7 +415,7 @@ functions:
     container: skills/mindmap/preview/screens/tasks.ts
     usecase: タスクをボードで見る
     scope: public
-    summary: 状態の並びの順に、状態ごとの項目を返す（検討事項のボードも使う）
+    summary: 状態の並びの順に、状態ごとの項目を返す（検討事項・資料のボードも使う）
     args:
       - name: items
         type: object[]

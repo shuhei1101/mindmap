@@ -80,7 +80,7 @@ constants:
       - key: tasks
         value: '["board", "table"]'
       - key: docs
-        value: '["cards", "table"]'
+        value: '["cards", "board", "table"]'
       - key: そのほか
         value: '["table"]'
   - name: LIBRARIES
@@ -325,9 +325,9 @@ functions:
       - name: test_parse_hash
         case: 正常
         summary: 既定と誤った値を扱う
-        condition: '`parametrize`: 空 / `#tab=decisions&view=table&id=D-1&f.status=要見直し|保留` / `#tab=nope&view=cards` / `#tab=decisions&id=D-99&full=1` / `#tab=tasks&view=map`'
+        condition: '`parametrize`: 空 / `#tab=decisions&view=table&id=D-1&f.status=要見直し|保留` / `#tab=nope&view=cards` / `#tab=decisions&id=D-99&full=1` / `#tab=tasks&view=map` / `#tab=docs&view=board`'
         mock: なし
-        expected: 'overview・table・null / decisions・table・D-1・`{status: [要見直し, 保留]}` / overview・table / decisions・map・null・full 偽 / tasks・board'
+        expected: 'overview・table・null / decisions・table・D-1・`{status: [要見直し, 保留]}` / overview・table / decisions・map・null・full 偽 / tasks・board / docs・board'
   - name: toHash
     title: ハッシュを作る
     kind: 関数
