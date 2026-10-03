@@ -8,7 +8,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import re
-import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -34,30 +33,36 @@ PAGE_URL = "https://preview.test/index.html"
 # 起動する `.js`（差し込む順の最後で、読むと画面を描き始めるため、画面の部品のテストでは読まない）
 APP_SCRIPT = "app.js"
 
-# 描画のライブラリの取得を待つ上限秒数
-LIBRARY_FETCH_TIMEOUT_SEC = 60
+# 描画のライブラリを入れる node_modules（リポジトリの直下で `npm ci` を済ませておく）
+NODE_MODULES_DIR = REPO_ROOT / "node_modules"
 
-# 描画のライブラリの取得結果（URL と本文）。テストをまたいで 1 回だけ取る
-type FetchedLibrary = tuple[str, str]
-_fetched_libraries: dict[str, FetchedLibrary] = {}
+# 配信元の URL（`/npm/{パッケージ}@{版}/{パス}`）から、パッケージ名とパスを取り出す
+LIBRARY_URL_PATTERN = re.compile(r"/npm/(?P<package>[^@/]+)@[^/]+/(?P<path>.+)$")
+
+# 描画のライブラリの読み込み結果（URL と本文）。テストをまたいで 1 回だけ読む
+type LoadedLibrary = tuple[str, str]
+_loaded_libraries: dict[str, LoadedLibrary] = {}
 
 
-def _fetch_library(name: str) -> FetchedLibrary:
-    """外部ライブラリの設計書の版の URL から本文を取り、integrity と突き合わせて返す。"""
-    # 取得済みならそのまま返す
-    if name in _fetched_libraries:
-        return _fetched_libraries[name]
+def _read_library(name: str) -> LoadedLibrary:
+    """外部ライブラリの設計書の版と同じバイトを node_modules から読み、integrity と突き合わせて返す。"""
+    # 読み込み済みならそのまま返す
+    if name in _loaded_libraries:
+        return _loaded_libraries[name]
     design = yaml.safe_load((LIBRARY_DESIGN_DIR / f"{name}.yaml").read_text(encoding="utf-8"))
     url = design["version"]["source"]
     expected = re.search(r"sha384-[A-Za-z0-9+/=]+", design["version"]["pinning"])
     assert expected is not None, f"{name} の設計書に integrity がありません"
-    with urllib.request.urlopen(url, timeout=LIBRARY_FETCH_TIMEOUT_SEC) as response:  # noqa: S310
-        body = response.read()
+    located = LIBRARY_URL_PATTERN.search(url)
+    assert located is not None, f"{name} の設計書の URL が jsDelivr の形ではありません: {url}"
+    # jsDelivr の `/npm/{名前}@{版}/{パス}` は、npm の同じ版の `{パス}` と同じバイト
+    path = NODE_MODULES_DIR / located["package"] / located["path"]
+    body = path.read_bytes()
     # 設計書が固定した版と同じバイトか
     digest = "sha384-" + base64.b64encode(hashlib.sha384(body).digest()).decode("ascii")
-    assert digest == expected.group(0), f"{name} の配布物が設計書の integrity と違います"
-    _fetched_libraries[name] = (url, body.decode("utf-8"))
-    return _fetched_libraries[name]
+    assert digest == expected.group(0), f"{path} が設計書の integrity と違います"
+    _loaded_libraries[name] = (url, body.decode("utf-8"))
+    return _loaded_libraries[name]
 
 
 @pytest.fixture
@@ -99,7 +104,7 @@ def load_library(preview_page: Page) -> LoadLibrary:
 
     def _load(name: str) -> None:
         """設計書の版のライブラリを `page.route` で返し、script 要素で読む。"""
-        url, body = _fetch_library(name)
+        url, body = _read_library(name)
         preview_page.route(
             url, lambda route: route.fulfill(body=body, content_type="application/javascript")
         )
