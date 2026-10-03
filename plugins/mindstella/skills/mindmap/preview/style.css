@@ -377,8 +377,8 @@ dialog.search::backdrop { background: var(--scrim); }
 .map-wrap { cursor: grab; }
 .map-wrap.dragging { cursor: grabbing; user-select: none; }
 .map-wrap button { cursor: pointer; }
-/* ボードは列を固定幅で横に並べ、はみ出たら横にスクロールする */
-.board { grid-template-columns: repeat(var(--cols), 290px); }
+/* 広い幅のボードは列を固定幅で横に並べ、はみ出たら横にスクロールする（狭い幅は列を縦に 1 列に積む） */
+@media (min-width: 721px) { .board { grid-template-columns: repeat(var(--cols), 290px); } }
 
 /* ===== フォーカスの見せ方 ===== */
 /* マップ: フォーカスした節の根までの枝と依存の線を強調し、ほかを薄くする */
@@ -488,8 +488,8 @@ dialog.viewer::backdrop { background: var(--scrim); }
 dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 .v-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 .v-stage svg { max-width: none !important; height: auto; }
-.board { cursor: grab; }
-.board.dragging { cursor: grabbing; user-select: none; }
+/* 広い幅のボード: 背景をつかんで横に動かせることを示す（狭い幅は横に送らないので示さない） */
+@media (min-width: 721px) { .board { cursor: grab; } .board.dragging { cursor: grabbing; user-select: none; } }
 
 
 /* ===== つながりの地: ライトは紙のような明るい地、ダークは深い灰色。どちらにも細かなざらつき ===== */
