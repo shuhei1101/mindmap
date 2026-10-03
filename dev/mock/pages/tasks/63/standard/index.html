@@ -14,14 +14,19 @@
   <!-- トークン: 採用したデザインスタイル（dev-swiss-cards）の値 -->
   <link rel="stylesheet" href="../../../../../../plugins/mindstella/skills/mindmap/preview/tokens.css">
   <link rel="stylesheet" href="../../../../refs/21/assets/style.css">
-  <!-- 63: 項目の ID のボタンの押せる的を広げた分を 21 のスタイルに重ねる -->
+  <!-- 資料のボードで足すスタイル -->
+  <link rel="stylesheet" href="../../../../refs/40/assets/style.css">
+  <!-- 項目の ID のボタンの押せる的を広げるスタイル -->
   <link rel="stylesheet" href="../../../../refs/63/assets/style.css">
   <!-- Markdown の描画と無害化、マップの配置の計算: 版を固定し、integrity でファイルの中身を確かめる -->
   <script src="https://cdn.jsdelivr.net/npm/marked@18.0.14/lib/marked.umd.js" integrity="sha384-2vpGtuKqJvFlwJqYnf/wUMuzUfhUnYBt9oay0e2yaFcq0Dh6/aEbQ8YAOeKGzlYo" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.16/dist/purify.min.js" integrity="sha384-a7SzOxErzJ3ZpQz0zJ32d67dSitNzPcbfybc/ykU9KJhMgZkwqfSxlhhdJRS+XGL" crossorigin="anonymous" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/elkjs@0.12.0/lib/elk.bundled.js" integrity="sha384-ww57TDqx4cGknIavPm0QKO+aygLUR1BLSn2Vhbnt1XdYKWcwLyWTFKX7aZMaKIi2" crossorigin="anonymous" defer></script>
   <script src="../../../../refs/21/assets/data.js" defer></script>
-  <script src="../../../../refs/21/assets/app.js" defer></script>
+  <!-- 資料のボードの見本で足す資料 -->
+  <script src="../../../../refs/40/assets/data.js" defer></script>
+  <!-- 40 のスクリプトに、検討事項の表の前提の列と 63 の画面への移り先を足したもの -->
+  <script src="../../../../refs/63/assets/app.js" defer></script>
 </head>
 <!-- data-screen: 描く画面。data-pages: pages/ への相対パス。data-initial: ハッシュが無いときに開く状態 -->
 <body data-screen="tasks" data-pages="../../../" data-initial="view=table">

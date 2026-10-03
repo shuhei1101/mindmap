@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- color-scheme: 既定は端末の明暗。切り替えは app.js が data-theme に持つ -->
   <meta name="color-scheme" content="light dark">
-  <title>検討事項 | mindmap プレビューのモック</title>
+  <title>資料 | mindmap プレビューのモック</title>
   <!-- 文字: 英数字は Inter、日本語は Noto Sans JP、ID は JetBrains Mono を読む（デザイン方針） -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,7 +29,7 @@
   <script src="../../../../refs/63/assets/app.js" defer></script>
 </head>
 <!-- data-screen: 描く画面。data-pages: pages/ への相対パス。data-initial: ハッシュが無いときに開く状態 -->
-<body data-screen="decisions" data-pages="../../../" data-initial="view=table">
+<body data-screen="docs" data-pages="../../../" data-initial="view=table">
   <!-- モック専用の操作列: 描画のライブラリが読めない状態に切り替える -->
   <div class="mockbar" role="group" aria-label="モックの状態">
     <span>モック</span>
@@ -52,7 +52,7 @@
   <nav class="tabbar" id="tabs" aria-label="項目の種類"></nav>
 
   <!-- パンくず -->
-  <nav class="crumbs crumbs-bar" aria-label="パンくず"><a href="../../../index.md">pages</a> / <a href="../../index.md">decisions</a> / <a href="../index.md">63</a> / standard</nav>
+  <nav class="crumbs crumbs-bar" aria-label="パンくず"><a href="../../../index.md">pages</a> / <a href="../../index.md">docs</a> / <a href="../index.md">63</a> / standard</nav>
 
   <!-- 本文 -->
   <main class="content" id="main"></main>
