@@ -1,7 +1,7 @@
 title: "プラグインの読み込み"
 entry:
   kind: operation
-  value: '`plugins/mindstella/` の `.claude-plugin/plugin.json` と `skills/`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
+  value: '`plugins/mindstella/` の `.claude-plugin/plugin.json`・`skills/`・`LICENSE`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
 flows:
   - name: 正常系
     summary: プラグイン mindstella がスキルのフォルダを持ち、hooks を持たずに読み込まれる
@@ -17,7 +17,7 @@ flows:
       ```mermaid
       sequenceDiagram
         participant C as Claude Code
-        participant IF as plugins/mindstella/ の .claude-plugin/plugin.json と skills/
+        participant IF as plugins/mindstella/ の .claude-plugin/plugin.json・skills/・LICENSE
 
         C-->>IF: マニフェストとフォルダを取り込む
         C->>C: プラグイン mindstella を有効にする
@@ -25,6 +25,7 @@ flows:
     expected:
       - '`claude plugin list` で `mindstella@mindstella` が有効である'
       - 取り込まれたプラグインのフォルダに `skills/setup/SKILL.md`・`skills/session/SKILL.md` と、`skills/mindmap/` の `references/`・`playbooks/`・`schemas/`・`scripts/` がある
+      - 取り込まれたプラグインのフォルダの直下に `LICENSE` があり、本文がリポジトリの直下の `LICENSE` と一致する
       - 取り込まれたプラグインのフォルダに `dev/`・`docs/`・`tests/`・`.storybook/`・`package.json` が無い
       - '`claude plugin details` で hooks が 0 件である'
     test: test_normal
@@ -53,7 +54,7 @@ request:
     type: '"MIT"'
     required: true
     description: プラグインのライセンス（SPDX の識別子）
-    notes: 本文はリポジトリの直下の `LICENSE`
+    notes: 本文はプラグインのフォルダの直下の `LICENSE`
   - name: homepage
     type: '"https://github.com/shuhei1101/mindstella"'
     required: true
@@ -75,6 +76,10 @@ request:
     type: フォルダ
     required: true
     description: スキル session（`/mindstella:session`）。形はインターフェース定義『話し合いの進行』
+  - name: LICENSE
+    type: ファイル
+    required: true
+    description: MIT ライセンスの本文と著作権の表記（`Copyright (c) 2026 shuhei1101`）
 request_example: |-
   ```json
   {
@@ -95,4 +100,7 @@ constraints:
   - item: Claude Code の版
     constraint: 2.1.287 以上
     notes: 非機能要件の「Claude Code の版」
+  - item: ライセンスの本文の置き方
+    constraint: リポジトリの直下とプラグインのフォルダの直下の 2 か所に、同じ本文の実体のファイルとして置く。シンボリックリンクにしない
+    notes: 'Claude Code は、ローカルのパスからインストールするとプラグインのフォルダの外を指すシンボリックリンクを飛ばす（公式ドキュメント『Host and maintain a marketplace』の Share files within a marketplace with symlinks）。Windows の clone ではリンクが本文を持たないファイルになる'
 test_file: tests/integration/plugin/test_plugin_loading.py
