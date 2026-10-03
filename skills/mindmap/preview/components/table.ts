@@ -189,8 +189,8 @@ namespace MindmapPreview {
     pop.style.top = `${openBelow ? rect.bottom + gap : rect.top - gap - pop.offsetHeight}px`;
   }
 
-  /** 描き直す前に控えた、表の入れ物のスクロールの位置（種類ごと。描いた後に戻す） */
-  const pendingScroll = new Map<Kind, { left: number; top: number }>();
+  /** 表の入れ物（スクロールする要素）ごとの、大きさの観察（描き直すたびに前の観察を止める） */
+  const wrapObservers = new WeakMap<HTMLElement, ResizeObserver>();
 
   /** 表の項目の見出しのアイコン */
   function sortIcon(direction: "asc" | "desc" | null): Node {
@@ -200,17 +200,18 @@ namespace MindmapPreview {
   }
 
   /** 項目の表を返す。操作は引数のコールバックで知らせ、描き直しは使う側が行う */
-  export function table({
-    kind,
-    columns,
-    rows,
-    sort = null,
-    filters = {},
-    pinTo = null,
-    hiddenColumns,
-    popover = null,
-    on,
-  }: TableProps): HTMLElement {
+  export function table(props: TableProps): HTMLElement {
+    return buildTable({ props, previous: null });
+  }
+
+  /** 表を組み立てる。previous があれば、その表の入れ物（スクロールする要素）を作り直さず、中身だけ差し替える */
+  function buildTable({
+    props: { kind, columns, rows, sort = null, filters = {}, pinTo = null, hiddenColumns, popover = null, on },
+    previous,
+  }: {
+    props: TableProps;
+    previous: HTMLElement | null;
+  }): HTMLElement {
     const hidden = new Set(
       hiddenColumns ?? columns.filter((column) => column.hidden).map((column) => column.key),
     );
@@ -219,13 +220,11 @@ namespace MindmapPreview {
     const pinned = pinTo === null ? 0 : visible.findIndex((column) => column.key === pinTo) + 1;
     const shownRows = sortRows({ rows: filterRows({ rows, columns, filters }), columns, sort });
 
-    const root = h({ tag: "div", attrs: { class: "table-block", "data-kind": kind } });
-    const wrap = h({ tag: "div", attrs: { class: "table-wrap" } });
-
-    /** 操作の前に、表の入れ物のスクロールの位置を控える（描き直した後に戻す） */
-    const remember = (): void => {
-      pendingScroll.set(kind, { left: wrap.scrollLeft, top: wrap.scrollTop });
-    };
+    // 描き直しでは前の入れ物をそのまま使い、スクロールの位置を失わない
+    const root = previous ?? h({ tag: "div", attrs: { class: "table-block", "data-kind": kind } });
+    const wrap =
+      previous?.querySelector<HTMLElement>(".table-wrap") ??
+      h({ tag: "div", attrs: { class: "table-wrap" } });
 
     // ===== 条件のチップと、表示する列のボタン =====
     const chips: HTMLElement[] = [];
@@ -244,7 +243,6 @@ namespace MindmapPreview {
                   type: "button",
                   "aria-label": `${column?.label ?? key}: ${value} の条件を外す`,
                   onclick: () => {
-                    remember();
                     on.filter({ key, values: values.filter((candidate) => candidate !== value) });
                   },
                 },
@@ -263,7 +261,6 @@ namespace MindmapPreview {
             class: "btn ghost",
             type: "button",
             onclick: () => {
-              remember();
               on.filter({ key: null, values: [] });
             },
           },
@@ -310,7 +307,6 @@ namespace MindmapPreview {
                 disabled: column.fixed === true,
                 onchange: (event: Event) => {
                   const checked = (event.target as HTMLInputElement).checked;
-                  remember();
                   on.columns(
                     checked
                       ? [...hidden].filter((key) => key !== column.key)
@@ -338,7 +334,6 @@ namespace MindmapPreview {
                   class: "btn ghost",
                   type: "button",
                   onclick: () => {
-                    remember();
                     on.reset();
                   },
                 },
@@ -364,7 +359,6 @@ namespace MindmapPreview {
                 checked: chosen.includes(value),
                 onchange: (event: Event) => {
                   const checked = (event.target as HTMLInputElement).checked;
-                  remember();
                   on.filter({
                     key,
                     values: checked ? [...chosen, value] : chosen.filter((item) => item !== value),
@@ -393,8 +387,7 @@ namespace MindmapPreview {
       on.popover?.(spec);
     };
 
-    root.append(
-      h({
+    const toolbar = h({
         tag: "div",
         attrs: { class: "table-toolbar" },
         children: [
@@ -414,8 +407,7 @@ namespace MindmapPreview {
             ],
           }),
         ],
-      }),
-    );
+      });
 
     // ===== 見出し =====
     const headers = visible.map((column, position) => {
@@ -445,7 +437,6 @@ namespace MindmapPreview {
                   type: "button",
                   "data-sort": column.key,
                   onclick: () => {
-                    remember();
                     on.sort(column.key);
                   },
                 },
@@ -474,7 +465,6 @@ namespace MindmapPreview {
                   "aria-pressed": String(isPinned),
                   "aria-label": `${column.label}まで固定`,
                   onclick: () => {
-                    remember();
                     on.pin(column.key);
                   },
                 },
@@ -544,30 +534,27 @@ namespace MindmapPreview {
               ],
             }),
           ];
-    wrap.append(
-      h({
-        tag: "table",
-        attrs: { class: "grid" },
-        children: [
-          h({ tag: "thead", children: [h({ tag: "tr", children: [...headers] })] }),
-          h({ tag: "tbody", children: [...body] }),
-        ],
-      }),
-    );
-    root.append(wrap, pop);
+    const grid = h({
+      tag: "table",
+      attrs: { class: "grid" },
+      children: [
+        h({ tag: "thead", children: [h({ tag: "tr", children: [...headers] })] }),
+        h({ tag: "tbody", children: [...body] }),
+      ],
+    });
+    if (previous === null) {
+      wrap.append(grid);
+      root.append(toolbar, wrap, pop);
+    } else {
+      // 描き直し: 入れ物（スクロールする要素）は残し、同じ回のうちに中身だけを差し替える
+      root.querySelector(".table-toolbar")?.replaceWith(toolbar);
+      wrap.replaceChildren(grid);
+      root.querySelector(".pop")?.replaceWith(pop);
+    }
 
-    // ===== 配置: 固定した列の左端の位置・該当なしの文言の幅・控えたスクロールの位置 =====
-    let saved = pendingScroll.get(kind);
-    pendingScroll.delete(kind);
-    /** 控えたスクロールの位置を表に戻す */
-    const restoreScroll = (): void => {
-      if (saved === undefined) return;
-      wrap.scrollLeft = saved.left;
-      wrap.scrollTop = saved.top;
-    };
-    // 表が文書に入った直後に戻し、描いた最初のコマで先頭へ戻って見えないようにする
-    queueMicrotask(restoreScroll);
-    new ResizeObserver(() => {
+    // ===== 配置: 固定した列の左端の位置・該当なしの文言の幅 =====
+    wrapObservers.get(wrap)?.disconnect();
+    const observer = new ResizeObserver(() => {
       wrap.style.setProperty("--wrap-w", `${wrap.clientWidth}px`);
       let left = 0;
       headers.forEach((header, position) => {
@@ -578,10 +565,9 @@ namespace MindmapPreview {
         }
         left += header.getBoundingClientRect().width;
       });
-      // 列の位置を整えた後にも、最初の 1 回だけ戻す
-      restoreScroll();
-      saved = undefined;
-    }).observe(wrap);
+    });
+    wrapObservers.set(wrap, observer);
+    observer.observe(wrap);
 
     // 開いたままにするポップオーバーを、表が文書に入った後に開く
     if (popover !== null) queueMicrotask(() => showPopover(popover));
@@ -768,9 +754,12 @@ namespace MindmapPreview {
     const persist = (): void => {
       prefsListener?.(kind, { hidden: state.hidden ?? [], pinTo: state.pinTo });
     };
+    /** 今の表（描き直すとき、入れ物を残して中身だけ差し替える） */
+    let current: HTMLElement | null = null;
     const render = (): void => {
-      slot.replaceChildren(
-        table({
+      const next = buildTable({
+        previous: current,
+        props: {
           kind,
           columns,
           rows,
@@ -815,8 +804,13 @@ namespace MindmapPreview {
               state.popover = popover;
             },
           },
-        }),
-      );
+        },
+      });
+      // 初めて描くときだけ、表を差し込む（描き直しでは同じ表の中身が入れ替わる）
+      if (current === null) {
+        current = next;
+        slot.replaceChildren(next);
+      }
     };
     render();
     return slot;
