@@ -34,7 +34,7 @@ flows:
       - '`path` が `配る.html` の絶対パス'
       - '`配る.html` の `mindmap-data` の中身を JSON として読むと、`settings` と 7 つの種類の項目が YAML と同じで、`bodies` に `A-1.md` の本文がある'
       - '`配る.html` の `script`・`link`・`img` に `src`・`href` を持つものが無い'
-      - '`配る.html` の中に `</script>` が雛形のぶんだけある（本文の `</script>` で要素が閉じていない）'
+      - '`配る.html` の中の `</script>` の数が、雛形の数にライセンスの表示の要素の 1 つを足した数（本文の `</script>` で要素が閉じていない）'
       - '`mindmap-licenses` の中身に、marked・DOMPurify・elkjs・mermaid のそれぞれの名前・版・著作権の表示・ライセンスの名前があり、elkjs のソースコードの入手先の URL がある'
       - ワークスペースの `preview.html` の中身が、呼ぶ前と同じ
     test: test_normal
