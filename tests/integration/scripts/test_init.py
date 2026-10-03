@@ -8,6 +8,8 @@ from typing import Any
 
 import yaml
 
+from workspace_fixtures import REPO_ROOT
+
 from .fixture_types import LockDirs, MakeWorkspace, RunMindmap, SnapshotTree
 
 # 作られる 7 種類の YAML のファイル名
@@ -52,11 +54,22 @@ def test_normal(tmp_path: Path, run_mindmap: RunMindmap, valid_settings: dict[st
         "notes.yaml": {"items": []},
         "logs.yaml": {"items": []},
     }
+    plugin_version = (REPO_ROOT / "plugins" / "mindstella" / "version.ini").read_text(
+        encoding="utf-8"
+    )
+    version_file = (root / "mindstella-version.ini").read_text(encoding="utf-8")
+    assert version_file.splitlines()[0] == plugin_version.splitlines()[0]
     assert (root / "docs").is_dir()
     assert (root / "release").is_dir()
     payload = json.loads(result.stdout)
     assert payload["workspace"] == str(root)
-    assert set(payload["files"]) == {"mindmap.yaml", *KIND_YAML_FILES, "docs/", "release/"}
+    assert set(payload["files"]) == {
+        "mindmap.yaml",
+        *KIND_YAML_FILES,
+        "mindstella-version.ini",
+        "docs/",
+        "release/",
+    }
 
 
 def test_error_when_workspace_exists(

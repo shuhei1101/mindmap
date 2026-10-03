@@ -369,3 +369,17 @@ tables:
         title: 本文
         type: string
         description: Markdown の本文。front matter を持たない。書き込みは `add` / `update` が行い、ファイル名は項目の ID に揃える
+  - name: mindstella-version.ini
+    title: 版
+    datastore: テキスト
+    summary: ワークスペースを最後に整えたときのプラグインの版
+    scale: 1 行
+    access: 全件
+    description: '`init` が作るときに書き、`migrate --record` が移し替えた後に書き換える。無ければ版を記録する前の形式として扱う'
+    columns:
+      - name: (1 行目)
+        title: 版
+        type: string
+        not_null: true
+        description: '`v{メジャー}.{マイナー}.{パッチ}`。2 行目より後は読まない'
+        example: v0.3.0

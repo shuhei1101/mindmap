@@ -1,0 +1,56 @@
+$ python3 -m pytest tests/unit
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/chore-release-plugin-version-sync
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 363 items
+
+tests/unit/preview/test_app.py ....                                      [  1%]
+tests/unit/preview/test_decisions.py .                                   [  1%]
+tests/unit/preview/test_docs.py .                                        [  1%]
+tests/unit/preview/test_dom.py .............                             [  5%]
+tests/unit/preview/test_graph.py .                                       [  5%]
+tests/unit/preview/test_libs.py .....                                    [  6%]
+tests/unit/preview/test_records.py ...                                   [  7%]
+tests/unit/preview/test_router.py ...                                    [  8%]
+tests/unit/preview/test_table.py ...                                     [  9%]
+tests/unit/preview/test_tasks.py .                                       [  9%]
+tests/unit/preview/test_app.py ..                                        [ 10%]
+tests/unit/preview/test_dom.py ........                                  [ 12%]
+tests/unit/preview/test_records.py .                                     [ 12%]
+tests/unit/preview/test_router.py ...                                    [ 13%]
+tests/unit/preview/test_table.py ..                                      [ 14%]
+tests/unit/preview/test_app.py .                                         [ 14%]
+tests/unit/preview/test_dom.py ....                                      [ 15%]
+tests/unit/preview/test_records.py .                                     [ 15%]
+tests/unit/preview/test_router.py .                                      [ 15%]
+tests/unit/preview/test_table.py ..                                      [ 16%]
+tests/unit/preview/test_dom.py ...                                       [ 17%]
+tests/unit/preview/test_records.py .                                     [ 17%]
+tests/unit/preview/test_router.py .                                      [ 17%]
+tests/unit/preview/test_table.py .                                       [ 18%]
+tests/unit/preview/test_dom.py ...                                       [ 19%]
+tests/unit/preview/test_router.py .                                      [ 19%]
+tests/unit/preview/test_dom.py .                                         [ 19%]
+tests/unit/preview/test_router.py .                                      [ 19%]
+tests/unit/scripts/test_backup.py ......                                 [ 21%]
+tests/unit/scripts/test_builder.py ..................................... [ 31%]
+.....                                                                    [ 33%]
+tests/unit/scripts/test_check_env.py .......................             [ 39%]
+tests/unit/scripts/test_checker.py .......                               [ 41%]
+tests/unit/scripts/test_commands.py ..................................   [ 50%]
+tests/unit/scripts/test_graph.py ................                        [ 55%]
+tests/unit/scripts/test_kinds.py ......                                  [ 56%]
+tests/unit/scripts/test_launcher.py ..............                       [ 60%]
+tests/unit/scripts/test_migration_coverage.py ..                         [ 61%]
+tests/unit/scripts/test_migration_ops.py ................                [ 65%]
+tests/unit/scripts/test_migrator.py ....................                 [ 71%]
+tests/unit/scripts/test_mindmap.py ................                      [ 75%]
+tests/unit/scripts/test_query.py ....................                    [ 80%]
+tests/unit/scripts/test_store.py ....................................... [ 91%]
+...............                                                          [ 95%]
+tests/unit/scripts/test_versions.py ...............                      [100%]
+
+============================= 363 passed in 42.20s =============================

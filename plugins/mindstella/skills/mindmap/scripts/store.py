@@ -53,7 +53,10 @@ DEFAULT_FILE_MODE = 0o666
 WHOLE_PATH = "(全体)"
 
 # 前の版の形式でスキーマに合わないときに、エラーの最後に続ける 1 行
-LEGACY_HINT = "ヒント: 前の版の形式の記録は migrate で今の形式に移せます"
+LEGACY_HINT = "ヒント: 前の版の形式の記録は /mindstella:upgrade で今の形式に移せます"
+
+# ワークスペースを最後に整えたときのプラグインの版を持つファイルの名前
+VERSION_FILE = "mindstella-version.ini"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -305,8 +308,8 @@ def save_change(workspace: Workspace, change: Change) -> None:
         raise write_failed(yaml_path, error) from error
 
 
-def create_workspace(root: Path, settings: dict[str, Any]) -> list[str]:
-    """設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`release/` を作る。"""
+def create_workspace(root: Path, settings: dict[str, Any], *, version: str) -> list[str]:
+    """設定を検証してから、設定・空の 7 種類の YAML・版のファイル・`docs/`・`release/` を作る。"""
     root = root.resolve()
     if (root / SETTINGS_FILE).exists():
         raise WorkspaceExistsError(f"既にワークスペースがあります: {root}")
@@ -340,6 +343,9 @@ def create_workspace(root: Path, settings: dict[str, Any]) -> list[str]:
             (root / spec.file).write_text(dump_yaml({"items": []}), encoding="utf-8")
             created.append(root / spec.file)
             files.append(spec.file)
+        (root / VERSION_FILE).write_text(f"{version}\n", encoding="utf-8")
+        created.append(root / VERSION_FILE)
+        files.append(VERSION_FILE)
         # mindmap.yaml は最後に書く（途中で止まってもワークスペースとして扱われない）
         (root / SETTINGS_FILE).write_text(dump_yaml(settings), encoding="utf-8")
         files.append(SETTINGS_FILE)

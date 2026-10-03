@@ -1,0 +1,51 @@
+title: "git"
+kind: "CLI"
+version:
+  current: 2.43.0（確かめた版）
+  checked_on: '2026-10-04'
+  pinning: 版は固定しない。git が無いか、作業ツリーの外、ignore されたファイルがある、コミットできないときは、使わずにフォルダの複製に回す
+catalogs:
+  - name: コマンド
+    version: 2.43.0
+    entries:
+      - name: git rev-parse --is-inside-work-tree
+        kind: コマンド
+        purpose: 作業ツリーの中かを確かめる
+      - name: git ls-files --others --ignored --exclude-standard -- .
+        kind: コマンド
+        purpose: ignore されたファイルがあるかを引く
+      - name: git add -A -- .
+        kind: コマンド
+        purpose: フォルダの下の変更をステージする
+      - name: git diff --cached --quiet -- .
+        kind: コマンド
+        purpose: フォルダの下にステージされた変更が無いかを終了コードで返す
+      - name: git commit -m {メッセージ} -- .
+        kind: コマンド
+        purpose: フォルダのパスだけをコミットする（フォルダの外のステージは入れない）
+      - name: git reset -q -- .
+        kind: コマンド
+        purpose: コミットできなかったときに、フォルダの下のステージを戻す
+      - name: git rev-parse HEAD
+        kind: コマンド
+        purpose: 今のコミットの ID を返す
+      - name: git checkout {コミット} -- .
+        kind: コマンド
+        purpose: フォルダの下をコミットの中身に戻す
+      - name: git clean -fdq -- .
+        kind: コマンド
+        purpose: フォルダの下の、コミットに無いファイルとフォルダを消す
+lead: ソースコードの変更を履歴として記録する分散型のバージョン管理の CLI。
+supplier: Git プロジェクト
+dependency_scope: 任意
+adoption: 採用
+used_in:
+  - plugins/mindstella/skills/mindmap/scripts/backup.py
+upstream: git/git
+verification:
+  state: 済
+  date: '2026-10-04'
+  detail: git 2.43.0 で、一時フォルダの作業ツリー（ignore あり・なし・ワークスペースの外にステージ済みのファイルあり）で、ワークスペースのパスだけを add してコミットし、`checkout {コミット} -- .` と `clean -fdq -- .` で戻せることを単体テストで確かめた。コミットが 1 つも無い作業ツリーでも、パスを指したコミットが通った
+license: GPL-2.0-only（商用利用可）
+official_url: https://git-scm.com/
+docs_url: https://git-scm.com/docs

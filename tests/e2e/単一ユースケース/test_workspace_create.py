@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from workspace_fixtures import MakeVenv, RunMindmap, SnapshotTree
+from workspace_fixtures import REPO_ROOT, MakeVenv, RunMindmap, SnapshotTree
 
 # スキルがセットアップのステップで決める設定
 SETTINGS: dict[str, Any] = {
@@ -74,6 +74,12 @@ def test_normal(tmp_path: Path, make_venv: MakeVenv, run_mindmap: RunMindmap) ->
         "notes.yaml": {"items": []},
         "logs.yaml": {"items": []},
     }
+    # mindstella-version.ini があり、1 行目がプラグインの版である
+    plugin_version = (REPO_ROOT / "plugins" / "mindstella" / "version.ini").read_text(
+        encoding="utf-8"
+    )
+    version_file = (root / "mindstella-version.ini").read_text(encoding="utf-8")
+    assert version_file.splitlines()[0] == plugin_version.splitlines()[0]
     assert (root / "docs").is_dir()
     assert (root / "release").is_dir()
     # 全ての YAML がスキーマに合う（点検がスキーマ違反を出さない）

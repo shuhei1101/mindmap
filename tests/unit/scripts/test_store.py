@@ -426,9 +426,9 @@ def test_create_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> Non
     # 準備
     root = tmp_path / "ws"
     # 実行
-    files = store.create_workspace(root, valid_settings)
+    files = store.create_workspace(root, valid_settings, version="v0.3.0")
     # 検証
-    assert len(files) == 10
+    assert len(files) == 11
     assert set(files) == {
         "mindmap.yaml",
         "decisions.yaml",
@@ -438,10 +438,12 @@ def test_create_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> Non
         "terms.yaml",
         "notes.yaml",
         "logs.yaml",
+        "mindstella-version.ini",
         "docs/",
         "release/",
     }
     assert yaml.safe_load((root / "mindmap.yaml").read_text(encoding="utf-8")) == valid_settings
+    assert (root / "mindstella-version.ini").read_text(encoding="utf-8") == "v0.3.0\n"
 
 
 def test_create_workspace_when_exists(make_workspace, snapshot_tree, valid_settings) -> None:
@@ -451,7 +453,7 @@ def test_create_workspace_when_exists(make_workspace, snapshot_tree, valid_setti
     before = snapshot_tree(root)
     # 実行・検証
     with pytest.raises(WorkspaceExistsError, match=re.escape(str(root))):
-        store.create_workspace(root, valid_settings)
+        store.create_workspace(root, valid_settings, version="v0.3.0")
     assert snapshot_tree(root) == before
 
 
@@ -464,7 +466,7 @@ def test_create_workspace_when_settings_invalid(
     del valid_settings["phases"]
     # 実行・検証
     with pytest.raises(SchemaMismatchError) as exc_info:
-        store.create_workspace(root, valid_settings)
+        store.create_workspace(root, valid_settings, version="v0.3.0")
     assert "mindmap.yaml" in str(exc_info.value.lines)
     assert "phases" in str(exc_info.value.lines)
     assert not root.exists()
@@ -480,7 +482,7 @@ def test_create_workspace_when_write_fails(
     failing_write_text("logs.yaml")
     # 実行・検証
     with pytest.raises(WriteFailedError):
-        store.create_workspace(root, valid_settings)
+        store.create_workspace(root, valid_settings, version="v0.3.0")
     assert not root.exists()
 
 

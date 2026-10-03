@@ -1,0 +1,16 @@
+steps:
+  - op: rename_key
+    file: docs.yaml
+    each_item: true
+    from: done
+    to: status
+  - op: map_values
+    file: docs.yaml
+    each_item: true
+    key: status
+    map: {true: 完成, false: 下書き}
+  - op: set_default
+    file: mindmap.yaml
+    each_item: false
+    key: summary
+    ask: 話し合いの題名

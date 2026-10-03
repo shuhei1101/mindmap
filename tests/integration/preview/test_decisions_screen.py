@@ -2,8 +2,28 @@
 
 from __future__ import annotations
 
+import pytest
 from playwright.sync_api import Page
-from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WritePreview,
+    WriteSamplePreview,
+)
+from preview_style_checks import (
+    BOARD_COLUMN_WIDTH_PX,
+    BOARD_EDGE_GAP_PX,
+    DESKTOP_VIEWPORT,
+    MIN_UI_FONT_SIZE_PX,
+    PHONE_VIEWPORT,
+    TRANSPARENT,
+    board_edges,
+    board_layout,
+    map_item_id_font_size,
+    pin_id_column,
+    table_cell_backgrounds,
+)
 from workspace_fixtures import MakeItem
 
 # マップを字下げの一覧に切り替える幅の境（これ以下）
@@ -406,3 +426,98 @@ def test_map_toggle_all_box_appearance(
     assert box["barWidth"] != "0px"
     assert abs(check["dx"]) <= CHECK_CENTER_TOLERANCE
     assert abs(check["dy"]) <= CHECK_CENTER_TOLERANCE
+
+
+def test_map_item_id_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """マップの項目の 2 行目の ID は、計算後の文字の大きさが 11px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=map")
+    page.wait_for_selector("#decision-map .map-node.n-item")
+    # 実行
+    size = map_item_id_font_size(page)
+    # 検証
+    assert size >= MIN_UI_FONT_SIZE_PX
+
+
+def test_board_edge_gap(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """検討事項のボードは、カードの左端をボードの左端から余白を空けて置き、ツールバーの左端に揃える（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=board")
+    # 実行
+    edges = board_edges(page)
+    # 検証
+    assert edges["cardLeft"] - edges["boardLeft"] >= BOARD_EDGE_GAP_PX
+    assert edges["cardLeft"] == pytest.approx(edges["toolbarLeft"], abs=1)
+
+
+def test_board_columns_when_narrow(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """検討事項のボードは、幅 390px で列を縦に 1 列に積み、列の右端を画面の幅に収め、背景をつかめることを示さない（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=board")
+    page.set_viewport_size(PHONE_VIEWPORT)
+    # 実行
+    layout = board_layout(page)
+    # 検証
+    assert layout["columnCount"] > 1
+    assert layout["leftSpread"] == pytest.approx(0, abs=1)
+    assert layout["rightmost"] <= layout["viewportWidth"]
+    assert not layout["pageScrolls"]
+    assert layout["cursor"] != "grab"
+
+
+def test_board_columns_when_wide(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """検討事項のボードは、幅 1280px で 290px の列を横に並べ、背景をつかめることを示す（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=board")
+    page.set_viewport_size(DESKTOP_VIEWPORT)
+    # 実行
+    layout = board_layout(page)
+    # 検証
+    assert layout["columnCount"] > 1
+    assert layout["topSpread"] == pytest.approx(0, abs=1)
+    assert layout["narrowest"] == pytest.approx(BOARD_COLUMN_WIDTH_PX, abs=1)
+    assert layout["widest"] == pytest.approx(BOARD_COLUMN_WIDTH_PX, abs=1)
+    assert layout["cursor"] == "grab"
+
+
+def test_table_cell_surface(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """検討事項の表のセルは静止時に面の色を持たず、面の色は表の枠と固定した列が持つ（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table")
+    pin_id_column(page)
+    # 実行
+    backgrounds = table_cell_backgrounds(page)
+    # 検証
+    assert backgrounds["wrap"] != TRANSPARENT
+    assert backgrounds["plain"] == [TRANSPARENT]
+    assert len(backgrounds["pinned"]) > 0
+    assert TRANSPARENT not in backgrounds["pinned"]
+
+
+def test_table_id_button_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """表の「前提」の列の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table")
+    # 実行
+    sizes = page.eval_on_selector_all("table.grid td button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX

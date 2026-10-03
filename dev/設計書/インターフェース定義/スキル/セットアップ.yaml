@@ -27,6 +27,7 @@ flows:
       - 本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
       - 本文が指す `steps/` のファイルが全てある
       - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
+      - 本文が `migrate --workspace {フォルダ} --plan` を呼ぶ
       - '`claude plugin validate` が終了コード 0'
     test: test_normal
 lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindstella:session` へ渡すスキルの入口と、そのファイルの形。
@@ -63,6 +64,9 @@ constraints:
     constraint: ワークスペースを作ったら最後に `build` を流す（hooks は使わない）
   - item: 引き継ぎ
     constraint: 最後に `/mindstella:session {ワークスペースのフォルダ}` で続けるよう案内する
+  - item: 版の比較
+    constraint: 既存のワークスペースでは `status` の前に `migrate --workspace {フォルダ} --plan` を呼ぶ。`relation` が `older` なら `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる。`same` のときだけ `status` へ進む
+    notes: インターフェース定義『記録の形式の移行』
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:

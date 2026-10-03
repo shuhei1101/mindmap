@@ -103,4 +103,7 @@ constraints:
   - item: ライセンスの本文の置き方
     constraint: リポジトリの直下とプラグインのフォルダの直下の 2 か所に、同じ本文の実体のファイルとして置く。シンボリックリンクにしない
     notes: 'Claude Code は、ローカルのパスからインストールするとプラグインのフォルダの外を指すシンボリックリンクを飛ばす（公式ドキュメント『Host and maintain a marketplace』の Share files within a marketplace with symlinks）。Windows の clone ではリンクが本文を持たないファイルになる'
+  - item: プラグインの版のファイル
+    constraint: '`plugins/mindstella/version.ini` の 1 行目にプラグインの版（`v{メジャー}.{マイナー}.{パッチ}`）を書く。スクリプトがワークスペースの版と比べるために読む。リポジトリの直下の `version.ini` の版より小さくしない'
+    notes: ワークスペースの形を変える PR が `migrations/{次の版}/` を足すときに、同じ PR でその版へ上げる。リリースでは tester がリポジトリの直下の `version.ini` を上げるときに、形を変えなかったスプリントでも同じ版へ揃える。マニフェストの `version` には写さない（制約「版」）
 test_file: tests/integration/plugin/test_plugin_loading.py

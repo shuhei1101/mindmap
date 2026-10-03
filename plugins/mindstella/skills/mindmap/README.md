@@ -45,8 +45,10 @@ claude plugin install mindstella@mindstella
 | 新しい話し合いを始める | `/mindstella:setup {ワークスペースのフォルダ}` |
 | 途中まで進んだ話し合いを再開する | `/mindstella:setup {ワークスペースのフォルダ}` |
 | セットアップの後に話し合いを進める | `/mindstella:session {ワークスペースのフォルダ}` |
+| プラグインを上げた後にワークスペースを今の版へ移し替える | `/mindstella:upgrade {ワークスペースのフォルダ}` |
 
 `/mindstella:setup` は、フォルダに `mindmap.yaml` が無ければ新しいワークスペースを作り、あれば状況を示して続きを推奨する。
 最後に `/mindstella:session` で続けるよう案内する。
+ワークスペースの版がプラグインより古ければ、`/mindstella:setup`・`/mindstella:session` は `/mindstella:upgrade` を案内して止まる。
 
 操作の手順は [話し合い](https://shuhei1101.github.io/mindstella/使い方/話し合い/)、スキルとコマンドの一覧は [スキル](https://shuhei1101.github.io/mindstella/リファレンス/スキル.html)・[コマンド](https://shuhei1101.github.io/mindstella/リファレンス/コマンド.html) にある。

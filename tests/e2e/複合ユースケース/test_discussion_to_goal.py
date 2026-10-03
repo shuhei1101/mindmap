@@ -10,7 +10,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from preview_helpers import preview_reflects_yaml
-from workspace_fixtures import MakeItem, MakeWorkspace, RunMindmap
+from workspace_fixtures import (
+    REPO_ROOT,
+    MakeItem,
+    MakeLegacyWorkspace,
+    MakeWorkspace,
+    RunMindmap,
+    SnapshotTree,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -23,6 +30,9 @@ CATEGORY = "機能"
 
 # 会話の日付
 TODAY = "2026-10-02"
+
+# 移し替えの点検で聞かれる題名に利用者が答える内容
+SUMMARY_ANSWER = "要件出しのスキルを設計する"
 
 # 新しい話し合いで /mindstella:setup が決める設定（分野: システム開発、ゴール: インターフェースまで）
 SETTINGS: dict[str, Any] = {
@@ -248,3 +258,64 @@ def test_normal_when_resume(
     assert added["id"] == "D-3"
     ids = [item["id"] for item in read_yaml(root, "decisions.yaml")["items"]]
     assert ids == ["D-1", "D-2", "D-3"]
+
+
+def test_normal_when_resume_older_version(
+    make_legacy_workspace: MakeLegacyWorkspace,
+    make_item: MakeItem,
+    run_mindmap: RunMindmap,
+    python_path: str,
+    replay: Replay,
+    read_yaml: Callable[[Path, str], Any],
+    snapshot_tree: SnapshotTree,
+) -> None:
+    """古い版のワークスペースを移し替えてから、状況を読み、続きの番号で項目を足す（正常系）。"""
+    # 準備
+    root = make_legacy_workspace(make_item("D-1"), legacy_docs={"A-1": True}, without_summary=True)
+    before = snapshot_tree(root)
+    ws = ["--workspace", str(root)]
+    # 実行
+    # セットアップ: 版を比べて古いと分かり、どのファイルも書き換えずに移し替えのスキルを案内して止まる
+    first_plan = run_mindmap("migrate", *ws, "--plan", python=python_path)
+    unchanged_after_setup = snapshot_tree(root)
+    # 移し替え: 手順を当て、点検で聞かれる題名を入れ、版を書き換える
+    applied = run_mindmap("migrate", *ws, python=python_path)
+    checked_before_set = run_mindmap("check", *ws, python=python_path)
+    run_mindmap(
+        "migrate", *ws, "--set", f"mindmap.yaml:summary={SUMMARY_ANSWER}", python=python_path
+    )
+    recorded = run_mindmap("migrate", *ws, "--record", python=python_path)
+    # セットアップ（2 回目）: 版の案内を出さず、状況を読む
+    second_plan = replay("migrate", *ws, "--plan")
+    status = replay("status", *ws)
+    # 取り込み: 続きの番号で検討事項を足す
+    added = replay("add", "decision", *ws, data={"title": "続きで出た問い", "status": "未決定"})
+    checked = run_mindmap("check", *ws, python=python_path)
+    # 検証
+    # 最初のセットアップが、どのファイルも書き換えずに移し替えのスキルを案内する
+    assert json.loads(first_plan.stdout)["relation"] == "older"
+    assert unchanged_after_setup == before
+    assert applied.returncode == 0
+    assert checked_before_set.returncode == 1
+    assert recorded.returncode == 0
+    # 移し替えの後、mindstella-version.ini の 1 行目がプラグインの版である
+    plugin_version = (REPO_ROOT / "plugins" / "mindstella" / "version.ini").read_text(
+        encoding="utf-8"
+    )
+    first_line = (root / "mindstella-version.ini").read_text(encoding="utf-8").splitlines()[0]
+    assert first_line == plugin_version.splitlines()[0]
+    # 資料 A-1 が status: 完成で done を持たず、mindmap.yaml の summary が答えた題名である
+    doc = read_yaml(root, "docs.yaml")["items"][0]
+    assert doc["status"] == "完成"
+    assert "done" not in doc
+    assert read_yaml(root, "mindmap.yaml")["summary"] == SUMMARY_ANSWER
+    # 2 回目のセットアップが版の案内を出さず、状況と続きの推奨を出す
+    assert second_plan["relation"] == "same"
+    assert status["next"][0]["id"] == "D-1"
+    # 既存の項目の ID が変わらず、取り込みで足した検討事項が D-2 になっている
+    assert added["id"] == "D-2"
+    ids = [item["id"] for item in read_yaml(root, "decisions.yaml")["items"]]
+    assert ids == ["D-1", "D-2"]
+    # check が問題を 0 件で返す
+    assert checked.returncode == 0
+    assert json.loads(checked.stdout)["problems"] == []

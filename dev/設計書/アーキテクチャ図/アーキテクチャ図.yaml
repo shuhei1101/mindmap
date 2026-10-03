@@ -87,7 +87,7 @@ repository:
   style: モノレポ
   repositories:
     - name: shuhei1101/mindstella
-  layout: '`.claude-plugin/`（マーケットプレイスのマニフェスト）/ `plugins/mindstella/.claude-plugin/`（プラグインのマニフェスト）/ `plugins/mindstella/skills/setup/`・`plugins/mindstella/skills/session/`（スキル。SKILL.md と `steps/`）/ `plugins/mindstella/skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・プレビューの `preview/`。SKILL.md は持たない）'
+  layout: '`.claude-plugin/`（マーケットプレイスのマニフェスト）/ `plugins/mindstella/.claude-plugin/`（プラグインのマニフェスト）/ `plugins/mindstella/version.ini`（プラグインの版）/ `plugins/mindstella/skills/setup/`・`plugins/mindstella/skills/session/`・`plugins/mindstella/skills/upgrade/`（スキル。SKILL.md と `steps/`）/ `plugins/mindstella/skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・版ごとの移し替えの手順 `migrations/`・プレビューの `preview/`。SKILL.md は持たない）'
   notes: マーケットプレイスはリポジトリの直下の `.claude-plugin/` に置き、プラグインを `./plugins/mindstella` で指す。プラグインは `plugins/mindstella/` の下に分け、利用者へ配るのはその中身だけにする。
 subsystems:
   - name: プラグイン
@@ -97,7 +97,7 @@ subsystems:
     runs_on: 利用者の端末の Claude Code
   - name: スキル
     scope: skill
-    role: 会話の進め方の手順（セットアップ `setup` と話し合いの進行 `session` の 2 つ）。ワークスペースへの記録はスクリプトのコマンドで行い、リサーチはサブエージェントに任せる
+    role: 会話の進め方の手順（セットアップ `setup`・話し合いの進行 `session`・ワークスペースの移し替え `upgrade` の 3 つ）。ワークスペースへの記録はスクリプトのコマンドで行い、リサーチはサブエージェントに任せる
     runtime: Markdown（Claude Code が読む手順）
     runs_on: 利用者の端末の Claude Code
     status: implemented
