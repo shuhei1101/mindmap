@@ -406,6 +406,13 @@ functions:
     returns:
       type: HTMLElementTagNameMap[tag]
       description: 作った要素
+    unit_tests:
+      - name: test_h
+        case: 正常
+        summary: 属性・リスナー・子を付けた要素を返す
+        condition: '`{tag: "button", attrs: {class: "b", disabled: true, title: null, hidden: false, onclick: 数える関数}, children: ["a", 1, null, false, 要素]}` で作り、click のイベントを送る'
+        mock: なし
+        expected: '`className` が `b`、`disabled` が空の値で付き、`title`・`hidden` は無い。子は `a`・`1`・要素の 3 つ。関数が 1 回呼ばれる'
   - name: append
     title: 子を足す
     kind: 関数
@@ -427,6 +434,13 @@ functions:
     returns:
       type: void
       description: '-'
+    unit_tests:
+      - name: test_append
+        case: 正常
+        summary: 偽の値を除いて末尾に足す
+        condition: 子を 1 つ持つ要素に `["x", 0, undefined, false]`
+        mock: なし
+        expected: 子が `元の子・x・0` の 3 つ
   - name: icon
     title: アイコン
     kind: 関数
@@ -443,6 +457,13 @@ functions:
     returns:
       type: SVGSVGElement
       description: '`class="icon"`・`viewBox="0 0 24 24"`・`aria-hidden="true"` の SVG'
+    unit_tests:
+      - name: test_icon
+        case: 正常
+        summary: 装飾として隠した SVG を返す
+        condition: '`"search"`'
+        mock: なし
+        expected: '`svg.icon` で `aria-hidden` が `true`、子の図形を 1 つ以上持つ'
   - name: statusMark
     title: 状態の印
     kind: 関数
@@ -459,6 +480,13 @@ functions:
     returns:
       type: SVGSVGElement | null
       description: '`class="mark"` の SVG。知らない状態・`undefined` は `null`'
+    unit_tests:
+      - name: test_status_mark
+        case: 正常
+        summary: 知っている状態だけ印を返す
+        condition: '`parametrize`: `決定済み` / `要見直し` / `完成` / `知らない` / `undefined`'
+        mock: なし
+        expected: '`svg.mark` / `svg.mark` / `svg.mark` / `null` / `null`'
   - name: statusBadge
     title: 状態の表示
     kind: 関数
@@ -475,6 +503,13 @@ functions:
     returns:
       type: Node
       description: '`span.st`（`data-st` に状態）。`undefined` は空の断片'
+    unit_tests:
+      - name: test_status_badge
+        case: 正常
+        summary: 印と名前を並べ、状態が無ければ空
+        condition: '`parametrize`: `未決定` / `undefined`'
+        mock: なし
+        expected: '`span.st` で `data-st` が `未決定`、文字が `未決定`、`svg.mark` を持つ / 子の無い断片'
   - name: impactBadge
     title: 影響度の表示
     kind: 関数
@@ -491,6 +526,13 @@ functions:
     returns:
       type: Node
       description: '`span.impact`。大は 3 本・中は 2 本・小は 1 本の目盛りを `on` にする。大・中・小のどれでもない値と `undefined` は空の断片'
+    unit_tests:
+      - name: test_impact_badge
+        case: 正常
+        summary: 影響度ごとの目盛りの数
+        condition: '`parametrize`: `大` / `中` / `小` / `知らない` / `undefined`'
+        mock: なし
+        expected: '`on` の目盛りが 3 / 2 / 1 本 / 空の断片 / 空の断片'
   - name: tagList
     title: タグの並び
     kind: 関数
@@ -507,6 +549,13 @@ functions:
     returns:
       type: Node
       description: タグごとの `span.tag` を持つ断片
+    unit_tests:
+      - name: test_tag_list
+        case: 正常
+        summary: タグの数だけ並べる
+        condition: '`parametrize`: `["UI", "性能"]` / `undefined`'
+        mock: なし
+        expected: '`span.tag` が 2 つで文字が `UI`・`性能` / 子の無い断片'
   - name: deliverableBadge
     title: 成果物の印
     kind: 関数
@@ -518,6 +567,13 @@ functions:
     returns:
       type: HTMLElement
       description: '`span.deliv-badge`'
+    unit_tests:
+      - name: test_deliverable_badge
+        case: 正常
+        summary: アイコンと文字を持つ
+        condition: 引数なし
+        mock: なし
+        expected: '`span.deliv-badge` が `svg.icon` と文字 `成果物` を持つ'
   - name: emptyNote
     title: 空のときの 1 行
     kind: 関数
@@ -534,6 +590,13 @@ functions:
     returns:
       type: HTMLElement
       description: '`p.empty`'
+    unit_tests:
+      - name: test_empty_note
+        case: 正常
+        summary: 文を持つ段落を返す
+        condition: '`"該当なし"`'
+        mock: なし
+        expected: '`p.empty` の文字が `該当なし`'
   - name: enableDragScroll
     title: 背景のドラッグで動かす
     kind: 関数
@@ -551,6 +614,13 @@ functions:
     returns:
       type: void
       description: '-'
+    unit_tests:
+      - name: test_enable_drag_scroll
+        case: 正常
+        summary: 背景のドラッグで動き、ボタンの上では動かない
+        condition: '`parametrize`: 背景で押して左へ 50px・上へ 30px 動かす / ボタンの上で押して同じだけ動かす'
+        mock: なし
+        expected: '`scrollLeft` が 50・`scrollTop` が 30 増え、離すと `dragging` が外れる / `scrollLeft`・`scrollTop` が変わらない'
   - name: markSelected
     title: 選択中の印を付け替える
     kind: 関数
@@ -568,6 +638,13 @@ functions:
     returns:
       type: void
       description: '-'
+    unit_tests:
+      - name: test_mark_selected
+        case: 正常
+        summary: 開いた項目だけに印が付き、持った ID を引ける
+        condition: '`main` の中に `data-id` が D-1・D-2 の要素を置き、`parametrize`: `"D-2"` / `null`'
+        mock: なし
+        expected: D-2 だけが `selected`・`currentSelection()` が `D-2` / どれも `selected` でなく、`currentSelection()` が `null`
   - name: currentSelection
     title: 開いている項目
     kind: 関数
