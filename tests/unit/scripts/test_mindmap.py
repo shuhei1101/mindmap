@@ -114,6 +114,23 @@ def test_main_when_summary_required(
     assert captured.out == ""
 
 
+def test_main_when_out_invalid(
+    make_workspace: MakeWorkspace, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """書き出す先の誤りは終了コード 2（正常系）。"""
+    # 準備
+    root = make_workspace()
+    # 実行
+    exit_code = mindmap.main(
+        ["export", "--workspace", str(root), "--out", str(root / "preview.html")]
+    )
+    # 検証
+    captured = capsys.readouterr()
+    assert exit_code == 2
+    assert "--out" in captured.err
+    assert captured.out == ""
+
+
 def test_main(make_workspace: MakeWorkspace, capsys: pytest.CaptureFixture[str]) -> None:
     """コマンドの結果を JSON で出す（正常系）。"""
     # 準備

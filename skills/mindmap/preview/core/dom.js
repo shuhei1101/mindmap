@@ -123,6 +123,31 @@ var MindmapPreview;
         });
     }
     MindmapPreview.statusBadge = statusBadge;
+    /** 帯に並ぶ値のうち表示している数から、まとめて切り替える箱の状態を返す（帯に無い値は数えない） */
+    function toggleAllState({ shown, all }) {
+        const count = all.filter((value) => shown.has(value)).length;
+        if (count === 0)
+            return "none";
+        return count === all.length ? "all" : "some";
+    }
+    MindmapPreview.toggleAllState = toggleAllState;
+    /** 帯の右端に置く、文字を添えない三状態のチェックの箱。押すと、全て表示していれば空、それ以外は全てを `onChange` に渡す */
+    function toggleAllBox({ label, shown, all, onChange, }) {
+        const state = toggleAllState({ shown, all });
+        const checkbox = h({
+            tag: "input",
+            attrs: {
+                type: "checkbox",
+                checked: state === "all",
+                "aria-label": label,
+                onchange: () => onChange(state === "all" ? new Set() : new Set(all)),
+            },
+        });
+        // 一部だけ表示しているときの横棒は、属性でなくプロパティで付ける
+        checkbox.indeterminate = state === "some";
+        return h({ tag: "label", attrs: { class: "legend-all-check", title: label }, children: [checkbox] });
+    }
+    MindmapPreview.toggleAllBox = toggleAllBox;
     /** 影響度（大・中・小）の 3 本の目盛りと文字 */
     function impactBadge(weight) {
         const levels = ["大", "中", "小"];
@@ -149,9 +174,9 @@ var MindmapPreview;
         return fragment;
     }
     MindmapPreview.tagList = tagList;
-    /** 成果物の印（箱のアイコンと文字） */
+    /** 納品物の印（箱のアイコンと文字） */
     function deliverableBadge() {
-        return h({ tag: "span", attrs: { class: "deliv-badge" }, children: [icon("box"), "成果物"] });
+        return h({ tag: "span", attrs: { class: "deliv-badge" }, children: [icon("box"), "納品物"] });
     }
     MindmapPreview.deliverableBadge = deliverableBadge;
     /** 「該当なし」など、空のときの 1 行 */

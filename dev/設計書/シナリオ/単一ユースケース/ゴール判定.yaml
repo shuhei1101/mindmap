@@ -3,12 +3,14 @@ scenarios:
   - name: 正常シナリオ（ゴールに届いた）
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `goal`・`show`・`handoff/` への書き出し・`add`（会話ログ）・`build` を、決めた引数で順に再生する
+        description: モデルを呼ばない。手順が連ねる `goal`・`show`・`clear-release`・`release/` への書き出し・`add`（会話ログ）・`build` を、決めた引数で順に再生する
       - name: 作成済みのワークスペース
         description: 'ゴールがインターフェースまでで、目的からインターフェースまでの検討事項が全て決定済みか対象外で、ゴールの `deliverables` の資料 A-1 が `status: 完成`'
         notes: コンテンツのフェーズに未決定の D-9 を置き、ゴールより後ろのフェーズは判定に入らないことを確かめる
+      - name: 前回のリリース
+        description: '`release/` に、前回のゴール判定で書き出した `古い資料.md` がある'
       - name: 利用者の返答
-        description: 示した検討事項と成果物を確定する
+        description: 示した検討事項と納品物を確定する
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -20,17 +22,20 @@ scenarios:
         CC->>SCR: goal
         SCR->>WS: mindmap.yaml のフェーズ・ゴールと全ての YAML を読む
         SCR-->>CC: 届いた（残り 0 件）
-        CC-->>U: 決まった検討事項と成果物を示して確定を求める
+        CC-->>U: 決まった検討事項と納品物を示して確定を求める
         U->>CC: 確定する
-        CC->>SCR: show（成果物の本文）
-        CC->>WS: handoff/ に引き渡しの資料を書き出す
+        CC->>SCR: show（納品物の本文）
+        CC->>SCR: clear-release
+        SCR->>WS: release/ の中身を消す
+        CC->>WS: release/ にリリースの資料を書き出す
         CC->>SCR: add（会話ログ）
         CC->>SCR: build
-        CC-->>U: handoff/ のファイルを示す
+        CC-->>U: release/ のファイルを示す
       ```
     expected:
-      - '`goal` の出力が「届いた」で、残りの検討事項と成果物が 0 件である（ゴールより後ろの D-9 を含まない）'
-      - '`handoff/` に、決まった検討事項の一覧と成果物 A-1 の本文がある'
+      - '`goal` の出力が「届いた」で、残りの検討事項と納品物が 0 件である（ゴールより後ろの D-9 を含まない）'
+      - '`release/` に、決まった検討事項の一覧と納品物 A-1 の本文がある'
+      - '`release/` に前回の `古い資料.md` が残っていない'
       - 会話ログが 1 件足されている
     test: test_normal_when_reached
   - name: 正常シナリオ（ゴールに届いていない）
@@ -38,7 +43,7 @@ scenarios:
       - name: Mock
         description: モデルを呼ばない。手順が連ねる `goal` を再生する
       - name: 作成済みのワークスペース
-        description: 'ゴールのフェーズまでに未決定の D-1 と、ゴールの `deliverables` に `status: 確認中` の成果物 A-1 を持つ'
+        description: 'ゴールのフェーズまでに未決定の D-1 と、ゴールの `deliverables` に `status: 確認中` の納品物 A-1 を持つ'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -52,24 +57,24 @@ scenarios:
       ```
     expected:
       - '`goal` の出力が「届いていない」で、残りに D-1 と A-1 がある'
-      - '`handoff/` に何も書かれていない'
+      - '`release/` に何も書かれていない'
     test: test_normal_when_not_reached
-lead: '`session` が、ゴールのフェーズまでの検討事項と成果物が揃ったかを確かめ、利用者の確定を取って `handoff/` に引き渡しの資料を書き出す単一ユースケース。'
+lead: '`session` が、ゴールのフェーズまでの検討事項と納品物が揃ったかを確かめ、利用者の確定を取って `release/` にリリースの資料を書き出す単一ユースケース。'
 issue: 4
 primary_actor: 利用者
 stakeholders:
   - name: 利用者
     interest: ゴールに届いていないときは、何が残っているかが分かる
-  - name: 引き渡し先
-    interest: '`handoff/` だけを読めば、決まったことと成果物が分かる'
+  - name: 受け取り手
+    interest: '`release/` だけを読めば、決まったことと納品物が分かる'
 trigger: 利用者がゴールに届いたかを尋ねる、または `next` の候補が無くなる
 preconditions:
   - ワークスペースが作成済みである
   - 依存が揃っている
-success_guarantee: ゴールに届いたときだけ、利用者の確定の後に `handoff/` へ書き出す。届いていないときは残りを示し、`handoff/` には書かない。
+success_guarantee: ゴールに届いたときだけ、利用者の確定の後に `release/` へ書き出す。届いていないときは残りを示し、`release/` には書かない。
 frequency: 話し合いの終わりに 1〜数回
 priority: 高
 notes:
-  引き渡しの形: '`handoff/` に書き出す資料の形は進め方ガイドの「引き渡しの形」が決める。書き出しはスクリプトのコマンドを持たず、スキルが Markdown を書く'
+  リリースの形: '`release/` に書き出す資料の形は進め方ガイドの「リリースの形」が決める。書き出しはスキルが Markdown を書く。書き出す前に `clear-release` で `release/` の中身を消し、最新の確定版の一式だけを置く（版はフォルダで切らない）'
   ゴールに届いたかの判定: 'スクリプトにコマンド `goal` を足して判定させる。ゴールのフェーズまでの検討事項が全て決定済みか対象外・取り下げで、ゴールの `deliverables` の資料が全て `status: 完成` のときに届いたとする。引数と出力の形はインターフェース定義設計で決める'
 test_file: tests/e2e/単一ユースケース/test_goal_check.py

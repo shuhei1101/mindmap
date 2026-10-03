@@ -1,0 +1,25 @@
+# 実行したコマンド
+pytest tests/integration/preview/test_decisions_screen.py tests/integration/preview/test_graph_screen.py -v
+# コミット: 70453a4c3a581a69ef584eb76f564e72a86df4cc
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.0, pluggy-1.6.0 -- /tmp/claude-1000/-mnt-c-Users-shuhe-repo-mindmap/23902008-7594-40d0-95e5-7d13434f85a9/scratchpad/venv/bin/python3.12
+cachedir: .pytest_cache
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/design-preview-decision-map-status-toggle-all
+configfile: pytest.ini
+plugins: base-url-2.1.0, playwright-0.9.0
+collecting ... collected 11 items
+
+tests/integration/preview/test_decisions_screen.py::test_view_switch[chromium] PASSED [  9%]
+tests/integration/preview/test_decisions_screen.py::test_map[chromium] PASSED [ 18%]
+tests/integration/preview/test_decisions_screen.py::test_map_status_legend[chromium] PASSED [ 27%]
+tests/integration/preview/test_decisions_screen.py::test_map_keyword[chromium] PASSED [ 36%]
+tests/integration/preview/test_decisions_screen.py::test_map_zoom[chromium] PASSED [ 45%]
+tests/integration/preview/test_decisions_screen.py::test_map_when_narrow[chromium] PASSED [ 54%]
+tests/integration/preview/test_decisions_screen.py::test_board[chromium] PASSED [ 63%]
+tests/integration/preview/test_decisions_screen.py::test_table_ready_column[chromium] PASSED [ 72%]
+tests/integration/preview/test_graph_screen.py::test_canvas[chromium] PASSED [ 81%]
+tests/integration/preview/test_graph_screen.py::test_kind_toggles[chromium] PASSED [ 90%]
+tests/integration/preview/test_graph_screen.py::test_open_item_from_hash[chromium] PASSED [100%]
+
+============================= 11 passed in 12.52s ==============================

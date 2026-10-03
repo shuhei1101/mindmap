@@ -268,7 +268,7 @@ def test_tag_list(
 
 
 def test_deliverable_badge(preview_page: Page, load_preview_scripts: LoadPreviewScripts) -> None:
-    """箱のアイコンと「成果物」を持つ印を返す（正常系）。"""
+    """箱のアイコンと「納品物」を持つ印を返す（正常系）。"""
     # 準備
     load_preview_scripts()
     # 実行
@@ -284,7 +284,7 @@ def test_deliverable_badge(preview_page: Page, load_preview_scripts: LoadPreview
         }"""
     )
     # 検証
-    assert result == {"tag": "SPAN", "className": "deliv-badge", "icons": 1, "text": "成果物"}
+    assert result == {"tag": "SPAN", "className": "deliv-badge", "icons": 1, "text": "納品物"}
 
 
 def test_empty_note(preview_page: Page, load_preview_scripts: LoadPreviewScripts) -> None:
@@ -384,3 +384,96 @@ def test_mark_selected(
     )
     # 検証
     assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("all_values", "shown", "expected"),
+    [
+        pytest.param(["a", "b", "c"], ["a", "b", "c"], "all", id="all_shown"),
+        pytest.param(["a", "b", "c"], ["a"], "some", id="some_shown"),
+        pytest.param(["a", "b", "c"], [], "none", id="none_shown"),
+        pytest.param(["a", "b", "c"], ["a", "b", "c", "z"], "all", id="shown_has_extra_value"),
+        pytest.param([], [], "none", id="no_values"),
+    ],
+)
+def test_toggle_all_state(
+    preview_page: Page,
+    load_preview_scripts: LoadPreviewScripts,
+    all_values: list[str],
+    shown: list[str],
+    expected: str,
+) -> None:
+    """表示している数で、まとめて切り替える箱の状態を返す（正常系）。"""
+    # 準備
+    load_preview_scripts()
+    # 実行
+    result = preview_page.evaluate(
+        """({shown, all}) => MindmapPreview.toggleAllState({shown: new Set(shown), all})""",
+        {"shown": shown, "all": all_values},
+    )
+    # 検証
+    assert result == expected
+
+
+@pytest.mark.parametrize(
+    ("shown", "expected"),
+    [
+        pytest.param(
+            ["a", "b", "c"],
+            {"checked": True, "indeterminate": False, "next": []},
+            id="all_shown",
+        ),
+        pytest.param(
+            ["a"],
+            {"checked": False, "indeterminate": True, "next": ["a", "b", "c"]},
+            id="some_shown",
+        ),
+        pytest.param(
+            [],
+            {"checked": False, "indeterminate": False, "next": ["a", "b", "c"]},
+            id="none_shown",
+        ),
+    ],
+)
+def test_toggle_all_box(
+    preview_page: Page,
+    load_preview_scripts: LoadPreviewScripts,
+    shown: list[str],
+    expected: dict[str, Any],
+) -> None:
+    """状態に合わせて箱を作り、押すと次に表示する値を渡す（正常系）。"""
+    # 準備
+    load_preview_scripts()
+    # 実行
+    result = preview_page.evaluate(
+        """({shown}) => {
+            const calls = [];
+            const box = MindmapPreview.toggleAllBox({
+                label: "すべての状態を表示",
+                shown: new Set(shown),
+                all: ["a", "b", "c"],
+                onChange: (next) => { calls.push(Array.from(next).sort()); },
+            });
+            document.body.append(box);
+            const checkbox = box.querySelector("input[type=checkbox]");
+            const before = {checked: checkbox.checked, indeterminate: checkbox.indeterminate};
+            checkbox.click();
+            return {
+                tag: box.tagName,
+                className: box.className,
+                ariaLabel: checkbox.getAttribute("aria-label"),
+                ...before,
+                calls,
+            };
+        }""",
+        {"shown": shown},
+    )
+    # 検証
+    assert result == {
+        "tag": "LABEL",
+        "className": "legend-all-check",
+        "ariaLabel": "すべての状態を表示",
+        "checked": expected["checked"],
+        "indeterminate": expected["indeterminate"],
+        "calls": [expected["next"]],
+    }

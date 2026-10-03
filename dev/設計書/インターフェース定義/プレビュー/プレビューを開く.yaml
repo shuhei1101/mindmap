@@ -1,7 +1,7 @@
 title: "プレビューを開く"
 entry:
   kind: screen
-  value: '`build` が書き出した `preview.html`（雛形は `skills/mindmap/preview/`）'
+  value: '`build` が書き出した `preview.html`（雛形は `skills/mindmap/preview/`）。`export` が書き出した配る書き出しも同じ画面を開く'
   api: なし（記録は `mindmap-data` の要素から読む。通信は描画のライブラリと文字の読み込みだけ）
 flows:
   - name: 正常系
@@ -94,6 +94,30 @@ flows:
       - 詳細パネルが開いていない
       - URL のハッシュに `id` が無い
     test: test_normal_when_item_not_found
+  - name: 正常系（配る書き出しを通信なしで開く）
+    summary: 描画のライブラリを中に持つ配る書き出しは、通信が無くても本文・図・マップを描く
+    setup:
+      - name: Mock
+        description: ブラウザから `file:` 以外への要求を全て失敗させ、要求の数を数える
+      - name: exported_html
+        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を持つワークスペースから `export` で書き出した HTML
+        notes: ハッシュは `tab=decisions&id=D-3`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as 配る書き出し
+
+        ユーザー->>IF: #tab=decisions&id=D-3 で開く
+        IF->>IF: 中に持つ描画のライブラリと mindmap-data を読む
+        IF-->>ユーザー: 検討事項のマップと D-3 の詳細パネル
+      ```
+    expected:
+      - 外への要求が 0 件
+      - '`role="alert"` の読めなかったライブラリの知らせが無い'
+      - マップに D-3 が描かれている
+      - 詳細パネルに D-3 が開き、本文の見出しが見出しの要素で、図が SVG で描かれている
+    test: test_normal_when_exported_offline
   - name: 異常系（描画のライブラリが読めない）
     summary: 描画のライブラリの配信元に届かないと、使う箇所に読めなかったライブラリの名前を出す
     setup:
@@ -196,15 +220,15 @@ constraints:
   - item: 記録
     constraint: '`mindmap-data` を `JSON.parse` して読むだけで、書き換えない'
   - item: 描画のライブラリ
-    constraint: 描画のライブラリ（`refs` の外部ライブラリの設計書）を配信元から、版を固定し `integrity` と `crossorigin="anonymous"` を付けた script 要素で読む。読めなかったときは代わりの読み込みをせず、そのライブラリを使う箇所に名前を出す。本文は原文を出し、表・ボード・カード・つながりはそのまま使える
+    constraint: 描画のライブラリ（`refs` の外部ライブラリの設計書）を配信元から、版を固定し `integrity` と `crossorigin="anonymous"` を付けた script 要素で読む。読めなかったときは代わりの読み込みをせず、そのライブラリを使う箇所に名前を出す。本文は原文を出し、表・ボード・カード・つながりはそのまま使える。配る書き出しは描画のライブラリを中に持ち、配信元から読まない
   - item: 本文の無害化
     constraint: '本文の Markdown は HTML に描いた後、無害化してから差し込む。図はスクリプトを動かさない安全の設定で描く'
   - item: 文字
-    constraint: 画面の文字（デザイン方針の書体）を文字の配信元から読む。読めないときは端末の文字で描く
+    constraint: 画面の文字（デザイン方針の書体）を文字の配信元から読む。読めないときは端末の文字で描く。配る書き出しは文字の配信元を読まず、端末の文字で描く
   - item: 端末の保存領域
     constraint: ライト / ダークと、表ごとの表示する列・ピン留めを `localStorage` の 1 つのキーに持つ。表の絞り込みの条件は保存しない。保存できない環境では開いている間だけ保つ
   - item: 通信
-    constraint: 描画のライブラリと文字の配信元だけ。記録を外へ送らない
+    constraint: 描画のライブラリと文字の配信元だけ。記録を外へ送らない。配る書き出しは通信しない
 refs:
   - dev/設計書/インターフェース定義/スクリプト/プレビューの書き出し#
   - dev/設計書/外部ライブラリ/marked#
@@ -212,4 +236,5 @@ refs:
   - dev/設計書/外部ライブラリ/elkjs#
   - dev/設計書/外部ライブラリ/mermaid#
   - dev/設計書/外部API/GoogleFonts#
+  - dev/設計書/インターフェース定義/スクリプト/配る書き出し#
 test_file: tests/integration/preview/test_open_preview.py

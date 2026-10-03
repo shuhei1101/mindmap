@@ -35,7 +35,7 @@ flows:
 lead: 作成済みのワークスペースで、取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定のステップを回すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/複合ユースケース/話し合いをゴールまで進める#
-side_effects: スクリプトの書き込むコマンドでワークスペースの YAML を書き換える。資料の本文（`docs/`）と引き渡しの資料（`handoff/`）はスキルが Markdown を書き、そのとき利用者に書き込みの確認が出る。リサーチではサブエージェントが Web を調べる
+side_effects: スクリプトの書き込むコマンドでワークスペースの YAML を書き換える。資料の本文（`docs/`）とリリースの資料（`release/`）はスキルが Markdown を書き、そのとき利用者に書き込みの確認が出る。リリースの資料を書く前に `clear-release` で `release/` の中身を消す。リサーチではサブエージェントが Web を調べる。配る書き出しを頼まれたときは `export` で、利用者が示したパスへ HTML を書き出す
 request:
   - name: $ARGUMENTS
     type: str
@@ -58,7 +58,7 @@ constraints:
     constraint: いつ使うか（セットアップの後に話し合いを進めるとき）が分かる 1 文
   - item: front matter の allowed-tools
     constraint: '`Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。Write・Edit と、これ以外の Bash は許していない'
-    notes: Agent・WebSearch・WebFetch はリサーチのサブエージェントに使う。許可がサブエージェントの WebSearch・WebFetch に及ぶことは PoC で確かめた。`docs/` の本文は `add`・`update` の `body_markdown` で書く。`handoff/` の Markdown の書き出しと、成果物を外すときの `mindmap.yaml` の `goal.deliverables` の書き換えは、数が少ないため利用者の確認に回す（パスで絞れない Write・Edit を話し合いの間ずっと許さない）
+    notes: Agent・WebSearch・WebFetch はリサーチのサブエージェントに使う。許可がサブエージェントの WebSearch・WebFetch に及ぶことは PoC で確かめた。`docs/` の本文は `add`・`update` の `body_markdown` で書く。`release/` の Markdown の書き出しと、納品物を外すときの `mindmap.yaml` の `goal.deliverables` の書き換えは、数が少ないため利用者の確認に回す（パスで絞れない Write・Edit を話し合いの間ずっと許さない）
   - item: 共通のファイルの参照
     constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
   - item: スクリプトの起動
@@ -71,9 +71,12 @@ constraints:
   - item: スキルの中の名前
     constraint: 特定の開発基盤の名前を出さない（アーキテクチャ図の制約）
   - item: 進め方ガイド
-    constraint: '`playbooks/{分野}.md` は、`## 最上位の軸の呼び名`・`## カテゴリーの分け方`・`## フェーズと観点`・`## 必ず調べるもの`・`## ゴールの候補`・`## 引き渡しの形` の節をこの並びで持つ。`## ゴールの候補` は `（既定）` を付けた行を 1 つだけ持つ'
+    constraint: '`playbooks/{分野}.md` は、`## 最上位の軸の呼び名`・`## カテゴリーの分け方`・`## フェーズと観点`・`## 必ず調べるもの`・`## ゴールの候補`・`## リリースの形` の節をこの並びで持つ。`## ゴールの候補` は `（既定）` を付けた行を 1 つだけ持つ'
     notes: |-
       資料作り・壁打ちの値は補足の `進め方ガイドの分野`
+  - item: 配る書き出し
+    constraint: 利用者が記録を人に渡したいと言ったときだけ、プレビューのステップで書き出す先のパスを利用者に聞き、`export --workspace {フォルダ} --out {パス}` を呼ぶ。書き出す先にワークスペースの `preview.html` と `release/` の中を指さない。書き出したら `path` の絶対パスと、ネットにつながらなくても開けて書き込む操作が無いことを示す。編集の後に流すのは `build` のまま
+    notes: '`release/` は `clear-release` が中身を消す。インターフェース定義『配る書き出し』'
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
 notes:

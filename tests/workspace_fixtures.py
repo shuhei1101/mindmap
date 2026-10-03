@@ -66,13 +66,16 @@ def run_mindmap() -> RunMindmap:
     env = {**os.environ, "PYTHONUTF8": "1"}
 
     def _run(
-        *args: str, stdin: str | None = None, python: str = sys.executable
+        *args: str,
+        stdin: str | None = None,
+        python: str = sys.executable,
+        extra_env: dict[str, str] | None = None,
     ) -> subprocess.CompletedProcess[str]:
-        """引数と標準入力を渡して実行し、終了コードが 0 以外でも例外にせず返す。"""
+        """引数と標準入力を渡して実行し、終了コードが 0 以外でも例外にせず返す。extra_env は環境変数に足す。"""
         return subprocess.run(
             [python, str(MINDMAP_SCRIPT), *args],
             input=stdin,
-            env=env,
+            env={**env, **(extra_env or {})},
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -135,7 +138,7 @@ def make_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> MakeWorksp
         """項目のある種類の YAML だけを置いたワークスペースを作り、そのフォルダを返す。"""
         root = tmp_path / name
         (root / "docs").mkdir(parents=True)
-        (root / "handoff").mkdir()
+        (root / "release").mkdir()
         write_yaml(root / "mindmap.yaml", valid_settings if settings is None else settings)
         # 項目のある種類だけ、渡した並びのまま 1 つの YAML にまとめる
         for prefix, file_name in KIND_FILES.items():

@@ -242,6 +242,20 @@ classes:
     summary: 題名を持たないワークスペースを `--summary` 無しで移そうとした。入口は終了コード 2（引数の誤り）にする
     kind: クラス
     inherits: MindmapError
+  - name: OutPathError
+    title: 書き出す先の誤り
+    container: skills/mindmap/scripts/errors.py
+    usecase: 配る書き出し
+    summary: '`export` の `--out` が `.html` で終わらないか、ワークスペースの `preview.html` を指す。入口は終了コード 2（引数の誤り）にする'
+    kind: クラス
+    inherits: MindmapError
+  - name: DownloadFailedError
+    title: 取れなかった
+    container: skills/mindmap/scripts/errors.py
+    usecase: 配る書き出し
+    summary: 配る書き出しで jsDelivr から配布ファイルかライセンスの本文を取れないか、配布ファイルが雛形の `integrity` と合わない。メッセージに URL と理由（`raise ... from` で元の例外をつなぐ）
+    kind: クラス
+    inherits: MindmapError
 constants:
   - name: KINDS
     title: 種類の一覧
@@ -282,12 +296,12 @@ constants:
     usecase: 共通
     summary: 本文の Markdown を置くフォルダ名
     value: '"docs"'
-  - name: HANDOFF_DIR
-    title: 引き渡しのフォルダ名
+  - name: RELEASE_DIR
+    title: リリースのフォルダ名
     container: skills/mindmap/scripts/kinds.py
     usecase: ワークスペースの作成
     summary: ゴール判定で書き出す資料のフォルダ名
-    value: '"handoff"'
+    value: '"release"'
   - name: SCHEMA_DIR
     title: スキーマのフォルダ
     container: skills/mindmap/scripts/store.py
@@ -688,7 +702,7 @@ functions:
     container: skills/mindmap/scripts/store.py
     usecase: ワークスペースの作成
     scope: public
-    summary: 設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`handoff/` を作る
+    summary: 設定を検証してから、設定・空の 7 種類の YAML・`docs/`・`release/` を作る
     side_effects: フォルダとファイルを作る
     args:
       - name: root
@@ -708,7 +722,7 @@ functions:
       1. `root/mindmap.yaml` があれば `WorkspaceExistsError` を送る
       2. 設定と空の 7 種類で `Workspace` を組み、検証する（ワークスペースの検証。`validate_workspace`）
          - 問題がある場合、`SchemaMismatchError` を送る（フォルダも作らない）
-      3. フォルダと `docs/`・`handoff/` を作り、7 種類の YAML（`items: []`）を書き、最後に `mindmap.yaml` を書く（`dump_yaml`）
+      3. フォルダと `docs/`・`release/` を作り、7 種類の YAML（`items: []`）を書き、最後に `mindmap.yaml` を書く（`dump_yaml`）
          - `OSError` が起きた場合、この関数が作ったファイルとフォルダを消して `WriteFailedError` を送る（`mindmap.yaml` を最後に書くので、途中で止まってもワークスペースとして扱われない）
     exceptions:
       - name: WorkspaceExistsError
@@ -725,7 +739,7 @@ functions:
         summary: まだ無いフォルダにワークスペースを作る
         condition: '`tmp_path / "ws"`（無い）と正しい設定'
         mock: なし
-        expected: 戻り値が 8 つの YAML と `docs/`・`handoff/`。`mindmap.yaml` を読むと渡した設定
+        expected: 戻り値が 8 つの YAML と `docs/`・`release/`。`mindmap.yaml` を読むと渡した設定
       - name: test_create_workspace_when_exists
         case: 異常
         summary: mindmap.yaml があるフォルダには作らない
@@ -925,6 +939,62 @@ functions:
         condition: '`summary` を持たない設定と A-1（`done: true`）、`status` を `完了` にした D-1 を持つワークスペースを検証した問題。`parametrize`: `mindmap.yaml` の問題 / A-1 の問題 / D-1 の問題 / `kind: broken_ref` の問題'
         mock: なし
         expected: 真 / 真 / 偽 / 偽
+  - name: clear_release
+    title: リリースの片付け
+    kind: 関数
+    container: skills/mindmap/scripts/store.py
+    usecase: リリースの片付け
+    scope: public
+    summary: '`release/` の中身を消し、空の `release/` を残す'
+    side_effects: '`release/` の中のファイルとフォルダを消す（`release/` が無ければ作る）'
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+    returns:
+      type: list[str]
+      description: 消したものの `release/` からのパス（フォルダは末尾に `/`。名前の順）
+    process: |-
+      1. `root/mindmap.yaml` が無ければ `WorkspaceNotFoundError` を送る
+      2. `root / RELEASE_DIR` を作る（あればそのまま）
+      3. 中の項目を名前の順に消す（シンボリックリンクとファイルは `Path.unlink`、リンクでないフォルダは `shutil.rmtree`。リンク先は消さない）。消したものを戻り値に足す
+         - `OSError` が起きた場合、そこで止めて `WriteFailedError` を送る（それまでに消したものは戻さない。次の呼び出しで片付く）
+    exceptions:
+      - name: WorkspaceNotFoundError
+        condition: '`root` に `mindmap.yaml` が無い'
+        message: 'ワークスペースがありません: {root}'
+      - name: WriteFailedError
+        condition: '`release/` を作るか中のものを消す途中で `OSError` が起きた'
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_clear_release
+        case: 正常
+        summary: release/ の中のファイルとフォルダを消す
+        condition: 作成済みのワークスペースの `release/` に `古い資料.md` と、ファイルを 1 つ持つ `図/`
+        mock: なし
+        expected: 戻り値が `["古い資料.md", "図/"]`。`release/` があり、中身が空。`mindmap.yaml` が呼ぶ前と同じ
+      - name: test_clear_release_when_release_dir_missing
+        case: 正常
+        summary: release/ が無ければ空の release/ を作る
+        condition: '`release/` を消し、`handoff/` に `資料.md` を置いたワークスペース'
+        mock: なし
+        expected: 戻り値が空。空の `release/` がある。`handoff/` が呼ぶ前と同じ
+      - name: test_clear_release_when_workspace_missing
+        case: 異常
+        summary: mindmap.yaml が無ければ何も消さない
+        condition: '`mindmap.yaml` が無く、`release/` に `資料.md` がある `tmp_path`'
+        mock: なし
+        expected: '`WorkspaceNotFoundError`。`release/資料.md` が残っている'
+        exception: mindmap.yaml が無い
+      - name: test_clear_release_when_remove_fails
+        case: 異常
+        summary: 消せないものに当たったらそこで止める
+        condition: '`release/` に `一.md`・`二.md`。`Path.unlink` を `二.md` のときだけ `PermissionError` を送るように差し替える（`failing_unlink`）'
+        mock: '`Path.unlink`（monkeypatch）'
+        expected: '`WriteFailedError`（メッセージに `二.md` のパス）。`二.md` が残り、`一.md` は無い'
+        exception: 消す途中で OSError
 test_files:
   - tests/unit/scripts/test_kinds.py
   - tests/unit/scripts/test_store.py

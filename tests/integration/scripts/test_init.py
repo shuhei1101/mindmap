@@ -53,10 +53,10 @@ def test_normal(tmp_path: Path, run_mindmap: RunMindmap, valid_settings: dict[st
         "logs.yaml": {"items": []},
     }
     assert (root / "docs").is_dir()
-    assert (root / "handoff").is_dir()
+    assert (root / "release").is_dir()
     payload = json.loads(result.stdout)
     assert payload["workspace"] == str(root)
-    assert set(payload["files"]) == {"mindmap.yaml", *KIND_YAML_FILES, "docs/", "handoff/"}
+    assert set(payload["files"]) == {"mindmap.yaml", *KIND_YAML_FILES, "docs/", "release/"}
 
 
 def test_error_when_workspace_exists(

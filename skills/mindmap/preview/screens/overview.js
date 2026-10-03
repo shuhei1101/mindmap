@@ -4,7 +4,7 @@ var MindmapPreview;
 (function (MindmapPreview) {
     /** 縦に積む幅で出す、次に検討する項目の件数 */
     const NEXT_STACKED_COUNT = 3;
-    /** 成果物のチェックリストに出す件数（これを超えたら資料を成果物で絞って開く） */
+    /** 納品物のチェックリストに出す件数（これを超えたら資料を納品物で絞って開く） */
     const DELIVERABLE_LIMIT = 5;
     /** 小さなタイルに出す件数 */
     const MINI_LIMIT = 3;
@@ -128,7 +128,7 @@ var MindmapPreview;
         new ResizeObserver(fit).observe(tile);
         return tile;
     }
-    /** ゴールまでのタイル（決定済みの数・フェーズごとの棒・成果物のチェックリスト） */
+    /** ゴールまでのタイル（決定済みの数・フェーズごとの棒・納品物のチェックリスト） */
     function goalTile({ index, on }) {
         const { goal } = index.data.derived;
         const settled = goal.phase_progress.reduce((sum, cell) => sum + cell.settled, 0);
@@ -185,10 +185,10 @@ var MindmapPreview;
                             attrs: { class: "deliv-head" },
                             children: [
                                 MindmapPreview.icon("box"),
-                                "成果物",
+                                "納品物",
                                 MindmapPreview.h({ tag: "span", attrs: { class: "mono" }, children: [`${doneCount}/${deliverables.length}`] }),
                                 deliverables.length > DELIVERABLE_LIMIT
-                                    ? showAll(deliverables.length, () => on.navigate(tableRoute("docs", { deliverable: ["成果物"] }, "cards")))
+                                    ? showAll(deliverables.length, () => on.navigate(tableRoute("docs", { deliverable: ["納品物"] }, "cards")))
                                     : null,
                             ],
                         }),

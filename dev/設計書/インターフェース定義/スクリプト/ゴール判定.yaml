@@ -4,7 +4,7 @@ entry:
   value: '`python3 {スキルのフォルダ}/scripts/mindmap.py goal`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
 flows:
   - name: 正常系（届いた）
-    summary: ゴールのフェーズまでが決着し成果物が揃っていれば、届いたと返す
+    summary: ゴールのフェーズまでが決着し納品物が揃っていれば、届いたと返す
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
@@ -20,7 +20,7 @@ flows:
 
         クライアント->>IF: goal --workspace
         IF-->>WS: mindmap.yaml と全ての YAML を読む
-        IF->>IF: ゴールのフェーズまでの検討事項と成果物を確かめる
+        IF->>IF: ゴールのフェーズまでの検討事項と納品物を確かめる
         IF-->>クライアント: JSON
       ```
     expected:
@@ -30,7 +30,7 @@ flows:
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じ
     test: test_normal_when_reached
   - name: 正常系（届いていない）
-    summary: 決着していない検討事項と揃っていない成果物を残りとして返す
+    summary: 決着していない検討事項と揃っていない納品物を残りとして返す
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
@@ -77,7 +77,7 @@ flows:
       - 終了コードが 1
       - 標準エラーにフォルダのパスがある
     test: test_error_when_workspace_not_found
-lead: ゴールのフェーズまでの検討事項が決着し、ゴールの成果物が揃ったかを判定し、届いたかと残りの項目を返す。
+lead: ゴールのフェーズまでの検討事項が決着し、ゴールの納品物が揃ったかを判定し、届いたかと残りの項目を返す。
 idempotent: true
 side_effects: なし（読むだけ）
 request:

@@ -44,8 +44,14 @@ items:
     summary: python3 で起動したコマンドを、依存が無ければスキル専用の仮想環境の Python で起動し直す
     group: 作る
   - page: ゴール判定.yaml
-    summary: 'goal: ゴールのフェーズまでが決着し成果物が揃ったかと、残りの項目を返す'
+    summary: 'goal: ゴールのフェーズまでが決着し納品物が揃ったかと、残りの項目を返す'
     group: 読む
   - page: 記録の形式の移行.yaml
     summary: 'migrate: 前の版の形式の YAML（資料の done）を今の形式へ一度だけ書き換える'
+    group: 点検と書き出し
+  - page: リリースの片付け.yaml
+    summary: 'clear-release: リリースの資料を書き出す前に release/ の中身を消す'
+    group: 点検と書き出し
+  - page: 配る書き出し.yaml
+    summary: 'export: 描画のライブラリまで中に持つ見るだけの 1 枚の HTML を書き出す'
     group: 点検と書き出し

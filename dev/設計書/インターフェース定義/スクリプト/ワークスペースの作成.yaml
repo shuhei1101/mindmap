@@ -21,14 +21,14 @@ flows:
 
         クライアント->>IF: init --workspace（標準入力に設定）
         IF->>IF: 設定をスキーマと突き合わせる
-        IF->>WS: mindmap.yaml・種類ごとの YAML・docs/・handoff/ を作る
+        IF->>WS: mindmap.yaml・種類ごとの YAML・docs/・release/ を作る
         IF-->>クライアント: JSON（workspace・files）
       ```
     expected:
       - 終了コードが 0
       - '`mindmap.yaml` を読むと、渡した設定と同じ中身である'
       - '`decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` が `items: []` である'
-      - '`docs/` と `handoff/` がある'
+      - '`docs/` と `release/` がある'
       - '`files` に作った 8 つの YAML と 2 つのフォルダがある'
     test: test_normal
   - name: 異常系（既にワークスペースがある・WorkspaceExistsError）
@@ -100,9 +100,9 @@ flows:
       - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
       - '`--workspace` のフォルダが無い'
     test: test_error_when_write_fails
-lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`handoff/` を作る。
+lead: 指定したフォルダに、標準入力で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`release/` を作る。
 idempotent: false
-side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`handoff/` を作る'
+side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）を書き、`docs/`・`release/` を作る'
 request:
   - name: --workspace
     type: str

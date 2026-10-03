@@ -5,6 +5,7 @@ from __future__ import annotations
 import dataclasses
 import os
 import re
+import shutil
 import stat
 import sys
 from collections.abc import Callable, Iterator
@@ -23,7 +24,7 @@ from errors import (
     WorkspaceNotFoundError,
     WriteFailedError,
 )
-from fixture_types import MakeItem, MakeWorkspace, SnapshotTree
+from fixture_types import FailingUnlink, MakeItem, MakeWorkspace, SnapshotTree
 
 # 壊れた YAML（閉じていないフローの配列）
 BROKEN_YAML = "items: [unclosed"
@@ -438,7 +439,7 @@ def test_create_workspace(tmp_path: Path, valid_settings: dict[str, Any]) -> Non
         "notes.yaml",
         "logs.yaml",
         "docs/",
-        "handoff/",
+        "release/",
     }
     assert yaml.safe_load((root / "mindmap.yaml").read_text(encoding="utf-8")) == valid_settings
 
@@ -481,6 +482,70 @@ def test_create_workspace_when_write_fails(
     with pytest.raises(WriteFailedError):
         store.create_workspace(root, valid_settings)
     assert not root.exists()
+
+
+def test_clear_release(make_workspace: MakeWorkspace) -> None:
+    """release/ の中のファイルとフォルダを消し、消したものを名前の順に返す（正常系）。"""
+    # 準備
+    root = make_workspace()
+    (root / "release" / "古い資料.md").write_text("古い\n", encoding="utf-8")
+    (root / "release" / "図").mkdir()
+    (root / "release" / "図" / "構成.md").write_text("図\n", encoding="utf-8")
+    settings_before = (root / "mindmap.yaml").read_bytes()
+    # 実行
+    removed = store.clear_release(root)
+    # 検証
+    assert removed == ["古い資料.md", "図/"]
+    assert (root / "release").is_dir()
+    assert list((root / "release").iterdir()) == []
+    assert (root / "mindmap.yaml").read_bytes() == settings_before
+
+
+def test_clear_release_when_release_dir_missing(
+    make_workspace: MakeWorkspace, snapshot_tree: SnapshotTree
+) -> None:
+    """release/ が無ければ空の release/ を作り、前の版の handoff/ は触らない（正常系）。"""
+    # 準備
+    root = make_workspace()
+    shutil.rmtree(root / "release")
+    (root / "handoff").mkdir()
+    (root / "handoff" / "資料.md").write_text("前の版の資料\n", encoding="utf-8")
+    handoff_before = snapshot_tree(root / "handoff")
+    # 実行
+    removed = store.clear_release(root)
+    # 検証
+    assert removed == []
+    assert (root / "release").is_dir()
+    assert list((root / "release").iterdir()) == []
+    assert snapshot_tree(root / "handoff") == handoff_before
+
+
+def test_clear_release_when_workspace_missing(tmp_path: Path) -> None:
+    """mindmap.yaml が無ければ何も消さない（異常系）。"""
+    # 準備
+    (tmp_path / "release").mkdir()
+    (tmp_path / "release" / "資料.md").write_text("資料\n", encoding="utf-8")
+    # 実行・検証
+    with pytest.raises(WorkspaceNotFoundError, match=re.escape(str(tmp_path))):
+        store.clear_release(tmp_path)
+    assert (tmp_path / "release" / "資料.md").read_text(encoding="utf-8") == "資料\n"
+
+
+def test_clear_release_when_remove_fails(
+    make_workspace: MakeWorkspace, failing_unlink: FailingUnlink
+) -> None:
+    """消せないものに当たった時点で止まり、それまでに消したものは戻さない（異常系）。"""
+    # 準備
+    root = make_workspace()
+    (root / "release" / "一.md").write_text("一\n", encoding="utf-8")
+    (root / "release" / "二.md").write_text("二\n", encoding="utf-8")
+    # 名前の順に消すので、一.md を消した後に二.md で止まる
+    failing_unlink("二.md")
+    # 実行・検証
+    with pytest.raises(WriteFailedError, match=re.escape(str(root / "release" / "二.md"))):
+        store.clear_release(root)
+    assert (root / "release" / "二.md").exists()
+    assert not (root / "release" / "一.md").exists()
 
 
 def test_read_body(make_workspace) -> None:
