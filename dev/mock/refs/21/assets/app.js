@@ -646,7 +646,8 @@
   // 線の種類: 見た目（実線・点線・破線・一点鎖線）で見分ける
   const LINK_DASH = { dep: [], rel: [1.5, 3], src: [6, 4], for: [10, 3, 2, 3] };
   const KIND_VAR = { decisions: "--k-dec", tasks: "--k-task", research: "--k-res", docs: "--k-doc", terms: "--k-term", notes: "--k-note", logs: "--k-log" };
-  state.graphKinds ??= new Set(["decisions", "tasks", "research", "docs", "logs"]);
+  // 開いた直後に出す種類: body の data-graph-kinds が all なら全ての種類、無ければ用語集とメモを除く
+  state.graphKinds ??= new Set(document.body.dataset.graphKinds === "all" ? Object.keys(KIND_VAR) : ["decisions", "tasks", "research", "docs", "logs"]);
   const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const allLinks = () => {
     const out = [], seen = new Set();
