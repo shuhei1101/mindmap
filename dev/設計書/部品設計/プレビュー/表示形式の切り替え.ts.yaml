@@ -1,6 +1,6 @@
 title: 表示形式の切り替え
 lead: 1 つの画面の表示形式（マップ・ボード・カード・表）を切り替えるセグメント。形式ごとに同じ幅のボタンを並べ、選んでいる形式を押された見た目にする。
-implementation: skills/mindmap/preview/components/view-switch.ts#MindmapPreview.viewSwitch
+implementation: plugins/mindstella/skills/mindmap/preview/components/view-switch.ts#MindmapPreview.viewSwitch
 story: Preview/ViewSwitch
 test_file: tests/integration/storybook/test_view_switch_stories.py
 args:
