@@ -11,7 +11,7 @@ items:
     summary: タスクのボード・表
     group: タブ
   - page: 資料.yaml
-    summary: 資料のカード・表（納品物を先頭に）
+    summary: 資料のカード・ボード・表（納品物を先頭に）
     group: タブ
   - page: 記録の表.yaml
     summary: 調査・用語集・メモ・会話ログの表

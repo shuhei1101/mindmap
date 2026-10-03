@@ -36,11 +36,12 @@ export const Tasks: Story = {
   },
 };
 
-/** 資料（カード・表）でカードを選んでいる */
+/** 資料（カード・ボード・表）でカードを選んでいる */
 export const Docs: Story = {
   args: {
     views: [
       { key: "cards", label: "カード" },
+      { key: "board", label: "ボード" },
       { key: "table", label: "表" },
     ],
     current: "cards",
