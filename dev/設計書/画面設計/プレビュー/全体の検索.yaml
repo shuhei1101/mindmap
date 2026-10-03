@@ -13,7 +13,7 @@ elements:
     description: 当たった項目の種類・ID・タイトル。押すか、上下の矢印で選んで Enter で、その項目のタブと詳細パネルを開き、検索を閉じる
     io: 表示
     source: プレビューを開く.mindmap-data（7 種類の項目と bodies）
-    visible_when: 検索の言葉が空でない（当たらないときは「該当する項目はありません」）
+    visible_when: 検索の言葉が空でない（当たらないときは「該当する項目はありません。別の条件を試してください。」）
   - name: 閉じる
     kind: button
     description: 検索を閉じる。Esc と外側の押下でも閉じる
