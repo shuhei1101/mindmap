@@ -1159,7 +1159,7 @@ functions:
         case: 正常
         summary: 配る書き出しを書いてそのパスを返す
         condition: 作成済みのワークスペースと、ワークスペースの外の `tmp_path / "配る.html"`
-        mock: なし
+        mock: '`export_preview`（本物を、小さな雛形のフォルダと取る中身を返す `fetch` を渡して呼ぶものに差し替える。通信しない）'
         expected: '`{"path": "{配る.html の絶対パス}"}` と 0。`配る.html` がある'
       - name: test_run_export_when_out_is_preview
         case: 異常

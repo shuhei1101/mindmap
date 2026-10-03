@@ -639,7 +639,7 @@ functions:
       - name: test_assemble_standalone_template
         case: 正常
         summary: 外の読み込みを取った配布ファイルとライセンスの表示に置き換える
-        condition: '`tmp_path` に、外の読み込みの印の間に 2 つの `<script src integrity>`（パッケージ `a`・`b`）を持つ `template.html` と、`a`・`b` の `VendorLibrary`'
+        condition: '`tmp_path` に、外の読み込みの印の間に 2 つの `<script src integrity>`（パッケージ `a`・`b`）を持つ `template.html` と、`a`・`b` の `VendorLibrary`（入手先の `repository` は `https://` を持たない値）'
         mock: '`fetch`（配布ファイルは `/* a */`・`/* b */` で、`integrity` はその sha384。ライセンスの URL には `本文 a`・`本文 b`）'
         expected: '`https://` と外の読み込みの印が無い。`/* a */`・`/* b */` がこの順で、どちらも `<script id="mindmap-app">` より前にある。`mindmap-licenses` の要素の中に `本文 a`・`本文 b` がある。`fetch` に渡った URL が配布ファイル 2 つとライセンスの本文 2 つ'
       - name: test_assemble_standalone_template_when_integrity_mismatch
