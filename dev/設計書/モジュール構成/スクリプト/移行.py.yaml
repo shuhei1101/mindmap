@@ -1,185 +1,968 @@
 title: "スクリプト / 移行"
-lead: 前の版の形式のワークスペース（資料の `done`・題名の無い設定）を今の形式に書き換える。読み書きと検証だけに依存する。
+lead: ワークスペースの版とプラグインの版を比べ、版ごとの移し替えの手順（`migrations/{版}/steps.yaml`）を並べる・写しを取って当てる・値を入れる・版を書き換える。読み書きと検証だけに依存する。
 directory: |-
   ```
-  plugins/mindstella/skills/mindmap/scripts/
-    migrator.py   移す中身の組み立て・検証・2 ファイルの置き換え
+  plugins/mindstella/
+    version.ini                        プラグインの版（1 行目）
+    skills/mindmap/
+      migrations/
+        v0.3.0/
+          steps.yaml                   版を記録する前の形式 → v0.3.0 の手順
+      schemas/
+        migration-steps.schema.json    steps.yaml の形
+      scripts/
+        versions.py                    版の解釈・比較・読み書き
+        migrator.py                    手順の読み込みと、並べる・当てる・値を入れる・版を書く処理
+        migration_ops.py               操作ごとの当て方と、手順の 1 行の説明
+        backup.py                      写しの取り方と戻し方（git のコミットかフォルダの複製）
   ```
 data_models:
-  - name: MigrationEntry
-    title: 移したもの
+  - name: Version
+    title: 版
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
+    usecase: 記録の形式の移行
+    role: 値オブジェクト
+    summary: '`v{メジャー}.{マイナー}.{パッチ}` の 3 つの整数'
+    description: '`@dataclass(frozen=True, slots=True, order=True)`。並びの比較は `major` → `minor` → `patch` の順。`str()` は `v{major}.{minor}.{patch}`。'
+    properties:
+      - name: major
+        type: int
+        description: メジャー
+      - name: minor
+        type: int
+        description: マイナー
+      - name: patch
+        type: int
+        description: パッチ
+  - name: MigrationStep
+    title: 手順
     container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     role: DTO
-    summary: 書き換えた 1 件。`migrate` の出力の `migrated[]` と同じキー
-    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。`dataclasses.asdict` で JSON にする。'
+    summary: '`steps.yaml` の 1 つの手順と、その版・番号'
+    description: '`@dataclass(frozen=True, slots=True, kw_only=True)`。'
     properties:
-      - name: id
-        type: str | None
-        description: 書き換えた項目の ID。`mindmap.yaml` は `None`
+      - name: version
+        type: Version
+        description: 手順の版（`migrations/` のフォルダ名）
+      - name: index
+        type: int
+        description: '`steps.yaml` の中の 1 始まりの番号'
+      - name: op
+        type: Literal['rename_file', 'move_dir', 'delete', 'rename_key', 'set_default', 'map_values', 'call']
+        description: 操作
+      - name: args
+        type: dict[str, Any]
+        description: '`op` を除いた操作の引数'
+      - name: folder
+        type: Path
+        description: 手順の版のフォルダ（`call` が `scripts/` を引く）
+  - name: NeededValue
+    title: 値が要るキー
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    role: DTO
+    summary: '`set_default` の `ask` で、値が無いキー。出力の `needs_values[]` と同じキー'
+    properties:
       - name: file
         type: str
         description: ワークスペースからの相対パス
-      - name: change
+      - name: key
         type: str
-        description: 書き換えの中身
-        example: 'done: true → status: 完成'
+        description: キーのパス（`.` 区切り）
+      - name: description
+        type: str
+        description: 利用者に聞くことの説明（`ask` の値）
+  - name: Backup
+    title: 写し
+    container: plugins/mindstella/skills/mindmap/scripts/backup.py
+    usecase: 記録の形式の移行
+    role: DTO
+    summary: 取った写し。出力の `backup` と同じキー
+    properties:
+      - name: kind
+        type: Literal['git', 'copy']
+        description: git のコミットか、フォルダの複製か
+      - name: ref
+        type: str
+        description: コミットの ID か、複製したフォルダの絶対パス
+  - name: MigrationReport
+    title: 移し替えの結果
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    role: DTO
+    summary: '`migrate` の出力の中身。入口は版を文字列にし、手順を `{version, index, op, destructive, summary}` にして出す'
+    properties:
+      - name: workspace_version
+        type: Version | None
+        description: ワークスペースの版
+      - name: plugin_version
+        type: Version
+        description: プラグインの版
+      - name: relation
+        type: Literal['older', 'same', 'newer']
+        description: 比べた結果
+      - name: steps
+        type: list[MigrationStep]
+        default: '[]'
+        description: 並べた・当てた手順
+      - name: needs_values
+        type: list[NeededValue]
+        default: '[]'
+        description: 値が要るキー
+      - name: backup
+        type: Backup | None
+        default: None
+        description: 取った写し
+      - name: recorded
+        type: Version | None
+        default: None
+        description: '`--record` で書いた版'
 constants:
-  - name: DONE_TO_STATUS
-    title: done から状態への対応
+  - name: PLUGIN_VERSION_FILE
+    title: プラグインの版のファイル
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
+    usecase: 記録の形式の移行
+    summary: '`plugins/mindstella/version.ini`（このファイルの 4 つ上のフォルダの `version.ini`）'
+    value: Path(__file__).resolve().parents[3] / "version.ini"
+  - name: VERSION_PATTERN
+    title: 版の形
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
+    usecase: 記録の形式の移行
+    summary: 版の文字列全体に当てる正規表現
+    value: re.compile(r"v(\d+)\.(\d+)\.(\d+)")
+  - name: MIGRATIONS_DIR
+    title: 手順の置き場所
     container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
-    summary: 資料の `done` の値 → `status`
-    value: '{True: "完成", False: "下書き"}'
+    summary: '`skills/mindmap/migrations/`'
+    value: Path(__file__).resolve().parents[1] / "migrations"
+  - name: STEPS_SCHEMA
+    title: 手順の形のスキーマ
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    summary: '`schemas/migration-steps.schema.json`'
+    value: SCHEMA_DIR / "migration-steps.schema.json"
+  - name: DESTRUCTIVE_OPS
+    title: 破壊的な操作
+    container: plugins/mindstella/skills/mindmap/scripts/migration_ops.py
+    usecase: 記録の形式の移行
+    summary: 利用者に当ててよいかを確かめる操作
+    value: frozenset({"rename_file", "move_dir", "delete"})
+  - name: BACKUP_COMMIT_MESSAGE
+    title: 写しのコミットのメッセージ
+    container: plugins/mindstella/skills/mindmap/scripts/backup.py
+    usecase: 記録の形式の移行
+    summary: git の写しのコミットのメッセージ（`{version}` は `--to`）
+    value: '"mindstella: {version} へ移し替える前の写し"'
 functions:
-  - name: migrate_settings
-    title: 設定の移行
+  - name: parse_release_version
+    title: 版の解釈
     kind: 関数
-    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
     usecase: 記録の形式の移行
     scope: public
-    summary: 題名を持たない設定に題名を足した設定を返す
+    summary: '`v{メジャー}.{マイナー}.{パッチ}` の文字列を版にする'
     args:
-      - name: settings
-        type: dict[str, Any]
+      - name: text
+        type: str
         required: true
         passing: positional
-        description: '`mindmap.yaml` の値'
-      - name: summary
-        type: str | None
-        required: true
-        passing: keyword
-        description: '`--summary`'
+        description: 版の文字列（前後の空白は落とす）
     returns:
-      type: tuple[dict[str, Any], MigrationEntry | None]
-      description: 移した後の設定と、移したときの 1 件（移さないときは `None`）
+      type: Version
+      description: 解釈した版
     process: |-
-      1. `settings` が `summary` を持つ場合、`settings` をそのままと `None` を返す（`summary` 引数は使わない）
-      2. `summary` 引数の前後の空白を落とす
-         - `None` か空の場合、`SummaryRequiredError` を送る
-      3. 先頭に `summary` を置き、残りのキーを元の順に続けた辞書と、`MigrationEntry(id=None, file="mindmap.yaml", change="summary を足した")` を返す
+      1. 前後の空白を落とし、`VERSION_PATTERN` に全体が当たるかを見る（`fullmatch`）
+         - 当たらない場合、`ValueError` を送る
+      2. 3 つの整数で `Version` を作って返す
     exceptions:
-      - name: SummaryRequiredError
-        condition: 設定が `summary` を持たず、`summary` 引数が `None` か空
-        message: ワークスペースに題名がありません。--summary で題名を渡してください
+      - name: ValueError
+        condition: 版の形でない
+        message: '版の形が違います: {text}（v{メジャー}.{マイナー}.{パッチ} で書いてください）'
     unit_tests:
-      - name: test_migrate_settings
+      - name: test_parse_release_version
         case: 正常
-        summary: 題名を先頭に足す
-        condition: '`summary` を持たない設定（`field`・`phases` など）と `summary=" 題名 "`'
+        summary: 版を解釈し、整数で比べる
+        condition: '`" v0.10.2\n"` と `v0.9.9`'
         mock: なし
-        expected: 返った設定の最初のキーが `summary`（値は `題名`）で、残りのキーが元の順。`MigrationEntry` の `id` が `None`、`file` が `mindmap.yaml`
-      - name: test_migrate_settings_when_summary_present
-        case: 正常
-        summary: 題名を持つ設定は変えない
-        condition: '`summary` を持つ設定と `summary="別の題名"`'
-        mock: なし
-        expected: 設定がそのままと `None`
-      - name: test_migrate_settings_when_summary_missing
+        expected: '`Version(0, 10, 2)`。`v0.9.9` より大きく、`str()` が `v0.10.2`'
+      - name: test_parse_release_version_when_invalid
         case: 異常
-        summary: 題名が無く引数も無ければ送る
-        condition: '`summary` を持たない設定。`parametrize`: `summary=None` / `summary="  "`'
+        summary: 版の形でなければ送る
+        condition: '`parametrize`: `0.3.0` / `v0.3` / `v0.3.0-rc1` / 空文字'
         mock: なし
-        expected: '`SummaryRequiredError`（`match` に `--summary`）'
-        exception: 題名が無く引数も空
-  - name: migrate_docs_items
-    title: 資料の移行
+        expected: '`ValueError`（`match` に `v{メジャー}`）'
+        exception: 版の形でない
+  - name: compare_versions
+    title: 版の比較
     kind: 関数
-    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
     usecase: 記録の形式の移行
     scope: public
-    summary: 資料の `done` を `status` に置き換えた並びを返す
+    summary: ワークスペースの版をプラグインの版と比べる
     args:
-      - name: items
-        type: list[dict[str, Any]]
+      - name: workspace
+        type: Version | None
         required: true
         passing: positional
-        description: '`docs.yaml` の `items`'
+        description: ワークスペースの版（版を記録する前の形式は `None`）
+      - name: plugin
+        type: Version
+        required: true
+        passing: positional
+        description: プラグインの版
     returns:
-      type: tuple[list[dict[str, Any]], list[MigrationEntry]]
-      description: 移した後の並びと、移した項目（並びの順）
-    process: |-
-      1. 項目を並びのまま見る
-         - `done` を持たないか、`status` を既に持つ場合、そのままにする（`status` を持つ項目の `done` は残し、検証が止める）
-         - `done` が真偽値でない場合、そのままにする（検証が止める）
-         - それ以外の場合、`done` の位置に `status`（`DONE_TO_STATUS`）を置いた辞書にし、`MigrationEntry(id, "docs.yaml", "done: {true|false} → status: {状態}")` を足す。`updated` は変えない
+      type: Literal['older', 'same', 'newer']
+      description: 比べた結果
+    process: 1. `workspace` が `None` か `plugin` より小さければ `older`、等しければ `same`、大きければ `newer` を返す
     unit_tests:
-      - name: test_migrate_docs_items
+      - name: test_compare_versions
         case: 正常
-        summary: done を状態に置き換える
-        condition: 'A-1（`done: true`）・A-2（`done: false`）・A-3（`status: 確認中`）'
+        summary: 古い・同じ・新しいを返す
+        condition: '`parametrize`: `(None, v0.3.0)` / `(v0.2.0, v0.3.0)` / `(v0.3.0, v0.3.0)` / `(v0.10.0, v0.3.0)`'
         mock: なし
-        expected: 'A-1 が `status: 完成`、A-2 が `status: 下書き` で `done` を持たず、キーの位置と `updated` が元のまま。A-3 がそのまま。`MigrationEntry` が A-1・A-2 の 2 件'
-      - name: test_migrate_docs_items_when_not_bool
+        expected: '`older` / `older` / `same` / `newer`'
+  - name: read_workspace_version
+    title: ワークスペースの版の読み込み
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: '`mindstella-version.ini` の 1 行目を版にする。無ければ `None`'
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+    returns:
+      type: Version | None
+      description: ワークスペースの版。版のファイルが無ければ `None`
+    process: |-
+      1. `root / VERSION_FILE` が無ければ `None` を返す
+      2. 1 行目を読み、版にする（`parse_release_version`）
+         - `ValueError` の場合、`SchemaMismatchError`（`lines` に `mindstella-version.ini: 1 行目: {理由}`）を送る
+    exceptions:
+      - name: SchemaMismatchError
+        condition: 版のファイルの 1 行目が版の形でない
+    unit_tests:
+      - name: test_read_workspace_version
         case: 正常
-        summary: 真偽値でない done は移さない
-        condition: 'A-1（`done: "yes"`）'
+        summary: 1 行目の版を読む
+        condition: 1 行目が `v0.3.0`、2 行目に別の文字を書いた版のファイル
         mock: なし
-        expected: A-1 がそのままで、`MigrationEntry` が空
-  - name: migrate_workspace
-    title: ワークスペースの移行
+        expected: '`Version(0, 3, 0)`'
+      - name: test_read_workspace_version_when_missing
+        case: 正常
+        summary: 版のファイルが無ければ None
+        condition: 版のファイルを持たない `tmp_path`
+        mock: なし
+        expected: '`None`'
+      - name: test_read_workspace_version_when_invalid
+        case: 異常
+        summary: 版の形でなければ送る
+        condition: 1 行目が `0.3` の版のファイル
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` が `mindstella-version.ini: ` で始まる 1 行）'
+        exception: 版の形でない
+  - name: read_plugin_version
+    title: プラグインの版の読み込み
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: プラグインの版のファイルの 1 行目を版にする
+    args:
+      - name: path
+        type: Path
+        required: false
+        default: PLUGIN_VERSION_FILE
+        passing: keyword
+        description: プラグインの版のファイル
+    returns:
+      type: Version
+      description: プラグインの版
+    process: 1. `path` の 1 行目を読み、版にする（`parse_release_version`）
+    unit_tests:
+      - name: test_read_plugin_version
+        case: 正常
+        summary: プラグインの版を読む
+        condition: '`v0.3.0` と書いた一時ファイルを `path` に渡す'
+        mock: なし
+        expected: '`Version(0, 3, 0)`'
+  - name: write_workspace_version
+    title: ワークスペースの版の書き込み
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/versions.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: '`mindstella-version.ini` に版を 1 行で書く'
+    side_effects: '`mindstella-version.ini` を書く'
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+      - name: version
+        type: Version
+        required: true
+        passing: positional
+        description: 書く版
+    returns:
+      type: None
+      description: なし
+    process: |-
+      1. `str(version)` と改行を一時ファイルに書き（`write_temp`）、`os.replace` で `root / VERSION_FILE` に置き換える
+         - `OSError` が起きた場合、一時ファイルを消して `WriteFailedError` を送る
+    exceptions:
+      - name: WriteFailedError
+        condition: 一時ファイルの書き込みか置き換えで `OSError` が起きた
+        message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_write_workspace_version
+        case: 正常
+        summary: 版を 1 行で書く
+        condition: '`Version(0, 3, 0)`'
+        mock: なし
+        expected: '`mindstella-version.ini` の中身が `v0.3.0\n`'
+      - name: test_write_workspace_version_when_write_fails
+        case: 異常
+        summary: 置き換えられなければ送る
+        condition: '`os.replace` を `OSError` を送る関数に差し替える'
+        mock: '`os.replace`（`versions` モジュールの参照を monkeypatch）'
+        expected: '`WriteFailedError`。`mindstella-version.ini` と `.tmp` のファイルが無い'
+        exception: 置き換えで OSError
+  - name: list_versions
+    title: 手順の版の一覧
     kind: 関数
     container: plugins/mindstella/skills/mindmap/scripts/migrator.py
     usecase: 記録の形式の移行
     scope: public
-    summary: 設定と資料を移し、検証してから 2 ファイルを置き換える
-    side_effects: 移すものがあるときだけ `docs.yaml`・`mindmap.yaml` を置き換える
+    summary: 手順の置き場所にある版のフォルダを版の順に返す
+    args:
+      - name: migrations_dir
+        type: Path
+        required: false
+        default: MIGRATIONS_DIR
+        passing: keyword
+        description: 手順の置き場所
+    returns:
+      type: list[Version]
+      description: 版の順に並べた版（版の形でないフォルダとファイルは含めない）
+    process: 1. 直下のフォルダのうち、名前が版の形のものを版にして並べ替えて返す
+    unit_tests:
+      - name: test_list_versions
+        case: 正常
+        summary: 版のフォルダだけを版の順に返す
+        condition: '`v0.10.0/`・`v0.3.0/`・`notes/` のフォルダと `v0.4.0` のファイルを置いた一時フォルダ'
+        mock: なし
+        expected: '`[v0.3.0, v0.10.0]`'
+  - name: load_steps
+    title: 手順の読み込み
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 1 つの版の `steps.yaml` を読み、スキーマと突き合わせて手順に並べる
+    args:
+      - name: version
+        type: Version
+        required: true
+        passing: positional
+        description: 手順の版
+      - name: migrations_dir
+        type: Path
+        required: false
+        default: MIGRATIONS_DIR
+        passing: keyword
+        description: 手順の置き場所
+    returns:
+      type: list[MigrationStep]
+      description: 並びの順の手順（`index` は 1 始まり）
+    process: |-
+      1. `{migrations_dir}/{version}/steps.yaml` を読む
+      2. `STEPS_SCHEMA` と突き合わせる
+         - 読めないか合わない場合、`StepsInvalidError`（`lines` に合わない箇所）を送る
+      3. `steps` の各要素を、`op` とそれ以外の引数に分けて `MigrationStep` にする
+    exceptions:
+      - name: StepsInvalidError
+        condition: '`steps.yaml` が読めないか、スキーマに合わない'
+    unit_tests:
+      - name: test_load_steps
+        case: 正常
+        summary: v0.3.0 の手順を読む
+        condition: リポジトリの `migrations/v0.3.0/steps.yaml`
+        mock: なし
+        expected: '`rename_key`（`docs.yaml`・`done` → `status`）・`map_values`（`status`、`true` → `完成`・`false` → `下書き`）・`set_default`（`mindmap.yaml`・`summary`・`ask`）の 3 つが `index` 1〜3 で並ぶ'
+      - name: test_load_steps_when_invalid
+        case: 異常
+        summary: 決まっていない操作は送る
+        condition: '`op: rename_table` を書いた `steps.yaml` を置いた一時フォルダ'
+        mock: なし
+        expected: '`StepsInvalidError`'
+        exception: スキーマに合わない
+  - name: plan_migration
+    title: 手順を並べる
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 版を比べ、`from` より後で `to` 以下の版の手順と値が要るキーを返す。何も書かない
     args:
       - name: root
         type: Path
         required: true
         passing: positional
         description: '`--workspace`'
-      - name: summary
-        type: str | None
-        required: true
+      - name: from_version
+        type: Version | None
+        required: false
+        default: None
         passing: keyword
-        description: '`--summary`'
+        description: '`--from`（`None` ならワークスペースの版）'
+      - name: to_version
+        type: Version | None
+        required: false
+        default: None
+        passing: keyword
+        description: '`--to`（`None` ならプラグインの版）'
+      - name: migrations_dir
+        type: Path
+        required: false
+        default: MIGRATIONS_DIR
+        passing: keyword
+        description: 手順の置き場所
     returns:
-      type: list[MigrationEntry]
-      description: 移したもの（`mindmap.yaml` が先、資料は並びの順）。移すものが無いときは空
+      type: MigrationReport
+      description: '`workspace_version`・`plugin_version`・`relation`・`steps`・`needs_values`'
     process: |-
-      1. ワークスペースを検証せずに読む（`load_workspace`）
-      2. 設定と資料を移す（`migrate_settings`、`migrate_docs_items`）
-         - 移したものが無い場合、何も書かずに空を返す
-      3. `raw` の `mindmap.yaml`・`docs.yaml` を移した後の値に差し替えたワークスペースを検証する（`validate_workspace`）
-         - 問題がある場合、`SchemaMismatchError` を送る（何も書かない）
-      4. 書き換えるファイルの一時ファイルを全て書く（`dump_yaml`、`_write_temp`）
-         - `OSError` が起きた場合、書いた一時ファイルを消して `WriteFailedError` を送る
-      5. `docs.yaml` を置き換える前に前の中身を控え、`docs.yaml` → `mindmap.yaml` の順に `os.replace` で置き換える
-         - `mindmap.yaml` の置き換えで `OSError` が起きた場合、`docs.yaml` を控えに戻し、残った一時ファイルを消して `WriteFailedError` を送る
+      1. `root / mindmap.yaml` が無ければ `WorkspaceNotFoundError` を送る
+      2. ワークスペースの版とプラグインの版を読み（`read_workspace_version`・`read_plugin_version`）、比べる（`compare_versions`）
+      3. `from_version`・`to_version` を省いた分を 2 の版で埋める
+      4. `list_versions` のうち `from` より後（`from` が `None` なら全て）で `to` 以下の版の手順を、版の順に読む（`load_steps`）
+      5. 各手順の値が要るキーを集め（`list_needed_values`。同じ `file`・`key` は 1 つ）、`MigrationReport` を返す
     exceptions:
-      - name: SchemaMismatchError
-        condition: 移した後のワークスペースに問題がある
-      - name: WriteFailedError
-        condition: 一時ファイルの書き込みか置き換えで `OSError` が起きた（後始末をした後）
-        message: '書き込めませんでした: {パス}（{理由}）'
+      - name: WorkspaceNotFoundError
+        condition: '`mindmap.yaml` が無い'
     unit_tests:
-      - name: test_migrate_workspace
+      - name: test_plan_migration
         case: 正常
-        summary: 題名を足し、資料の done を移す
-        condition: '`summary` を持たない設定と、A-1（`done: true`）を YAML で直接書いたワークスペース、`summary="題名"`'
-        mock: なし
-        expected: '`mindmap.yaml`・A-1 の 2 件。`mindmap.yaml` に `summary`、`docs.yaml` の A-1 が `status: 完成`'
-      - name: test_migrate_workspace_when_nothing
+        summary: 版を記録する前の形式に v0.3.0 の手順を並べる
+        condition: '版のファイルと `summary` を持たず A-1（`done: true`）を持つワークスペース。プラグインの版を `v0.3.0` にする'
+        mock: '`read_plugin_version`（`v0.3.0` を返す関数に差し替える）'
+        expected: '`relation: older`、`steps` が v0.3.0 の 3 つ、`needs_values` が `mindmap.yaml` の `summary` の 1 件。ファイルの更新日時が呼ぶ前と同じ'
+      - name: test_plan_migration_when_same
         case: 正常
-        summary: 移すものが無ければ書かない
-        condition: 今の形式のワークスペース。`summary=None`
-        mock: なし
-        expected: 空。`mindmap.yaml`・`docs.yaml` の更新日時が呼ぶ前と同じ
-      - name: test_migrate_workspace_when_schema_mismatch
+        summary: 版が同じなら手順は空
+        condition: 版のファイルが `v0.3.0` のワークスペース
+        mock: '`read_plugin_version`（`v0.3.0`）'
+        expected: '`relation: same`、`steps`・`needs_values` が空'
+      - name: test_plan_migration_when_newer
+        case: 正常
+        summary: 版が新しくても送らずに newer を返す
+        condition: 版のファイルが `v99.0.0` のワークスペース
+        mock: '`read_plugin_version`（`v0.3.0`）'
+        expected: '`relation: newer`、`steps` が空'
+      - name: test_plan_migration_when_workspace_missing
         case: 異常
-        summary: 移しても合わなければ書かない
-        condition: 'A-1（`done: true`）と、`status` を `完了` にした D-1 を持つワークスペース'
+        summary: ワークスペースが無ければ送る
+        condition: '`mindmap.yaml` が無い `tmp_path`'
         mock: なし
-        expected: '`SchemaMismatchError`（`lines` に `decisions.yaml: items[0].status:`）。ファイルが呼ぶ前と同じ'
-        exception: 移した後に問題がある
-      - name: test_migrate_workspace_when_replace_fails
+        expected: '`WorkspaceNotFoundError`'
+        exception: mindmap.yaml が無い
+  - name: apply_migration
+    title: 手順を当てる
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 写しを取ってから手順を版の順に当てる。失敗したら写しから戻して送る。版のファイルは書かない
+    side_effects: 写しを取り、手順が変えるファイルを書く
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: from_version
+        type: Version | None
+        required: false
+        default: None
+        passing: keyword
+        description: '`--from`'
+      - name: to_version
+        type: Version | None
+        required: false
+        default: None
+        passing: keyword
+        description: '`--to`'
+      - name: migrations_dir
+        type: Path
+        required: false
+        default: MIGRATIONS_DIR
+        passing: keyword
+        description: 手順の置き場所
+    returns:
+      type: MigrationReport
+      description: 当てた手順・当てた後に値が要るキー・写し
+    process: |-
+      1. 手順を並べる（`plan_migration`）
+         - `relation` が `newer` の場合、`WorkspaceNewerError`（メッセージに 2 つの版とプラグインの更新の案内）を送る
+         - 手順が空の場合、写しを取らずにそのまま返す
+      2. 写しを取る（`take_backup`。版は `to`）
+      3. 手順を並びの順に当てる（`apply_step`）
+         - `StepError` が起きた場合、写しから戻し（`restore_backup`）、`StepFailedError`（`{版} の手順 {番号}（{操作}）: {理由}`）を送る
+      4. 当てた後の値が要るキーを集め直し、手順と写しを添えて返す
+    exceptions:
+      - name: WorkspaceNewerError
+        condition: ワークスペースの版がプラグインの版より新しい
+        message: ワークスペースの版 {版} はプラグインの版 {版} より新しいため移し替えられません。プラグインを更新してください
+      - name: StepFailedError
+        condition: 手順が失敗した（写しから戻した後）
+      - name: WriteFailedError
+        condition: 写しを取れない（手順を当てない）
+    unit_tests:
+      - name: test_apply_migration
+        case: 正常
+        summary: v0.3.0 の手順を当てて、値が要るキーを返す
+        condition: '版のファイルと `summary` を持たず A-1（`done: true`）・A-2（`done: false`）を持つワークスペース'
+        mock: '`read_plugin_version`（`v0.3.0`）'
+        expected: 'A-1 が `status: 完成`、A-2 が `status: 下書き` で `done` を持たず、`updated` が同じ。`needs_values` が `summary` の 1 件。`backup.kind` が `copy`。`mindstella-version.ini` が無い'
+      - name: test_apply_migration_when_already_current
+        case: 正常
+        summary: 今の形のワークスペースは何も変えない
+        condition: '版のファイルを持たず、`summary` と A-1（`status: 完成`）を持つワークスペース'
+        mock: '`read_plugin_version`（`v0.3.0`）'
+        expected: '`needs_values` が空。`mindmap.yaml`・`docs.yaml` の中身と更新日時が呼ぶ前と同じ'
+      - name: test_apply_migration_when_newer
         case: 異常
-        summary: 2 つ目の置き換えに失敗したら 1 つ目を戻す
-        condition: '`summary` を持たない設定と A-1（`done: true`）。`os.replace` を、`mindmap.yaml` への置き換えで `OSError` を送る関数に差し替える'
+        summary: 版が新しければ写しも取らずに送る
+        condition: 版のファイルが `v99.0.0` のワークスペース
+        mock: '`read_plugin_version`（`v0.3.0`）'
+        expected: '`WorkspaceNewerError`（メッセージに `v99.0.0` と `v0.3.0`）。ワークスペースの隣に写しのフォルダが無い'
+        exception: 版が新しい
+      - name: test_apply_migration_when_step_fails
+        case: 異常
+        summary: 手順が失敗したら写しから戻して送る
+        condition: '版のファイルを持たず、`docs.yaml` が `items: [` のワークスペース'
+        mock: '`read_plugin_version`（`v0.3.0`）'
+        expected: '`StepFailedError`（メッセージが `v0.3.0 の手順 1（rename_key）: ` で始まる）。全てのファイルの中身が呼ぶ前と同じ'
+        exception: 手順が失敗した
+  - name: parse_assignment
+    title: 入れる値の解釈
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: '`--set` の `{ファイル}:{キーのパス}={値}` を 3 つに分ける（argparse の `type` に渡す）'
+    args:
+      - name: text
+        type: str
+        required: true
+        passing: positional
+        description: '`--set` の 1 つ'
+    returns:
+      type: tuple[str, str, str]
+      description: ファイル・キーのパス・値
+    process: |-
+      1. 最初の `:` でファイルを、その後の最初の `=` でキーのパスと値を分ける
+         - どちらかが無いか、ファイル・キーのパスが空の場合、`ValueError` を送る（argparse が終了コード 2 にする）
+    exceptions:
+      - name: ValueError
+        condition: 形が違う
+        message: '--set の形が違います: {text}（{ファイル}:{キーのパス}={値}）'
+    unit_tests:
+      - name: test_parse_assignment
+        case: 正常
+        summary: '値の中の : と = は値に残す'
+        condition: '`mindmap.yaml:summary=a:b=c`'
+        mock: なし
+        expected: '`("mindmap.yaml", "summary", "a:b=c")`'
+      - name: test_parse_assignment_when_invalid
+        case: 異常
+        summary: 形が違えば送る
+        condition: '`parametrize`: `summary=x` / `mindmap.yaml:summary` / `:summary=x`'
+        mock: なし
+        expected: '`ValueError`（`match` に `--set`）'
+        exception: 形が違う
+  - name: set_values
+    title: 値を入れる
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 値が要るキーに値を入れる。版のファイルは書かない
+    side_effects: 指したファイルを書く
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: assignments
+        type: list[tuple[str, str, str]]
+        required: true
+        passing: positional
+        description: '`--set` を解釈した並び'
+    returns:
+      type: None
+      description: なし
+    process: |-
+      1. `root / mindmap.yaml` が無ければ `WorkspaceNotFoundError` を送る
+      2. ファイルごとに YAML を読み、キーのパスを `.` で辿って値を置く（途中の辞書が無ければ作る）
+      3. 書き換えたファイルを一時ファイルに書いてから置き換える（`dump_yaml`・`write_temp`・`os.replace`）
+         - `OSError` の場合、一時ファイルを消して `WriteFailedError` を送る
+    exceptions:
+      - name: WorkspaceNotFoundError
+        condition: '`mindmap.yaml` が無い'
+      - name: WriteFailedError
+        condition: 書き込みか置き換えで `OSError` が起きた
+    unit_tests:
+      - name: test_set_values
+        case: 正常
+        summary: 題名を入れ、ほかのキーと並びを変えない
+        condition: '`summary` を持たない `mindmap.yaml` と `[("mindmap.yaml", "summary", "題名")]`'
+        mock: なし
+        expected: '`mindmap.yaml` の `summary` が `題名`、ほかのキーが元の順で同じ。`mindstella-version.ini` が無い'
+      - name: test_set_values_when_write_fails
+        case: 異常
+        summary: 置き換えられなければ送る
+        condition: '`os.replace` を `OSError` を送る関数に差し替える'
         mock: '`os.replace`（`migrator` モジュールの参照を monkeypatch）'
-        expected: '`WriteFailedError`。`mindmap.yaml`・`docs.yaml` が呼ぶ前と同じで、`.tmp` のファイルが無い'
+        expected: '`WriteFailedError`。`mindmap.yaml` が呼ぶ前と同じで `.tmp` のファイルが無い'
         exception: 置き換えで OSError
-test_files:
-  - tests/unit/scripts/test_migrator.py
+  - name: record_version
+    title: 版を書く
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migrator.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: ワークスペースを点検し、スキーマに合えば版のファイルを書く
+    side_effects: '`mindstella-version.ini` を書く'
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: '`--workspace`'
+      - name: to_version
+        type: Version | None
+        required: false
+        default: None
+        passing: keyword
+        description: '`--to`（`None` ならプラグインの版）'
+    returns:
+      type: Version
+      description: 書いた版
+    process: |-
+      1. ワークスペースの版が `to` より新しければ `WorkspaceNewerError` を送る
+      2. ワークスペースを読み、検証する（`load_workspace`・`validate_workspace`）
+         - 問題がある場合、`SchemaMismatchError` を送る（`build_mismatch_error`。版のファイルを書かない）
+      3. 版を書く（`write_workspace_version`）
+    exceptions:
+      - name: WorkspaceNewerError
+        condition: ワークスペースの版が `to` より新しい
+      - name: SchemaMismatchError
+        condition: ワークスペースがスキーマに合わない
+    unit_tests:
+      - name: test_record_version
+        case: 正常
+        summary: 合うワークスペースに版を書く
+        condition: 今の形で版のファイルを持たないワークスペース、`to_version=v0.3.0`
+        mock: なし
+        expected: '`v0.3.0` を返し、`mindstella-version.ini` の 1 行目が `v0.3.0`'
+      - name: test_record_version_when_schema_mismatch
+        case: 異常
+        summary: 題名が無ければ書かない
+        condition: '`summary` を持たない `mindmap.yaml` のワークスペース'
+        mock: なし
+        expected: '`SchemaMismatchError`（`lines` に `mindmap.yaml: ` と `summary`）。`mindstella-version.ini` が無い'
+        exception: スキーマに合わない
+  - name: apply_step
+    title: 手順を 1 つ当てる
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migration_ops.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 操作ごとに手順を当て、変えたファイルを返す
+    side_effects: 手順が変えるファイル・フォルダを書く・動かす・消す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+      - name: step
+        type: MigrationStep
+        required: true
+        passing: positional
+        description: 当てる手順
+    returns:
+      type: list[str]
+      description: 変えたファイル・フォルダ（ワークスペースからの相対パス）。何も変えなければ空
+    process: |-
+      1. `op` で分ける。対象が無い・既にあるときの振る舞いはインターフェース定義『記録の形式の移行』の制約「対象が無い・既にあるとき」のとおり
+         - `rename_file`・`move_dir`: `from` が無ければ飛ばす。`to` があれば `StepError`。あれば動かす
+         - `delete`: `path` が無ければ飛ばす。あればファイルかフォルダを消す
+         - `rename_key`・`set_default`・`map_values`: `file` を読む（読めなければ `StepError`。`{file} を読めません: {理由}`）。`each_item` なら `items[]` の各項目に、そうでなければ最上位の辞書に当てる。キーの位置を保ったまま書き換える
+         - `call`: `{folder}/scripts/{script}.py` を読み込んで `migrate(root)` を呼び、返した相対パスの並びを変えたものにする（例外は `StepError`）
+      2. YAML の操作は、中身が変わったときだけ一時ファイルに書いてから置き換える（`dump_yaml`・`write_temp`・`os.replace`。`OSError` は `StepError`）
+    exceptions:
+      - name: StepError
+        condition: 手順が対象を読めない・書けない、動かす先が既にある、`rename_key` の `from` と `to` が同じ項目にある、`call` が例外を送った
+        message: 理由（`migrator` が版と番号を添えて `StepFailedError` にする）
+    unit_tests:
+      - name: test_apply_step_when_rename_key
+        case: 正常
+        summary: キーの名前を位置を保って変える
+        condition: '`docs.yaml` の A-1（`id`・`done`・`updated` の順）に `rename_key`（`done` → `status`）'
+        mock: なし
+        expected: A-1 のキーが `id`・`status`・`updated` の順で値が同じ。戻り値が `["docs.yaml"]`
+      - name: test_apply_step_when_rename_key_missing
+        case: 正常
+        summary: from が無い項目は飛ばし、ファイルを書かない
+        condition: '`status` だけを持つ A-1 に `rename_key`（`done` → `status`）'
+        mock: なし
+        expected: 戻り値が空。`docs.yaml` の更新日時が呼ぶ前と同じ
+      - name: test_apply_step_when_rename_key_conflict
+        case: 異常
+        summary: from と to の両方を持つ項目は送る
+        condition: '`done` と `status` の両方を持つ A-1 に `rename_key`（`done` → `status`）'
+        mock: なし
+        expected: '`StepError`（メッセージに `A-1` か `items[0]` と `status`）'
+        exception: to が既にある
+      - name: test_apply_step_when_map_values
+        case: 正常
+        summary: map にある値だけを置き換える
+        condition: '`status` が `true`・`false`・`確認中` の 3 項目に `map_values`（`true` → `完成`、`false` → `下書き`）'
+        mock: なし
+        expected: '`完成`・`下書き`・`確認中`'
+      - name: test_apply_step_when_set_default_ask
+        case: 正常
+        summary: ask は何も書かない
+        condition: '`summary` を持たない `mindmap.yaml` に `set_default`（`summary`・`ask`）'
+        mock: なし
+        expected: 戻り値が空。`mindmap.yaml` が呼ぶ前と同じ
+      - name: test_apply_step_when_set_default_value
+        case: 正常
+        summary: キーが無い項目にだけ既定の値を足す
+        condition: '`tags` を持つ項目と持たない項目に `set_default`（`tags`・`value: []`）'
+        mock: なし
+        expected: '持たない項目だけが `tags: []` を持ち、持つ項目の値が同じ'
+      - name: test_apply_step_when_rename_file
+        case: 正常
+        summary: ファイルを動かし、動かす先があれば送る
+        condition: '`parametrize`: `a.yaml` だけがある / `a.yaml` と `b.yaml` がある、に `rename_file`（`a.yaml` → `b.yaml`）'
+        mock: なし
+        expected: 前者は `b.yaml` に動き戻り値が `["a.yaml", "b.yaml"]`。後者は `StepError` で両方が残る
+      - name: test_apply_step_when_delete_missing
+        case: 正常
+        summary: 消す対象が無ければ飛ばす
+        condition: '`old/` が無いワークスペースに `delete`（`old/`）'
+        mock: なし
+        expected: 戻り値が空
+      - name: test_apply_step_when_call
+        case: 正常
+        summary: 変換のスクリプトの migrate を呼ぶ
+        condition: '`scripts/convert.py` に、`notes.yaml` を書いて `["notes.yaml"]` を返す `migrate(root)` を置いた版のフォルダと、`call`（`convert`）'
+        mock: なし
+        expected: 戻り値が `["notes.yaml"]`
+      - name: test_apply_step_when_unreadable
+        case: 異常
+        summary: YAML として読めなければ送る
+        condition: '`docs.yaml` が `items: [` のワークスペースに `rename_key`'
+        mock: なし
+        expected: '`StepError`（メッセージが `docs.yaml を読めません` で始まる）'
+        exception: 読めない
+  - name: describe_step
+    title: 手順の 1 行の説明
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migration_ops.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: 出力の `steps[].summary` にする 1 行を作る
+    args:
+      - name: step
+        type: MigrationStep
+        required: true
+        passing: positional
+        description: 説明する手順
+    returns:
+      type: str
+      description: 手順の中身の 1 行
+    process: 1. `op` ごとの決まった形に引数を埋めて返す（例 `rename_key` は `{file} の {items[]. か空}{from} を {to} に名前を変える`、`set_default` の `ask` は `{file} の {key} を利用者に聞く（{ask}）`）
+    unit_tests:
+      - name: test_describe_step
+        case: 正常
+        summary: 操作ごとの 1 行を作る
+        condition: '`parametrize`: v0.3.0 の 3 つの手順'
+        mock: なし
+        expected: '`docs.yaml の items[].done を status に名前を変える` / `docs.yaml の items[].status の値を置き換える（true → 完成、false → 下書き）` / `mindmap.yaml の summary を利用者に聞く（話し合いの題名）`'
+  - name: list_needed_values
+    title: 値が要るキーの洗い出し
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/migration_ops.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: '`set_default` の `ask` で、今のワークスペースにキーが無いものを返す'
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+      - name: step
+        type: MigrationStep
+        required: true
+        passing: positional
+        description: 手順
+    returns:
+      type: list[NeededValue]
+      description: 値が要るキー（`ask` でない手順と、キーを持つときは空）
+    process: |-
+      1. `set_default` で `ask` を持つ手順だけを見る
+      2. `file` を読み（読めなければ空を返す。読めないことは手順を当てるときに `StepError` になる）、`key` を持たない項目があれば `NeededValue(file, key, ask)` を 1 つ返す
+    unit_tests:
+      - name: test_list_needed_values
+        case: 正常
+        summary: キーが無ければ返し、あれば返さない
+        condition: '`parametrize`: `summary` を持たない / 持つ `mindmap.yaml` と、v0.3.0 の `set_default`'
+        mock: なし
+        expected: 前者は `mindmap.yaml`・`summary`・`話し合いの題名` の 1 件、後者は空
+  - name: take_backup
+    title: 写しを取る
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/backup.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: git の作業ツリーの中で ignore されたファイルが無ければワークスペースのパスだけをコミットし、そうでなければ隣のフォルダへ複製する
+    side_effects: git のコミットを足すか、ワークスペースの隣にフォルダを作る
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+      - name: version
+        type: Version
+        required: true
+        passing: positional
+        description: 移し替える先の版（`--to`）
+    returns:
+      type: Backup
+      description: 取った写し
+    process: |-
+      1. `root` を cwd にして `git rev-parse --is-inside-work-tree` を呼ぶ
+         - git が無いか終了コードが 0 でない場合、4 へ進む
+      2. `git ls-files --others --ignored --exclude-standard -- .` が 1 行でも返せば、4 へ進む
+      3. `git add -A -- .` の後、`git commit -m {BACKUP_COMMIT_MESSAGE} -- .` を呼び、`git rev-parse HEAD` の ID で `Backup(kind="git")` を返す
+         - 変更が無くてコミットしなかった場合、今の `HEAD` を写しにする
+         - コミットが失敗した場合（作者の名前が無い等）、`git reset -q -- .` でステージを戻して 4 へ進む
+      4. `root` の隣の `{root.name}.before-{version}`（既にあれば末尾に `-{YYYYmmddHHMMSS}`）へ `shutil.copytree` で複製し、絶対パスで `Backup(kind="copy")` を返す
+         - `OSError` の場合、作りかけの複製を消して `WriteFailedError` を送る
+    exceptions:
+      - name: WriteFailedError
+        condition: 複製に失敗した
+    unit_tests:
+      - name: test_take_backup_when_not_git
+        case: 正常
+        summary: git の外ではフォルダを複製する
+        condition: git の作業ツリーの外のワークスペース
+        mock: なし
+        expected: '`kind: copy`、`ref` の `{名前}.before-v0.3.0` に同じ中身がある'
+      - name: test_take_backup_when_git
+        case: 正常
+        summary: ワークスペースのパスだけをコミットする
+        condition: '`git init` した一時フォルダの `ws/` にワークスペース、外に `other.txt` と `git add` 済みの `staged.txt`'
+        mock: なし
+        expected: '`kind: git`。コミットが `ws/` のファイルだけを持ち、`staged.txt` はステージされたまま'
+      - name: test_take_backup_when_ignored
+        case: 正常
+        summary: ignore されたファイルがあれば複製する
+        condition: '`tmp/.gitignore` に `*` を書いた作業ツリーの `tmp/ws/` のワークスペース'
+        mock: なし
+        expected: '`kind: copy`。コミットが増えていない'
+      - name: test_take_backup_when_copy_exists
+        case: 正常
+        summary: 同じ名前の写しがあれば日時を足す
+        condition: '`{名前}.before-v0.3.0` が既にある'
+        mock: なし
+        expected: '`ref` が `{名前}.before-v0.3.0-` で始まる別のフォルダ'
+  - name: restore_backup
+    title: 写しから戻す
+    kind: 関数
+    container: plugins/mindstella/skills/mindmap/scripts/backup.py
+    usecase: 記録の形式の移行
+    scope: public
+    summary: ワークスペースを写しの中身に戻す
+    side_effects: ワークスペースのファイルを書き戻す・消す
+    args:
+      - name: root
+        type: Path
+        required: true
+        passing: positional
+        description: ワークスペースのフォルダ
+      - name: backup
+        type: Backup
+        required: true
+        passing: positional
+        description: 取った写し
+    returns:
+      type: None
+      description: なし
+    process: |-
+      1. `git` なら、`root` を cwd にして `git checkout {ref} -- .` と `git clean -fdq -- .` を呼ぶ
+      2. `copy` なら、`root` の中身を消してから `ref` の中身を `root` へ複製する（`shutil.copytree(dirs_exist_ok=True)`）
+    unit_tests:
+      - name: test_restore_backup_when_copy
+        case: 正常
+        summary: 複製から書き戻し、増えたファイルを消す
+        condition: 複製を取った後に `docs.yaml` を書き換え、`new.yaml` を足したワークスペース
+        mock: なし
+        expected: '`docs.yaml` が写しの中身で、`new.yaml` が無い'
+      - name: test_restore_backup_when_git
+        case: 正常
+        summary: コミットの中身に戻し、増えたファイルを消す
+        condition: git の写しを取った後に `docs.yaml` を書き換え、`new.yaml` を足したワークスペース
+        mock: なし
+        expected: '`docs.yaml` がコミットの中身で、`new.yaml` が無い'
+diagrams:
+  - name: 全体
+    diagram: |-
+      ```mermaid
+      classDiagram
+        direction LR
+        class 移し替えの処理
+        class 版
+        class 操作の当て方
+        class 写し
+        class 読み書きと検証
+        移し替えの処理 --> 版 : 比べる・書く
+        移し替えの処理 --> 操作の当て方 : 手順を 1 つずつ当てる
+        移し替えの処理 --> 写し : 取る・戻す
+        移し替えの処理 --> 読み書きと検証 : 版を書く前の点検
+        操作の当て方 --> 読み書きと検証 : YAML の書き方
+        版 --> 読み書きと検証 : 一時ファイル
+      ```
+classes:
+  - name: StepError
+    title: 手順の失敗
+    kind: クラス
+    container: plugins/mindstella/skills/mindmap/scripts/migration_ops.py
+    usecase: 記録の形式の移行
+    summary: 1 つの手順が失敗した理由。`apply_migration` が写しから戻して版と番号を添えた `StepFailedError` にする（入口までは出ない）
+    inherits: Exception
+notes:
+  v0.3.0 の手順: |-
+    `migrations/v0.3.0/steps.yaml` は次の 3 つを並べる（今までの `migrator.py` の中身を移したもの）。
+
+    1. `rename_key`: `file: docs.yaml`・`each_item: true`・`from: done`・`to: status`
+    2. `map_values`: `file: docs.yaml`・`each_item: true`・`key: status`・`map: {true: 完成, false: 下書き}`
+    3. `set_default`: `file: mindmap.yaml`・`each_item: false`・`key: summary`・`ask: 話し合いの題名`
+
+    `scripts/` は使わないので置かない。
+  手順の形のスキーマ: '`schemas/migration-steps.schema.json` は `steps` の各要素を `op` で分け（`oneOf`）、インターフェース定義『記録の形式の移行』の制約「操作と引数」の引数だけを許す（`additionalProperties: false`）。`set_default` は `value` か `ask` のどちらか 1 つを持つ。'
+  開発側の点検: '`tests/unit/scripts/test_migration_coverage.py` に置く。`v*` のタグを版の順に並べた先頭（最新のタグ）の `plugins/mindstella/skills/mindmap/schemas/` と今の `schemas/` を比べ（`git show {タグ}:{パス}`。`migration-steps.schema.json` は比べない）、違うのに `list_versions` に「最新のタグより新しく、プラグインの版以下」の版が無ければ落とす（`test_schema_changes_have_migration`）。タグが 1 つも無い clone では skip する。あわせて、プラグインの版が最新のタグより前でないことを確かめる（`test_plugin_version_not_behind_latest_tag`）'
+  対応テストファイル: '`tests/unit/scripts/test_versions.py`・`test_migrator.py`・`test_migration_ops.py`・`test_backup.py`・`test_migration_coverage.py`。単体テスト作成でファイルを作ったときに `test_files` へ移す'
