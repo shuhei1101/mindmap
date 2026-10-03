@@ -20,11 +20,12 @@ adoption: 採用
 upstream: kieler/elkjs
 used_in:
   - skills/mindmap/preview/template.html
+  - skills/mindmap/scripts/builder.py
 verification:
   state: 済
   date: '2026-10-02'
   detail: file:// で開いた HTML から jsDelivr の `lib/elk.bundled.js` を下の integrity と `crossorigin="anonymous"` 付きで読み、Chromium で `new ELK().layout` が `layered`・直角の枝（`ORTHOGONAL`）で 2 つの節の座標を返すことを確かめた
-license: EPL-2.0 OR GPL-3.0-or-later（改変せず CDN から読むだけで、配る物に含めない）
+license: EPL-2.0 OR GPL-3.0-or-later から EPL-2.0 を選ぶ（商用利用可）。配る書き出しに入れるときは、版・著作権の表示（(c) Kiel University and others）・EPL-2.0 の本文を残し、ソースコードの入手先（https://github.com/kieler/elkjs と `{版}` のタグ）を表示に含める。改変しない
 official_url: https://github.com/kieler/elkjs
 selection:
   candidates: '配信元として jsDelivr・unpkg・raw.esm.sh・cdnjs を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4165328069)）。ライブラリそのものは Issue #5 で決まっている'

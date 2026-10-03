@@ -122,11 +122,11 @@ external_systems:
       事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
     detail: dev/設計書/外部ライブラリ/claude-code#
   - name: jsDelivr
-    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得
+    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得。`build` の書き出しは開いたブラウザが読み、配る書き出し（`export`）は書き出すときに取って中に持つ
     direction: 受信のみ
     protocol: HTTPS
     notes:
-      事前確認: 要。プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。
+      事前確認: 要。`build` の書き出しは、プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。`export` は、書き出すときに `https://cdn.jsdelivr.net/npm/{package}@{version}/{path}` から配布ファイルとライセンスの本文を取る。1 回の要求で接続と 1 回の読み取りをそれぞれ 30 秒まで待ち、取れなければ何も書かずにエラーで終える。配る書き出しを開くときは通信しない。
     refs:
       - dev/設計書/外部ライブラリ/marked#
       - dev/設計書/外部ライブラリ/DOMPurify#
@@ -138,11 +138,11 @@ external_systems:
     protocol: HTTPS
     detail: dev/設計書/外部API/GoogleFonts#
     notes:
-      事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。
+      事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。配る書き出しは文字を読まず、常に端末の文字で描く。
 lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
 constraints: |-
   - hooks・MCP サーバーを持たない
   - 他のスキル・外部の仕組みに依存しない
   - スキル・スクリプト・プレビューの中で、特定の開発基盤の名前を出さない
   - 常駐するサーバーを持たない（プレビューはファイルとして開く）
-  - ネットがある前提で、描画のライブラリは CDN から、文字は Google Fonts から読む（埋め込む選択肢は持たない）
+  - ネットがある前提で、`build` の書き出しは描画のライブラリを CDN から、文字を Google Fonts から読み、配る書き出し（`export`）は書き出すときに取った描画のライブラリを中に持つ
