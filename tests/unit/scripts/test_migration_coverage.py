@@ -18,6 +18,9 @@ from versions import Version
 REPO_ROOT_PARENT_DEPTH = 3
 REPO_ROOT = Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 
+# リリースの版を持つファイル（リポジトリの直下の version.ini）
+RELEASE_VERSION_FILE = REPO_ROOT / "version.ini"
+
 # スキーマの置き場所（リポジトリの直下からの相対パス）
 SCHEMA_RELATIVE_DIR = "plugins/mindstella/skills/mindmap/schemas"
 
@@ -90,13 +93,12 @@ def test_schema_changes_have_migration() -> None:
     )
 
 
-def test_plugin_version_not_behind_latest_tag() -> None:
-    """プラグインの版が最新のタグより前でない（正常系）。"""
+def test_plugin_version_not_behind_release_version() -> None:
+    """プラグインの版がリポジトリの直下の version.ini の版より前でない（正常系）。"""
     # 準備
-    latest = _latest_tag()
-    if latest is None:
-        pytest.skip("版のタグが 1 つも無い clone では確かめない")
+    release_lines = RELEASE_VERSION_FILE.read_text(encoding="utf-8").splitlines()
+    release_version = versions.parse_release_version(release_lines[0])
     # 実行
     plugin_version = versions.read_plugin_version()
     # 検証
-    assert plugin_version >= latest
+    assert plugin_version >= release_version
