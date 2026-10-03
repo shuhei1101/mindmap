@@ -437,6 +437,12 @@ table.grid tbody tr.selected td { background: var(--row-selected); box-shadow: i
 .doc-card { display: grid; gap: 8px; margin: 0; }
 .doc-kind { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--accent); font-weight: 600; }
 .doc-card .c-for { display: grid; gap: 2px; }
+/* ボードの資料のカード: 列の中で縦に積む間を空ける */
+.board-col .doc-card { margin-bottom: 10px; }
+/* ボードの資料のカードのタグ: 折り返して並べる */
+.board-col .doc-card .c-tags { display: flex; flex-wrap: wrap; }
+/* 詳細を開いている資料のカード: 枠の全体と面の色で示す */
+.board-col .doc-card.selected { border-color: var(--accent); background: var(--row-selected); }
 
 /* ===== マップ: 選んだ項目の依存の線を流す ===== */
 .map-canvas.focusing .edge-dep.rel { animation: dep-flow 1s linear infinite; }

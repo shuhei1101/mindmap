@@ -51,7 +51,7 @@ namespace MindmapPreview {
   export const VIEWS_OF: Partial<Record<Tab, View[]>> = {
     decisions: ["map", "board", "table"],
     tasks: ["board", "table"],
-    docs: ["cards", "table"],
+    docs: ["cards", "board", "table"],
   };
 
   /** 画面の既定の表示形式 */

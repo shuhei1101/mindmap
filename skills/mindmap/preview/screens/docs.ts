@@ -1,4 +1,4 @@
-// 資料。カード（既定）と表で見る。成果物を先頭に印付きで並べ、資料の状態を出す。
+// 資料。カード（既定）・ボード・表で見る。成果物を先頭に印付きで並べ、資料の状態を出す。
 
 namespace MindmapPreview {
   /** 成果物を先頭に、それぞれ連番の順に並べた資料を返す */
@@ -39,6 +39,7 @@ namespace MindmapPreview {
     const toolbarElement = toolbar(
       [
         { key: "cards", label: "カード" },
+        { key: "board", label: "ボード" },
         { key: "table", label: "表" },
       ],
       route,
@@ -61,11 +62,10 @@ namespace MindmapPreview {
       });
     }
 
-    // ===== カード: 絞り込みは表と同じ条件を使う =====
+    // ===== カードとボード: 絞り込みは表と同じ条件を使う =====
     const state = tableState("docs");
     if (Object.keys(route.filters).length > 0) state.filters = { ...route.filters };
     const ordered = orderDocs(index.data.docs);
-    const grid = h({ tag: "div", attrs: { class: "doc-grid" } });
     const chips = h({ tag: "div", attrs: { class: "chips" } });
     const pop = h({ tag: "div", attrs: { class: "pop", popover: "auto" } });
     const filterButton = h({
@@ -131,14 +131,38 @@ namespace MindmapPreview {
           ),
       );
     };
-    /** カードと条件のチップを、今の絞り込みで描く */
+    /** カードの並びかボードを、今の絞り込みで描く */
+    const drawContent = (): HTMLElement => {
+      const shown = filterRows({ rows: ordered, columns, filters: state.filters }) as Item[];
+      if (route.view === "board") {
+        // 列ごとに成果物を先頭に並べ直す
+        return board({
+          columns: boardColumns({ items: shown, statuses: [...DOC_STATUSES] }).map((column) => ({
+            status: column.status,
+            items: orderDocs(column.items),
+          })),
+          card: (item) => docCard({ index, doc: item, open: on.open, inBoard: true }),
+        });
+      }
+      return h({
+        tag: "div",
+        attrs: { class: "doc-grid" },
+        children:
+          shown.length > 0
+            ? shown.map((row) => docCard({ index, doc: row, open: on.open, inBoard: false }))
+            : [h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する資料はありません。別の条件を試してください。"] })],
+      });
+    };
+    let content = drawContent();
+    /** カードの並びかボードと条件のチップを、今の絞り込みで描き直す */
     const render = (): void => {
-      const shown = filterRows({ rows: ordered, columns, filters: state.filters });
-      grid.replaceChildren(
-        ...(shown.length > 0
-          ? shown.map((row) => docCard(index, row as Item, on.open))
-          : [h({ tag: "p", attrs: { class: "no-match" }, children: ["該当する資料はありません。別の条件を試してください。"] })]),
-      );
+      const next = drawContent();
+      content.replaceWith(next);
+      content = next;
+      drawChips();
+    };
+    /** 条件のチップを、今の絞り込みで描く */
+    const drawChips = (): void => {
       const items: HTMLElement[] = [];
       for (const [key, values] of Object.entries(state.filters)) {
         const label = columns.find((column) => column.key === key)?.label ?? key;
@@ -186,17 +210,27 @@ namespace MindmapPreview {
       }
       chips.replaceChildren(...items);
     };
-    render();
+    drawChips();
     toolbarElement.append(h({ tag: "span", attrs: { class: "spacer" } }), filterButton);
-    return h({ tag: "div", attrs: { class: "screen docs" }, children: [toolbarElement, chips, grid, pop] });
+    return h({ tag: "div", attrs: { class: "screen docs" }, children: [toolbarElement, chips, content, pop] });
   }
 
-  /** 資料のカード（成果物の印・種類・状態・カテゴリー・フェーズ・タグ） */
-  function docCard(index: RecordIndex, doc: Item, open: (id: string) => void): HTMLElement {
+  /** 資料のカード（成果物の印・種類・状態・カテゴリー・フェーズ・タグ）。ボードの中では列で状態が分かるので状態の印を出さず、開いている資料に選択の印を付ける */
+  function docCard({
+    index,
+    doc,
+    open,
+    inBoard,
+  }: {
+    index: RecordIndex;
+    doc: Item;
+    open: (id: string) => void;
+    inBoard: boolean;
+  }): HTMLElement {
     return h({
       tag: "button",
       attrs: {
-        class: `card doc-card${doc.deliverable === true ? " deliv-card" : ""}`,
+        class: `card doc-card${doc.deliverable === true ? " deliv-card" : ""}${inBoard && doc.id === currentSelection() ? " selected" : ""}`,
         type: "button",
         "data-id": doc.id,
         onclick: () => open(doc.id),
@@ -214,7 +248,7 @@ namespace MindmapPreview {
           attrs: { class: "c-meta" },
           children: [
             h({ tag: "span", attrs: { class: "mono" }, children: [doc.id] }),
-            statusBadge(doc.status),
+            inBoard ? null : statusBadge(doc.status),
             h({ tag: "span", children: [[doc.category, doc.phase].filter(Boolean).join(" · ")] }),
           ],
         }),
