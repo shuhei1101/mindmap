@@ -110,7 +110,7 @@ namespace MindmapPreview {
       else prefs.columns[kind] = tablePrefs;
       persist();
     });
-    document.title = `${data.settings.summary} | mindmap`;
+    document.title = `${data.settings.summary} | mindstella`;
 
     // ===== テーマ =====
     let theme: Theme = prefs.theme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");

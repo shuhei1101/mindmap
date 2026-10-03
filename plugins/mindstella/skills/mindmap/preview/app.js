@@ -103,7 +103,7 @@ var MindmapPreview;
                 prefs.columns[kind] = tablePrefs;
             persist();
         });
-        document.title = `${data.settings.summary} | mindmap`;
+        document.title = `${data.settings.summary} | mindstella`;
         // ===== テーマ =====
         let theme = prefs.theme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         document.documentElement.dataset["theme"] = theme;
