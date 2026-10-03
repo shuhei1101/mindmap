@@ -1,0 +1,1 @@
+# モックの tokens.css の参照先を plugins/mindstella/ の下へ直す
