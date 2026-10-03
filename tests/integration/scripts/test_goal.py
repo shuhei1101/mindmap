@@ -27,7 +27,7 @@ def test_normal_when_reached(
     run_mindmap: RunMindmap,
     snapshot_tree: SnapshotTree,
 ) -> None:
-    """ゴールのフェーズまでが決着し成果物が揃っていれば、届いたと返す（正常系）。"""
+    """ゴールのフェーズまでが決着し納品物が揃っていれば、届いたと返す（正常系）。"""
     # 準備
     root = make_workspace(
         make_item("D-1", phase="目的", status="決定済み"),
@@ -60,7 +60,7 @@ def test_normal_when_not_reached(
     valid_settings: dict[str, Any],
     run_mindmap: RunMindmap,
 ) -> None:
-    """決着していない検討事項と揃っていない成果物を残りとして返す（正常系）。"""
+    """決着していない検討事項と揃っていない納品物を残りとして返す（正常系）。"""
     # 準備
     root = make_workspace(
         make_item("D-1", phase="目的", status="未決定"),

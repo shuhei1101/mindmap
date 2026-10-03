@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "資料",
-  "description": "`docs.yaml` の形。会話の中で作った図・文書。成果物もこの中で印を付ける。",
+  "description": "`docs.yaml` の形。会話の中で作った図・文書。納品物もこの中で印を付ける。",
   "type": "object",
   "required": [
     "items"
@@ -72,7 +72,7 @@
         },
         "deliverable": {
           "type": "boolean",
-          "description": "ゴールで引き渡す成果物か"
+          "description": "ゴールでリリースする納品物か"
         },
         "status": {
           "type": "string",
@@ -81,7 +81,7 @@
             "確認中",
             "完成"
           ],
-          "description": "資料の状態。成果物は `完成` でできたとみなす"
+          "description": "資料の状態。納品物は `完成` でできたとみなす"
         },
         "body": {
           "type": "string",

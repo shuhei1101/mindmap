@@ -9,7 +9,7 @@ elements:
   - name: タイトル
     kind: heading
     position: 見出し
-    description: 項目の ID・タイトル・状態。成果物の資料はタイトルの右に余白を空けて成果物の印を置く（状態の横に並べない）
+    description: 項目の ID・タイトル・状態。納品物の資料はタイトルの右に余白を空けて納品物の印を置く（状態の横に並べない）
     io: 表示
     source: プレビューを開く.id の項目
   - name: 全画面に切り替える

@@ -72,7 +72,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """15 のコマンドと引数を持つ ArgumentParser を作る。"""
+    """コマンドと引数を持つ ArgumentParser を作る。"""
     parser = argparse.ArgumentParser(
         prog="mindmap.py", description="ワークスペースの YAML を読み書き・検索・点検する"
     )
@@ -124,6 +124,7 @@ def build_parser() -> argparse.ArgumentParser:
     add_command("check", "スキーマ違反・参照切れ・本文のずれを洗い出す")
     add_command("build", "記録を埋め込んだ preview.html を書き出す")
     add_command("goal", "ゴールに届いたかと残りを返す")
+    add_command("clear-release", "リリースの資料を書き出す前に release/ の中身を消す")
     migrate_parser = add_command("migrate", "前の版の形式を今の形式に移す")
     migrate_parser.add_argument(
         "--summary", default=None, help="設定に足す題名（設定が題名を持たないときに渡す）"
@@ -196,6 +197,7 @@ def _run_command(commands: Any, args: argparse.Namespace) -> tuple[dict[str, Any
         "check": lambda: commands.run_check(root),
         "build": lambda: commands.run_build(root),
         "goal": lambda: commands.run_goal(root),
+        "clear-release": lambda: commands.run_clear_release(root),
         "migrate": lambda: commands.run_migrate(root, summary=args.summary),
     }
     return handlers[args.command]()

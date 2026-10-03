@@ -30,7 +30,7 @@ BUTTONS_SCRIPT = """() => [...document.querySelectorAll('.segment button')].map(
         ),
         pytest.param(
             "preview-viewswitch--docs",
-            [("cards", "カード", "true"), ("table", "表", "false")],
+            [("cards", "カード", "true"), ("board", "ボード", "false"), ("table", "表", "false")],
             id="docs",
         ),
     ],
