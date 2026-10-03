@@ -1,4 +1,4 @@
-"""資料を読む（成果物を先頭にしたカードで見て、絞り込み、カードから本文を開く）の E2E テスト。"""
+"""資料を読む（納品物を先頭にしたカードで見て、絞り込み、カードから本文を開く）の E2E テスト。"""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def test_normal(
     make_item: MakeItem,
     valid_settings: dict[str, Any],
 ) -> None:
-    """成果物を先頭にカードを並べ、種類で絞り込み、カードから本文を見出しと表で読む（正常系）。"""
+    """納品物を先頭にカードを並べ、種類で絞り込み、カードから本文を見出しと表で読む（正常系）。"""
     # 準備
     path = build_preview(
         make_item("A-1", deliverable=False, kind="メモ書き", status="下書き"),

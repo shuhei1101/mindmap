@@ -9,7 +9,7 @@ from preview_helpers import BuildPreview, OpenPreview, click_item_ball
 from workspace_fixtures import MakeItem, SnapshotTree
 
 # 本文に mermaid の図を持つ Markdown
-BODY_WITH_DIAGRAM = """# 成果物の本文
+BODY_WITH_DIAGRAM = """# 納品物の本文
 
 ```mermaid
 flowchart LR
@@ -22,7 +22,7 @@ RENDER_TIMEOUT_MS = 20_000
 
 
 def _settings(valid_settings: dict[str, Any]) -> dict[str, Any]:
-    """カテゴリー 2 つ・フェーズ 3 つ・成果物 1 つを持つ設定を返す。"""
+    """カテゴリー 2 つ・フェーズ 3 つ・納品物 1 つを持つ設定を返す。"""
     return {
         **valid_settings,
         "categories": [
