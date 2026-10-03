@@ -4,4 +4,4 @@
 :root { --target-min: 24px; }
 
 /* 項目の ID のボタン: 見えている枠そのものを 24px 以上にし、ID の文字を縦横の中央に置く。文字の大きさ・枠の線と色は 21 のまま */
-.idlink { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); line-height: 1; vertical-align: middle; }
+.idlink { display: inline-flex; align-items: center; justify-content: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); line-height: 1; vertical-align: middle; }
