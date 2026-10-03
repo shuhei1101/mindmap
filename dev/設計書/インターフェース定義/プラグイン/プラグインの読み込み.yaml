@@ -79,7 +79,7 @@ request:
   - name: LICENSE
     type: ファイル
     required: true
-    description: MIT ライセンスの本文と著作権の表記（`Copyright (c) 2026 shuhei1101`）。リポジトリの直下の `LICENSE` と一字一句同じ本文
+    description: MIT ライセンスの本文と著作権の表記（`Copyright (c) 2026 shuhei1101`）
 request_example: |-
   ```json
   {
@@ -102,5 +102,5 @@ constraints:
     notes: 非機能要件の「Claude Code の版」
   - item: ライセンスの本文の置き方
     constraint: リポジトリの直下とプラグインのフォルダの直下の 2 か所に、同じ本文の実体のファイルとして置く。シンボリックリンクにしない
-    notes: '`claude plugin install` がリンクを実体で写すかは確かめておらず、Windows の clone ではリンクが本文を持たないファイルになる。2 つの本文の一致は結合テストで確かめる'
+    notes: 'Claude Code は、ローカルのパスからインストールするとプラグインのフォルダの外を指すシンボリックリンクを飛ばす（公式ドキュメント『Host and maintain a marketplace』の Share files within a marketplace with symlinks）。Windows の clone ではリンクが本文を持たないファイルになる'
 test_file: tests/integration/plugin/test_plugin_loading.py
