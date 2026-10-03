@@ -294,7 +294,7 @@ dialog.search::backdrop { background: var(--scrim); }
   .toolbar .btn .lbl { display: none; }
   .toolbar .grow { max-width: none; flex-basis: 100%; }
   /* 狭い幅のマップは、字下げした縦の一覧にする */
-  .map-wrap, .map-empty { display: none; }
+  .map-wrap, .map-view .map-empty { display: none; }
   .map-outline { display: block; }
   .board { grid-template-columns: 1fr; }
 }
