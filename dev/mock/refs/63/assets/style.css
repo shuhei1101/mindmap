@@ -1,0 +1,7 @@
+/* 21 のスタイルの上に重ね、項目の ID のボタン（.idlink）の押せる的を縦横 24px 以上にする分 */
+
+/* 押せる的の下限: 指で押し外さない大きさ（WCAG 2.2 の 2.5.8 の 24px） */
+:root { --target-min: 24px; }
+
+/* 項目の ID のボタン: 見えている枠そのものを 24px 以上にし、ID の文字を縦横の中央に置く。文字の大きさ・枠の線と色は 21 のまま */
+.idlink { display: inline-flex; align-items: center; justify-content: center; min-width: var(--target-min); min-height: var(--target-min); line-height: 1; vertical-align: middle; }
