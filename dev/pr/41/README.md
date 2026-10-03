@@ -1,0 +1,1 @@
+# ツールの名前を mindmap から mindstella に変え、プラグインを plugins/mindstella/ に分けて配る
