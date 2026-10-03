@@ -149,6 +149,7 @@ flows:
       - 終了コードが 2
       - 標準エラーに `--summary` がある
       - '`mindmap.yaml`・`docs.yaml` の中身が呼ぶ前と同じ'
+    test: test_error_when_summary_required
 lead: 前の版の形式で書かれたワークスペースの YAML を、今のスキーマに合う形へ一度だけ書き換える。
 idempotent: true
 side_effects: 移すものがあるときだけ、`mindmap.yaml`・`docs.yaml` のうち書き換えるものの一時ファイルを全て書き終えてから、`docs.yaml` → `mindmap.yaml` の順に `os.replace` で置き換える。移すものが無いときは何も書かない
@@ -214,3 +215,4 @@ constraints:
     constraint: 起こさない。`docs.yaml` を置き換える前に前の中身を控え、`mindmap.yaml` の置き換えに失敗したら `docs.yaml` を控えに戻してからエラーで終わる（終了コード 1。残った一時ファイルも消す）
 refs:
   - dev/設計書/ER図/ワークスペース#tables[docs.yaml]
+test_file: tests/integration/scripts/test_migrate.py

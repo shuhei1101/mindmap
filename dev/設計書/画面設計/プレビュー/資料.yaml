@@ -53,3 +53,4 @@ elements:
     visible_when: 表示形式が表
 lead: 資料をカード（既定）・表で見る画面。成果物を先頭に印付きで並べる。
 mock: dev/mock/pages/docs/21/standard/index.html
+test_file: tests/integration/preview/test_docs_screen.py

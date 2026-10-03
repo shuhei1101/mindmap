@@ -29,3 +29,4 @@ elements:
     visible_when: 常時
 lead: 全種類の項目を関連でつないで 3D で描く画面。タブの帯の右端の入口から開く。
 mock: dev/mock/pages/graph/21/standard/index.html
+test_file: tests/integration/preview/test_graph_screen.py

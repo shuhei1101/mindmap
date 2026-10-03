@@ -212,3 +212,4 @@ refs:
   - dev/設計書/外部ライブラリ/elkjs#
   - dev/設計書/外部ライブラリ/mermaid#
   - dev/設計書/外部API/GoogleFonts#
+test_file: tests/integration/preview/test_open_preview.py

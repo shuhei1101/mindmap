@@ -80,3 +80,4 @@ elements:
     visible_when: 表示形式が表
 lead: 検討事項をマップ（既定）・ボード・表で見る画面。
 mock: dev/mock/pages/decisions/21/standard/index.html
+test_file: tests/integration/preview/test_decisions_screen.py

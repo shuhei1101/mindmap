@@ -19,3 +19,4 @@ elements:
     description: 検索を閉じる。Esc と外側の押下でも閉じる
 lead: 全種類の項目を ID・タイトル・本文で探すモーダル。トップバーの入口か `/` キーで開く。
 mock: dev/mock/pages/search/21/standard/index.html
+test_file: tests/integration/preview/test_search_screen.py

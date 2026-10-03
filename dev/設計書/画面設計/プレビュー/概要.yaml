@@ -76,3 +76,4 @@ elements:
     visible_when: 常時（そのカテゴリーとフェーズに項目が無いセルは「—」で押せない）
 lead: プレビューを開いたときの既定の画面。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・カテゴリー別の進み具合のタイルを並べる。
 mock: dev/mock/pages/overview/21/standard/index.html
+test_file: tests/integration/preview/test_overview_screen.py

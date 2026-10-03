@@ -10,3 +10,4 @@ elements:
     description: 図の拡大を閉じ、開いた元（詳細パネルか詳細の全画面の本文）に戻る。Esc でも閉じる
 lead: 本文の図を大きく見る。詳細パネルからはモーダルで開き、詳細の全画面からは全画面の中身を切り替える。
 mock: dev/mock/pages/diagram-viewer/21/standard/index.html
+test_file: tests/integration/preview/test_diagram_viewer_screen.py

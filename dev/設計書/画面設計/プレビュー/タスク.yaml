@@ -47,3 +47,4 @@ elements:
     visible_when: 表示形式が表
 lead: タスクをボード（既定）・表で見る画面。
 mock: dev/mock/pages/tasks/21/standard/index.html
+test_file: tests/integration/preview/test_tasks_screen.py
