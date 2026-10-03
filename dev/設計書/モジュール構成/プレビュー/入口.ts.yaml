@@ -133,7 +133,7 @@ functions:
     process: |-
       1. 埋め込みのデータを読み、索引を作る（`readEmbeddedData`、`buildIndex`）
          - 読めない場合、本文にそのメッセージを出して終える
-      2. 端末の設定を読み、テーマを当てる（`loadPrefs`）
+      2. 端末の設定を読み、テーマを当てる（`loadPrefs`）。ページの題（`document.title`）を `{設定の summary} | mindstella` にする
       3. ハッシュを読み（`parseHash`）、記録に無い `id` だった場合は `id` の無いハッシュに置き換える（`navigate`、`push: false`）
       4. トップバーと画面を描き、`id` があれば詳細パネルを開く。絞り込みは画面に渡した後、ハッシュから消す（`navigate`、`push: false`）
       5. 画面・部品のコールバックを、`navigate` と描き直し、`savePrefs` につなぐ
