@@ -25,7 +25,7 @@ elements:
     position: ツールバーの左端
     description: 表示形式を切り替える
     visible_when: 常時
-  - name: カードの絞り込み
+  - name: 絞り込み
     kind: button
     position: ツールバー
     description: ポップオーバーで成果物 → 成果物以外の順・状態・種類・カテゴリー・フェーズ・タグで絞る。かかっている条件はチップで出し、個別とすべてを外せる。カードとボードで同じ条件を使う
@@ -48,7 +48,7 @@ elements:
       - name: rows
         value: プレビューを開く.mindmap-data.docs
       - name: filters
-        value: プレビューを開く.f.{列}（開いたときだけ。カードの絞り込みも同じ条件で開く）
+        value: プレビューを開く.f.{列}（開いたときだけ。カード・ボードの絞り込みも同じ条件で開く）
     description: 資料の表
     visible_when: 表示形式が表
   - name: ボード
