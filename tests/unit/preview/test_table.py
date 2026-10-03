@@ -22,10 +22,10 @@ COLUMNS_JS = """
 
 # 絞り込みの行
 FILTER_ROWS = [
-    {"id": "D-1", "status": "要見直し", "ready": "はい", "tags": ["a", "b"]},
-    {"id": "D-2", "status": "保留", "ready": "いいえ", "tags": ["c"]},
-    {"id": "D-3", "status": "未決定", "ready": "はい", "tags": ["a"]},
-    {"id": "D-4", "status": "未決定", "ready": "いいえ", "tags": []},
+    {"id": "D-1", "status": "要見直し", "ready": "着手可能", "tags": ["a", "b"]},
+    {"id": "D-2", "status": "保留", "ready": "なし", "tags": ["c"]},
+    {"id": "D-3", "status": "未決定", "ready": "着手可能", "tags": ["a"]},
+    {"id": "D-4", "status": "未決定", "ready": "前提待ち", "tags": []},
 ]
 
 
@@ -33,7 +33,7 @@ FILTER_ROWS = [
     ("filters", "expected_ids"),
     [
         pytest.param({"status": ["要見直し", "保留"]}, ["D-1", "D-2"], id="any_in_column"),
-        pytest.param({"status": ["未決定"], "ready": ["はい"]}, ["D-3"], id="all_columns"),
+        pytest.param({"status": ["未決定"], "ready": ["着手可能"]}, ["D-3"], id="all_columns"),
         pytest.param({"tags": ["a"]}, ["D-1", "D-3"], id="array_value"),
         pytest.param({}, ["D-1", "D-2", "D-3", "D-4"], id="no_filter"),
     ],

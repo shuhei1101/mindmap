@@ -203,34 +203,36 @@ def test_status_badge(
 
 
 @pytest.mark.parametrize(
-    ("weight", "expected"),
+    ("weight", "labeled", "expected"),
     [
-        pytest.param("大", {"on": 3}, id="large"),
-        pytest.param("中", {"on": 2}, id="medium"),
-        pytest.param("小", {"on": 1}, id="small"),
-        pytest.param("知らない", EMPTY_FRAGMENT, id="unknown"),
-        pytest.param(None, EMPTY_FRAGMENT, id="undefined"),
+        pytest.param("大", False, {"on": 3, "text": "大"}, id="large"),
+        pytest.param("中", False, {"on": 2, "text": "中"}, id="medium"),
+        pytest.param("小", False, {"on": 1, "text": "小"}, id="small"),
+        pytest.param("知らない", False, EMPTY_FRAGMENT, id="unknown"),
+        pytest.param(None, False, EMPTY_FRAGMENT, id="undefined"),
+        pytest.param("大", True, {"on": 3, "text": "影響度 大"}, id="large_labeled"),
     ],
 )
 def test_impact_badge(
     preview_page: Page,
     load_preview_scripts: LoadPreviewScripts,
     weight: str | None,
+    labeled: bool,
     expected: dict[str, Any],
 ) -> None:
-    """影響度を目盛りで表す。大・中・小のどれでもない値と未指定は空の断片（正常系）。"""
+    """影響度を目盛りと文字で表す。大・中・小のどれでもない値と未指定は空の断片（正常系）。"""
     # 準備
     load_preview_scripts()
     # 実行
     result = preview_page.evaluate(
-        """(weight) => {
-            const node = MindmapPreview.impactBadge(weight ?? undefined);
+        """({weight, labeled}) => {
+            const node = MindmapPreview.impactBadge(weight ?? undefined, labeled || undefined);
             if (node.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
                 return {nodeType: node.nodeType, childCount: node.childNodes.length};
             }
-            return {on: node.querySelectorAll("i.on").length};
+            return {on: node.querySelectorAll("i.on").length, text: node.textContent};
         }""",
-        weight,
+        {"weight": weight, "labeled": labeled},
     )
     # 検証
     assert result == expected
