@@ -1,10 +1,9 @@
 # 実行したコマンド
 pytest tests/integration -v
-# コミット: df26702b3b99b8b6c71464b61cb6a85d9103c501
+# コミット: f6a7110352e1b814b03b3f1f4294a99990819d66
 
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
-cachedir: .pytest_cache
 rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-preview-preview-screens
 configfile: pytest.ini
 plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
@@ -160,4 +159,4 @@ tests/integration/scripts/test_update.py::test_error_when_legacy_format PASSED [
 tests/integration/skill/test_session.py::test_normal PASSED              [ 99%]
 tests/integration/skill/test_setup.py::test_normal PASSED                [100%]
 
-================== 146 passed, 2 skipped in 238.59s (0:03:58) ==================
+================== 146 passed, 2 skipped in 285.11s (0:04:45) ==================

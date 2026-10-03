@@ -1,10 +1,9 @@
 # 実行したコマンド
 pytest tests/unit -v
-# コミット: 7a0cac0c2dc53082ddb62b48d190e2765e9e09c1
+# コミット: f6a7110352e1b814b03b3f1f4294a99990819d66
 
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0 -- /mnt/c/Users/shuhe/repo/ai-monitor/.claude/worktrees/develop/.venv/bin/python3
-cachedir: .pytest_cache
 rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/feat-preview-preview-screens
 configfile: pytest.ini
 plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
@@ -278,4 +277,4 @@ tests/unit/scripts/test_store.py::test_save_change_when_item_value_fixed PASSED 
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[copy_from_target] PASSED [ 99%]
 tests/unit/scripts/test_store.py::test_write_temp_when_mode[from_umask] PASSED [100%]
 
-============================= 266 passed in 31.08s =============================
+============================= 266 passed in 33.26s =============================
