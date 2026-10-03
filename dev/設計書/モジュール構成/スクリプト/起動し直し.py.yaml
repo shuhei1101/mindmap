@@ -2,14 +2,14 @@ title: "スクリプト / 起動し直し"
 lead: 起動した Python に依存が揃っていなければ、スキル専用の仮想環境の Python で `mindmap.py` を起動し直す。入口が引数を解釈する前に呼ぶ。
 directory: |-
   ```
-  skills/mindmap/scripts/
+  plugins/mindstella/skills/mindmap/scripts/
     launcher.py   起動した Python の依存の判定と、仮想環境の Python での起動し直し（Python 3.8 で読める構文）
   ```
 functions:
   - name: current_python_ready
     title: 起動した Python の依存の判定
     kind: 関数
-    container: skills/mindmap/scripts/launcher.py
+    container: plugins/mindstella/skills/mindmap/scripts/launcher.py
     usecase: 共通
     scope: public
     summary: 起動した Python が依存の確認と同じ判定で揃っているか
@@ -51,7 +51,7 @@ functions:
   - name: relaunch_if_needed
     title: 必要なら起動し直す
     kind: 関数
-    container: skills/mindmap/scripts/launcher.py
+    container: plugins/mindstella/skills/mindmap/scripts/launcher.py
     usecase: 共通
     scope: public
     summary: 起動した Python で動ければ None、動けなければ仮想環境の Python で起動し直して終了コードを返す
@@ -148,7 +148,7 @@ functions:
   - name: format_relaunch_error
     title: 起動し直せないときのエラーの行
     kind: 関数
-    container: skills/mindmap/scripts/launcher.py
+    container: plugins/mindstella/skills/mindmap/scripts/launcher.py
     usecase: 共通
     scope: public
     summary: 仮想環境の確認の例外から、標準エラーに出す行を作る

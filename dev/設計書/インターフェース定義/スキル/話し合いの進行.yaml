@@ -1,7 +1,7 @@
 title: "話し合いの進行"
 entry:
   kind: operation
-  value: '`/mindmap:session [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `skills/session/SKILL.md`）'
+  value: '`/mindstella:session [ワークスペースのフォルダ]`（利用者が Claude Code で呼ぶスキル。実体は `plugins/mindstella/skills/session/SKILL.md`）'
 flows:
   - name: 正常系
     summary: スキル session と共通の置き場所のファイルが制約どおりの形で、プラグインの検証を通る
@@ -40,10 +40,10 @@ request:
   - name: $ARGUMENTS
     type: str
     required: false
-    default: なし（同じ会話で `setup` が渡したフォルダを使う。無ければ `/mindmap:setup` を案内する）
+    default: なし（同じ会話で `setup` が渡したフォルダを使う。無ければ `/mindstella:setup` を案内する）
     location: argument
     description: ワークスペースのフォルダのパス
-    constraints: '`mindmap.yaml` があるフォルダ。無ければ書き込まず `/mindmap:setup` を案内する'
+    constraints: '`mindmap.yaml` があるフォルダ。無ければ書き込まず `/mindstella:setup` を案内する'
 exceptions:
   - name: なし（正常終了）
     condition: ファイルの形が制約どおりで、Claude Code がスキルとして読み込める

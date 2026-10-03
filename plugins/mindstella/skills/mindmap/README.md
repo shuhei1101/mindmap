@@ -1,4 +1,4 @@
-# mindmap
+# mindstella
 
 話し合いを記録しながら、要件・調査・資料づくりの決め事を形にしていく Claude Code のスキル。
 
@@ -14,7 +14,7 @@ Claude Code と話し合いながら、決め事・そこから派生する問�
 - 話し合いは、取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定のステップで進む
 - ワークスペースへの書き込みは、全てスクリプトのコマンドを通す。書き込む前にスキーマと突き合わせ、合わなければ何も書き換えない
 
-詳しくは [話し合いの進め方](https://shuhei1101.github.io/mindmap/はじめに/コアコンセプト/話し合いの進め方.html) を読む。
+詳しくは [話し合いの進め方](https://shuhei1101.github.io/mindstella/はじめに/コアコンセプト/話し合いの進め方.html) を読む。
 
 ## ユースケース（分野）
 
@@ -31,22 +31,22 @@ Claude Code 2.1.287 以上と、Python 3.12 以上（`venv` を含む）が要�
 マーケットプレイスを登録して、プラグインをインストールする。
 
 ```bash
-claude plugin marketplace add shuhei1101/mindmap
-claude plugin install mindmap@mindmap
+claude plugin marketplace add shuhei1101/mindstella
+claude plugin install mindstella@mindstella
 ```
 
 起動中の Claude Code では `/reload-plugins` を実行する。
-スクリプトの依存（PyYAML・jsonschema）は、`/mindmap:setup` が確かめ、足りなければそろえるコマンドを示す。
+スクリプトの依存（PyYAML・jsonschema）は、`/mindstella:setup` が確かめ、足りなければそろえるコマンドを示す。
 
 ## 使い方
 
 | やりたいこと | 呼び方 |
 | --- | --- |
-| 新しい話し合いを始める | `/mindmap:setup {ワークスペースのフォルダ}` |
-| 途中まで進んだ話し合いを再開する | `/mindmap:setup {ワークスペースのフォルダ}` |
-| セットアップの後に話し合いを進める | `/mindmap:session {ワークスペースのフォルダ}` |
+| 新しい話し合いを始める | `/mindstella:setup {ワークスペースのフォルダ}` |
+| 途中まで進んだ話し合いを再開する | `/mindstella:setup {ワークスペースのフォルダ}` |
+| セットアップの後に話し合いを進める | `/mindstella:session {ワークスペースのフォルダ}` |
 
-`/mindmap:setup` は、フォルダに `mindmap.yaml` が無ければ新しいワークスペースを作り、あれば状況を示して続きを推奨する。
-最後に `/mindmap:session` で続けるよう案内する。
+`/mindstella:setup` は、フォルダに `mindmap.yaml` が無ければ新しいワークスペースを作り、あれば状況を示して続きを推奨する。
+最後に `/mindstella:session` で続けるよう案内する。
 
-操作の手順は [話し合い](https://shuhei1101.github.io/mindmap/使い方/話し合い/)、スキルとコマンドの一覧は [スキル](https://shuhei1101.github.io/mindmap/リファレンス/スキル.html)・[コマンド](https://shuhei1101.github.io/mindmap/リファレンス/コマンド.html) にある。
+操作の手順は [話し合い](https://shuhei1101.github.io/mindstella/使い方/話し合い/)、スキルとコマンドの一覧は [スキル](https://shuhei1101.github.io/mindstella/リファレンス/スキル.html)・[コマンド](https://shuhei1101.github.io/mindstella/リファレンス/コマンド.html) にある。

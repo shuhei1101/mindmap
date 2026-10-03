@@ -1,0 +1,51 @@
+$ pytest tests/unit
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /mnt/c/Users/shuhe/repo/mindmap/.claude/worktrees/chore-plugin-rename-to-mindstella
+configfile: pytest.ini
+plugins: anyio-4.14.1, asyncio-1.4.0, base-url-2.1.0, playwright-0.9.0, xdist-3.8.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 311 items
+
+tests/unit/preview/test_app.py ....                                      [  1%]
+tests/unit/preview/test_decisions.py .                                   [  1%]
+tests/unit/preview/test_docs.py .                                        [  1%]
+tests/unit/preview/test_dom.py .............                             [  6%]
+tests/unit/preview/test_graph.py .                                       [  6%]
+tests/unit/preview/test_libs.py .....                                    [  8%]
+tests/unit/preview/test_records.py ...                                   [  9%]
+tests/unit/preview/test_router.py ...                                    [  9%]
+tests/unit/preview/test_table.py ...                                     [ 10%]
+tests/unit/preview/test_tasks.py .                                       [ 11%]
+tests/unit/preview/test_app.py ..                                        [ 11%]
+tests/unit/preview/test_dom.py ........                                  [ 14%]
+tests/unit/preview/test_records.py .                                     [ 14%]
+tests/unit/preview/test_router.py ...                                    [ 15%]
+tests/unit/preview/test_table.py ..                                      [ 16%]
+tests/unit/preview/test_app.py .                                         [ 16%]
+tests/unit/preview/test_dom.py ....                                      [ 18%]
+tests/unit/preview/test_records.py .                                     [ 18%]
+tests/unit/preview/test_router.py .                                      [ 18%]
+tests/unit/preview/test_table.py ..                                      [ 19%]
+tests/unit/preview/test_dom.py ...                                       [ 20%]
+tests/unit/preview/test_records.py .                                     [ 20%]
+tests/unit/preview/test_router.py .                                      [ 20%]
+tests/unit/preview/test_table.py .                                       [ 21%]
+tests/unit/preview/test_dom.py ...                                       [ 22%]
+tests/unit/preview/test_router.py ..                                     [ 22%]
+tests/unit/scripts/test_builder.py ..................................... [ 34%]
+.....                                                                    [ 36%]
+tests/unit/scripts/test_check_env.py .......................             [ 43%]
+tests/unit/scripts/test_checker.py .......                               [ 45%]
+tests/unit/scripts/test_commands.py ..................................   [ 56%]
+tests/unit/scripts/test_graph.py ................                        [ 62%]
+tests/unit/scripts/test_kinds.py ......                                  [ 63%]
+tests/unit/scripts/test_launcher.py ..............                       [ 68%]
+tests/unit/scripts/test_migrator.py ..........                           [ 71%]
+tests/unit/scripts/test_mindmap.py ..............                        [ 76%]
+tests/unit/scripts/test_query.py ....................                    [ 82%]
+tests/unit/scripts/test_store.py ....................................... [ 95%]
+...............                                                          [100%]
+
+============================= 311 passed in 40.34s =============================
+exit=0

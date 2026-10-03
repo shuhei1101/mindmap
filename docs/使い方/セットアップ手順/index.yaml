@@ -1,6 +1,6 @@
 summary: 条件が来たときに引く、1 条件 = 1 ページの手順
 items:
   - page: プラグインをインストールする.md
-    summary: mindmap を初めて使うときに実行する
+    summary: mindstella を初めて使うときに実行する
   - page: スクリプトの依存を入れる.md
     summary: スクリプトを初めて動かすとき、check-env が足りないものを返したときに実行する

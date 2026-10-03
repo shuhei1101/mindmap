@@ -16,7 +16,7 @@ endpoints:
         condition: 存在しないフォントの名前・太さを指定した
 lead: Web フォントの CSS とフォントのファイルを配る Google のサービス（Google Fonts）。
 used_in:
-  - skills/mindmap/preview/template.html
+  - plugins/mindstella/skills/mindmap/preview/template.html
 verification:
   state: 済
   date: '2026-10-02'

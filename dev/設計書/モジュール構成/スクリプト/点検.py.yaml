@@ -2,13 +2,13 @@ title: "スクリプト / 点検"
 lead: ワークスペースのスキーマ違反・ID の重複・参照切れ・本文のずれを洗い出す。読み書きと検証だけに依存し、ファイルを書かない。
 directory: |-
   ```
-  skills/mindmap/scripts/
+  plugins/mindstella/skills/mindmap/scripts/
     checker.py   スキーマ違反・ID の重複・参照切れ・本文のずれ
   ```
 constants:
   - name: REF_RULES
     title: 参照の正しい種類
-    container: skills/mindmap/scripts/checker.py
+    container: plugins/mindstella/skills/mindmap/scripts/checker.py
     usecase: ワークスペースの点検
     summary: （参照する側の種類, キー）→ 指してよい種類。表に無い組はそのキーを持たない
     entries:
@@ -30,7 +30,7 @@ functions:
   - name: check_workspace
     title: ワークスペースの点検
     kind: 関数
-    container: skills/mindmap/scripts/checker.py
+    container: plugins/mindstella/skills/mindmap/scripts/checker.py
     usecase: ワークスペースの点検
     scope: public
     summary: 全ての問題をファイル名の順、同じファイルの中は項目の並びの順に返す
@@ -65,7 +65,7 @@ functions:
   - name: _check_duplicate_ids
     title: ID の重複の点検
     kind: 関数
-    container: skills/mindmap/scripts/checker.py
+    container: plugins/mindstella/skills/mindmap/scripts/checker.py
     usecase: ワークスペースの点検
     scope: internal
     summary: 同じ ID を 2 つ目以降に持つ項目を `duplicate_id` にする
@@ -89,7 +89,7 @@ functions:
   - name: _check_refs
     title: 参照切れの点検
     kind: 関数
-    container: skills/mindmap/scripts/checker.py
+    container: plugins/mindstella/skills/mindmap/scripts/checker.py
     usecase: ワークスペースの点検
     scope: internal
     summary: 存在しない ID と、`REF_RULES` に合わない種類の ID を指す参照を `broken_ref` にする
@@ -128,7 +128,7 @@ functions:
   - name: _check_bodies
     title: 本文のずれの点検
     kind: 関数
-    container: skills/mindmap/scripts/checker.py
+    container: plugins/mindstella/skills/mindmap/scripts/checker.py
     usecase: ワークスペースの点検
     scope: internal
     summary: 指す本文が無い項目と、どこからも指されない `docs/*.md` を拾う

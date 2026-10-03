@@ -31,6 +31,9 @@ def test_tabs(write_sample_preview: WriteSamplePreview, open_preview: OpenPrevie
     page.click('nav.tabbar a[data-tab="tasks"]')
     page.wait_for_selector(".screen.tasks")
     # 検証
+    # トップバーのツール名と、開いたページの題の末尾が mindstella
+    assert page.inner_text(".topbar .brand-name") == "mindstella"
+    assert page.title() == "要件出しのスキル mindmap を設計する | mindstella"
     assert page.inner_text(".topbar .brand-sub") == "要件出しのスキル mindmap を設計する"
     assert [row[0] for row in tabs] == TAB_KEYS
     assert dict(tabs) == {

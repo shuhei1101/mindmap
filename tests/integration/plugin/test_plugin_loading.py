@@ -1,4 +1,4 @@
-"""プラグインの読み込み（.claude-plugin/plugin.json と skills/）の結合テスト。"""
+"""プラグインの読み込み（plugins/mindstella/ の .claude-plugin/plugin.json と skills/）の結合テスト。"""
 
 from __future__ import annotations
 
@@ -10,11 +10,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from conftest import RunClaude
 
-PLUGIN_ID = "mindmap@mindmap"
+PLUGIN_ID = "mindstella@mindstella"
+
+# 取り込まれたプラグインのフォルダに無いこと（リポジトリの開発用のファイル）
+OUTSIDE_PLUGIN_NAMES = ["dev", "docs", "tests", ".storybook", "package.json"]
 
 
 def _find_installed_plugin(list_json: str) -> dict[str, object]:
-    """claude plugin list --json の出力から mindmap@mindmap の行を取り出す。"""
+    """claude plugin list --json の出力から mindstella@mindstella の行を取り出す。"""
     return next(plugin for plugin in json.loads(list_json) if plugin["id"] == PLUGIN_ID)
 
 
@@ -27,7 +30,7 @@ def _count_hooks(details: str) -> int:
 
 
 def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
-    """プラグイン mindmap が 2 つのスキルと共通の置き場所を持ち、hooks を持たずに読み込まれる（正常系）。"""
+    """プラグイン mindstella が 2 つのスキルと共通の置き場所を持ち、プラグインの外のフォルダを持たず、hooks を持たずに読み込まれる（正常系）。"""
     # 準備
     run_claude("plugin", "marketplace", "add", str(repo_root))
 
@@ -39,7 +42,7 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     # 検証
     installed = _find_installed_plugin(plugin_list.stdout)
     install_path = Path(str(installed["installPath"]))
-    # claude plugin list で mindmap@mindmap が有効である
+    # claude plugin list で mindstella@mindstella が有効である
     assert installed["enabled"] is True
     # 取り込まれたプラグインのフォルダに 2 つのスキルの SKILL.md と、共通の置き場所の 4 つのフォルダがある
     assert (install_path / "skills" / "setup" / "SKILL.md").is_file()
@@ -49,5 +52,8 @@ def test_normal(run_claude: RunClaude, repo_root: Path) -> None:
     assert (shared / "playbooks").is_dir()
     assert (shared / "schemas").is_dir()
     assert (shared / "scripts").is_dir()
+    # 取り込まれたプラグインのフォルダに .claude-plugin/plugin.json があり、リポジトリの開発用のファイルが無い
+    assert (install_path / ".claude-plugin" / "plugin.json").is_file()
+    assert [name for name in OUTSIDE_PLUGIN_NAMES if (install_path / name).exists()] == []
     # claude plugin details で hooks が 0 件である
     assert _count_hooks(details.stdout) == 0

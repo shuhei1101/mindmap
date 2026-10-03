@@ -1,7 +1,7 @@
 summary: 単一ユースケースのシナリオ
 items:
   - page: プラグインのインストール.yaml
-    summary: マーケットプレイスを登録してプラグイン mindmap をインストールする
+    summary: マーケットプレイスを登録してプラグイン mindstella をインストールする
   - page: ワークスペースの作成.yaml
     summary: 依存を確かめ、新しいワークスペースを作る
   - page: 記録の追加と更新.yaml

@@ -42,7 +42,7 @@ var MindmapPreview;
                     attrs: { class: "brand" },
                     children: [
                         brandMark(),
-                        MindmapPreview.h({ tag: "span", attrs: { class: "brand-name" }, children: ["mindmap"] }),
+                        MindmapPreview.h({ tag: "span", attrs: { class: "brand-name" }, children: ["mindstella"] }),
                     ],
                 }),
                 MindmapPreview.h({ tag: "span", attrs: { class: "brand-sub", title }, children: [title] }),

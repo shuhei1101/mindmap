@@ -76,7 +76,7 @@ overview:
       label: HTTPS
   subgraphs:
     - id: SYS
-      label: mindmap
+      label: mindstella
       nodes:
         - PLG
         - SKL
@@ -86,9 +86,9 @@ overview:
 repository:
   style: モノレポ
   repositories:
-    - name: shuhei1101/mindmap
-  layout: '`.claude-plugin/`（マーケットプレイスとプラグインのマニフェスト）/ `skills/setup/`・`skills/session/`（スキル。SKILL.md と `steps/`）/ `skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・プレビューの `preview/`。SKILL.md は持たない）'
-  notes: リポジトリの直下がマーケットプレイスとプラグインの両方の直下を兼ねる（マーケットプレイスはプラグインを `./` で指す）。
+    - name: shuhei1101/mindstella
+  layout: '`.claude-plugin/`（マーケットプレイスのマニフェスト）/ `plugins/mindstella/.claude-plugin/`（プラグインのマニフェスト）/ `plugins/mindstella/skills/setup/`・`plugins/mindstella/skills/session/`（スキル。SKILL.md と `steps/`）/ `plugins/mindstella/skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・プレビューの `preview/`。SKILL.md は持たない）'
+  notes: マーケットプレイスはリポジトリの直下の `.claude-plugin/` に置き、プラグインを `./plugins/mindstella` で指す。プラグインは `plugins/mindstella/` の下に分け、利用者へ配るのはその中身だけにする。
 subsystems:
   - name: プラグイン
     scope: plugin
@@ -139,7 +139,7 @@ external_systems:
     detail: dev/設計書/外部API/GoogleFonts#
     notes:
       事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。配る書き出しは文字を読まず、常に端末の文字で描く。
-lead: mindmap のサブシステムと、Claude Code・ブラウザ・CDN との境界。
+lead: mindstella のサブシステムと、Claude Code・ブラウザ・CDN との境界。
 constraints: |-
   - hooks・MCP サーバーを持たない
   - 他のスキル・外部の仕組みに依存しない

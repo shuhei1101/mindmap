@@ -20,6 +20,8 @@ from workspace_fixtures import MakeItem, MakeWorkspace, RunMindmap, SnapshotTree
 REPO_ROOT_PARENT_DEPTH = 3
 TEMPLATE_PATH = (
     Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
+    / "plugins"
+    / "mindstella"
     / "skills"
     / "mindmap"
     / "preview"

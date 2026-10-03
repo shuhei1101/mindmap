@@ -58,7 +58,7 @@ selection:
   candidates: '`@storybook/server-webpack5`・`@storybook/html-vite`・`@storybook/web-components-vite`・`storybook-html-rsbuild` を比べた（[選定の案](https://github.com/shuhei1101/mindmap/pull/21#discussion_r4165828025)）'
   decision: '`@storybook/html-vite` にする。部品を「引数を受けて要素を返す関数」で書けば、ストーリーの `args` で状態を渡すだけで描け、状態ごとの HTML 断片が要らない。依存は server-webpack5 の約 3 分の 1（94 件）'
   consequences: 判定フローチャート『Storybookの描画の方式』の結論（server-webpack5）から外れる。素の JS をブラウザで描く部品の行き先がフローチャートに無いためで、ルール改修を報告した
-install: |-
+install: |
   ```bash
   npm install --save-dev --save-exact storybook@10.6.1 @storybook/html-vite@10.6.1 vite@8.3.2
   npx storybook dev -p 6006
@@ -67,7 +67,7 @@ install: |-
   `package.json` はリポジトリの直下に `private`・`"type": "module"` で置き、`node_modules/` は `.gitignore` に足す。`.storybook/main.js` は次を持つ。
 
   - `framework: "@storybook/html-vite"`・`core.disableTelemetry: true`
-  - `staticDirs` で `skills/mindmap/preview/` を配り、`previewHead` で部品の CSS・JavaScript を読む
+  - `staticDirs` で `plugins/mindstella/skills/mindmap/preview/` を配り、`previewHead` で部品の CSS・JavaScript を読む
   - 描画のライブラリの script 要素は、雛形 `template.html` から取り出して `previewHead` に差し込む（版・integrity を雛形の 1 か所に保つ）
 limitations:
   - item: Node の版

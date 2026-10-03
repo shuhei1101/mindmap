@@ -2,14 +2,14 @@ title: "スクリプト / ゴール判定"
 lead: ゴールのフェーズまでの検討事項とゴールの納品物から、ゴールに届いたかを判定する `goal` の処理。判定は依存と影響（`graph.py`）、出力の形はコマンドの処理（`commands.py`）に置く。
 directory: |-
   ```
-  skills/mindmap/scripts/
+  plugins/mindstella/skills/mindmap/scripts/
     graph.py      ゴールの判定（judge_goal・GoalReport）を足す
     commands.py   goal の処理（run_goal）を足す
   ```
 data_models:
   - name: GoalReport
     title: ゴール判定の結果
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: ゴール判定
     role: DTO
     summary: ゴールに届いたかと、残りの検討事項・納品物
@@ -34,7 +34,7 @@ functions:
   - name: judge_goal
     title: ゴールの判定
     kind: 関数
-    container: skills/mindmap/scripts/graph.py
+    container: plugins/mindstella/skills/mindmap/scripts/graph.py
     usecase: ゴール判定
     scope: public
     summary: ゴールのフェーズまでの検討事項が決着し、ゴールの納品物が揃ったかを判定する
@@ -76,7 +76,7 @@ functions:
   - name: run_goal
     title: goal の処理
     kind: 関数
-    container: skills/mindmap/scripts/commands.py
+    container: plugins/mindstella/skills/mindmap/scripts/commands.py
     usecase: ゴール判定
     scope: public
     summary: ゴールの判定を出力の形にする

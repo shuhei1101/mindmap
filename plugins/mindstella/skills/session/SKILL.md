@@ -12,8 +12,8 @@ allowed-tools: Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_RO
 ## 入力
 
 - ワークスペースのフォルダ: $ARGUMENTS
-  - 空なら、同じ会話で `/mindmap:setup` が渡したフォルダを使う。それも無ければ `/mindmap:setup` を案内して終える
-  - `{ワークスペースのフォルダ}/mindmap.yaml` を Read で読めないときは、何も書き込まず `/mindmap:setup` を案内して終える
+  - 空なら、同じ会話で `/mindstella:setup` が渡したフォルダを使う。それも無ければ `/mindstella:setup` を案内して終える
+  - `{ワークスペースのフォルダ}/mindmap.yaml` を Read で読めないときは、何も書き込まず `/mindstella:setup` を案内して終える
 
 ## ステップ
 

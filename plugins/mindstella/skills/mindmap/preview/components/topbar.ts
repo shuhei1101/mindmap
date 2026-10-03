@@ -86,7 +86,7 @@ namespace MindmapPreview {
           attrs: { class: "brand" },
           children: [
             brandMark(),
-            h({ tag: "span", attrs: { class: "brand-name" }, children: ["mindmap"] }),
+            h({ tag: "span", attrs: { class: "brand-name" }, children: ["mindstella"] }),
           ],
         }),
         h({ tag: "span", attrs: { class: "brand-sub", title }, children: [title] }),

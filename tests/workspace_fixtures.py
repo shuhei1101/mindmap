@@ -20,7 +20,9 @@ REPO_ROOT_PARENT_DEPTH = 1
 REPO_ROOT = Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 
 # 起動するスクリプトの入口
-MINDMAP_SCRIPT = REPO_ROOT / "skills" / "mindmap" / "scripts" / "mindmap.py"
+MINDMAP_SCRIPT = (
+    REPO_ROOT / "plugins" / "mindstella" / "skills" / "mindmap" / "scripts" / "mindmap.py"
+)
 
 # 子プロセス 1 回を待つ上限秒数
 COMMAND_TIMEOUT_SEC = 120

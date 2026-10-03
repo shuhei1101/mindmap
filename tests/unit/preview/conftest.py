@@ -22,7 +22,7 @@ REPO_ROOT_PARENT_DEPTH = 3
 REPO_ROOT = Path(__file__).resolve().parents[REPO_ROOT_PARENT_DEPTH]
 
 # tsc が生成した `.js` を置くフォルダ
-PREVIEW_DIR = REPO_ROOT / "skills" / "mindmap" / "preview"
+PREVIEW_DIR = REPO_ROOT / "plugins" / "mindstella" / "skills" / "mindmap" / "preview"
 
 # 描画のライブラリの外部ライブラリの設計書を置くフォルダ
 LIBRARY_DESIGN_DIR = REPO_ROOT / "dev" / "設計書" / "外部ライブラリ"

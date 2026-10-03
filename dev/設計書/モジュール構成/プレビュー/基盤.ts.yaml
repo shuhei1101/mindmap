@@ -3,7 +3,7 @@ lead: 画面が共通で使う土台。記録の索引と画面に出す値の�
 directory: |-
   ```
   tsconfig.json      tsc の設定（リポジトリの直下。外部ライブラリ『typescript』）
-  skills/mindmap/preview/
+  plugins/mindstella/skills/mindmap/preview/
     core/
       globals.d.ts   描画のライブラリ（marked・DOMPurify・ELK・mermaid）のグローバルに npm の型を割り当てる（出力しない）
       dom.ts         要素の組み立て（`h`）・アイコン・状態の印など、画面が共通で使う DOM の部品
@@ -17,7 +17,7 @@ directory: |-
 data_models:
   - name: RecordIndex
     title: 記録の索引
-    container: skills/mindmap/preview/core/records.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/records.ts
     usecase: 共通
     summary: 埋め込みのデータを ID で引けるようにし、参照の逆向きを持つ
     properties:
@@ -35,7 +35,7 @@ data_models:
         description: 着手できる検討事項の ID（`data.derived.next` の ID。表の「着手できる」の列が使う）
   - name: Route
     title: 画面の場所
-    container: skills/mindmap/preview/core/router.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/router.ts
     usecase: 共通
     summary: URL のハッシュが指す画面・表示形式・項目・絞り込み（インターフェース定義『プレビューを開く』のリクエスト）
     properties:
@@ -57,7 +57,7 @@ data_models:
 constants:
   - name: DEFAULT_VIEW
     title: 画面ごとの既定の表示形式
-    container: skills/mindmap/preview/core/router.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/router.ts
     usecase: 共通
     summary: '`tab` → 既定の `view`'
     entries:
@@ -71,7 +71,7 @@ constants:
         value: table
   - name: VIEWS_OF
     title: 画面が持つ表示形式
-    container: skills/mindmap/preview/core/router.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/router.ts
     usecase: 共通
     summary: '`tab` → 切り替えられる `view` の並び'
     entries:
@@ -85,7 +85,7 @@ constants:
         value: '["table"]'
   - name: LIBRARIES
     title: 描画のライブラリ
-    container: skills/mindmap/preview/core/libs.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/libs.ts
     usecase: 共通
     summary: ライブラリの名前 → 読めたときに置かれるグローバル
     entries:
@@ -101,7 +101,7 @@ functions:
   - name: buildIndex
     title: 記録の索引を作る
     kind: 関数
-    container: skills/mindmap/preview/core/records.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/records.ts
     usecase: 共通
     scope: public
     summary: 埋め込みのデータから `RecordIndex` を作る
@@ -128,7 +128,7 @@ functions:
   - name: relatedItems
     title: 関係する項目
     kind: 関数
-    container: skills/mindmap/preview/core/records.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/records.ts
     usecase: 項目の詳細を読む
     scope: public
     summary: 詳細パネルに出す前提・後続・関連タスク・経緯・関連・参照している項目を返す
@@ -156,7 +156,7 @@ functions:
   - name: searchItems
     title: 全体の検索
     kind: 関数
-    container: skills/mindmap/preview/core/records.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/records.ts
     usecase: 項目を検索する
     scope: public
     summary: 空白で区切った語を全て含む項目を返す
@@ -184,7 +184,7 @@ functions:
   - name: missingLibraries
     title: 読めなかったライブラリ
     kind: 関数
-    container: skills/mindmap/preview/core/libs.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/libs.ts
     usecase: 共通
     scope: public
     summary: 渡したライブラリのうち、グローバルが無いものの名前を返す
@@ -207,7 +207,7 @@ functions:
   - name: libraryNotice
     title: 読めなかったライブラリの知らせ
     kind: 関数
-    container: skills/mindmap/preview/core/libs.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/libs.ts
     usecase: 共通
     scope: public
     summary: 読めなかったライブラリの名前を出す `role="alert"` の要素を返す
@@ -235,7 +235,7 @@ functions:
   - name: renderMarkdown
     title: 本文を描く
     kind: 関数
-    container: skills/mindmap/preview/core/libs.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/libs.ts
     usecase: 項目の詳細を読む
     scope: public
     summary: 本文の Markdown を無害化した要素にする。mermaid のコードブロックは図の入れ物に置き換える
@@ -269,7 +269,7 @@ functions:
   - name: renderDiagrams
     title: 図を描く
     kind: 関数
-    container: skills/mindmap/preview/core/libs.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/libs.ts
     usecase: 項目の詳細を読む
     scope: public
     is_async: true
@@ -298,7 +298,7 @@ functions:
   - name: parseHash
     title: ハッシュを読む
     kind: 関数
-    container: skills/mindmap/preview/core/router.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/router.ts
     usecase: 共通
     scope: public
     summary: URL のハッシュを `Route` にする
@@ -331,7 +331,7 @@ functions:
   - name: toHash
     title: ハッシュを作る
     kind: 関数
-    container: skills/mindmap/preview/core/router.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/router.ts
     usecase: 共通
     scope: public
     summary: '`Route` を URL のハッシュにする（既定の値と `filters` は書かない）'
@@ -354,7 +354,7 @@ functions:
   - name: navigate
     title: 画面を移る
     kind: 関数
-    container: skills/mindmap/preview/core/router.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/router.ts
     usecase: 共通
     scope: public
     summary: ハッシュを書き換え、履歴に積むか置き換える
@@ -383,7 +383,7 @@ functions:
   - name: h
     title: 要素を作る
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 要素を作り、属性とイベントのリスナーを付け、子を並べる
@@ -416,7 +416,7 @@ functions:
   - name: append
     title: 子を足す
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 要素の中に子を足す
@@ -444,7 +444,7 @@ functions:
   - name: icon
     title: アイコン
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 24px の枠に描いた線のアイコン。読み上げ名は付けず、装飾として隠す
@@ -467,7 +467,7 @@ functions:
   - name: statusMark
     title: 状態の印
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 状態ごとの印（色と形）を 10px の枠に描く。検討事項・タスク・資料の状態を持つ
@@ -490,7 +490,7 @@ functions:
   - name: statusBadge
     title: 状態の表示
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 状態の印と名前を並べる
@@ -513,7 +513,7 @@ functions:
   - name: impactBadge
     title: 影響度の表示
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 影響度（大・中・小）を 3 本の目盛りと文字で表す
@@ -536,7 +536,7 @@ functions:
   - name: tagList
     title: タグの並び
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: タグを `span.tag` で並べる
@@ -559,7 +559,7 @@ functions:
   - name: deliverableBadge
     title: 納品物の印
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 納品物の資料に付ける印（箱のアイコンと「納品物」）
@@ -577,7 +577,7 @@ functions:
   - name: emptyNote
     title: 空のときの 1 行
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 一覧が空のときに出す 1 行（「該当なし」など）
@@ -600,7 +600,7 @@ functions:
   - name: enableDragScroll
     title: 背景のドラッグで動かす
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: スクロールする要素を、押せるもの（button・a・input・label）の上でない所の左ボタンのドラッグで動かせるようにする
@@ -624,7 +624,7 @@ functions:
   - name: markSelected
     title: 選択中の印を付け替える
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: 詳細パネルで開いている項目を持ち、描いてある行・カード・節（`main [data-id]`）の `selected` を付け替える
@@ -648,7 +648,7 @@ functions:
   - name: currentSelection
     title: 開いている項目
     kind: 関数
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     scope: public
     summary: '`markSelected` が最後に受けた ID を返す。描き直した行・カードに「選択中」の印を付けるのに使う'
@@ -658,7 +658,7 @@ functions:
       description: 開いている項目の ID
   - name: toggleAllState
     title: まとめて切り替える箱の状態
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     summary: 帯に並ぶ値のうちいくつを表示しているかから、まとめて切り替える箱の状態を返す
     kind: 関数
@@ -687,7 +687,7 @@ functions:
         expected: '`all` / `some` / `none` / `all` / `none`'
   - name: toggleAllBox
     title: まとめて切り替える箱
-    container: skills/mindmap/preview/core/dom.ts
+    container: plugins/mindstella/skills/mindmap/preview/core/dom.ts
     usecase: 共通
     summary: 帯の右端に置く、文字を添えない三状態のチェックの箱を作る。検討事項の状態の印と、つながりの項目の種類で使う
     kind: 関数

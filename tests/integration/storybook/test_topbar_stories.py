@@ -21,6 +21,8 @@ def test_overview(open_story: OpenStory) -> None:
     # 検証
     assert page.evaluate(CURRENT_SCRIPT) == ["overview"]
     assert page.locator("nav.tabbar").get_attribute("aria-label") == "項目の種類"
+    # トップバーのツール名が mindstella
+    assert page.inner_text(".brand-name") == "mindstella"
     assert page.inner_text(".brand-sub") == "要件出しのスキル mindmap を設計する"
 
 

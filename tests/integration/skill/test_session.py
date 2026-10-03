@@ -1,4 +1,4 @@
-"""スキル session（/mindmap:session）と共通の置き場所のファイルの形の結合テスト。"""
+"""スキル session（/mindstella:session）と共通の置き場所のファイルの形の結合テスト。"""
 
 from __future__ import annotations
 
