@@ -458,6 +458,8 @@ table.grid tbody tr.selected td { background: var(--row-selected); box-shadow: i
 dialog.viewer { width: min(1200px, calc(100vw - 32px)); height: min(820px, calc(100dvh - 32px)); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow-pop); overflow: hidden; }
 dialog.viewer[open] { display: flex; flex-direction: column; }
 dialog.viewer::backdrop { background: var(--scrim); }
+/* 図の拡大の中身: 道具の行の下の窓が、残りの高さを占める */
+.viewer-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .v-bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--border-soft); }
 .v-bar .spacer { flex: 1; }
 .v-pct { min-width: 4em; text-align: center; font-size: var(--fs-xs); color: var(--text-2); }
