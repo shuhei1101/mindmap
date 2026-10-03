@@ -45,19 +45,6 @@ request:
     type: '"shuhei1101"'
     required: true
     description: プラグインの作者
-  - name: skills/mindmap/
-    type: フォルダ
-    required: true
-    description: 2 つのスキルが共通で読む置き場所。`references/`・`playbooks/`・`schemas/`・`scripts/`・`preview/`・`README.md` を持ち、SKILL.md は持たない
-    notes: 'SKILL.md を持たないのでスキルとしては読み込まれない（PoC #22 で確かめた）'
-  - name: skills/setup/
-    type: フォルダ
-    required: true
-    description: スキル setup（`/mindstella:setup`）。形はインターフェース定義『セットアップ』
-  - name: skills/session/
-    type: フォルダ
-    required: true
-    description: スキル session（`/mindstella:session`）。形はインターフェース定義『話し合いの進行』
   - name: author.url
     type: '"https://github.com/shuhei1101"'
     required: true
@@ -75,6 +62,19 @@ request:
     type: '"https://github.com/shuhei1101/mindstella"'
     required: true
     description: プラグインのソースコードのリポジトリ
+  - name: skills/mindmap/
+    type: フォルダ
+    required: true
+    description: 2 つのスキルが共通で読む置き場所。`references/`・`playbooks/`・`schemas/`・`scripts/`・`preview/`・`README.md` を持ち、SKILL.md は持たない
+    notes: 'SKILL.md を持たないのでスキルとしては読み込まれない（PoC #22 で確かめた）'
+  - name: skills/setup/
+    type: フォルダ
+    required: true
+    description: スキル setup（`/mindstella:setup`）。形はインターフェース定義『セットアップ』
+  - name: skills/session/
+    type: フォルダ
+    required: true
+    description: スキル session（`/mindstella:session`）。形はインターフェース定義『話し合いの進行』
 request_example: |-
   ```json
   {
