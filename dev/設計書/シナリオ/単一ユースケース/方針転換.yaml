@@ -31,7 +31,7 @@ scenarios:
       - 'T-1・T-2 がそれぞれ `for: [D-2]`・`for: [D-3]` を持つ'
       - D-1 の `answer` に A の内容が残っていない
     test: test_normal
-  - name: 正常シナリオ（成果物が要らなくなる）
+  - name: 正常シナリオ（納品物が要らなくなる）
     setup:
       - name: Mock
         description: モデルを呼ばない。手順が連ねる `update`・`check`・`add`・`build` と `mindmap.yaml` の書き換えを、決めた引数で順に再生する
@@ -74,5 +74,5 @@ success_guarantee: 切り替えた検討事項の本文は今の正だけを書�
 frequency: 話し合いの中で数回
 priority: 高
 notes:
-  E2E の範囲: '`adopt`・`impact` の結果は既存の『採用する案の切り替え』の『正常シナリオ』が確かめる。このユースケースの E2E は、その後の要見直し・見直しのタスク・`answer` の直しと、成果物の格下げを確かめる'
+  E2E の範囲: '`adopt`・`impact` の結果は既存の『採用する案の切り替え』の『正常シナリオ』が確かめる。このユースケースの E2E は、その後の要見直し・見直しのタスク・`answer` の直しと、納品物の格下げを確かめる'
 test_file: tests/e2e/単一ユースケース/test_policy_change.py
