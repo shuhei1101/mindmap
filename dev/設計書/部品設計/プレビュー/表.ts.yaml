@@ -66,7 +66,7 @@ events:
     value: key（`data-sort`）
     description: 使う側が 昇順 → 降順 → 解除 と巡る
   - name: 絞り込み
-    when: 絞り込みのポップオーバーで値を選んだ・外したとき、チップの × かすべて外すを押したとき
+    when: 絞り込みのポップオーバーで値を選んだ・外したとき、チップの × か「すべて解除」を押したとき
     value: key と値の配列
     description: 使う側が `filters` を変えて描き直す。保存しない
   - name: ピン留め
@@ -98,7 +98,7 @@ states:
       - name: sort
         value: '{"key": "title", "dir": "desc"}'
   - name: Filtered
-    description: 確度 = 高で絞り込み中。絞り込み中の列の道具は押された見た目で、表の上にチップとすべて外すを並べる
+    description: 確度 = 高で絞り込み中。絞り込み中の列の道具は押された見た目で、表の上にチップと「すべて解除」を並べる
     args:
       - name: filters
         value: '{"conf": ["高"]}'
@@ -123,6 +123,6 @@ states:
 accessibility:
   - 並べ替え中の列の見出しに `aria-sort`（ascending・descending）を付け、ほかは `none`
   - 絞り込み・ピン留めのボタンは `aria-pressed` で押した状態を伝え、`{列} で絞り込み`・`{列}まで固定` の読み上げ名を付ける
-  - "チップの × に `{列}: {値} の条件を外す` の読み上げ名を付ける"
+  - 'チップの × に `{列}: {値} の条件を解除` の読み上げ名を付ける'
   - 行のタイトルは `button` 要素にし、キーボードで詳細を開ける
   - 操作してもスクロールの位置を保つ

@@ -2,7 +2,7 @@ summary: "build が書き出す preview.html の画面"
 docs_index: true
 items:
   - page: 概要.yaml
-    summary: 既定で開く画面。次に検討する項目・ゴールまで・要見直し・保留・進行中のタスク・進み具合のタイル
+    summary: 既定で開く画面。次に検討する項目・ゴールまでの進捗・要見直し・保留・進行中のタスク・カテゴリー別の進捗のタイル
     group: タブ
   - page: 検討事項.yaml
     summary: 検討事項のマップ・ボード・表
@@ -26,7 +26,7 @@ items:
     summary: 詳細パネルの中身を中央のモーダルで大きく出す
     group: 重ねる画面
   - page: 全体の検索.yaml
-    summary: 全種類の項目を ID・タイトル・本文で探す
+    summary: 全種類の項目を ID・タイトル・本文で検索する
     group: 重ねる画面
   - page: 図の拡大.yaml
     summary: 本文の図を大きく見る
