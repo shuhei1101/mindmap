@@ -3,7 +3,12 @@
 from __future__ import annotations
 
 import pytest
-from preview_fixture_types import OpenPreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WriteSamplePreview,
+)
 from preview_style_checks import (
     BOARD_EDGE_GAP_PX,
     TRANSPARENT,
@@ -97,3 +102,17 @@ def test_table_cell_surface(
     assert backgrounds["plain"] == [TRANSPARENT]
     assert len(backgrounds["pinned"]) > 0
     assert TRANSPARENT not in backgrounds["pinned"]
+
+
+def test_table_id_button_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """表の「進める検討事項」の列の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=tasks&view=table")
+    # 実行
+    sizes = page.eval_on_selector_all("table.grid td button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX

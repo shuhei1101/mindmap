@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 from playwright.sync_api import Page
-from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
+from preview_fixture_types import (
+    ID_BUTTON_MIN_SIZE_PX,
+    ID_BUTTON_SIZE_JS,
+    OpenPreview,
+    WritePreview,
+    WriteSamplePreview,
+)
 from preview_style_checks import TRANSPARENT, animated_properties, pin_id_column, row_backgrounds
 from workspace_fixtures import MakeItem
 
@@ -239,3 +245,17 @@ def test_selected_row_hover(
     assert TRANSPARENT not in other_hovered["cells"]
     assert other_hovered["pinned"] == other_hovered["cells"]
     assert at_rest["row"] not in other_hovered["cells"]
+
+
+def test_id_button_size(
+    write_sample_preview: WriteSamplePreview, open_preview: OpenPreview
+) -> None:
+    """関係する項目（前提・後続の項目・関連タスク）の ID のボタンは、見えている枠が縦横 24px 以上である（正常系）。"""
+    # 準備
+    path = write_sample_preview()
+    page = open_preview(path, "#tab=decisions&view=table&id=D-2")
+    # 実行
+    sizes = page.eval_on_selector_all("aside.panel .d-sec button.idlink", ID_BUTTON_SIZE_JS)
+    # 検証
+    assert sizes["count"] > 0
+    assert sizes["smallest"] >= ID_BUTTON_MIN_SIZE_PX

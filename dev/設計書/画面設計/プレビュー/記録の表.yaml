@@ -29,5 +29,5 @@ elements:
     description: その種類の表。表示形式の切り替えは出さない
     visible_when: 常時
 lead: 調査・用語集・メモ・会話ログを表だけで見る画面。種類ごとに同じ画面を使い回す。
-mock: dev/mock/pages/records/21/standard/index.html
+mock: dev/mock/pages/records/63/standard/index.html
 test_file: tests/integration/preview/test_records_screen.py
