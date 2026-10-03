@@ -185,7 +185,7 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .legend .legend-all-check, .legend .legend-all-check:has(input:checked) { margin-left: 6px; padding: 0 4px; border: 0; background: none; }
 /* まとめて切り替えるチェックの箱の本体: 状態の印と違い、箱そのものを見せる */
 /* 背景は塗らず、枠とチェック・横棒の記号だけで描く */
-.legend .legend-all-check input { position: relative; box-sizing: border-box; opacity: 1; pointer-events: auto; appearance: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--text-3); border-radius: 3px; background: transparent; cursor: pointer; }
+.legend .legend-all-check input { position: relative; box-sizing: border-box; opacity: 1; pointer-events: auto; appearance: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
 /* チェックの記号: 右下の 2 辺の枠を回してレ点にし、箱の中心に置く。線の太さは状態の印の線にそろえる */
 .legend .legend-all-check input:checked::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 7px; border: solid var(--text); border-width: 0 1.5px 1.5px 0; transform: translate(-50%, -60%) rotate(45deg); }
 /* 横棒の記号: 一部だけを出しているとき。枠線で描き、ハイコントラストでも消えないようにする */
@@ -529,6 +529,8 @@ body[data-toggle-all] .map-tools .legend label:has(input[data-act="gkind"]:check
 body[data-toggle-all] .map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) { border: 1px solid var(--border-soft); color: var(--text-2); background: none; text-decoration: none; }
 /* まとめて切り替える箱を持つ画面の非表示の種類の色の点: 状態の印の非表示と同じ薄さ */
 body[data-toggle-all] .map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) .kdot { opacity: .35; }
+/* まとめて切り替える箱を持つ画面の非表示のチップ（状態の印・項目の種類）: 枠を点線にして表示中と見分ける */
+body[data-toggle-all] .map-tools .legend label:not(.legend-all-check):has(input:not(:checked)) { border-style: dashed; }
 /* 図の拡大表示: 背景はつかんで動かせ、図の中の文字は選んでコピーできる */
 .v-canvas { user-select: none; }
 .v-stage svg text, .v-stage svg foreignObject, .v-stage svg .nodeLabel, .v-stage svg .edgeLabel { user-select: text; cursor: text; }
