@@ -257,7 +257,8 @@ flows:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: make_workspace
-        description: '版のファイルを持たず、`docs.yaml` の中身が `items: [`（YAML として読めない）のワークスペース'
+        description: '版のファイルを持たず、資料 A-1（`done: true`）・A-2（`done: false`）を持ち、`mindmap.yaml` の中身が `field: [`（YAML として読めない）のワークスペース'
+        notes: 資料の手順 1・2 が `docs.yaml` を書き換えた後に、`mindmap.yaml` を読む手順 3 が失敗する
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -273,8 +274,8 @@ flows:
       ```
     expected:
       - 終了コード 1
-      - '標準エラーが `エラー: v0.3.0 の手順 ` で始まり、`docs.yaml` がある'
-      - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
+      - '標準エラーが `エラー: v0.3.0 の手順 3（set_default）: ` で始まり、`mindmap.yaml` がある'
+      - 手順 1・2 が書き換えた `docs.yaml` を含め、ワークスペースの全てのファイルの中身が呼ぶ前と同じ
       - '`mindstella-version.ini` が無いまま'
     test: test_error_when_step_fails
   - name: 異常系（点検に合わない・SchemaMismatchError）

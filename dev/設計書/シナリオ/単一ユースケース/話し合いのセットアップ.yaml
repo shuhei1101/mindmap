@@ -154,6 +154,7 @@ scenarios:
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
     notes:
       E2E: 新設の『ワークスペースの移し替え』の『正常シナリオ』が、版の比較が古いと返すことを確かめる
+    test: test_normal_when_older_version
   - name: 異常シナリオ（版が新しいワークスペース）
     setup:
       - name: Mock
@@ -186,6 +187,7 @@ scenarios:
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
     notes:
       E2E: 新設の『ワークスペースの移し替え』の『異常シナリオ（版が新しい）』が、版の比較が新しいと返すことを確かめる
+    test: test_error_when_newer_version
 lead: 利用者がセットアップのスキル `setup` を呼び、依存を確かめてから、新しいワークスペースを作るか、既存のワークスペースの状況を読んで続きを選ぶ単一ユースケース。
 issue: 4
 primary_actor: 利用者
@@ -201,3 +203,4 @@ frequency: 話し合いを始めるとき・再開するときに 1 回
 priority: 高
 notes:
   E2E の範囲: このユースケースは E2E を持たない（各シナリオの補足の既存のシナリオが、スクリプトの振る舞いを確かめる）。たたき台の中身・状況の示し方・続きの推奨・`/mindstella:session` の案内はモデルの応答で、確かめない
+test_file: tests/e2e/単一ユースケース/test_discussion_setup.py
