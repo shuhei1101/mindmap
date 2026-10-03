@@ -9,8 +9,16 @@ from typing import Any
 import pytest
 import yaml
 
+import builder
 import commands
+import errors
 from errors import ItemNotFoundError, OptionNotFoundError, SchemaMismatchError
+from export_helpers import (
+    external_template,
+    make_fetch,
+    make_responses,
+    write_preview_dir,
+)
 from fixture_types import MakeItem, MakeLegacyWorkspace, MakeWorkspace
 from query import SearchFilter
 
@@ -433,3 +441,50 @@ def test_run_migrate(make_legacy_workspace: MakeLegacyWorkspace) -> None:
     assert payload == {
         "migrated": [{"id": "A-1", "file": "docs.yaml", "change": "done: false → status: 下書き"}]
     }
+
+
+def _patch_export_offline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """配る書き出しを、通信せず小さな雛形と取る中身を差し込んだものに差し替える。"""
+    # 差し替える前の本物を控える
+    real_export = builder.export_preview
+    scripts = [("marked", b"/* marked */")]
+    preview_dir = tmp_path / "preview"
+    write_preview_dir(preview_dir, external_template(scripts))
+    fetch, _calls = make_fetch(make_responses(scripts))
+
+    def _export_offline(workspace: Any, **kwargs: Any) -> Path:
+        """雛形のフォルダと取る関数だけを差し替えて、本物の書き出しを呼ぶ。"""
+        return real_export(workspace, **{**kwargs, "preview_dir": preview_dir, "fetch": fetch})
+
+    # 書き出しのモジュールの関数と、コマンドの処理が名前で取り込んだ関数の両方を差し替える
+    monkeypatch.setattr(builder, "export_preview", _export_offline)
+    monkeypatch.setattr(commands, "export_preview", _export_offline, raising=False)
+
+
+def test_run_export(
+    make_workspace: MakeWorkspace,
+    make_item: MakeItem,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """配る書き出しを書いてそのパスを返す（正常系）。"""
+    # 準備
+    root = make_workspace(make_item("D-1"))
+    out = tmp_path / "配る.html"
+    _patch_export_offline(monkeypatch, tmp_path)
+    # 実行
+    payload, exit_code = commands.run_export(root, out, now=_fixed_now)
+    # 検証
+    assert payload == {"path": str(out)}
+    assert exit_code == 0
+    assert out.exists()
+
+
+def test_run_export_when_out_is_preview(tmp_path: Path) -> None:
+    """preview.html を指す out はワークスペースを読む前に弾く（異常系）。"""
+    # 準備
+    root = tmp_path / "空のフォルダ"
+    root.mkdir()
+    # 実行・検証
+    with pytest.raises(errors.OutPathError):
+        commands.run_export(root, root / "preview.html", now=_fixed_now)
