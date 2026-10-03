@@ -22,8 +22,8 @@ var MindmapPreview;
             tag: "div",
             attrs: { class: "lib-error", role: "alert" },
             children: [
-                MindmapPreview.h({ tag: "span", children: [`${what}を表示できません。読めなかったライブラリ: ${names.join("・")}`] }),
-                MindmapPreview.h({ tag: "span", attrs: { class: "muted" }, children: ["通信を確かめて、ページを読み込み直してください。"] }),
+                MindmapPreview.h({ tag: "span", children: [`${what}を表示できません。読み込めなかったライブラリ: ${names.join("・")}`] }),
+                MindmapPreview.h({ tag: "span", attrs: { class: "muted" }, children: ["通信を確認して、ページを再読み込みしてください。"] }),
             ],
         });
     }
@@ -56,7 +56,7 @@ var MindmapPreview;
                         children: [
                             MindmapPreview.h({
                                 tag: "button",
-                                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大して見る", title: "拡大して見る" },
+                                attrs: { class: "icon-btn", type: "button", "data-act": "diagram-zoom", "aria-label": "図を拡大表示", title: "拡大表示" },
                                 children: [MindmapPreview.icon("expand")],
                             }),
                             MindmapPreview.h({
@@ -142,7 +142,7 @@ var MindmapPreview;
                 // 描けなかった図: mermaid が body に残した作業用の要素を消し、描けなかったことと原文を入れる
                 document.getElementById(`d${id}`)?.remove();
                 document.getElementById(id)?.remove();
-                container.replaceChildren(MindmapPreview.h({ tag: "p", attrs: { class: "md-error" }, children: ["この図は描けませんでした。原文を表示します。"] }), MindmapPreview.h({ tag: "pre", attrs: { class: "dg-raw" }, children: [source] }));
+                container.replaceChildren(MindmapPreview.h({ tag: "p", attrs: { class: "md-error" }, children: ["この図は表示できませんでした。原文を表示します。"] }), MindmapPreview.h({ tag: "pre", attrs: { class: "dg-raw" }, children: [source] }));
             }
         }
     }

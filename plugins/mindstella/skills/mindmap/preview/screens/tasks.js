@@ -52,7 +52,7 @@ var MindmapPreview;
     }
     MindmapPreview.boardCard = boardCard;
     /** 状態ごとの列にカードを並べたボード。横に送れ、背景のドラッグで動かせる */
-    function board({ columns, card, }) {
+    function board({ columns, card, emptyText, }) {
         const element = MindmapPreview.h({
             tag: "div",
             attrs: { class: "board", style: `--cols:${columns.length}` },
@@ -69,7 +69,7 @@ var MindmapPreview;
                                 MindmapPreview.h({ tag: "span", attrs: { class: "n" }, children: [items.length] }),
                             ],
                         }),
-                        ...(items.length > 0 ? items.map(card) : [MindmapPreview.emptyNote("なし")]),
+                        ...(items.length > 0 ? items.map(card) : [MindmapPreview.emptyNote(emptyText)]),
                     ],
                 })),
             ],
@@ -117,6 +117,7 @@ var MindmapPreview;
                     links: item.for ?? [],
                     open: on.open,
                 }),
+                emptyText: "タスクはありません。",
             })
             : MindmapPreview.managedTable({
                 kind: "tasks",

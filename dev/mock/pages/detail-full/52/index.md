@@ -1,0 +1,5 @@
+# detail-full / 52
+
+| 案 | 説明 |
+| --- | --- |
+| [standard](./standard/index.html) | 点検で直した語を当てる。全画面表示のボタン（押されている） |

@@ -46,7 +46,7 @@ namespace MindmapPreview {
       const element = doc.getElementById(DATA_ELEMENT_ID);
       return JSON.parse(element?.textContent ?? "") as MindmapData;
     } catch {
-      throw new Error("記録を読めませんでした。preview.html を書き出し直してください");
+      throw new Error("記録を読み込めませんでした。preview.html をもう一度書き出してください。");
     }
   }
 

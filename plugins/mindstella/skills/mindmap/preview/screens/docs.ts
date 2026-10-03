@@ -142,6 +142,7 @@ namespace MindmapPreview {
             items: orderDocs(column.items),
           })),
           card: (item) => docCard({ index, doc: item, open: on.open, inBoard: true }),
+          emptyText: "資料はありません。",
         });
       }
       return h({
@@ -177,7 +178,7 @@ namespace MindmapPreview {
                   tag: "button",
                   attrs: {
                     type: "button",
-                    "aria-label": `${label}: ${value} の条件を外す`,
+                    "aria-label": `${label}: ${value} の条件を解除`,
                     onclick: () => {
                       const rest = values.filter((v) => v !== value);
                       if (rest.length === 0) delete state.filters[key];
@@ -204,7 +205,7 @@ namespace MindmapPreview {
                 render();
               },
             },
-            children: ["すべて外す"],
+            children: ["すべて解除"],
           }),
         );
       }

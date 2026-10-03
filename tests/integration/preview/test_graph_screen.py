@@ -17,7 +17,7 @@ TOGGLE_ALL_BOX = ".legend .legend-all-check input"
 TOGGLE_ALL_LABEL = "すべての種類を表示"
 
 # 全ての種類を隠したときに出す文
-NO_SHOWN_KIND_TEXT = "表示する種類の項目はありません"
+NO_SHOWN_KIND_TEXT = "表示する項目はありません。"
 
 # 項目の種類のチェックボックス（まとめて切り替える箱を除く）
 KIND_INPUTS = ".legend label:not(.legend-all-check) input"

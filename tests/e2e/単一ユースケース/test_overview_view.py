@@ -41,7 +41,7 @@ def test_normal(
     make_item: MakeItem,
     valid_settings: dict[str, Any],
 ) -> None:
-    """タイルで次に検討する項目・ゴールまで・要見直し・保留・進行中のタスクを読み、要見直しの一覧を開く（正常系）。"""
+    """タイルで次に検討する項目・ゴールまでの進捗・要見直し・保留・進行中のタスクを読み、要見直しの一覧を開く（正常系）。"""
     # 準備
     path = build_preview(
         make_item("D-2"),
@@ -62,6 +62,7 @@ def test_normal(
         "#tile-next button[data-id]", "buttons => buttons.map(b => b.dataset.id)"
     )
     assert next_ids == ["D-2"]
+    assert page.inner_text("#h-goal") == "ゴールまでの進捗"
     checklist = page.eval_on_selector_all(
         "#tile-goal .checklist li",
         "items => items.map(i => [i.querySelector('button').textContent, i.classList.contains('done')])",

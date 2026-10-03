@@ -68,7 +68,7 @@ export const SortedAsc: Story = { args: { sort: { key: "title", dir: "asc" } } }
 /** タイトルで降順。`aria-sort="descending"` */
 export const SortedDesc: Story = { args: { sort: { key: "title", dir: "desc" } } };
 
-/** 確度 = 高で絞り込み中。絞り込み中の列の道具は押された見た目で、表の上にチップとすべて外すを並べる */
+/** 確度 = 高で絞り込み中。絞り込み中の列の道具は押された見た目で、表の上にチップとすべて解除を並べる */
 export const Filtered: Story = { args: { filters: { conf: ["高"] } } };
 
 /** ID の列までピン留め。押した列のボタンだけが押された見た目で、固定した列の境に影 */

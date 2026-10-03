@@ -13,7 +13,7 @@ namespace MindmapPreview {
       open: (id: string) => void;
       /** パネルを閉じる */
       close: () => void;
-      /** 全画面に切り替える・元の大きさに戻す */
+      /** 全画面表示の入り切り */
       full: (full: boolean) => void;
       /** 見てきた項目を 1 つ戻る */
       back: () => void;
@@ -276,7 +276,7 @@ namespace MindmapPreview {
       parent: body,
       children: [
         relation(kind === "logs" ? "更新した項目" : "関連", related.related),
-        relation("この項目を参照している項目", related.referencedBy),
+        relation("参照元", related.referencedBy),
       ],
     });
     return body;
@@ -322,19 +322,20 @@ namespace MindmapPreview {
           ],
         }),
         h({ tag: "span", attrs: { class: "spacer" } }),
-        arrow("前に見た項目へ戻る", "←", position <= 0, on.back),
-        arrow("次に見た項目へ進む", "→", position >= length - 1, on.forward),
+        arrow("前の項目へ戻る", "←", position <= 0, on.back),
+        arrow("次の項目へ進む", "→", position >= length - 1, on.forward),
         h({
           tag: "button",
           attrs: {
             class: "icon-btn panel-full",
             type: "button",
             "data-act": "full",
-            "aria-label": full ? "元の大きさに戻す" : "全画面で表示",
-            title: full ? "元の大きさに戻す" : "全画面で表示",
+            "aria-label": "全画面表示",
+            title: "全画面表示",
+            "aria-pressed": String(full),
             onclick: () => on.full(!full),
           },
-          children: [icon(full ? "shrink" : "expand")],
+          children: [icon("expand")],
         }),
         full
           ? null
