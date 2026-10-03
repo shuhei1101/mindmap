@@ -6,7 +6,13 @@ from typing import Any
 
 import pytest
 from preview_fixture_types import OpenPreview, WritePreview, WriteSamplePreview
-from preview_style_checks import BOARD_EDGE_GAP_PX, TRANSPARENT, board_edges, table_cell_backgrounds
+from preview_style_checks import (
+    BOARD_EDGE_GAP_PX,
+    TRANSPARENT,
+    board_edges,
+    pin_id_column,
+    table_cell_backgrounds,
+)
 from workspace_fixtures import MakeItem
 
 
@@ -250,9 +256,11 @@ def test_table_cell_surface(
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=docs&view=table")
+    pin_id_column(page)
     # 実行
     backgrounds = table_cell_backgrounds(page)
     # 検証
     assert backgrounds["wrap"] != TRANSPARENT
     assert backgrounds["plain"] == [TRANSPARENT]
+    assert len(backgrounds["pinned"]) > 0
     assert TRANSPARENT not in backgrounds["pinned"]

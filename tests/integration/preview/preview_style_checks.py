@@ -13,6 +13,7 @@ __all__ = [
     "animated_properties",
     "board_edges",
     "map_item_id_font_size",
+    "pin_id_column",
     "row_backgrounds",
     "table_cell_backgrounds",
 ]
@@ -43,14 +44,19 @@ _TABLE_CELL_BACKGROUNDS_SCRIPT = """() => {
     };
 }"""
 
-# 行とその全てのセルの背景色を集める
+# 行の背景色と、その行のセルの背景色を、固定した列とそれ以外に分けて集める
 _ROW_BACKGROUNDS_SCRIPT = """selector => {
     const row = document.querySelector(selector);
+    const colors = cells => [...new Set([...cells].map(c => getComputedStyle(c).backgroundColor))];
     return {
         row: getComputedStyle(row).backgroundColor,
-        cells: [...new Set([...row.querySelectorAll('td')].map(c => getComputedStyle(c).backgroundColor))],
+        cells: colors(row.querySelectorAll('td:not(.pinned)')),
+        pinned: colors(row.querySelectorAll('td.pinned')),
     };
 }"""
+
+# ID の列まで固定する見出しのボタン
+_PIN_ID_BUTTON = 'table.grid thead .th-tool.pin[data-pin="id"]'
 
 # 時間の幅がある（0 秒より長い）transition の対象の名前を集める（対象と時間は組で数え、時間が足りない分は繰り返す）
 _ANIMATED_PROPERTIES_SCRIPT = """selector => {
@@ -71,8 +77,14 @@ def table_cell_backgrounds(page: Page) -> dict[str, Any]:
     return page.evaluate(_TABLE_CELL_BACKGROUNDS_SCRIPT)
 
 
+def pin_id_column(page: Page) -> None:
+    """表の見出しのボタンで ID の列まで固定し、固定したセルが描かれるのを待つ。"""
+    page.click(_PIN_ID_BUTTON)
+    page.wait_for_selector("table.grid tbody td.pinned")
+
+
 def row_backgrounds(page: Page, selector: str) -> dict[str, Any]:
-    """表の行の背景色と、その行のセルの背景色を返す。"""
+    """表の行の背景色と、その行のセルの背景色（固定した列とそれ以外）を返す。"""
     return page.evaluate(_ROW_BACKGROUNDS_SCRIPT, selector)
 
 

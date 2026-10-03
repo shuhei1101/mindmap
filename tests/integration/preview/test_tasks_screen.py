@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import pytest
 from preview_fixture_types import OpenPreview, WriteSamplePreview
-from preview_style_checks import BOARD_EDGE_GAP_PX, TRANSPARENT, board_edges, table_cell_backgrounds
+from preview_style_checks import (
+    BOARD_EDGE_GAP_PX,
+    TRANSPARENT,
+    board_edges,
+    pin_id_column,
+    table_cell_backgrounds,
+)
 
 
 def test_board(write_sample_preview: WriteSamplePreview, open_preview: OpenPreview) -> None:
@@ -81,9 +87,11 @@ def test_table_cell_surface(
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=tasks&view=table")
+    pin_id_column(page)
     # 実行
     backgrounds = table_cell_backgrounds(page)
     # 検証
     assert backgrounds["wrap"] != TRANSPARENT
     assert backgrounds["plain"] == [TRANSPARENT]
+    assert len(backgrounds["pinned"]) > 0
     assert TRANSPARENT not in backgrounds["pinned"]

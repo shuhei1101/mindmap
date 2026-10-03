@@ -11,6 +11,7 @@ from preview_style_checks import (
     TRANSPARENT,
     board_edges,
     map_item_id_font_size,
+    pin_id_column,
     table_cell_backgrounds,
 )
 
@@ -427,9 +428,11 @@ def test_table_cell_surface(
     # 準備
     path = write_sample_preview()
     page = open_preview(path, "#tab=decisions&view=table")
+    pin_id_column(page)
     # 実行
     backgrounds = table_cell_backgrounds(page)
     # 検証
     assert backgrounds["wrap"] != TRANSPARENT
     assert backgrounds["plain"] == [TRANSPARENT]
+    assert len(backgrounds["pinned"]) > 0
     assert TRANSPARENT not in backgrounds["pinned"]
