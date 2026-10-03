@@ -1,4 +1,5 @@
-/* 開発者ツール × スイス: 無彩色の骨格に、印の 1 色（枝の線と選択）だけを置く */
+/* 見本 v2: 開発者ツール × スイス。無彩色の骨格に、印の 1 色（枝の線と選択）だけを置く */
+
 
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: var(--fs-body); line-height: 1.6; font-feature-settings: "palt" 1; -webkit-font-smoothing: antialiased; }
@@ -16,7 +17,7 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 .st[data-st="取り下げ"], .st[data-st="対象外"], .st[data-st="中止"] { color: var(--text-3); }
 
 /* ===== トップバー ===== */
-.topbar { position: sticky; top: 0; z-index: 30; height: var(--topbar-h); display: flex; align-items: center; gap: 16px; padding: 0 20px; background: var(--topbar-bg); color: var(--topbar-fg); }
+.topbar { position: sticky; top: var(--mock-h, 0px); z-index: 30; height: var(--topbar-h); display: flex; align-items: center; gap: 16px; padding: 0 20px; background: var(--topbar-bg); color: var(--topbar-fg); }
 .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .brand-mark { width: 22px; height: 22px; color: var(--accent); flex: none; }
 .brand-name { font-weight: 700; letter-spacing: -.01em; }
@@ -28,7 +29,7 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 .top-btn:hover, .search-trigger:hover { color: var(--topbar-fg); background: var(--topbar-hover); }
 
 /* ===== タブ ===== */
-.tabbar { position: sticky; top: var(--topbar-h); z-index: 25; display: flex; gap: 4px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+.tabbar { position: sticky; top: calc(var(--mock-h, 0px) + var(--topbar-h)); z-index: 25; display: flex; gap: 4px; padding: 0 20px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
 .tabbar::-webkit-scrollbar { display: none; }
 .tab { text-decoration: none; display: flex; align-items: center; gap: 8px; height: var(--tab-h); padding: 0 10px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--text-2); white-space: nowrap; }
 .tab:hover { color: var(--text); }
@@ -37,7 +38,7 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 
 /* ===== 本文と詳細パネル ===== */
 .content { padding: 28px var(--page-pad) 64px; max-width: var(--content-max); margin: 0 auto; }
-.panel { position: fixed; z-index: 20; top: calc(var(--topbar-h) + var(--tab-h) + 1px); right: 0; bottom: 0; width: var(--panel-w); max-width: 100%; background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-panel); display: flex; flex-direction: column; }
+.panel { position: fixed; z-index: 20; top: calc(var(--mock-h, 0px) + var(--topbar-h) + var(--tab-h) + 1px); right: 0; bottom: 0; width: var(--panel-w); max-width: 100%; background: var(--surface); border-left: 1px solid var(--border); box-shadow: var(--shadow-panel); display: flex; flex-direction: column; }
 
 .panel-head { display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 10px 0 20px; border-bottom: 1px solid var(--border-soft); }
 .panel-kind { font-size: var(--fs-small); color: var(--text-2); }
@@ -63,8 +64,7 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 .impact { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); color: var(--text-2); white-space: nowrap; }
 .impact i { display: inline-block; width: 4px; height: 10px; background: var(--border); border-radius: 1px; }
 .impact i.on { background: var(--text-2); }
-/* 項目の ID のボタン: 見えている枠そのものを縦横 --target-min 以上にし、ID の文字を縦横の中央に置く */
-.idlink { padding: 0 4px; margin: 0 4px 2px 0; border: 1px solid var(--border-soft); border-radius: 3px; background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: 11.5px; display: inline-flex; align-items: center; justify-content: center; min-inline-size: var(--target-min); min-block-size: var(--target-min); line-height: 1; vertical-align: middle; }
+.idlink { padding: 0 4px; margin: 0 4px 2px 0; border: 1px solid var(--border-soft); border-radius: 3px; background: var(--surface); color: var(--text); font-family: var(--font-mono); font-size: 11.5px; }
 .idlink:hover { border-color: var(--accent); color: var(--accent); }
 .muted { color: var(--text-3); }
 .empty { color: var(--text-3); margin: 6px 0; }
@@ -131,15 +131,14 @@ svg.icon { width: 16px; height: 16px; flex: none; stroke: currentColor; fill: no
 /* ===== 表 ===== */
 .table-wrap { overflow: auto; max-height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 130px); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
 table.grid { border-collapse: separate; border-spacing: 0; width: 100%; font-size: var(--fs-small); }
-table.grid th, table.grid td { padding: var(--cell-py) 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; }
-table.grid tbody .pinned { background: var(--surface); }
+table.grid th, table.grid td { padding: var(--cell-py) 12px; border-bottom: 1px solid var(--border-soft); text-align: left; vertical-align: top; background: var(--surface); }
 table.grid tbody tr:last-child td { border-bottom: 0; }
 table.grid thead th { position: sticky; top: 0; z-index: 3; background: var(--thead-bg); color: var(--text-2); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; padding-top: 6px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 table.grid .pinned { position: sticky; z-index: 2; }
 table.grid thead th.pinned { z-index: 4; }
 table.grid .pin-edge { box-shadow: 6px 0 8px -6px var(--shadow-color); }
-table.grid tbody tr:not(.selected):hover td { background: var(--row-hover); }
-table.grid tbody tr.selected, table.grid tbody tr.selected .pinned { background: var(--row-selected); }
+table.grid tbody tr:hover td { background: var(--row-hover); }
+table.grid tbody tr.selected td { background: var(--row-selected); }
 table.grid tbody tr.dim td { color: var(--text-3); }
 table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; }
 table.grid td.nowrap { white-space: nowrap; }
@@ -159,7 +158,7 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .row-open:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
 
 /* ===== ボード ===== */
-.board { display: grid; grid-template-columns: repeat(var(--cols), minmax(240px, 1fr)); gap: 16px; overflow-x: auto; padding: 8px 8px 8px; margin-inline: -8px; }
+.board { display: grid; grid-template-columns: repeat(var(--cols), minmax(240px, 1fr)); gap: 16px; overflow-x: auto; padding-bottom: 8px; }
 .board-col h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--text); font-size: var(--fs-small); }
 .board-col h3 .n { font-family: var(--font-mono); color: var(--text-3); font-weight: 400; }
 .card { display: block; width: 100%; text-align: left; padding: 12px; margin-bottom: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
@@ -178,19 +177,20 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .legend label:has(input:not(:checked)) .mark { opacity: .35; }
 .legend label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .legend .n { font-family: var(--font-mono); color: var(--text-3); }
-/* 非表示のチップ（状態の印・項目の種類）: 枠を点線にして、表示中と見分ける */
-.legend label:not(.legend-all-check):has(input:not(:checked)) { border-style: dashed; }
-/* 項目の種類の色の点: 非表示のときは状態の印と同じ薄さにする */
-.legend label:has(input:not(:checked)) .kdot { opacity: .35; }
-/* まとめて切り替えるチェックの箱: 並びの右端に、文字を持たない箱だけを置く */
+/* まとめて切り替えるボタン 2 つ: 状態の印の後ろに区切り線を挟んで置き、状態の印と同じ高さにそろえる */
+.legend .legend-all { display: inline-flex; gap: 2px; margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--border-soft); }
+/* まとめて切り替えるボタン */
+.legend .legend-all .btn { height: 26px; padding: 0 8px; font-size: var(--fs-xs); }
+/* まとめて切り替えるチェックの箱: 状態の印の並びの右端に、文字を持たない箱だけを置く */
 .legend .legend-all-check, .legend .legend-all-check:has(input:checked) { margin-left: 6px; padding: 0 4px; border: 0; background: none; }
-/* まとめて切り替えるチェックの箱の本体: 背景は塗らず、枠とチェック・横棒の記号だけで描く */
+/* まとめて切り替えるチェックの箱の本体: 状態の印と違い、箱そのものを見せる */
+/* 背景は塗らず、枠とチェック・横棒の記号だけで描く */
 .legend .legend-all-check input { position: relative; box-sizing: border-box; opacity: 1; pointer-events: auto; appearance: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
 /* チェックの記号: 右下の 2 辺の枠を回してレ点にし、箱の中心に置く。線の太さは状態の印の線にそろえる */
 .legend .legend-all-check input:checked::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 7px; border: solid var(--text); border-width: 0 1.5px 1.5px 0; transform: translate(-50%, -60%) rotate(45deg); }
-/* 横棒の記号: 一部だけ表示しているとき。枠線で描き、ハイコントラストでも消えないようにする */
+/* 横棒の記号: 一部だけを出しているとき。枠線で描き、ハイコントラストでも消えないようにする */
 .legend .legend-all-check input:indeterminate::after { content: ""; position: absolute; left: 2.5px; right: 2.5px; top: calc(50% - .75px); border-top: 1.5px solid var(--text); }
-/* 表示するものが無いとき: 枠の中央に空の旨を出す（押しても邪魔にならない） */
+/* 表示する状態の検討事項が無いとき: マップの枠の中央に空の旨を出す */
 .map-empty { position: absolute; left: 0; right: 0; top: 40%; z-index: 1; margin: 0; text-align: center; pointer-events: none; }
 .map-wrap { position: relative; overflow: auto; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 150px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
   background-image: radial-gradient(var(--border-soft) 1px, transparent 1px); background-size: 20px 20px; }
@@ -215,7 +215,7 @@ button.n-item:hover { border-color: var(--accent); }
 button.n-item.sel { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
 button.n-item.off { color: var(--text-3); border-style: dashed; }
 .n-item .r1 { display: flex; align-items: center; gap: 7px; font-weight: 600; min-width: 0; }
-.n-item .r2 { display: flex; gap: 8px; color: var(--text-3); font-size: var(--fs-xs); padding-left: 17px; }
+.n-item .r2 { display: flex; gap: 8px; color: var(--text-3); font-size: 11px; padding-left: 17px; }
 .map-outline { display: none; }
 .motion-btn[hidden] { display: none; }
 
@@ -243,14 +243,6 @@ button.n-item.off { color: var(--text-3); border-style: dashed; }
 .opt dt { color: var(--text-3); }
 .opt dd { margin: 0; }
 .md { font-size: var(--fs-small); line-height: 1.8; }
-/* 本文の見出し: 段を下げて差し込んでも、元の段の大きさと余白で見せる */
-.md [data-md-level] { font-weight: 700; }
-.md [data-md-level="1"] { font-size: 2em; margin: .67em 0; }
-.md [data-md-level="2"] { font-size: 1.5em; margin: .83em 0; }
-.md [data-md-level="3"] { font-size: 1.17em; margin: 1em 0; }
-.md [data-md-level="4"] { font-size: 1em; margin: 1.33em 0; }
-.md [data-md-level="5"] { font-size: .83em; margin: 1.67em 0; }
-.md [data-md-level="6"] { font-size: .67em; margin: 2.33em 0; }
 .md table { border-collapse: collapse; margin: 8px 0; width: 100%; }
 .md th, .md td { border: 1px solid var(--border-soft); padding: 4px 8px; text-align: left; vertical-align: top; }
 .md th { background: var(--surface-2); }
@@ -261,7 +253,7 @@ button.n-item.off { color: var(--text-3); border-style: dashed; }
 
 /* ===== ポップオーバーと検索 ===== */
 .pop { margin: 0; inset: auto; position: fixed; min-width: 220px; max-width: 320px; max-height: min(560px, calc(100dvh - 16px)); overflow: auto; padding: 6px; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-pop); }
-.pop .pop-title { margin: 4px 6px 6px; font-size: var(--fs-xs); color: var(--text-2); font-weight: 600; }
+.pop h3 { margin: 4px 6px 6px; font-size: var(--fs-xs); color: var(--text-2); font-weight: 600; }
 .pop label { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 3px; font-size: var(--fs-small); }
 .pop label:hover { background: var(--hover); }
 .pop label .n { margin-left: auto; color: var(--text-3); font-family: var(--font-mono); font-size: var(--fs-xs); }
@@ -283,14 +275,11 @@ dialog.search::backdrop { background: var(--scrim); }
 /* ===== 狭い幅（テーマの値の後に置き、上書きが効くようにする） ===== */
 @media (max-width: 1100px) { .ov-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) {
-  .panel { top: var(--topbar-h); width: 100%; z-index: 35; border-left: 0; }
+  .panel { top: calc(var(--mock-h, 0px) + var(--topbar-h)); width: 100%; z-index: 35; border-left: 0; }
   .search-trigger { min-width: 0; width: 32px; padding: 0; justify-content: center; }
   .search-trigger .label, .search-trigger kbd, .brand-sub { display: none; }
   .table-wrap [data-pri="4"], .table-wrap [data-pri="5"] { display: none; }
   .panel-close-x { display: none; }
-  /* 狭い幅のマップは、マップと倍率の操作を隠し、字下げした縦の一覧にする */
-  .map-view-root .map-frame, .map-view-root .zoom { display: none; }
-  .map-outline { display: block; }
 }
 @media (min-width: 901px) { .panel-back { display: none; } }
 @media (max-width: 720px) {
@@ -304,6 +293,9 @@ dialog.search::backdrop { background: var(--scrim); }
   .th-tool.pin { display: none; }
   .toolbar .btn .lbl { display: none; }
   .toolbar .grow { max-width: none; flex-basis: 100%; }
+  /* 狭い幅のマップは、字下げした縦の一覧にする */
+  .map-wrap, .map-view .map-empty { display: none; }
+  .map-outline { display: block; }
   .board { grid-template-columns: 1fr; }
 }
 .map-outline ul { list-style: none; margin: 0; padding: 0; }
@@ -393,7 +385,7 @@ button.n-item:hover, button.n-item:focus-visible { border-color: var(--accent); 
 button.n-item.sel { border-color: var(--accent); border-width: 2px; box-shadow: 0 0 0 4px var(--accent-weak); }
 /* 表: 行のどこかにフォーカスがあるときは行ごと示し、選択中の行は背景で示す */
 table.grid tbody tr:focus-within td { background: var(--row-selected); }
-table.grid tbody tr.selected td { box-shadow: inset 0 1px 0 var(--accent-line), inset 0 -1px 0 var(--accent-line); }
+table.grid tbody tr.selected td { background: var(--row-selected); box-shadow: inset 0 1px 0 var(--accent-line), inset 0 -1px 0 var(--accent-line); }
 .row-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
 /* カード・タイルの中のボタン */
 .card:focus-visible, .next-list button:focus-visible, .mini button:focus-visible, .cat-rows button:focus-visible, .cell-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius); }
@@ -453,12 +445,6 @@ table.grid tbody tr.selected td { box-shadow: inset 0 1px 0 var(--accent-line), 
 .doc-card { display: grid; gap: 8px; margin: 0; }
 .doc-kind { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--accent); font-weight: 600; }
 .doc-card .c-for { display: grid; gap: 2px; }
-/* ボードの資料のカード: 列の中で縦に積む間を空ける */
-.board-col .doc-card { margin-bottom: 10px; }
-/* ボードの資料のカードのタグ: 折り返して並べる */
-.board-col .doc-card .c-tags { display: flex; flex-wrap: wrap; }
-/* 詳細を開いている資料のカード: 枠の全体と面の色で示す */
-.board-col .doc-card.selected { border-color: var(--accent); background: var(--row-selected); }
 
 /* ===== マップ: 選んだ項目の依存の線を流す ===== */
 .map-canvas.focusing .edge-dep.rel { animation: dep-flow 1s linear infinite; }
@@ -480,8 +466,6 @@ table.grid tbody tr.selected td { box-shadow: inset 0 1px 0 var(--accent-line), 
 dialog.viewer { width: min(1200px, calc(100vw - 32px)); height: min(820px, calc(100dvh - 32px)); padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); box-shadow: var(--shadow-pop); overflow: hidden; }
 dialog.viewer[open] { display: flex; flex-direction: column; }
 dialog.viewer::backdrop { background: var(--scrim); }
-/* 図の拡大の中身: 道具の行の下の窓が、残りの高さを占める */
-.viewer-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .v-bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--border-soft); }
 .v-bar .spacer { flex: 1; }
 .v-pct { min-width: 4em; text-align: center; font-size: var(--fs-xs); color: var(--text-2); }
@@ -499,9 +483,10 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), radial-gradient(ellipse at 50% 45%, var(--g-bg-center) 0%, var(--g-bg) 70%); }
 .g3-wrap { display: block; width: 100%; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 110px); min-height: 460px; cursor: grab; touch-action: none; }
 
-/* ===== 詳細パネル: ゆっくりすべり込む。本文の寄せは同時に切り替える ===== */
+/* ===== 詳細パネル: ゆっくりすべり込む。本文の幅も同じ速さで変える ===== */
 .panel { transform: translateX(102%); visibility: hidden; transition: transform .45s cubic-bezier(.22, .8, .24, 1), visibility 0s linear .45s; }
 .panel.open { transform: none; visibility: visible; transition: transform .45s cubic-bezier(.22, .8, .24, 1); }
+.content { transition: margin-right .45s cubic-bezier(.22, .8, .24, 1); }
 
 /* ===== つながりの入口: タブの帯の右端に、ほかのタブと分けて置く ===== */
 .tab-gap { flex: 1; min-width: 16px; }
@@ -534,10 +519,30 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 
 /* 表示形式の切り替えは、どのタブでも同じ幅・同じ位置にする（切り替えでちらつかないように） */
 .segment button { min-width: 92px; justify-content: center; }
+/* つながりの種類の切り替え: 表示中は塗り、非表示は点線の枠と打ち消し線ではっきり分ける */
+.map-tools .legend label:has(input[data-act="gkind"]:checked) { background: var(--surface); border: 1px solid var(--text-2); color: var(--text); font-weight: 600; }
+.map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) { background: transparent; border: 1px dashed var(--border); color: var(--text-3); text-decoration: line-through; }
+.map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) .kdot { opacity: .25; }
+/* まとめて切り替える箱を持つ画面の項目の種類: 枠と表示中・非表示の見た目を、検討事項の状態の印にそろえる */
+body[data-toggle-all] .map-tools .legend label:has(input[data-act="gkind"]:checked) { border: 1px solid var(--border); color: var(--text); background: var(--surface); font-weight: inherit; }
+/* まとめて切り替える箱を持つ画面の非表示の種類: 点線・打ち消し線をやめ、状態の印の非表示と同じにする */
+body[data-toggle-all] .map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) { border: 1px solid var(--border-soft); color: var(--text-2); background: none; text-decoration: none; }
+/* まとめて切り替える箱を持つ画面の非表示の種類の色の点: 状態の印の非表示と同じ薄さ */
+body[data-toggle-all] .map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) .kdot { opacity: .35; }
+/* まとめて切り替える箱を持つ画面の非表示のチップ（状態の印・項目の種類）: 枠を点線にして表示中と見分ける */
+body[data-toggle-all] .map-tools .legend label:not(.legend-all-check):has(input:not(:checked)) { border-style: dashed; }
 /* 図の拡大表示: 背景はつかんで動かせ、図の中の文字は選んでコピーできる */
 .v-canvas { user-select: none; }
 .v-stage svg text, .v-stage svg foreignObject, .v-stage svg .nodeLabel, .v-stage svg .edgeLabel { user-select: text; cursor: text; }
 
+/* ===== モック専用の操作列: 実画面と見分けるため地の色を変える ===== */
+.mockbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 6px 20px; background: #fff7d6; color: #5c4a00; font-size: var(--fs-xs); }
+/* モック専用の操作列のダーク */
+:root[data-theme="dark"] .mockbar { background: #2a2410; color: #f5e3a3; }
+/* モック専用の操作列のリンクとボタン */
+.mockbar a, .mockbar button { color: inherit; padding: 2px 6px; border: 1px solid transparent; border-radius: 3px; background: none; font-size: inherit; }
+/* 選んでいる状態の切り替え */
+.mockbar [aria-current="page"], .mockbar [aria-pressed="true"] { font-weight: 700; border-color: currentColor; text-decoration: none; }
 
 /* ===== パンくず ===== */
 .crumbs { font-size: var(--fs-xs); color: var(--text-3); margin-bottom: 16px; }
@@ -545,7 +550,7 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 .crumbs a { color: var(--text-2); }
 
 /* ===== 表示形式の切り替え: どのタブでも同じ幅・同じ位置 ===== */
-.segment button { width: var(--view-switch-item-width, 96px); min-width: 0; }
+.segment button { width: 96px; min-width: 0; }
 
 /* ===== マップのキーワード: 名前に含む項目を黄色で強調し、状態の印に件数のバッジを付ける ===== */
 .map-node.hit { background: var(--hit); }
@@ -583,12 +588,16 @@ dialog.full .panel-head { flex: none; }
 /* 拡大・縮小・全体を表示: マップの枠の外の右下に固定する */
 .map-frame .zoom { position: static; width: fit-content; margin: 8px 0 0 auto; box-shadow: none; }
 
+/* モック専用の操作列の高さ: 帯を上端に留め、その下にトップバー・タブ・詳細パネルを置く */
+body:has(> .mockbar) { --mock-h: 32px; }
+/* モック専用の操作列を上端に留める。狭い幅で収まらないときは、折り返さず帯の中で横に送る（高さを変えるとトップバーと重なる） */
+.mockbar { position: sticky; top: 0; z-index: 31; height: var(--mock-h); padding-top: 0; padding-bottom: 0; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
 /* 詳細パネルを並べるときは、パンくずも本文と同じだけ寄せる */
 @media (min-width: 1100px) { body.panel-open .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
 @media (min-width: 901px) { body.panel-open:has(.content.map-view) .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
 @media (min-width: 1100px) { body.panel-open:has(.panel.wide) .crumbs-bar { margin-right: min(760px, 100%); } }
 
-/* ===== カテゴリー別の進捗のセル: ホバー・フォーカスで面を変える（濃さはトークンの --hover） ===== */
+/* ===== カテゴリー別の進み具合のセル: ホバー・フォーカスで面を変える（濃さはトークンの --hover） ===== */
 .cat-table a.cell, .cat-table a.cat-link { display: inline-flex; padding: 4px 6px; margin: -4px -6px; border-radius: var(--radius); color: inherit; text-decoration: none; }
 .cat-table a.cell:hover, .cat-table a.cell:focus-visible, .cat-table a.cat-link:hover, .cat-table a.cat-link:focus-visible { background: var(--hover); }
 
@@ -603,6 +612,15 @@ table.grid td.no-match-cell .no-match { position: sticky; left: 0; width: var(--
 
 /* 詳細の見出しの「← →」: 見てきた項目を行き来する。行き来できないときは押せない見た目 */
 .icon-btn:disabled { color: var(--text-3); opacity: .45; cursor: default; background: none; }
+
+/* ===== 資料のボード（40 の分） ===== */
+
+/* ボードの資料のカード: 列の中で縦に積む間を空ける */
+.doc-board .doc-card { margin-bottom: 10px; }
+/* ボードの資料のカードのタグ: 折り返して並べる */
+.doc-card .c-tags { display: flex; flex-wrap: wrap; }
+/* 詳細を開いている資料のカード: 枠の全体と面の色で示す */
+.card.selected { border-color: var(--accent); background: var(--row-selected); }
 
 /* ===== 全画面表示のボタン: 押された状態（全画面のとき）を面と枠の色で示す ===== */
 

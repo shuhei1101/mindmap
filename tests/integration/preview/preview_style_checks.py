@@ -7,11 +7,15 @@ from typing import Any
 from playwright.sync_api import Page
 
 __all__ = [
+    "BOARD_COLUMN_WIDTH_PX",
     "BOARD_EDGE_GAP_PX",
+    "DESKTOP_VIEWPORT",
     "MIN_UI_FONT_SIZE_PX",
+    "PHONE_VIEWPORT",
     "TRANSPARENT",
     "animated_properties",
     "board_edges",
+    "board_layout",
     "map_item_id_font_size",
     "pin_id_column",
     "row_backgrounds",
@@ -26,6 +30,33 @@ BOARD_EDGE_GAP_PX = 8
 
 # 画面の文字として許す最小の大きさ（px）
 MIN_UI_FONT_SIZE_PX = 11
+
+# 幅 721px 以上のボードの列の幅（px）
+BOARD_COLUMN_WIDTH_PX = 290
+
+# 幅 720px 以下を確かめるスマートフォンの画面の大きさ
+PHONE_VIEWPORT = {"width": 390, "height": 844}
+
+# 幅 721px 以上を確かめるデスクトップの画面の大きさ
+DESKTOP_VIEWPORT = {"width": 1280, "height": 800}
+
+# ボードの列の数・左端と上端のばらつき・一番右の右端・幅の範囲と、ボードのカーソル、ページの横スクロールの有無・画面の幅を測る
+_BOARD_LAYOUT_SCRIPT = """() => {
+    const rects = [...document.querySelectorAll('.board .board-col')].map(c => c.getBoundingClientRect());
+    const spread = values => Math.max(...values) - Math.min(...values);
+    const root = document.documentElement;
+    return {
+        columnCount: rects.length,
+        leftSpread: spread(rects.map(r => r.left)),
+        topSpread: spread(rects.map(r => r.top)),
+        rightmost: Math.max(...rects.map(r => r.right)),
+        narrowest: Math.min(...rects.map(r => r.width)),
+        widest: Math.max(...rects.map(r => r.width)),
+        cursor: getComputedStyle(document.querySelector('.board')).cursor,
+        pageScrolls: root.scrollWidth > root.clientWidth,
+        viewportWidth: root.clientWidth,
+    };
+}"""
 
 # 先頭の列の先頭のカード・ボード・ツールバーの左端を測る
 _BOARD_EDGES_SCRIPT = """() => ({
@@ -70,6 +101,11 @@ _ANIMATED_PROPERTIES_SCRIPT = """selector => {
 def board_edges(page: Page) -> dict[str, float]:
     """ボードの先頭のカード・ボード・ツールバーの左端の位置（px）を返す。"""
     return page.evaluate(_BOARD_EDGES_SCRIPT)
+
+
+def board_layout(page: Page) -> dict[str, Any]:
+    """ボードの列の数・左端と上端のばらつき・一番右の右端・幅の範囲（px）、ボードのカーソル、ページの横スクロールの有無、画面の幅（px）を返す。"""
+    return page.evaluate(_BOARD_LAYOUT_SCRIPT)
 
 
 def table_cell_backgrounds(page: Page) -> dict[str, Any]:
