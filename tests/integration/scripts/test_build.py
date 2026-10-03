@@ -77,6 +77,8 @@ def test_normal(
     goal = json.loads(run_mindmap("goal", "--workspace", str(root)).stdout)
     for key, value in goal.items():
         assert data["derived"]["goal"][key] == value
+    # 雛形のページの題が プレビュー | mindstella
+    assert "<title>プレビュー | mindstella</title>" in html
     # 本文の </script> で要素が閉じていない（雛形の閉じタグの数と同じ）
     assert html.count("</script>") == TEMPLATE_PATH.read_text(encoding="utf-8").count("</script>")
     # 読み込む src・href にローカルのパスが無い
