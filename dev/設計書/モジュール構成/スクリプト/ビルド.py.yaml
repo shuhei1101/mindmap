@@ -7,6 +7,7 @@ directory: |-
       template.html   プレビューの雛形（CSS・JavaScript・データの差し込み口と、描画のライブラリ・文字の読み込み。読み込みは EXTERNAL_START と EXTERNAL_END の間に置く）
       tokens.css・style.css・*.ts（と tsc が生成した *.js）  画面の中身（モジュール構成『プレビュー』）
       vendor/
+      README.md  配布ファイル・LICENSE・mermaid-bundled.txt を写し直す手順（使うコマンドと写すもの）
         marked.umd.js・purify.min.js・elk.bundled.js・mermaid.min.js  配る書き出しに差し込む描画のライブラリの配布ファイル（package.json と同じ版の npm のパッケージから改変せずに写す）
         licenses/
           marked.txt・DOMPurify.txt・elkjs.txt・mermaid.txt  各パッケージの LICENSE の写（DOMPurify は Apache-2.0 の LICENSE）
