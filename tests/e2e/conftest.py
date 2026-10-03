@@ -11,7 +11,7 @@ import pytest
 import yaml
 from playwright.sync_api import Page
 from preview_helpers import BuildPreview, OpenPreview
-from workspace_fixtures import MakeWorkspace, RunMindmap
+from workspace_fixtures import MakeVenv, MakeWorkspace, RunMindmap
 
 # スキルの手順が連ねるコマンドを再生する関数（コマンド・引数・中身の JSON を渡し、出力の JSON を返す）
 type Replay = Callable[..., dict[str, Any]]
@@ -32,6 +32,14 @@ def replay(run_mindmap: RunMindmap) -> Replay:
         return json.loads(result.stdout)
 
     return _replay
+
+
+@pytest.fixture
+def python_path(make_venv: MakeVenv, run_mindmap: RunMindmap) -> str:
+    """依存が揃った環境で `check-env` を流し、ほかのコマンドの起動し直し先の Python を返す。"""
+    check_env = run_mindmap("check-env", "--venv", str(make_venv("venv")))
+    assert check_env.returncode == 0
+    return json.loads(check_env.stdout)["python_path"]
 
 
 @pytest.fixture

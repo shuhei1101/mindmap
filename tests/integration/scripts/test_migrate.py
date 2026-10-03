@@ -26,8 +26,8 @@ VERSION_FILE = "mindstella-version.ini"
 # 渡す題名
 SUMMARY = "要件出しのスキルを設計する"
 
-# 手順が読めない docs.yaml（閉じていないフローの配列）
-BROKEN_DOCS = "items: [\n"
+# 読めない mindmap.yaml（閉じていないフローの配列）
+BROKEN_SETTINGS = "field: [\n"
 
 # 版が新しいワークスペースに書く版
 NEWER_VERSION = "v99.0.0"
@@ -291,19 +291,24 @@ def test_error_when_newer(
 
 
 def test_error_when_step_fails(
-    make_workspace: MakeWorkspace, run_mindmap: RunMindmap, snapshot_tree: SnapshotTree
+    make_legacy_workspace: MakeLegacyWorkspace,
+    run_mindmap: RunMindmap,
+    snapshot_tree: SnapshotTree,
 ) -> None:
-    """手順が読めないファイルに当たると、写しから戻して終わる（異常系）。"""
+    """手順 1・2 が docs.yaml を書き換えた後に手順 3 が失敗すると、写しから戻して終わる（異常系）。"""
     # 準備
-    root = make_workspace(raw_files={"docs.yaml": BROKEN_DOCS})
+    root = make_legacy_workspace(legacy_docs={"A-1": True, "A-2": False})
+    # 手順 3 が読む mindmap.yaml だけを読めない中身にする
+    (root / "mindmap.yaml").write_text(BROKEN_SETTINGS, encoding="utf-8")
     before = snapshot_tree(root)
     # 実行
     result = run_mindmap("migrate", "--workspace", str(root))
     # 検証
     assert result.returncode == 1
-    assert result.stderr.startswith(f"エラー: {PLUGIN_VERSION} の手順 ")
-    assert "docs.yaml" in result.stderr
+    assert result.stderr.startswith(f"エラー: {PLUGIN_VERSION} の手順 3（set_default）: ")
+    assert "mindmap.yaml" in result.stderr
     assert "Traceback" not in result.stderr
+    # 手順 1・2 が書き換えた docs.yaml も含めて、全てのファイルが呼ぶ前と同じ
     assert snapshot_tree(root) == before
     assert not (root / VERSION_FILE).exists()
 
