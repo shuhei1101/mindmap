@@ -15,8 +15,10 @@ __all__ = [
     "BuildPreview",
     "OpenPreview",
     "click_item_ball",
+    "count_balls",
     "preview_reflects_yaml",
     "row_ids",
+    "shown_ball_item_ids",
 ]
 
 type BuildPreview = Callable[..., Path]
@@ -153,3 +155,32 @@ def click_item_ball(page: Page, item_id: str) -> None:
         page.keyboard.press("Escape")
         page.wait_for_function("!document.querySelector('aside.panel.open')")
     raise AssertionError(f"つながりに {item_id} の玉が見つかりませんでした")
+
+
+def count_balls(page: Page) -> int:
+    """つながりのキャンバスに出ている玉の数を返す（近い玉どうしは 1 つに数える）。"""
+    return len(_find_ball_centers(page))
+
+
+def shown_ball_item_ids(page: Page) -> set[str]:
+    """つながりのキャンバスに出ている玉を順に押し、開いた詳細から項目の ID を集めて返す。
+
+    押すとカメラがその玉へ寄るので、押すたびに閉じて、カメラが止まるのを待ってから次の玉を探す。
+    """
+    ids: set[str] = set()
+    ball_count = len(_settled_ball_centers(page))
+    for index in range(ball_count):
+        centers = _settled_ball_centers(page)
+        x, y = centers[index % len(centers)]
+        page.mouse.move(x, y)
+        page.mouse.down()
+        page.mouse.up()
+        try:
+            page.wait_for_selector("aside.panel.open .panel-kind .mono", timeout=BALL_OPEN_TIMEOUT_MS)
+        except PlaywrightTimeoutError:
+            # 玉に当たらなかった: 次の玉へ
+            continue
+        ids.add(page.locator("aside.panel.open .panel-kind .mono").inner_text())
+        page.keyboard.press("Escape")
+        page.wait_for_function("!document.querySelector('aside.panel.open')")
+    return ids

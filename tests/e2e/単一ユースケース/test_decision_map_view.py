@@ -24,6 +24,16 @@ TREE_EDGES_TO_ROOT = 3
 # 依存の線の本数（D-1 → D-3 と D-3 → D-5）
 DEPENDENCY_EDGES = 2
 
+# まとめて切り替える箱（状態の印の並びの右端）と、状態の印のチェックボックス（箱を除く）
+TOGGLE_ALL_BOX = ".legend .legend-all-check input"
+STATUS_INPUTS = ".legend label:not(.legend-all-check) input"
+
+# 全ての状態を隠したときに出す文
+NO_SHOWN_STATUS_TEXT = "表示する状態の検討事項はありません"
+
+# マップに検討事項が 1 件も描かれていない
+NO_MAP_ITEM_SCRIPT = "!document.querySelector('#decision-map button.n-item')"
+
 
 def _settings(valid_settings: dict[str, Any]) -> dict[str, Any]:
     """カテゴリーを 2 つ持つ設定を返す。"""
@@ -225,3 +235,50 @@ def test_error_when_layout_library_unavailable(
     page.click('.segment button[data-view="table"]')
     page.wait_for_selector("table.grid")
     assert row_ids(page) == ["D-5"]
+
+
+def _toggle_all_box(page: Page) -> dict[str, bool]:
+    """まとめて切り替える箱の、チェック・横棒・状態の印の並びの右端かを返す。"""
+    return page.eval_on_selector(
+        TOGGLE_ALL_BOX,
+        """box => ({
+            checked: box.checked,
+            indeterminate: box.indeterminate,
+            last: box.closest('.legend').lastElementChild === box.closest('label'),
+        })""",
+    )
+
+
+def _status_checks(page: Page) -> list[bool]:
+    """状態の印のチェックを、並びの順に返す。"""
+    return page.eval_on_selector_all(STATUS_INPUTS, "inputs => inputs.map(i => i.checked)")
+
+
+def test_normal_when_toggle_all_statuses(
+    build_preview: BuildPreview,
+    open_preview: OpenPreview,
+    make_item: MakeItem,
+    valid_settings: dict[str, Any],
+) -> None:
+    """まとめて切り替える箱で全ての状態を出し・隠し、箱と状態の印をそろえ、空の旨の文を出す（正常系）。"""
+    # 準備
+    path = build_preview(*_decisions(make_item), settings=_settings(valid_settings))
+    # 実行・検証（開く: 決定済みを隠した木と、横棒の箱）
+    page = open_preview(path, "#tab=decisions&view=map", width=WIDE_WIDTH)
+    page.wait_for_selector("#decision-map button.n-item")
+    assert _map_item_ids(page) == ["D-3", "D-5"]
+    assert _toggle_all_box(page) == {"checked": False, "indeterminate": True, "last": True}
+    # 実行・検証（1 回目: 全ての状態を出す）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_selector('#decision-map button[data-node="D-1"]')
+    assert _map_item_ids(page) == ["D-1", "D-3", "D-5"]
+    assert _toggle_all_box(page) == {"checked": True, "indeterminate": False, "last": True}
+    assert _status_checks(page) == [True, True, True]
+    assert not page.is_visible("p.map-empty")
+    # 実行・検証（2 回目: 全ての状態を隠す）
+    page.click(TOGGLE_ALL_BOX)
+    page.wait_for_function(NO_MAP_ITEM_SCRIPT)
+    assert _map_item_ids(page) == []
+    assert _toggle_all_box(page) == {"checked": False, "indeterminate": False, "last": True}
+    assert _status_checks(page) == [False, False, False]
+    assert page.inner_text("p.map-empty") == NO_SHOWN_STATUS_TEXT
