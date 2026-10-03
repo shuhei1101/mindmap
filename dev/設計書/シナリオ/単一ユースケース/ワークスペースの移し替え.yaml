@@ -1,4 +1,4 @@
-title: ""
+title: "ワークスペースの移し替え"
 scenarios:
   - name: 正常シナリオ
     setup:
@@ -76,9 +76,9 @@ scenarios:
         description: モデルを呼ばない。手順が連ねる `check-env`・版の比較と手順の一覧・手順を当てるを、決めた引数で順に再生する
       - name: 依存が揃った環境
         description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema が入っている
-      - name: 移してもスキーマに合わないワークスペース
-        description: '版のファイルを持たず、資料 A-1（`done: true`）と、`status` を `完了` に直接書き換えた検討事項 D-1 を持つワークスペース'
-        notes: 移し替えの手順とは別の理由でスキーマに合わず、手順を当てるところで失敗する
+      - name: 手順が読めないワークスペース
+        description: 版のファイルを持たず、`mindmap.yaml` は読めるが、`docs.yaml` が YAML として読めない中身のワークスペース
+        notes: '`v0.3.0` の資料の `done` を `status` に移す手順が `docs.yaml` を読めずに失敗する。`docs.yaml` には閉じていない括弧（`items: [`）を書く'
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -98,7 +98,7 @@ scenarios:
         CC-->>U: どの版のどの手順で何が失敗したかを示して止まる
       ```
     expected:
-      - '手順を当てるコマンドが終了コード 1 で終わり、出力に失敗した版・手順と、`decisions.yaml: items[0].status:` で始まる理由がある'
+      - 手順を当てるコマンドが終了コード 1 で終わり、出力に失敗した版（`v0.3.0`）・手順・`docs.yaml` を読めない理由がある
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
       - '`mindstella-version.ini` が無いままである'
   - name: 異常シナリオ（版が新しい）
