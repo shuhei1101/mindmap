@@ -514,6 +514,7 @@ functions:
       2. 写しを取る（`take_backup`。版は `to`）
       3. 手順を並びの順に当てる（`apply_step`）
          - `StepError` が起きた場合、写しから戻し（`restore_backup`）、`StepFailedError`（`{版} の手順 {番号}（{操作}）: {理由}`）を送る
+         - 戻すことにも失敗した場合（`OSError`・git の終了コードが 0 でない）、`StepFailedError` の `lines` に `写しから戻せませんでした。写しは {backup.ref} にあります` を続ける
       4. 当てた後の値が要るキーを集め直し、手順と写しを添えて返す
     exceptions:
       - name: WorkspaceNewerError
@@ -550,6 +551,13 @@ functions:
         mock: '`read_plugin_version`（`v0.3.0`）'
         expected: '`StepFailedError`（メッセージが `v0.3.0 の手順 1（rename_key）: ` で始まる）。全てのファイルの中身が呼ぶ前と同じ'
         exception: 手順が失敗した
+      - name: test_apply_migration_when_restore_fails
+        case: 異常
+        summary: 戻せなかったときは写しの場所を添える
+        condition: '`docs.yaml` が `items: [` のワークスペース。`restore_backup` を `OSError` を送る関数に差し替える'
+        mock: '`read_plugin_version`（`v0.3.0`）・`restore_backup`（`migrator` モジュールの参照を monkeypatch）'
+        expected: '`StepFailedError` の `lines` に写しのフォルダの絶対パスがある'
+        exception: 手順も戻しも失敗した
   - name: parse_assignment
     title: 入れる値の解釈
     kind: 関数
