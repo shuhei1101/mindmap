@@ -139,7 +139,7 @@ table.grid thead th { position: sticky; top: 0; z-index: 3; background: var(--th
 table.grid .pinned { position: sticky; z-index: 2; }
 table.grid thead th.pinned { z-index: 4; }
 table.grid .pin-edge { box-shadow: 6px 0 8px -6px var(--shadow-color); }
-table.grid tbody tr:hover td { background: var(--row-hover); }
+table.grid tbody tr:not(.selected):hover td { background: var(--row-hover); }
 table.grid tbody tr.selected, table.grid tbody tr.selected .pinned { background: var(--row-selected); }
 table.grid tbody tr.dim td { color: var(--text-3); }
 table.grid td.num, table.grid th.num { text-align: right; font-variant-numeric: tabular-nums; }
