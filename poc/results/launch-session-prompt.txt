@@ -1,0 +1,24 @@
+
+
+✻ Sautéed for 6s · done 8:32 AM
+
+❯ スキルを使わずに、ツール mcp__mindstella__add_item を title=みかん
+  で直接呼んでください
+
+  Calling mindstella…
+
+────────────────────────────────────────────────────────────────────────────────
+ Tool use
+ mindstella — Add Item Tool: (MCP)
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ title: "みかん"
+╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
+ About the mindstella — Add Item Tool:
+ │ ワークスペースに項目を 1 件足す。
+
+ Do you want to proceed?
+ ❯ 1. Yes
+   2. Yes, and don't ask again for mindstella — Add Item commands in /t…
+   3. No
+
+ Esc to cancel · Tab to amend

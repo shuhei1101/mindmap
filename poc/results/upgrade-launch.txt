@@ -1,0 +1,2 @@
+[mindstella] plugin: {scratchpad}/cc-config/plugins/cache/mindstella-poc/mindstella-poc/0.0.2
+[mindstella] mcp config: /tmp/tmp.ttT7A3U83t/mcp.json

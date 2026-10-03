@@ -1,4 +1,5 @@
 {
   "name": "mindstella-poc",
-  "description": "PoC: 起動スクリプトで立てる MCP サーバーとプレビューの配信"
+  "description": "PoC: 起動スクリプトで立てる MCP サーバーとプレビューの配信",
+  "version": "0.0.2"
 }
