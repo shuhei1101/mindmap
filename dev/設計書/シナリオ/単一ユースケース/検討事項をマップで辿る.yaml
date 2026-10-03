@@ -106,6 +106,34 @@ scenarios:
       - マップの場所に、読めなかったライブラリとして elkjs の名前が出る
       - 表に切り替えると D-5 の行がある
     test: test_error_when_layout_library_unavailable
+  - name: 正常シナリオ（状態をまとめて切り替える）
+    setup:
+      - name: Mock
+        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 決定済みの D-1、要見直しの D-3、未決定の D-5
+      - name: 書き出し
+        description: 記録を書き出した `preview.html`。表示の幅は 1280px
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: 検討事項のタブを開く
+        P-->>U: マップ（決定済みを隠した木）と、横棒のまとめて切り替える箱
+        U->>P: まとめて切り替える箱を押す
+        P-->>U: 全ての状態の項目を出したマップ
+        U->>P: まとめて切り替える箱をもう一度押す
+        P-->>U: 全ての状態の項目を隠したマップと、空の旨の文
+      ```
+    expected:
+      - 開いた直後、状態の印の帯の右端のまとめて切り替える箱が横棒（一部を表示）になっている
+      - 1 回目に押した後、マップに D-1・D-3・D-5 があり、箱と状態の印の決定済み・要見直し・未決定のチェックが全て入っている
+      - 2 回目に押した後、マップに検討事項が 1 件も無く、箱と状態の印のチェックが全て外れ、マップの枠に「表示する状態の検討事項はありません」が出る
+    test: test_normal_when_toggle_all_statuses
 lead: 利用者が、検討事項を対象 → カテゴリー → フェーズ → 検討事項の木（マップ）で見て、状態で絞り、項目の枝と依存を辿る単一ユースケース。ボード・表への切り替えを含む。
 issue: 5
 primary_actor: 利用者

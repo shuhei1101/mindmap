@@ -176,6 +176,20 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .legend label:has(input:not(:checked)) .mark { opacity: .35; }
 .legend label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .legend .n { font-family: var(--font-mono); color: var(--text-3); }
+/* 非表示のチップ（状態の印・項目の種類）: 枠を点線にして、表示中と見分ける */
+.legend label:not(.legend-all-check):has(input:not(:checked)) { border-style: dashed; }
+/* 項目の種類の色の点: 非表示のときは状態の印と同じ薄さにする */
+.legend label:has(input:not(:checked)) .kdot { opacity: .35; }
+/* まとめて切り替えるチェックの箱: 並びの右端に、文字を持たない箱だけを置く */
+.legend .legend-all-check, .legend .legend-all-check:has(input:checked) { margin-left: 6px; padding: 0 4px; border: 0; background: none; }
+/* まとめて切り替えるチェックの箱の本体: 背景は塗らず、枠とチェック・横棒の記号だけで描く */
+.legend .legend-all-check input { position: relative; box-sizing: border-box; opacity: 1; pointer-events: auto; appearance: none; width: 14px; height: 14px; margin: 0; border: 1px solid var(--border); border-radius: 3px; background: transparent; cursor: pointer; }
+/* チェックの記号: 右下の 2 辺の枠を回してレ点にし、箱の中心に置く。線の太さは状態の印の線にそろえる */
+.legend .legend-all-check input:checked::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 7px; border: solid var(--text); border-width: 0 1.5px 1.5px 0; transform: translate(-50%, -60%) rotate(45deg); }
+/* 横棒の記号: 一部だけ表示しているとき。枠線で描き、ハイコントラストでも消えないようにする */
+.legend .legend-all-check input:indeterminate::after { content: ""; position: absolute; left: 2.5px; right: 2.5px; top: calc(50% - .75px); border-top: 1.5px solid var(--text); }
+/* 表示するものが無いとき: 枠の中央に空の旨を出す（押しても邪魔にならない） */
+.map-empty { position: absolute; left: 0; right: 0; top: 40%; z-index: 1; margin: 0; text-align: center; pointer-events: none; }
 .map-wrap { position: relative; overflow: auto; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 150px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
   background-image: radial-gradient(var(--border-soft) 1px, transparent 1px); background-size: 20px 20px; }
 .map-sizer { position: relative; }
@@ -519,10 +533,6 @@ dialog.viewer.dragging .v-canvas { cursor: grabbing; }
 
 /* 表示形式の切り替えは、どのタブでも同じ幅・同じ位置にする（切り替えでちらつかないように） */
 .segment button { min-width: 92px; justify-content: center; }
-/* つながりの種類の切り替え: 表示中は塗り、非表示は点線の枠と打ち消し線ではっきり分ける */
-.map-tools .legend label:has(input[data-act="gkind"]:checked) { background: var(--surface); border: 1px solid var(--text-2); color: var(--text); font-weight: 600; }
-.map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) { background: transparent; border: 1px dashed var(--border); color: var(--text-3); text-decoration: line-through; }
-.map-tools .legend label:has(input[data-act="gkind"]:not(:checked)) .kdot { opacity: .25; }
 /* 図の拡大表示: 背景はつかんで動かせ、図の中の文字は選んでコピーできる */
 .v-canvas { user-select: none; }
 .v-stage svg text, .v-stage svg foreignObject, .v-stage svg .nodeLabel, .v-stage svg .edgeLabel { user-select: text; cursor: text; }
