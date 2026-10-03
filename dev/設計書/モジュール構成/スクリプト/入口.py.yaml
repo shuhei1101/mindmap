@@ -1098,12 +1098,6 @@ functions:
     usecase: リリースの片付け
     scope: public
     summary: '`release/` の中身を消し、消したものを返す'
-    description: |-
-      単体テスト（単体テスト作成で `tests/unit/scripts/test_commands.py` に作り、作ったときに `unit_tests` へ移す）:
-
-      | テスト | 区分 | 条件 | モック | 期待値 |
-      | --- | --- | --- | --- | --- |
-      | `test_run_clear_release` | 正常 | 作成済みのワークスペースの `release/` に `古い資料.md` | なし | `{"removed": ["古い資料.md"]}` と 0 |
     args:
       - name: root
         type: Path
@@ -1114,6 +1108,13 @@ functions:
       type: tuple[dict[str, Any], int]
       description: '`{removed}` と 0'
     process: 1. `release/` を片付ける（リリースの片付け。`clear_release`）
+    unit_tests:
+      - name: test_run_clear_release
+        case: 正常
+        summary: release/ の中を消し、消したものを返す
+        condition: 作成済みのワークスペースの `release/` に `古い資料.md`
+        mock: なし
+        expected: '`{"removed": ["古い資料.md"]}` と 0'
 notes:
   モジュールの読み込み: スクリプトはパッケージとして入れず、スキルは全てのコマンドをシステムの `python3` で `{スキルのフォルダ}/scripts/mindmap.py` を起動する（依存が揃っていなければ入口が仮想環境の Python で起動し直す。『起動し直し』）。起動したファイルのフォルダが `sys.path` の先頭に入るので、各モジュールは `import store` のように同じフォルダの名前で読む。単体テストは `tests/unit/scripts/conftest.py` で `skills/mindmap/scripts` を `sys.path` に足して同じ名前で読む。
   入口の構文: '`mindmap.py`・`launcher.py`・`check_env.py` は先頭に `from __future__ import annotations` を置き、型注釈を実行時に評価しない（`X | Y` の型注釈が 3.9 以前で読み込み時に落ちない）。`commands.py` より先のモジュールは、起動した Python の依存が揃った後にだけ読むので 3.12 の書き方を使ってよい。'

@@ -932,15 +932,6 @@ functions:
     usecase: リリースの片付け
     scope: public
     summary: '`release/` の中身を消し、空の `release/` を残す'
-    description: |-
-      単体テスト（単体テスト作成で `tests/unit/scripts/test_store.py` に作り、作ったときに `unit_tests` へ移す）:
-
-      | テスト | 区分 | 条件 | モック | 期待値 |
-      | --- | --- | --- | --- | --- |
-      | `test_clear_release` | 正常 | 作成済みのワークスペースの `release/` に `古い資料.md` と、ファイルを 1 つ持つ `図/` | なし | 戻り値が `["古い資料.md", "図/"]`。`release/` があり、中身が空。`mindmap.yaml` が呼ぶ前と同じ |
-      | `test_clear_release_when_release_dir_missing` | 正常 | `release/` を消し、`handoff/` に `資料.md` を置いたワークスペース | なし | 戻り値が空。空の `release/` がある。`handoff/資料.md` が呼ぶ前と同じ |
-      | `test_clear_release_when_workspace_missing` | 異常 | `mindmap.yaml` が無く、`release/` に `資料.md` がある `tmp_path` | なし | `WorkspaceNotFoundError`。`release/資料.md` が残っている |
-      | `test_clear_release_when_remove_fails` | 異常 | `release/` に `一.md`・`二.md`。`Path.unlink` を `二.md` のときだけ `PermissionError` を送るように差し替える | `Path.unlink`（monkeypatch） | `WriteFailedError`（メッセージに `二.md` のパス）。`二.md` が残り、`一.md` は無い |
     side_effects: '`release/` の中のファイルとフォルダを消す（`release/` が無ければ作る）'
     args:
       - name: root
@@ -963,6 +954,33 @@ functions:
       - name: WriteFailedError
         condition: '`release/` を作るか中のものを消す途中で `OSError` が起きた'
         message: '書き込めませんでした: {パス}（{理由}）'
+    unit_tests:
+      - name: test_clear_release
+        case: 正常
+        summary: release/ の中のファイルとフォルダを消す
+        condition: 作成済みのワークスペースの `release/` に `古い資料.md` と、ファイルを 1 つ持つ `図/`
+        mock: なし
+        expected: 戻り値が `["古い資料.md", "図/"]`。`release/` があり、中身が空。`mindmap.yaml` が呼ぶ前と同じ
+      - name: test_clear_release_when_release_dir_missing
+        case: 正常
+        summary: release/ が無ければ空の release/ を作る
+        condition: '`release/` を消し、`handoff/` に `資料.md` を置いたワークスペース'
+        mock: なし
+        expected: 戻り値が空。空の `release/` がある。`handoff/` が呼ぶ前と同じ
+      - name: test_clear_release_when_workspace_missing
+        case: 異常
+        summary: mindmap.yaml が無ければ何も消さない
+        condition: '`mindmap.yaml` が無く、`release/` に `資料.md` がある `tmp_path`'
+        mock: なし
+        expected: '`WorkspaceNotFoundError`。`release/資料.md` が残っている'
+        exception: mindmap.yaml が無い
+      - name: test_clear_release_when_remove_fails
+        case: 異常
+        summary: 消せないものに当たったらそこで止める
+        condition: '`release/` に `一.md`・`二.md`。`Path.unlink` を `二.md` のときだけ `PermissionError` を送るように差し替える（`failing_unlink`）'
+        mock: '`Path.unlink`（monkeypatch）'
+        expected: '`WriteFailedError`（メッセージに `二.md` のパス）。`二.md` が残り、`一.md` は無い'
+        exception: 消す途中で OSError
 test_files:
   - tests/unit/scripts/test_kinds.py
   - tests/unit/scripts/test_store.py
