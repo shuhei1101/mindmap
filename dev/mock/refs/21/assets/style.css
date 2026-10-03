@@ -177,14 +177,12 @@ th:hover .th-tool.pin, th:focus-within .th-tool.pin, .th-tool.pin[aria-pressed="
 .legend label:has(input:not(:checked)) .mark { opacity: .35; }
 .legend label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 .legend .n { font-family: var(--font-mono); color: var(--text-3); }
-/* 状態をまとめて切り替える操作: 状態の印の後ろに区切り線を挟んで置く */
-.legend .legend-all, .legend .legend-all-check { margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--border-soft); }
-/* まとめて切り替えるボタン 2 つ: 状態の印と同じ高さにそろえる */
-.legend .legend-all { display: inline-flex; gap: 2px; }
+/* まとめて切り替えるボタン 2 つ: 状態の印の後ろに区切り線を挟んで置き、状態の印と同じ高さにそろえる */
+.legend .legend-all { display: inline-flex; gap: 2px; margin-left: 6px; padding-left: 12px; border-left: 1px solid var(--border-soft); }
 /* まとめて切り替えるボタン */
 .legend .legend-all .btn { height: 26px; padding: 0 8px; font-size: var(--fs-xs); }
-/* まとめて切り替えるチェックの箱: 枠を持たず、チェック・横棒・空の見た目を出す */
-.legend .legend-all-check { border-top: 0; border-right: 0; border-bottom: 0; border-radius: 0; background: none; color: var(--text); }
+/* まとめて切り替えるチェックの箱: 状態の印の前に区切り線を挟んで置く。枠を持たず、チェック・横棒・空の見た目を出す */
+.legend .legend-all-check, .legend .legend-all-check:has(input:checked) { margin-right: 6px; padding-left: 0; padding-right: 12px; border: 0; border-right: 1px solid var(--border-soft); border-radius: 0; background: none; color: var(--text); }
 /* まとめて切り替えるチェックの箱の本体: 状態の印と違い、箱そのものを見せる */
 .legend .legend-all-check input { position: static; opacity: 1; pointer-events: auto; margin: 0; accent-color: var(--accent); }
 .map-wrap { position: relative; overflow: auto; height: calc(100dvh - var(--topbar-h) - var(--tab-h) - 150px); min-height: 420px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
@@ -577,8 +575,8 @@ dialog.full .panel-head { flex: none; }
 
 /* モック専用の操作列の高さ: 帯を上端に留め、その下にトップバー・タブ・詳細パネルを置く */
 body:has(> .mockbar) { --mock-h: 32px; }
-/* モック専用の操作列を上端に留める */
-.mockbar { position: sticky; top: 0; z-index: 31; height: var(--mock-h); padding-top: 0; padding-bottom: 0; }
+/* モック専用の操作列を上端に留める。狭い幅で収まらないときは、折り返さず帯の中で横に送る（高さを変えるとトップバーと重なる） */
+.mockbar { position: sticky; top: 0; z-index: 31; height: var(--mock-h); padding-top: 0; padding-bottom: 0; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
 /* 詳細パネルを並べるときは、パンくずも本文と同じだけ寄せる */
 @media (min-width: 1100px) { body.panel-open .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
 @media (min-width: 901px) { body.panel-open:has(.content.map-view) .crumbs-bar { max-width: none; margin-right: var(--panel-w); } }
