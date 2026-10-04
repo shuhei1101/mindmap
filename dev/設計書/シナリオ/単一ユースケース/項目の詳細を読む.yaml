@@ -3,13 +3,13 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 検討事項 D-3（案 A を採用・案 B を不採用と理由、前提 D-1・後続 D-5、進めるタスク T-2、関連 R-1、本文の Markdown に mermaid の図を 1 つ）。メモ N-1 が D-3 を `related` で指す
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`。表示の幅は 1920px
+      - name: 配信
+        description: 記録を配っているサーバー。表示の幅は 1920px
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -42,14 +42,14 @@ scenarios:
   - name: 異常シナリオ（本文にスクリプトを含む）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 本文に `<script>` と `onerror` 属性を持つ `<img>` を含む資料 A-1
         notes: どちらも実行されるとページの変数に印を残す中身にする
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -71,8 +71,8 @@ scenarios:
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 本文に見出しと mermaid の図を持つ資料 A-1
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -91,6 +91,6 @@ issue: 5
 primary_actor: 利用者
 trigger: 利用者がどれかの画面で項目を押すか、項目を指す URL を開く
 preconditions:
-  - ワークスペースに記録があり、プレビューを書き出してある
+  - ワークスペースに記録があり、サーバーがプレビューを配っている
 minimal_guarantee: 本文に書かれた HTML やスクリプトは実行しない。描画のライブラリが読めないときも、本文の文字は読める。
 test_file: tests/e2e/単一ユースケース/test_item_detail_view.py
