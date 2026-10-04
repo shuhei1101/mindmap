@@ -1,0 +1,30 @@
+title: "設定: サーバー"
+lead: 起動スクリプトと MCP サーバーが読む環境変数。設定のファイルは持たない。
+settings:
+  - key: MINDSTELLA_VENV
+    title: 仮想環境のフォルダ
+    file: 環境変数
+    type: str
+    required: false
+    default: ~/.mindmap/venv
+    description: MCP サーバーを動かす仮想環境のフォルダ。起動スクリプトが依存の確認に渡し、MCP の設定の `command` にその Python を書く
+    env_var: MINDSTELLA_VENV
+    reload: restart
+    status: planned
+    visibility: user
+    refs:
+      - dev/設計書/インターフェース定義/サーバー/起動スクリプト#
+      - dev/設計書/インターフェース定義/サーバー/依存の確認#
+  - key: CLAUDE_CONFIG_DIR
+    title: Claude Code の設定のフォルダ
+    file: 環境変数
+    type: str
+    required: false
+    default: なし（Claude Code の既定の設定のフォルダ）
+    description: あれば起動スクリプトが tmux のセッションへ `new-session -e` で渡し、`claude plugin list --json` もそのフォルダで引く
+    env_var: CLAUDE_CONFIG_DIR
+    reload: restart
+    status: planned
+    visibility: user
+    refs:
+      - dev/設計書/インターフェース定義/サーバー/起動スクリプト#

@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `build` を再生する。ブラウザは起動しない
+        description: モデルを呼ばない。起動スクリプトの代わりに MCP サーバーを立て、手順が連ねるプレビューの URL の取得を再生する。示された URL を実際のブラウザで開く
       - name: 作成済みのワークスペース
         description: 検討事項 D-1 を持つ
     flow: |-
@@ -11,28 +11,59 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
-        participant WS as ワークスペース
+        participant SV as サーバー
+        participant P as プレビュー（ブラウザ）
 
         U->>CC: 記録を見たい
-        CC->>SCR: build
-        SCR->>WS: preview.html を書き出す
-        SCR-->>CC: 書き出したファイルのパス
-        CC-->>U: preview.html の絶対パスを示し、ブラウザで開くよう案内する
+        CC->>SV: プレビューの URL
+        SV-->>CC: 127.0.0.1 の URL
+        CC-->>U: URL を示し、ブラウザで開くよう案内する
+        U->>P: URL を開く
+        P->>SV: 記録を読む
+        SV-->>P: ワークスペースの記録
+        P-->>U: 概要
       ```
     expected:
-      - '`preview.html` があり、埋め込まれたデータに D-1 がある'
-      - '`build` の出力に `preview.html` のパスがある'
-lead: '`session` が、ワークスペースの記録をプレビューの HTML に書き出し、利用者がブラウザで開けるようにする単一ユースケース。'
+      - URL が `127.0.0.1` を指す
+      - 開いた画面に D-1 がある
+      - ワークスペースに `preview.html` が無い
+  - name: 正常シナリオ（記録を書き換える）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。起動スクリプトの代わりに MCP サーバーを立て、`add` を MCP のクライアントで呼ぶ。プレビューは実際のブラウザで開いておく
+      - name: 作成済みのワークスペース
+        description: 検討事項 D-1 を持つ
+      - name: 開いている画面
+        description: 検討事項の表
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant CC as Claude Code（session）
+        participant SV as サーバー
+        participant WS as ワークスペース
+        participant P as プレビュー（ブラウザ）
+
+        CC->>SV: add（検討事項 D-2）
+        SV->>WS: decisions.yaml に書く
+        SV->>SV: 書き換えを見つける
+        SV-->>P: 書き換えを知らせる
+        P->>SV: 記録を読み直す
+        P-->>P: 開いている画面を描き直す
+      ```
+    expected:
+      - 再読み込みの操作をせずに、検討事項の表に D-2 が出る
+      - 描き直した後も、開いていた画面と URL のハッシュが変わらない
+lead: '`session` が、サーバーが配るプレビューの URL を示し、利用者がブラウザで開いて、記録を書き換えるたびに画面が描き直される単一ユースケース。'
 issue: 4
 primary_actor: 利用者
 trigger: 利用者が記録を見たいと言う
 preconditions:
   - ワークスペースが作成済みである
-  - 依存が揃っている
-success_guarantee: '`preview.html` が今の記録で書き出し直され、応答にそのファイルの絶対パスがある。'
+  - 起動スクリプトで立ち上げ、mindstella の MCP のツールが使える
+success_guarantee: '応答にサーバーが配るプレビューの URL があり、開くと今の記録が出る。ワークスペースの YAML を書き換えると、開いている画面が再読み込みの操作なしで描き直される。'
 frequency: 話し合いの中で数回
 priority: 中
 notes:
-  開き方: スキルはブラウザを起動するコマンドを持たず、パスを示して利用者が開く。OS ごとの起動コマンドを `allowed-tools` に足さずに済み、Claude Code が動く端末とブラウザの端末が違うとき（WSL・リモート）にも崩れない
-  E2E の範囲: このユースケースは E2E を持たない。`build` の出力と埋め込みのデータは既存の『プレビューの書き出し』の『正常シナリオ』が確かめる。パスの示し方はモデルの応答で確かめない
+  E2E の範囲: 書き換えから画面への反映までの時間は非機能要件のテストが確かめる。URL の示し方はモデルの応答で、確かめない
+  開き方: スキルはブラウザを起動するコマンドを持たず、URL を示して利用者が開く。OS ごとの起動コマンドを `allowed-tools` に足さずに済み、Claude Code が動く端末とブラウザの端末が違うとき（WSL・リモート）にも崩れない
+  対応テストファイル: E2E テスト作成でファイルを作ったときに `test_file` と各シナリオの `test` を足す

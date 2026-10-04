@@ -11,6 +11,7 @@ er:
     - name: メモ
     - name: 会話ログ
     - name: 本文
+    - name: 送信
   relations:
     - from: 設定
       to: 検討事項
@@ -44,6 +45,10 @@ er:
       to: 本文
       cardinality: '||--o|'
       label: body
+    - from: 送信
+      to: 検討事項
+      cardinality: '}o--||'
+      label: target（どの種類の項目も指す）
 tables:
   - name: mindmap.yaml
     title: 設定
@@ -383,3 +388,59 @@ tables:
         not_null: true
         description: '`v{メジャー}.{マイナー}.{パッチ}`。2 行目より後は読まない'
         example: v0.3.0
+  - name: submissions.yaml
+    title: 送信
+    datastore: YAML
+    summary: プレビューの詳細パネルから送られた、項目ごとの回答・意見
+    primary_key: id
+    scale: ~1000
+    growth: 画面から送るたびに 1 件足す
+    deletion: 消さず、取り込んだら `taken` に日時を書く
+    access: 全件
+    description: '`items:` の配列を持ち、1 要素 = 1 件の送信。初めて送ったときにサーバーが作り、無ければ送信 0 件として扱う。書くのはサーバーの送信（`POST /api/submissions`）と `take_submission` だけで、`add`・`update` の対象にしない。共通のキー（`common.schema.json`）は持たない'
+    columns:
+      - name: id
+        title: ID
+        type: string
+        not_null: true
+        primary_key: true
+        auto: 採番
+        description: '`S-` + 連番。連番は最大 + 1 で、番号を使い回さない'
+        example: S-3
+      - name: target
+        title: 向けた項目
+        type: string
+        not_null: true
+        description: 回答・意見を向けた項目の ID（どの種類でもよい）。送ったときにワークスペースにあった項目
+        example: D-22
+      - name: body
+        title: 本文
+        type: string
+        not_null: true
+        description: 回答・意見の本文。前後の空白を除いて 1〜10000 文字
+        example: 案 A にする
+      - name: sent
+        title: 送った日時
+        type: string
+        not_null: true
+        auto: 作成日時
+        description: UTC のタイムゾーン付き ISO 8601
+        example: '2026-10-04T03:00:00+00:00'
+      - name: taken
+        title: 取り込んだ日時
+        type: string
+        not_null: false
+        description: 取り込んだ日時（UTC のタイムゾーン付き ISO 8601）。取り込んでいなければ `null`
+  - name: .mindstella.lock
+    title: 書き換えのロック
+    datastore: テキスト
+    summary: 同じワークスペースを書き換えるプロセスどうしの排他に使う空のファイル
+    scale: 1 件
+    deletion: 消さない
+    access: '`fcntl.flock` の排他ロックだけを取り、中身は読み書きしない'
+    description: 書き換えるツールと送信の受け付けが初めてロックを取るときに作る。点検・書き換えの知らせ・移し替えの対象にしない
+    columns:
+      - name: (中身)
+        title: 中身
+        type: string
+        description: 空。ロックの対象としてだけ使う

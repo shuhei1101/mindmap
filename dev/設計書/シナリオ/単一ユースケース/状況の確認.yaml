@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ（再開時の状況）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 要見直しの検討事項
@@ -20,12 +20,12 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: 再開時の状況を出す
-        SCR->>WS: 全ての YAML を読む
-        SCR-->>CC: 要見直し・進行中・再開可能・決定待ち・次の候補
+        CC->>SV: 再開時の状況を出す
+        SV->>WS: 全ての YAML を読む
+        SV-->>CC: 要見直し・進行中・再開可能・決定待ち・次の候補
       ```
     expected:
       - 要見直しに D-1 がある
@@ -38,7 +38,7 @@ scenarios:
   - name: 正常シナリオ（次に検討する項目）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませたワークスペース
         notes: フェーズの並び `目的` → `要件` → `構成`
@@ -52,13 +52,13 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: 次に検討する項目を出す
-        SCR->>WS: 全ての YAML を読む
-        SCR->>SCR: 前提が揃った未決定を選び、フェーズ → 影響度 → 後続の件数の順に並べる
-        SCR-->>CC: 候補の一覧
+        CC->>SV: 次に検討する項目を出す
+        SV->>WS: 全ての YAML を読む
+        SV->>SV: 前提が揃った未決定を選び、フェーズ → 影響度 → 後続の件数の順に並べる
+        SV-->>CC: 候補の一覧
       ```
     expected:
       - 候補が D-2・D-4・D-3・D-1 の順に並ぶ

@@ -3,14 +3,14 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: '納品物でない資料 A-1（種類: メモ書き、状態: 下書き、本文の Markdown に 1 行の文「メモ書きの本文」を持つ）と、納品物の資料 A-2（種類: 仕様書、状態: 完成、本文の Markdown に見出しと表を持つ）'
         notes: 資料の状態の値はインターフェース定義設計で `docs.schema.json` と決め、決まった値に合わせる
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -43,5 +43,5 @@ issue: 5
 primary_actor: 利用者
 trigger: 利用者が資料のタブを開く
 preconditions:
-  - ワークスペースに記録があり、プレビューを書き出してある
+  - ワークスペースに記録があり、サーバーがプレビューを配っている
 test_file: tests/e2e/単一ユースケース/test_doc_read_view.py

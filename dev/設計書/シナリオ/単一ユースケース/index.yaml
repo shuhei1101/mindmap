@@ -2,8 +2,10 @@ summary: 単一ユースケースのシナリオ
 items:
   - page: プラグインのインストール.yaml
     summary: マーケットプレイスを登録してプラグイン mindstella をインストールする
+  - page: 起動スクリプトで立ち上げる.yaml
+    summary: 依存を確かめ、tmux の中で MCP サーバーを渡した Claude Code を立ち上げる
   - page: ワークスペースの作成.yaml
-    summary: 依存を確かめ、新しいワークスペースを作る
+    summary: 新しいワークスペースを作る
   - page: 記録の追加と更新.yaml
     summary: 検討事項・タスクなどの項目を足す・直す
   - page: 採用する案の切り替え.yaml
@@ -14,10 +16,10 @@ items:
     summary: 項目を探し、1 件の中身と参照元・使っている属性名を読む
   - page: ワークスペースの点検.yaml
     summary: 参照切れと、YAML と本文の Markdown のずれを洗い出す
-  - page: プレビューの書き出し.yaml
-    summary: ワークスペースの記録をプレビューの HTML に書き出す
   - page: 話し合いのセットアップ.yaml
-    summary: 依存を確かめ、新しいワークスペースを作るか既存の続きを選ぶ
+    summary: 新しいワークスペースを作るか既存の続きを選ぶ
+  - page: 送信の取り込み.yaml
+    summary: 話し合いの最初に、プレビューから届いた送信を記録して取り込み済みにする
   - page: 発言の取り込み.yaml
     summary: 発言を記録し、派生の検討事項・未整理・タスクを積む
   - page: ヒアリング.yaml
@@ -27,7 +29,7 @@ items:
   - page: 方針転換.yaml
     summary: 採用する案を切り替え、影響を要見直しにして見直しのタスクを積む
   - page: プレビューを開く.yaml
-    summary: 記録をプレビューの HTML に書き出し、開く場所を示す
+    summary: サーバーが配るプレビューの URL を示し、記録の書き換えを開いている画面へ反映する
   - page: ゴール判定.yaml
     summary: ゴールに届いたかを確かめ、確定した記録をリリースの資料に書き出す
   - page: 概要を見る.yaml
@@ -42,6 +44,8 @@ items:
     summary: 資料を納品物を先頭にしたカードと状態の列のボードで見て、本文を開く
   - page: 項目の詳細を読む.yaml
     summary: 詳細パネルで項目の案・関係・本文を読む
+  - page: 回答・意見を送る.yaml
+    summary: 詳細パネルから項目の ID ごとに回答・意見を送る
   - page: 項目を検索する.yaml
     summary: 全体の検索で項目を探し、詳細を開く
   - page: つながりを辿る.yaml

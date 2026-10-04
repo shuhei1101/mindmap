@@ -1,0 +1,140 @@
+title: "プレビューの URL"
+entry:
+  kind: mcp_tool
+  value: '`preview_url`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__preview_url`）。結果とエラーの返し方は『MCP サーバーの起動』'
+flows:
+  - name: 正常系
+    summary: 初めて呼ぶと配信を立て、127.0.0.1 の URL を返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as preview_url（MCP のツール）
+        participant P as プレビューの配信
+
+        クライアント->>IF: preview_url workspace
+        IF->>P: 127.0.0.1 の空きポートで立てる
+        IF-->>クライアント: JSON（url・started: true）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`url` が `http://127.0.0.1:` で始まり、`started` が真'
+      - '`url` を GET すると 200 が返る'
+      - ワークスペースに `preview.html` が無い
+    test: test_normal
+  - name: 正常系（2 回目）
+    summary: 同じワークスペースで呼び直すと、同じ URL を返して配信を増やさない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース。`preview_url` を 1 回呼んでおく
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as preview_url（MCP のツール）
+
+        クライアント->>IF: preview_url workspace
+        IF-->>クライアント: JSON（同じ url・started: false）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`url` が 1 回目と同じで、`started` が偽'
+    test: test_normal_when_called_again
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すと配信を立てずに終わる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as preview_url（MCP のツール）
+        participant WS as フォルダ
+
+        クライアント->>IF: preview_url workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
+    test: test_error_when_workspace_not_found
+  - name: 異常系（待ち受けを立てられない・ServeFailedError）
+    summary: 待ち受けを立てられないとエラーで終わる
+    setup:
+      - name: Mock
+        description: 待ち受けを立てる処理を、OSError を送る偽に差し替える
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as preview_url（MCP のツール）
+
+        クライアント->>IF: preview_url workspace
+        IF->>IF: 待ち受けを立てられない
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - 'エラーの本文が `エラー: ` で始まり、トレースバックを含まない'
+    test: test_error_when_serve_fails
+lead: ワークスペースのプレビューを配る URL を返す。このプロセスでまだ配っていなければ、`127.0.0.1` の空きポートで配信を立てる。
+idempotent: true
+side_effects: 初めて呼んだワークスペースについて、このプロセスの中に配信（『プレビューの配信』『記録の取得』『書き換えの知らせ』『回答・意見の送信』）を立てる。ワークスペースには書かない
+callers:
+  - dev/設計書/インターフェース定義/スキル/話し合いの進行#
+request:
+  - name: workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+response:
+  - name: url
+    type: str
+    description: 配信の URL（`http://127.0.0.1:{ポート}/`）
+    example: http://127.0.0.1:43817/
+  - name: workspace
+    type: str
+    description: 配っているワークスペースの絶対パス
+  - name: started
+    type: bool
+    description: この呼び出しで配信を立てたか。既に配っていたら偽
+exceptions:
+  - name: なし（正常終了）
+    condition: 配信の URL を返せた
+    notes: 結果を返す
+  - name: WorkspaceNotFoundError
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー。配信を立てない
+  - name: ServeFailedError
+    condition: 待ち受けを立てられない（空きポートが取れない など）
+    notes: ツールのエラー。エラーの本文に理由
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: 待ち受け
+    constraint: '`127.0.0.1` だけ。ポートは OS に選ばせる（ポート 0 で待ち受ける）'
+    decided_by: dev/設計書/非機能要件/非機能要件#requirements[待ち受けの範囲]
+  - item: 配信の数
+    constraint: 1 つのプロセスの中で、ワークスペース（絶対パス）ごとに 1 つ。同じワークスペースで呼び直すと同じ URL を返す。別のプロセスが同じワークスペースを配っていても、このプロセスは別のポートで配る
+  - item: 配信を止める時
+    constraint: プロセスが終わるとき（『MCP サーバーの起動』の終わり方）。途中で止めるツールは持たない
+refs:
+  - dev/設計書/インターフェース定義/サーバー/プレビューの配信#

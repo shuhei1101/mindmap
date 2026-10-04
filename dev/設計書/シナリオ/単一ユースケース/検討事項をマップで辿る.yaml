@@ -3,14 +3,14 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 対象 1・カテゴリー 2・フェーズ 2 にまたがる検討事項。決定済みの D-1、要見直しの D-3（前提 D-1・後続 D-5）、未決定の D-5
         notes: 'D-3 は `depends_on: [D-1]`、D-5 は `depends_on: [D-3]`'
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`。表示の幅は 1280px
+      - name: 配信
+        description: 記録を配っているサーバー。表示の幅は 1280px
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -37,13 +37,13 @@ scenarios:
   - name: 正常シナリオ（キーワードで探す）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 名前に「保存」を含む未決定の D-2 と要見直しの D-3、含まない未決定の D-5
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -60,13 +60,13 @@ scenarios:
   - name: 正常シナリオ（狭い幅）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 正常シナリオと同じ検討事項
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`。表示の幅は 390px
+      - name: 配信
+        description: 記録を配っているサーバー。表示の幅は 390px
         notes: 狭い幅の境は画面設計で決める
     flow: |-
       ```mermaid
@@ -89,8 +89,8 @@ scenarios:
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 未決定の検討事項 D-5
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -109,13 +109,13 @@ scenarios:
   - name: 正常シナリオ（状態をまとめて切り替える）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 決定済みの D-1、要見直しの D-3、未決定の D-5
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`。表示の幅は 1280px
+      - name: 配信
+        description: 記録を配っているサーバー。表示の幅は 1280px
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -139,5 +139,5 @@ issue: 5
 primary_actor: 利用者
 trigger: 利用者が検討事項のタブを開く
 preconditions:
-  - ワークスペースに記録があり、プレビューを書き出してある
+  - ワークスペースに記録があり、サーバーがプレビューを配っている
 test_file: tests/e2e/単一ユースケース/test_decision_map_view.py

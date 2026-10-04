@@ -1,26 +1,29 @@
 title: "プレビューを開く"
 entry:
   kind: screen
-  value: '`build` が書き出した `preview.html`（雛形は `plugins/mindstella/skills/mindmap/preview/`）。`export` が書き出した配る書き出しも同じ画面を開く'
-  api: なし（記録は `mindmap-data` の要素から読む。通信は描画のライブラリと文字の読み込みだけ）
+  value: 'サーバーの配信の URL（`preview_url` が返す `http://127.0.0.1:{ポート}/`。画面は『プレビューの配信』が返し、雛形は `plugins/mindstella/skills/mindmap/preview/`）。`export` が書き出した配る書き出しも同じ画面を開く'
+  api: '`GET /api/records`（記録）・`GET /api/events`（書き換えの知らせ）・`POST /api/submissions`（回答・意見の送信）。配る書き出しは呼ばず、記録を `mindmap-data` の要素から読む'
 flows:
   - name: 正常系
     summary: ハッシュが指す画面・表示形式・項目を開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開き、描画のライブラリは配信元から読む）
       - name: make_workspace
-        description: 検討事項 D-1・D-3（D-3 は要見直しで、本文に見出しと mermaid の図を持つ）を書き出した `preview.html`
+        description: 検討事項 D-1・D-3（D-3 は要見直しで、本文に見出しと mermaid の図を持つ）を持つワークスペース
     flow: |-
       ```mermaid
       sequenceDiagram
         actor ユーザー
-        participant IF as preview.html
+        participant IF as プレビューの画面
+        participant SV as サーバーの配信
         participant CDN as 描画のライブラリの配信元
 
         ユーザー->>IF: #tab=decisions&view=table&id=D-3 で開く
         IF-->>CDN: 描画のライブラリを読む
-        IF->>IF: mindmap-data を読む
+        IF-->>SV: GET /api/records
+        SV-->>IF: 記録
+        IF-->>SV: GET /api/events につなぐ
         IF-->>ユーザー: 検討事項の表と D-3 の詳細パネル
       ```
     expected:
@@ -33,14 +36,14 @@ flows:
     summary: ハッシュが無いと概要を開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開き、描画のライブラリは配信元から読む）
       - name: make_workspace
-        description: 検討事項 D-1 を書き出した `preview.html`
+        description: 検討事項 D-1 を持つワークスペース
     flow: |-
       ```mermaid
       sequenceDiagram
         actor ユーザー
-        participant IF as preview.html
+        participant IF as プレビューの画面
 
         ユーザー->>IF: ハッシュ無しで開く
         IF-->>ユーザー: 概要
@@ -54,15 +57,15 @@ flows:
     summary: ハッシュの f.{列} で絞った表を条件のチップ付きで開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開き、描画のライブラリは配信元から読む）
       - name: make_workspace
-        description: 要見直しの D-3・保留の D-4・未決定の D-1 を書き出した `preview.html`
+        description: 要見直しの D-3・保留の D-4・未決定の D-1 を持つワークスペース
         notes: ハッシュは `tab=decisions&view=table&f.status=要見直し|保留`
     flow: |-
       ```mermaid
       sequenceDiagram
         actor ユーザー
-        participant IF as preview.html
+        participant IF as プレビューの画面
 
         ユーザー->>IF: f.status=要見直し|保留 のハッシュで開く
         IF-->>ユーザー: 条件のチップ付きの検討事項の表
@@ -76,15 +79,15 @@ flows:
     summary: 記録に無い ID を指すハッシュでは画面だけを開く
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは配信元から読む）
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開き、描画のライブラリは配信元から読む）
       - name: make_workspace
-        description: 検討事項 D-1 だけを書き出した `preview.html`
+        description: 検討事項 D-1 だけを持つワークスペース
         notes: ハッシュは `tab=decisions&id=D-99`
     flow: |-
       ```mermaid
       sequenceDiagram
         actor ユーザー
-        participant IF as preview.html
+        participant IF as プレビューの画面
 
         ユーザー->>IF: #tab=decisions&id=D-99 で開く
         IF-->>ユーザー: 検討事項のマップ（詳細パネルなし）
@@ -117,20 +120,21 @@ flows:
       - '`role="alert"` の読めなかったライブラリの知らせが無い'
       - マップに D-3 が描かれている
       - 詳細パネルに D-3 が開き、本文の見出しが見出しの要素で、図が SVG で描かれている
+      - 詳細パネルに回答・意見の入力と送るボタンが無く、接続の状態も出ていない
     test: test_normal_when_exported_offline
   - name: 異常系（描画のライブラリが読めない）
     summary: 描画のライブラリの配信元に届かないと、使う箇所に読めなかったライブラリの名前を出す
     setup:
       - name: Mock
-        description: ブラウザから描画のライブラリの配信元への要求を全て失敗させる
+        description: ブラウザから描画のライブラリの配信元への要求を全て失敗させる。MCP サーバーを立てて `preview_url` が返した URL を開く
       - name: make_workspace
-        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を書き出した `preview.html`
+        description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を持つワークスペース
         notes: ハッシュは `tab=decisions&id=D-3`
     flow: |-
       ```mermaid
       sequenceDiagram
         actor ユーザー
-        participant IF as preview.html
+        participant IF as プレビューの画面
         participant CDN as 描画のライブラリの配信元
 
         ユーザー->>IF: #tab=decisions&id=D-3 で開く
@@ -142,16 +146,118 @@ flows:
       - 詳細パネルの本文の箇所に、marked・DOMPurify・mermaid の名前と本文の原文が出る
       - 表示形式を表に切り替えると、D-3 の行がある
     test: test_error_when_library_unavailable
-lead: 利用者が `preview.html` をブラウザで開くと、埋め込みのデータを読み、URL のハッシュが指す画面・表示形式・項目を開く。
-idempotent: true
-side_effects: 記録は書き換えない。端末の保存領域（`localStorage`）にライト / ダークと表の表示する列・ピン留めを書く
+  - name: 正常系（書き換えで描き直す）
+    summary: ツールで書き換えると、開いている画面と項目を保ったまま描き直す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開き、同じサーバーの `add` を MCP のクライアントで呼ぶ）
+      - name: make_workspace
+        description: 検討事項 D-1・D-3 を持つワークスペース
+        notes: ハッシュは `tab=decisions&view=table&id=D-3`。詳細パネルの入力欄に「書きかけ」と入れておく
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as プレビューの画面
+        participant SV as サーバーの配信
+        participant T as add（MCP のツール）
+
+        ユーザー->>IF: #tab=decisions&view=table&id=D-3 で開く
+        T->>SV: 検討事項 D-4 を足す
+        SV-->>IF: event changed
+        IF-->>SV: GET /api/records
+        SV-->>IF: D-4 を含む記録
+        IF-->>ユーザー: D-4 の行が足された表と D-3 の詳細パネル
+      ```
+    expected:
+      - 再読み込みの操作をしないまま、表に D-4 の行が出る
+      - タブの帯で検討事項が選ばれ、表示形式は表のまま
+      - 詳細パネルに D-3 が開いたままで、入力欄に「書きかけ」が残っている
+      - URL が開いたときと同じで、履歴の数が増えていない
+  - name: 正常系（回答・意見を送る）
+    summary: 詳細パネルから送ると、入力欄を空にして送った旨を出す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開く）
+      - name: make_workspace
+        description: 検討事項 D-1 を持ち、送信を持たないワークスペース
+        notes: ハッシュは `tab=decisions&id=D-1`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as プレビューの画面
+        participant SV as サーバーの配信
+
+        ユーザー->>IF: 入力欄に「案 A にする」と書いて送る
+        IF-->>SV: POST /api/submissions {target: D-1, body: 案 A にする}
+        SV-->>IF: 201
+        IF-->>ユーザー: 送った旨と空の入力欄
+      ```
+    expected:
+      - '`role="status"` の送信の結果に送った旨が出る'
+      - 入力欄が空
+      - 取り込んでいない送信（`submissions`）が D-1 への「案 A にする」の 1 件を返す
+      - 入力欄と送るボタンに Tab キーで届き、送るボタンを Enter で押せる
+  - name: 異常系（本文が空）
+    summary: 空白だけの本文は送らずに理由を出す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` が返した URL を実際のブラウザで開き、画面からの要求を数える）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+        notes: ハッシュは `tab=decisions&id=D-1`。入力欄に空白だけを入れる
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as プレビューの画面
+
+        ユーザー->>IF: 空白だけで送る
+        IF-->>ユーザー: 本文が空の理由
+      ```
+    expected:
+      - '`POST /api/submissions` が送られていない'
+      - 送信の結果に本文が空である旨が出る
+  - name: 異常系（サーバーにつながらない）
+    summary: サーバーが止まると接続の状態を出し、前に読んだ記録で描き続け、送れなかった本文を残す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを子プロセスとして立て、`preview_url` が返した URL を実際のブラウザで開いた後に、サーバーの標準入力を閉じて止める）
+      - name: make_workspace
+        description: 検討事項 D-1・D-3 を持つワークスペース
+        notes: ハッシュは `tab=decisions&view=table&id=D-1`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor ユーザー
+        participant IF as プレビューの画面
+        participant SV as サーバーの配信
+
+        ユーザー->>IF: 開く
+        IF-->>SV: GET /api/records
+        SV-->>IF: 記録
+        SV->>SV: 止まる
+        IF->>IF: GET /api/events のつながりが切れる
+        IF-->>ユーザー: 接続の状態と前に読んだ記録
+        ユーザー->>IF: 「案 A にする」を送る
+        IF-->>SV: POST /api/submissions（届かない）
+        IF-->>ユーザー: 送れなかった理由と残した本文
+      ```
+    expected:
+      - 接続の状態に、つながらない旨と記録を読んだ日時が出る
+      - 表に D-1・D-3 の行が残り、詳細パネルに D-1 が開いたまま
+      - 送信の結果に送れなかった旨が出て、入力欄に「案 A にする」が残っている
+lead: 利用者がサーバーの配信の URL をブラウザで開くと、記録をサーバーから読み、URL のハッシュが指す画面・表示形式・項目を開く。書き換えの知らせを受けると描き直し、詳細パネルから項目ごとに回答・意見を送る。
+idempotent: false
+side_effects: 回答・意見を送ると、サーバーがワークスペースの `submissions.yaml` に 1 件足す（『回答・意見の送信』）。ほかの記録は書き換えない。端末の保存領域（`localStorage`）にライト / ダークと表の表示する列・ピン留めを書く
 callers:
   - dev/設計書/シナリオ/複合ユースケース/プレビューで記録を読み返す#
 request:
   - name: mindmap-data
     type: JSON（`<script type="application/json" id="mindmap-data">` の中身）
-    required: true
-    description: '`build` が埋め込んだ記録。形はインターフェース定義『プレビューの書き出し』のレスポンスの埋め込みのデータ'
+    required: false
+    description: '配る書き出しが埋め込んだ記録。形はインターフェース定義『記録の取得』のレスポンスと同じ。サーバーの配信では空で、画面は『記録の取得』を読む'
   - name: tab
     type: "'overview' | 'decisions' | 'tasks' | 'research' | 'docs' | 'terms' | 'notes' | 'logs' | 'graph'"
     required: false
@@ -189,9 +295,17 @@ request:
     constraints: 複数の値は `|` でつなぐ。開いたときに一度だけ読み、絞り込みを変えてもハッシュには書き戻さない
     example: f.status=要見直し
     notes: URL のハッシュの引数
+  - name: 回答・意見の本文
+    type: str
+    required: false
+    default: なし（送らない）
+    description: 詳細パネル・詳細の全画面の入力欄に書いて送る本文。開いている項目の ID と一緒に『回答・意見の送信』へ送る
+    constraints: 前後の空白を除いて 1 文字以上、10000 文字以下
+    example: 案 A にする
+    notes: 利用者の入力。サーバーの配信でだけ受ける
 request_example: |-
   ```text
-  preview.html#tab=decisions&view=table&id=D-3&f.status=%E8%A6%81%E8%A6%8B%E7%9B%B4%E3%81%97
+  http://127.0.0.1:43817/#tab=decisions&view=table&id=D-3&f.status=%E8%A6%81%E8%A6%8B%E7%9B%B4%E3%81%97
   ```
 response:
   - name: 画面
@@ -209,6 +323,15 @@ response:
   - name: 読めなかったライブラリの知らせ
     type: DOM（`role="alert"`）
     description: 描画のライブラリが読めなかったとき、そのライブラリを使う箇所（本文・図・マップ）に、読めなかったライブラリの名前を出す
+  - name: 回答・意見の入力
+    type: DOM
+    description: 詳細パネル・詳細の全画面の下端に留めた入力欄と送るボタン。サーバーの配信でだけ出し、配る書き出しでは出さない
+  - name: 送信の結果
+    type: DOM（`role="status"`）
+    description: 送っている・送った・本文が空・送れなかった（理由）を入力の近くに出す。読み上げの対象にする
+  - name: 接続の状態
+    type: DOM（`role="status"`）
+    description: サーバーにつながらない間、トップバーにつながらないことと、描いている記録を読んだ日時（`built_at`）を出す。つながり直したら消す。配る書き出しでは出さない
 response_notes: |-
   > [!NOTE]
   > 開いた後の画面の移動・項目の移動も同じ形のハッシュに書き、同じ URL を開き直すと同じ画面と項目が開く。
@@ -218,7 +341,7 @@ constraints:
   - item: 履歴
     constraint: 画面の移動と、詳細パネル・全画面の中の項目の移動は履歴に積む。表示形式の切り替え・詳細パネルの開閉・重ねる画面の開閉は積まずにハッシュを置き換える。幅 900px 以下の詳細パネルだけは開くときに積む
   - item: 記録
-    constraint: '`mindmap-data` を `JSON.parse` して読むだけで、書き換えない'
+    constraint: '`mindmap-data` に中身があれば `JSON.parse` して読み、空なら開いたときに `GET /api/records` を読む。画面から記録を書き換えない（回答・意見はサーバーが送信として足すだけ）'
   - item: 描画のライブラリ
     constraint: 描画のライブラリ（`refs` の外部ライブラリの設計書）を配信元から、版を固定し `integrity` と `crossorigin="anonymous"` を付けた script 要素で読む。読めなかったときは代わりの読み込みをせず、そのライブラリを使う箇所に名前を出す。本文は原文を出し、表・ボード・カード・つながりはそのまま使える。配る書き出しは描画のライブラリを中に持ち、配信元から読まない
   - item: 本文の無害化
@@ -228,13 +351,23 @@ constraints:
   - item: 端末の保存領域
     constraint: ライト / ダークと、表ごとの表示する列・ピン留めを `localStorage` の 1 つのキーに持つ。表の絞り込みの条件は保存しない。保存できない環境では開いている間だけ保つ
   - item: 通信
-    constraint: 描画のライブラリと文字の配信元だけ。記録を外へ送らない。配る書き出しは通信しない
+    constraint: 描画のライブラリと文字の配信元と、開いた配信（`127.0.0.1`）だけ。記録を外へ送らない。配る書き出しは通信しない
+  - item: 描き直し
+    constraint: サーバーの配信では `GET /api/events` につなぎ、`changed` を受けたら `GET /api/records` を読み直す。開いている画面・表示形式・URL のハッシュ・詳細パネルの項目・表の絞り込みと並べ替え・入力欄の書きかけを保ったまま描き直し、履歴に積まない。開いていた項目が記録から消えたら詳細パネルを閉じる。読み直しが 422 なら前に読んだ記録で描き続ける
+  - item: サーバーにつながらないとき
+    constraint: '`GET /api/events` のつながりが切れている間と、`GET /api/records` に届かないときは、接続の状態を出して前に読んだ記録で描き続ける。つなぎ直しはブラウザの `EventSource` に任せ、つながったら記録を読み直して接続の状態を消す。開いたときに一度も記録を読めなければ、接続の状態だけを出す'
+  - item: 回答・意見の送信
+    constraint: '`POST /api/submissions` へ `Content-Type: application/json` で `{target, body}` を送る。空白だけの本文は送らずに理由を出す。送っている間は送るボタンを押せなくする。201 なら入力欄を空にして送った旨を出す。400・404・415・500 と届かないときは本文を残して理由（届いたときは `detail`）を出す。入力欄と送るボタンにキーボードで届く'
 refs:
-  - dev/設計書/インターフェース定義/スクリプト/プレビューの書き出し#
+  - dev/設計書/インターフェース定義/サーバー/プレビューのURL#
+  - dev/設計書/インターフェース定義/サーバー/プレビューの配信#
+  - dev/設計書/インターフェース定義/サーバー/記録の取得#
+  - dev/設計書/インターフェース定義/サーバー/書き換えの知らせ#
+  - dev/設計書/インターフェース定義/サーバー/回答・意見の送信#
   - dev/設計書/外部ライブラリ/marked#
   - dev/設計書/外部ライブラリ/DOMPurify#
   - dev/設計書/外部ライブラリ/elkjs#
   - dev/設計書/外部ライブラリ/mermaid#
   - dev/設計書/外部API/GoogleFonts#
-  - dev/設計書/インターフェース定義/スクリプト/配る書き出し#
+  - dev/設計書/インターフェース定義/サーバー/配る書き出し#
 test_file: tests/integration/preview/test_open_preview.py

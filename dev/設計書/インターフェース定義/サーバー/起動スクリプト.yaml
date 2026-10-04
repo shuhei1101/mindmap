@@ -1,0 +1,334 @@
+title: "起動スクリプト"
+entry:
+  kind: operation
+  value: '`{プラグインのフォルダ}/bin/mindstella {ワークスペースのフォルダ}`（利用者が端末で叩くシェルスクリプト。引数・環境変数・標準出力・標準エラー・終了コード）'
+flows:
+  - name: 正常系
+    summary: 依存がそろっていれば、今の版のサーバーを渡した Claude Code を tmux のセッションで立てる
+    setup:
+      - name: Mock
+        description: '`PATH` の先頭に偽の `claude` を置く。`plugin list --json` には `installPath` にテストのプラグインのフォルダを返し、それ以外の引数では受け取った引数と環境変数をファイルに書いて待ち続ける'
+      - name: 仮想環境
+        description: PyYAML・jsonschema・mcp を見せた仮想環境を `MINDSTELLA_VENV` で渡す
+      - name: tmux
+        description: テストごとの短い一時フォルダ（`/tmp` の直下）を `TMUX_TMPDIR` にし、`TMUX` を消した環境で動かす tmux のサーバー
+        notes: 利用者の tmux のセッションに触れない。`TMUX` があると tmux は `TMUX_TMPDIR` よりそのソケットを使い、ソケットのパスが長いとつながらない（tmux 3.4 で確かめた）
+      - name: 設定のフォルダ
+        description: 一時フォルダを `CLAUDE_CONFIG_DIR` で渡す
+      - name: ワークスペースのフォルダ
+        description: まだ無いフォルダ `家計簿アプリ`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+        participant PY as 依存の確認
+        participant CC as claude（偽）
+        participant TM as tmux
+
+        クライアント->>IF: mindstella 家計簿アプリ（標準出力は端末でない）
+        IF->>PY: 依存を確かめる
+        PY-->>IF: 終了コード 0、python_path
+        IF->>CC: plugin list --json
+        CC-->>IF: installPath
+        IF->>IF: MCP の設定を書く
+        IF->>TM: new-session -d -s mindstella-家計簿アプリ-{ハッシュ} -c 家計簿アプリ -e CLAUDE_CONFIG_DIR
+        TM->>CC: claude --mcp-config {MCP の設定}
+        IF-->>クライアント: つなぐコマンド、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - フォルダ `家計簿アプリ` ができている
+      - tmux に `mindstella-家計簿アプリ-{ハッシュ}`（ハッシュは `家計簿アプリ` の絶対パスの SHA-256 の先頭 6 桁）のセッションがあり、作業フォルダが `家計簿アプリ`
+      - 偽の `claude` が受け取った `--mcp-config` のファイルの `mcpServers.mindstella` の `command` が仮想環境の Python、`args` が `installPath` の `skills/mindmap/scripts/server.py`
+      - 偽の `claude` の環境変数 `CLAUDE_CONFIG_DIR` が渡した設定のフォルダ
+      - その MCP の設定どおりにサーバーを立てて MCP のクライアントでつなぐと、ツールの一覧が返る
+      - 標準出力に `tmux attach-session -t =mindstella-家計簿アプリ-{ハッシュ}` がある
+    test: test_normal
+  - name: 正常系（プラグインを上げた後）
+    summary: 古い版のフォルダのスクリプトを叩いても、新しい版のサーバーを指す
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`。`installPath` は新しい版のフォルダを返す
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: プラグインのフォルダ
+        description: 古い版と新しい版の 2 つのフォルダ。古い版のフォルダの `bin/mindstella` を叩く
+      - name: tmux
+        description: 正常系と同じ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella（古い版）
+        participant CC as claude（偽）
+
+        クライアント->>IF: mindstella {フォルダ}
+        IF->>CC: plugin list --json
+        CC-->>IF: 新しい版の installPath
+        IF->>IF: 新しい版のサーバーを指す MCP の設定を書く
+        IF-->>クライアント: 終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - MCP の設定の `args` が新しい版のフォルダの `server.py` を指す
+    test: test_normal_when_plugin_upgraded
+  - name: 正常系（同じ名前のセッションがある）
+    summary: 既にあるセッションには新しく立てず、つなぐコマンドを返す
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: tmux
+        description: 正常系と同じ。同じフォルダ `家計簿アプリ` で起動スクリプトを一度叩き、セッションを先に立てておく
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+        participant TM as tmux
+
+        クライアント->>IF: mindstella 家計簿アプリ
+        IF->>TM: has-session -t =mindstella-家計簿アプリ-{ハッシュ}
+        TM-->>IF: ある
+        IF-->>クライアント: つなぐコマンド、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - tmux のセッションの数が呼ぶ前と同じ
+      - 偽の `claude` が `--mcp-config` で起動されていない
+      - 標準エラーに、既にセッションがある旨がある
+    test: test_normal_when_session_exists
+  - name: 異常系（依存が足りない・DependencyMissingError）
+    summary: ライブラリを入れていない仮想環境では、そろえるコマンドを示して何も立てない
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`
+      - name: 仮想環境
+        description: PyYAML・jsonschema・mcp を入れていない仮想環境を `MINDSTELLA_VENV` で渡す
+      - name: tmux
+        description: 正常系と同じ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+        participant PY as 依存の確認
+
+        クライアント->>IF: mindstella {フォルダ}
+        IF->>PY: 依存を確かめる
+        PY-->>IF: 終了コード 1、install
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `PyYAML`・`jsonschema`・`mcp` と、`-m pip install` を含むそろえるコマンドがある
+      - tmux にセッションが無い
+      - 偽の `claude` が起動されていない
+    test: test_error_when_dependency_missing
+  - name: 異常系（tmux が無い・TmuxNotFoundError）
+    summary: tmux が無ければ、入れるよう示して Claude Code を立てない
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: PATH
+        description: 偽の `claude` と `python3` だけを置いたフォルダを `PATH` にする（`tmux` を含まない）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+
+        クライアント->>IF: mindstella {フォルダ}
+        IF->>IF: tmux を探して見つからない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `tmux` がある
+      - 偽の `claude` が起動されていない
+    test: test_error_when_tmux_missing
+  - name: 異常系（Claude Code が無い・ClaudeNotFoundError）
+    summary: claude が無ければ、入れるよう示して止まる
+    setup:
+      - name: Mock
+        description: なし（偽の `claude` を置かない）
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: PATH
+        description: '`python3` と `tmux` だけを置いたフォルダを `PATH` にする（`claude` を含まない）'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+
+        クライアント->>IF: mindstella {フォルダ}
+        IF->>IF: claude を探して見つからない
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `claude` がある
+      - tmux にセッションが無い
+    test: test_error_when_claude_missing
+  - name: 異常系（プラグインがインストールされていない・PluginNotInstalledError）
+    summary: プラグインの一覧に mindstella が無ければ、インストールを案内して止まる
+    setup:
+      - name: Mock
+        description: '`plugin list --json` に空の配列を返す偽の `claude`'
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: tmux
+        description: 正常系と同じ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+        participant CC as claude（偽）
+
+        クライアント->>IF: mindstella {フォルダ}
+        IF->>CC: plugin list --json
+        CC-->>IF: 空
+        IF-->>クライアント: エラー、終了コード 1
+      ```
+    expected:
+      - 終了コードが 1
+      - 標準エラーに `mindstella@mindstella` とインストールの案内がある
+      - tmux にセッションが無い
+    test: test_error_when_plugin_not_installed
+  - name: 異常系（フォルダを渡さない・引数の誤り）
+    summary: 引数が無ければ使い方を出して止まる
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+
+        クライアント->>IF: mindstella
+        IF-->>クライアント: 使い方、終了コード 2
+      ```
+    expected:
+      - 終了コードが 2
+      - 標準エラーに使い方がある
+      - 偽の `claude` が起動されていない
+    test: test_error_when_folder_missing
+  - name: 正常系（別の場所に同じ名前のフォルダがある）
+    summary: 名前が同じでも場所が違うフォルダは、別のセッションを立てる
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: tmux
+        description: 正常系と同じ。`仕事/家計簿アプリ` で起動スクリプトを一度叩き、セッションを先に立てておく
+      - name: ワークスペースのフォルダ
+        description: まだ無いフォルダ `個人/家計簿アプリ`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+        participant TM as tmux
+
+        クライアント->>IF: mindstella 個人/家計簿アプリ
+        IF->>TM: has-session -t =mindstella-家計簿アプリ-{個人のハッシュ}
+        TM-->>IF: 無い
+        IF->>TM: new-session -d -s mindstella-家計簿アプリ-{個人のハッシュ} -c 個人/家計簿アプリ
+        IF-->>クライアント: つなぐコマンド、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - tmux に `仕事/家計簿アプリ` と `個人/家計簿アプリ` の 2 つのセッションがあり、それぞれの作業フォルダがそのフォルダ
+      - 標準出力のつなぐコマンドが `個人/家計簿アプリ` のセッションを指す
+      - 標準エラーに既にセッションがある旨が無い
+    test: test_normal_when_same_folder_name_elsewhere
+lead: 依存を確かめ、tmux のセッションの中で mindstella の MCP サーバーを渡した Claude Code を立ち上げ、そのセッションへつなぐ。
+idempotent: false
+side_effects: この起動だけの MCP の設定（`{一時フォルダ}/mindstella-{ランダム}/mcp.json`）を書き、tmux のセッションを 1 つ立てる。ワークスペースのフォルダが無ければ作る。ワークスペースの中は書かない
+callers:
+  - dev/設計書/シナリオ/単一ユースケース/起動スクリプトで立ち上げる#
+request:
+  - name: '{ワークスペースのフォルダ}'
+    type: str
+    required: true
+    location: argument
+    description: 話し合いのワークスペースのフォルダ。Claude Code の作業フォルダになり、フォルダ名と絶対パスを tmux のセッションの名前に使う
+    constraints: 作成済みかどうかを問わない。無ければ作る
+    example: ~/discussions/家計簿アプリ
+  - name: MINDSTELLA_VENV
+    type: str
+    required: false
+    default: '`~/.mindmap/venv`（『依存の確認』の `venv` の既定）'
+    location: argument
+    description: 環境変数。MCP サーバーを動かす仮想環境のフォルダ
+    notes: テストで一時フォルダの仮想環境を指すために使う
+  - name: CLAUDE_CONFIG_DIR
+    type: str
+    required: false
+    default: なし（Claude Code の既定の設定のフォルダ）
+    location: argument
+    description: 環境変数。Claude Code の設定のフォルダ。あれば tmux のセッションへ `new-session -e` で渡す
+    notes: tmux のサーバーが先に立っていると、呼び出し元の環境変数はセッションへ渡らない
+response:
+  - name: tmux のセッション
+    type: tmux のセッション
+    description: 名前は `mindstella-{フォルダ名}-{ハッシュ}`。フォルダ名の `.`・`:` は `-` に置き換える。ハッシュは、ワークスペースのフォルダのシンボリックリンクを解いた絶対パスの SHA-256 の 16 進の先頭 6 桁。作業フォルダがワークスペースのフォルダで、`claude --mcp-config {MCP の設定}` が動く
+  - name: MCP の設定
+    type: JSON のファイル
+    description: '`{"mcpServers": {"mindstella": {"command": "{仮想環境の Python}", "args": ["{プラグインのフォルダ}/skills/mindmap/scripts/server.py"]}}}`。プラグインのフォルダは `claude plugin list --json` の `mindstella@mindstella` の `installPath`'
+  - name: 標準エラー
+    type: str
+    description: '`[mindstella]` で始まる行で、使うプラグインのフォルダとセッションの名前を出す'
+exceptions:
+  - name: なし（正常終了）
+    condition: セッションを立てた（またはつないだ）
+    notes: 終了コード 0。標準出力が端末なら、そのセッションへつなぐ（tmux の外からは `tmux attach-session`、tmux の中（`$TMUX` がある）からは `tmux switch-client`）。端末でなければつながずに、つなぐコマンドを標準出力に出して終わる
+  - name: 引数の誤り
+    condition: ワークスペースのフォルダを渡さない
+    notes: 終了コード 2。使い方を標準エラーに出す
+  - name: DependencyMissingError
+    condition: 『依存の確認』が終了コード 1 を返した（仮想環境が無い・Python が古い・ライブラリが足りない）
+    notes: 終了コード 1。足りないものと、『依存の確認』の `install`（そろえるコマンド）を標準エラーに出す。`install` が `null` なら 3.12 以上の Python を入れるよう出す。tmux も Claude Code も立てない
+  - name: TmuxNotFoundError
+    condition: '`PATH` に `tmux` が無い'
+    notes: 終了コード 1。tmux を入れるよう標準エラーに出す。Claude Code を立てない
+  - name: ClaudeNotFoundError
+    condition: '`PATH` に `claude` が無い'
+    notes: 終了コード 1。Claude Code を入れるよう標準エラーに出す
+  - name: PluginNotInstalledError
+    condition: '`claude plugin list --json` に `mindstella@mindstella` が無い'
+    notes: 終了コード 1。プラグインのインストールの手順を案内する行を標準エラーに出す
+error_format: '標準エラーに `[mindstella] エラー: {内容}` の行を出し、そろえるコマンドがあれば次の行に出す。'
+constraints:
+  - item: 確かめる順
+    constraint: 引数 → 依存（『依存の確認』をシステムの `python3` で起動）→ `tmux` → `claude` → プラグインのフォルダ。どれかで止まったら、それより後は何もしない
+  - item: 使う版
+    constraint: 叩いたスクリプトの版ではなく、`claude plugin list --json` の `installPath` が指すインストールした今の版のサーバーを立てる
+  - item: 同じ名前のセッション
+    constraint: 同じ名前のセッション（同じフォルダを開いたセッション）が既にあれば新しく立てず、そのセッションへつなぐ（端末でなければ、つなぐコマンドを出して終わる）。標準エラーに既にあった旨を出す。別の場所にある同じ名前のフォルダはハッシュが違うため、別のセッションになる
+  - item: MCP の設定を渡す範囲
+    constraint: '`--mcp-config` で mindstella のサーバーだけを足す。利用者のほかの MCP の設定は消さない（`--strict-mcp-config` を付けない）。プラグインのマニフェストには MCP サーバーを書かない'
+  - item: 書くもの
+    constraint: MCP の設定のファイルだけ。セッションを使い終えても消さない（数百バイト。一時フォルダの片付けに任せる）
+  - item: シェル
+    constraint: '`bash`（`set -euo pipefail`）。JSON の読み書きは仮想環境の Python で行い、`jq` に頼らない'
+  - item: 終了コード
+    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: セッションの指し方
+    constraint: tmux の `-t` には頭に `=` を付けた名前（`-t =mindstella-{フォルダ名}-{ハッシュ}`）を渡し、完全に一致するセッションだけを指す
+    notes: '`=` が無いと tmux は名前の前方一致でも当て、別のワークスペースのセッションを指す（tmux 3.4 で確かめた）'
+refs:
+  - dev/設計書/インターフェース定義/サーバー/依存の確認#
+  - dev/設計書/インターフェース定義/サーバー/MCPサーバーの起動#
+  - dev/設計書/外部ライブラリ/tmux#
+  - dev/設計書/外部ライブラリ/claude-code#
+notes:
+  置き場所: 'プラグインの `bin/` に置き、インストールした版のフォルダから叩く。利用者は `claude plugin list --json` の `installPath` から場所を引く（手順は公開ドキュメント『起動スクリプトで立ち上げる』）。シェルの alias への登録は #10 に残したスコープ'

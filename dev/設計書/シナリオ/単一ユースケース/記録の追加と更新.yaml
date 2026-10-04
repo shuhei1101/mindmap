@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませた、項目を持たないワークスペース
       - name: 検討事項の中身
@@ -13,17 +13,17 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: 検討事項を足す
-        SCR->>SCR: ID・作成日・更新日を付け、スキーマと突き合わせる
-        SCR->>WS: decisions.yaml に書く
-        SCR-->>CC: 振った ID
-        CC->>SCR: その ID の答えと状態を直す
-        SCR->>SCR: 更新日を変え、スキーマと突き合わせる
-        SCR->>WS: decisions.yaml に書く
-        SCR-->>CC: 直した ID
+        CC->>SV: 検討事項を足す
+        SV->>SV: ID・作成日・更新日を付け、スキーマと突き合わせる
+        SV->>WS: decisions.yaml に書く
+        SV-->>CC: 振った ID
+        CC->>SV: その ID の答えと状態を直す
+        SV->>SV: 更新日を変え、スキーマと突き合わせる
+        SV->>WS: decisions.yaml に書く
+        SV-->>CC: 直した ID
       ```
     expected:
       - 追加が返した ID が `D-` で始まる
@@ -35,7 +35,7 @@ scenarios:
   - name: 異常シナリオ（スキーマに合わない）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませ、検討事項を 1 件足したワークスペース
       - name: 検討事項の中身
@@ -45,38 +45,38 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: 状態の値が誤った検討事項を足す
-        SCR->>SCR: スキーマと突き合わせて合わない
-        SCR-->>CC: 合わない箇所を示すエラー
+        CC->>SV: 状態の値が誤った検討事項を足す
+        SV->>SV: スキーマと突き合わせて合わない
+        SV-->>CC: 合わない箇所を示すエラー
       ```
     expected:
-      - 追加が 0 以外の終了コードで終わる
-      - 標準エラーに、合わないキー `status` と、その値 `完了` がある
+      - 追加のツールがエラーを返す
+      - エラーの本文に、合わないキー `status` と、その値 `完了` がある
       - ワークスペースの全てのファイルの中身が、追加を呼ぶ前と同じである
     test: test_error_when_schema_mismatch
   - name: 異常シナリオ（存在しない ID を直す）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませ、検討事項を 1 件足したワークスペース
     flow: |-
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: 存在しない ID の答えを直す
-        SCR->>WS: ID を探して見つからない
-        SCR-->>CC: ID が無いエラー
+        CC->>SV: 存在しない ID の答えを直す
+        SV->>WS: ID を探して見つからない
+        SV-->>CC: ID が無いエラー
       ```
     expected:
-      - 更新が 0 以外の終了コードで終わる
-      - 標準エラーに、渡した ID がある
+      - 更新のツールがエラーを返す
+      - エラーの本文に、渡した ID がある
       - ワークスペースの全てのファイルの中身が、更新を呼ぶ前と同じである
     test: test_error_when_id_not_found
 lead: スキルが、会話で出た検討事項・タスク・調査・資料・用語・メモ・会話ログをワークスペースに足し、後から直す単一ユースケース。

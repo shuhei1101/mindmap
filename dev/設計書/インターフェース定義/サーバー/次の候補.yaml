@@ -1,0 +1,128 @@
+title: "次の候補"
+entry:
+  kind: mcp_tool
+  value: '`next`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__next`）。結果とエラーの返し方は『MCP サーバーの起動』'
+flows:
+  - name: 正常系
+    summary: 前提が揃った未決定を決めた順に並べ、前提が揃っていないものを外す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: フェーズ `目的` → `要件` → `構成` のワークスペース
+      - name: 検討事項
+        description: 前提が揃った未決定 D-1〜D-4 と、未決定に依存する D-5〜D-7
+        notes: 'D-1: `要件`・`小`／D-2: `目的`・`小`／D-3: `要件`・`大`／D-4: `要件`・`大`／D-5: `depends_on: [D-1]`／D-6: `depends_on: [D-4]`／D-7: `depends_on: [D-6]`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as next（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: next workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: 候補を選んで並べる
+        IF-->>クライアント: JSON（candidates）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`candidates` の ID が D-2・D-4・D-3・D-1 の順'
+      - D-4 の `followers` が 2、D-3 が 0、D-1 が 1
+    test: test_normal
+  - name: 正常系（件数を絞る）
+    summary: limit で先頭から指定した件数だけ返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 正常系と同じワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as next（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: next workspace limit 2
+        IF-->>WS: 全ての YAML を読む
+        IF-->>クライアント: JSON（先頭 2 件）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`candidates` の ID が D-2・D-4 の 2 件'
+    test: test_normal_when_limited
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as next（MCP のツール）
+        participant WS as フォルダ
+
+        クライアント->>IF: next workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
+    test: test_error_when_workspace_not_found
+lead: 前提が揃った未決定の検討事項を、フェーズ → 影響度 → 後続の件数の順に並べて返す。
+idempotent: true
+side_effects: なし（読むだけ）
+request:
+  - name: workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+  - name: limit
+    type: int
+    required: false
+    default: なし（全件を返す）
+    location: argument
+    description: 返す候補の件数の上限
+    constraints: 1 以上
+response:
+  - name: candidates[].id
+    type: str
+    description: 検討事項の ID
+  - name: candidates[].title
+    type: str
+    description: タイトル
+  - name: candidates[].phase
+    type: str | None
+    description: フェーズ
+  - name: candidates[].weight
+    type: '"大" | "中" | "小" | None'
+    description: 影響度
+  - name: candidates[].followers
+    type: int
+    description: 後続の件数（影響の洗い出しと同じたどり方で得た項目のうち、未完了のものの数）
+exceptions:
+  - name: なし（正常終了）
+    condition: 並べられた（候補が 0 件のときも含む）
+    notes: 結果を返す
+  - name: WorkspaceNotFoundError
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: 候補にする検討事項
+    constraint: 状態が `未決定` で、`depends_on` の検討事項が全て決着しているもの（存在しない ID を指すものは候補にしない）
+  - item: 決着
+    constraint: 検討事項は `決定済み`・`対象外`・`取り下げ`、タスクは `完了`・`中止`。それ以外が未完了
+  - item: 並べ方
+    constraint: フェーズの並び（設定の `phases` の順。無い・設定に無いフェーズは最後）→ 影響度（大 → 中 → 小 → 無し）→ 後続の件数の多い順 → ID の連番の小さい順

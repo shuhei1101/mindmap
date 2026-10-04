@@ -1,0 +1,78 @@
+/* 65 のスタイルの上に重ね、詳細パネルから回答・意見を送る入力と、サーバーにつながらないときの表示を足す分 */
+
+/* ===== 回答・意見の送信 ===== */
+
+/* 送信の入力: ラベル・入力欄・結果と送るボタンの行を縦に積む */
+.send { display: grid; gap: 6px; }
+/* パネルの下端に留める置き方: 本文の下に線で区切って置き、本文だけを送る */
+.send.send-footer { flex: none; padding: 12px 24px 14px; border-top: 1px solid var(--border); background: var(--surface); }
+/* 詳細の全画面の下端: 本文と同じ幅に揃える */
+dialog.full .send.send-footer { width: 100%; max-width: 920px; margin: 0 auto; }
+/* 図を拡大しているときの全画面: 入力を隠して図に場所を譲る */
+dialog.full:has(.full-viewer) .send { display: none; }
+/* 本文の最後の節に置く置き方: 節の見出しの線の代わりに、ラベルを見出しの大きさにする */
+.send-sec { padding-top: 14px; border-top: 1px solid var(--border-soft); }
+/* 送信の入力のラベル: 常に見せる。どの項目へ送るかを ID で示す */
+.send-label { font-size: var(--fs-small); font-weight: 600; color: var(--text); }
+/* 送信の入力のラベルの ID */
+.send-label .mono { font-weight: 400; }
+/* 入力欄: 中身に合わせて 2 行から 8 行まで伸び、それを超えたら中を送る */
+.send textarea { width: 100%; min-block-size: calc(2lh + 16px); max-block-size: calc(8lh + 16px); field-sizing: content; resize: vertical; padding: 8px 10px; font: inherit; line-height: 1.5; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+/* 入力欄のフォーカス: 印の色の輪 */
+.send textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* 送っている間の入力欄: 書き換えられないことを面の色で示す */
+.send textarea:read-only { background: var(--surface-2); color: var(--text-2); }
+/* 本文が空で送ろうとした入力欄: 枠の全体を状態の色にする（文言と印でも示す） */
+.send textarea[aria-invalid="true"] { border-color: var(--st-review); }
+/* 結果と送るボタンの行: 結果を左、送るボタンを右に置く */
+.send-row { display: flex; align-items: flex-start; gap: 12px; }
+/* 送った結果: 入力の近くに出す。空のときも送るボタンと同じ高さを持ち、1 行の結果が出ても周りを動かさない */
+.send-msg { flex: 1; display: flex; align-items: flex-start; gap: 6px; min-height: var(--control-h); margin: 0; padding-top: 7px; font-size: var(--fs-small); color: var(--text-2); }
+/* 結果の印: 文字の 1 行目の中央に揃える */
+.send-msg svg.icon { width: 14px; height: 14px; margin-top: 2px; }
+/* 送った: 印の色の印を添える */
+.send-msg.sent svg.icon { color: var(--accent); }
+/* 本文が空・送れなかった: 状態の色の印を添え、文字は本文の色で読ませる */
+.send-msg.empty, .send-msg.failed { color: var(--text); }
+/* 本文が空・送れなかったの印 */
+.send-msg.empty svg.icon, .send-msg.failed svg.icon { color: var(--st-review); }
+/* 送るボタン: 結果の文言が長くても幅を保つ */
+.send-row .btn { flex: none; }
+/* 送っている間の送るボタン: 塗りを外して押せないことを示す（文字は面の上で 4.5:1 以上を保つ） */
+.send-row .btn:disabled { background: var(--surface-2); border-color: var(--border); color: var(--text-2); cursor: progress; }
+/* 送っている間の回る印 */
+.spinner { flex: none; width: 14px; height: 14px; margin-top: 2px; border: 2px solid var(--border); border-top-color: var(--text-2); border-radius: 50%; animation: send-spin .8s linear infinite; }
+/* 回る印の動き */
+@keyframes send-spin { to { transform: rotate(360deg); } }
+/* 動きを減らす設定では回さない */
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+/* 狭い幅の下端の入力: 左右の余白をパネルの本文に揃える */
+@media (max-width: 900px) { .send.send-footer { padding: 10px 16px 12px; } }
+
+/* ===== サーバーにつながらないときの表示 ===== */
+
+/* トップバーの接続の状態: 検索の入口の左に置く。押せない表示なので枠を持たない */
+.conn { flex: none; display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-small); color: var(--topbar-fg); white-space: nowrap; }
+/* つながっているときの接続の状態: 出さない */
+.conn[hidden] { display: none; }
+/* 接続の状態の印: 状態の色で示す */
+.conn svg.icon { color: var(--red-300); }
+/* 接続の状態の短い文言: 広い幅では隠す */
+.conn .conn-short { display: none; }
+/* 検索の入口が欄の形で並ぶ幅（1100px 以下）: トップバーに収まるよう短い文言に切り替え、時刻は title に持つ */
+@media (max-width: 1100px) { .conn .conn-long { display: none; } .conn .conn-short { display: inline; } }
+/* 最も狭い幅（360px 以下）の接続の状態: 印だけを見せてサイト名と重ねない。文言は読み上げにだけ残す */
+@media (max-width: 360px) { .conn .conn-short { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } .conn svg.icon { width: 18px; height: 18px; } }
+
+/* ===== 送れなかったときの本文を写すボタン ===== */
+
+/* 送れなかった旨と本文を写すボタン: 文言の下にボタンを置く */
+.send-msg-body { display: grid; justify-items: start; gap: 4px; }
+/* 本文を写すボタン: 送るボタンより目立たせず、文言の頭に揃える */
+.send-copy { height: 28px; padding: 0 8px; margin-left: -8px; font-size: var(--fs-small); }
+/* 本文を写すボタンの印: 状態の色を継がず、ボタンの文字の色にする */
+.send-msg .send-copy svg.icon { color: currentColor; }
+/* 送信の入力の幅で結果の置き方を変えるため、入力の幅を問い合わせの基準にする */
+.send { container-type: inline-size; }
+/* 入力の幅が狭いとき（360px 以下）: 送るボタンを右に置いたまま、結果を下の行に幅いっぱいで出す */
+@container (max-width: 360px) { .send-row { flex-wrap: wrap; justify-content: flex-end; } .send-row .send-msg { order: 2; flex-basis: 100%; min-height: 0; padding-top: 0; } .send-row .send-msg:empty { display: none; } }

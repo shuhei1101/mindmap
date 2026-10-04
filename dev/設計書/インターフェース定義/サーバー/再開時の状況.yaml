@@ -1,0 +1,108 @@
+title: "再開時の状況"
+entry:
+  kind: mcp_tool
+  value: '`status`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__status`）。結果とエラーの返し方は『MCP サーバーの起動』'
+flows:
+  - name: 正常系
+    summary: 要見直し・進行中・再開可能・決定待ち・そのほかの保留・次の候補を分けて返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 次の項目を持つワークスペース
+        notes: 'D-1 `要見直し`／T-1 `進行中`／D-2 `保留`・`depends_on: [D-3]`／D-3 `決定済み`／D-4 `保留`・`depends_on: [D-5]`／D-5 `未決定`／D-6 `保留`・`depends_on` なし・`reason: 予算が決まったら`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as status（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: status workspace
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: 状態と依存で分ける
+        IF-->>クライアント: JSON
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`needs_review` が D-1、`in_progress` が T-1、`resumable` が D-2'
+      - '`waiting` が D-4（`waiting_for: [D-5]`）'
+      - '`on_hold` が D-6（`reason` つき）'
+      - '`next` が D-5'
+    test: test_normal
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as status（MCP のツール）
+        participant WS as フォルダ
+
+        クライアント->>IF: status workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
+    test: test_error_when_workspace_not_found
+lead: 話し合いを再開するときに読む状況（要見直し・進行中・再開可能・決定待ち・そのほかの保留・次の候補）をまとめて返す。
+idempotent: true
+side_effects: なし（読むだけ）
+request:
+  - name: workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+response:
+  - name: needs_review[]
+    type: list[{id, title}]
+    description: 状態が `要見直し` の検討事項
+  - name: in_progress[]
+    type: list[{id, title}]
+    description: 状態が `進行中` のタスク
+  - name: resumable[]
+    type: list[{id, title}]
+    description: 状態が `保留` で、`depends_on` が 1 つ以上あり全て決着した検討事項・タスク
+  - name: waiting[].id
+    type: str
+    description: 状態が `保留` で、`depends_on` に未完了が残る検討事項・タスクの ID
+  - name: waiting[].title
+    type: str
+    description: タイトル
+  - name: waiting[].waiting_for
+    type: list[str]
+    description: 未完了の `depends_on` の ID
+  - name: on_hold[]
+    type: list[{id, title, reason}]
+    description: 状態が `保留` で `depends_on` を持たない検討事項・タスク（再開できるかは `reason` を読んでスキルが判断する）
+  - name: next[]
+    type: list[{id, title, phase, weight, followers}]
+    description: 次の候補の先頭 3 件（次の候補と同じ選び方・並べ方）
+exceptions:
+  - name: なし（正常終了）
+    condition: 状況をまとめられた
+    notes: 結果を返す
+  - name: WorkspaceNotFoundError
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: 決着
+    constraint: 検討事項は `決定済み`・`対象外`・`取り下げ`、タスクは `完了`・`中止`。存在しない ID は未完了として扱う
+  - item: 次の候補の件数
+    constraint: 3 件（定数。全件は次の候補のツールで引く）
+  - item: 各一覧の並び
+    constraint: ID の種類（D → T）、連番の小さい順（次の候補を除く）

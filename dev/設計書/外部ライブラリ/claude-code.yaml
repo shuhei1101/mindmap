@@ -30,6 +30,15 @@ catalogs:
       - name: claude -p
         kind: コマンド
         purpose: 非対話でスキルを動かし、`--output-format stream-json` で読み込みと許可を確かめる（PoC だけで使う。テストはモデルを呼ばない）
+      - name: claude plugin list --json
+        kind: コマンド
+        purpose: 起動スクリプトが `mindstella@mindstella` の `installPath`（インストールした今の版のフォルダ）を引く
+      - name: claude --mcp-config {ファイル}
+        kind: コマンド
+        purpose: 起動スクリプトが、この起動だけの MCP の設定で mindstella の MCP サーバーを渡して Claude Code を立ち上げる
+      - name: claude mcp list
+        kind: コマンド
+        purpose: プラグインを入れただけでは mindstella の MCP サーバーが載らないことを確かめる（テスト）
   - name: ファイル
     version: 2.1.287
     entries:

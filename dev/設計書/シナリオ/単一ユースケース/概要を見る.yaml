@@ -3,21 +3,21 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: '前提が全て決定済みの未決定の検討事項 D-2・前提が未決定の未決定の検討事項 D-6・要見直しの検討事項 D-3・保留の検討事項 D-4（前提の D-6 が未決定）・保留のタスク T-3・進行中のタスク T-2・納品物の資料 A-1（状態: 完成）と A-2（状態: 確認中）'
         notes: 'D-4 は `depends_on: [D-6]`。資料の状態の値はインターフェース定義設計で `docs.schema.json` と決め、決まった値に合わせる'
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
         participant U as 利用者
         participant P as プレビュー（ブラウザ）
 
-        U->>P: preview.html を開く
+        U->>P: プレビューの URL を開く
         P-->>U: 概要のタイル
         U->>P: 要見直しのタイルの「すべて表示」を押す
         P-->>U: 検討事項の表（状態 = 要見直しの条件のチップ付き）
@@ -34,13 +34,13 @@ scenarios:
   - name: 正常シナリオ（保留をすべて表示する）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 保留の検討事項 D-4・D-7 と保留のタスク T-3
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -59,13 +59,13 @@ scenarios:
   - name: 正常シナリオ（納品物が 5 件を超える）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開き、描画のライブラリは CDN から読む）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 納品物の資料 6 件と、納品物でない資料 1 件
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -86,6 +86,6 @@ issue: 5
 primary_actor: 利用者
 trigger: 利用者がプレビューを開く（概要は既定で開く画面）
 preconditions:
-  - ワークスペースに記録があり、プレビューを書き出してある
+  - ワークスペースに記録があり、サーバーがプレビューを配っている
   - ブラウザが CDN へ HTTPS で届く
 test_file: tests/e2e/単一ユースケース/test_overview_view.py

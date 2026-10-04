@@ -1,0 +1,124 @@
+title: "項目の表示"
+entry:
+  kind: mcp_tool
+  value: '`show`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__show`）。結果とエラーの返し方は『MCP サーバーの起動』'
+flows:
+  - name: 正常系
+    summary: 項目の中身と本文、参照元をキーごとに返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 次の項目を持つワークスペース
+        notes: 'D-1: 本文 `docs/D-1.md` あり／D-2: `depends_on: [D-1]`・`related: [D-1]`／T-1: `for: [D-1]`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as show（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: show workspace id D-1
+        IF-->>WS: 全ての YAML と docs/D-1.md を読む
+        IF-->>クライアント: JSON（item・body_markdown・referenced_by）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`item` が D-1 の全てのキーを持ち、`kind` が `decision`'
+      - '`body_markdown` が `docs/D-1.md` の中身'
+      - '`referenced_by` が D-2（`depends_on`）・D-2（`related`）・T-1（`for`）の 3 行'
+    test: test_normal
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as show（MCP のツール）
+        participant WS as フォルダ
+
+        クライアント->>IF: show workspace id D-1
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
+    test: test_error_when_workspace_not_found
+  - name: 異常系（ID が無い・ItemNotFoundError）
+    summary: 存在しない ID はエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 検討事項 D-1 だけを持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as show（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: show workspace id D-9
+        IF-->>WS: D-9 が無い
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文に `D-9` がある
+    test: test_error_when_id_not_found
+lead: ID で指した 1 項目の全てのキーと本文、その項目を参照している項目を返す。
+idempotent: true
+side_effects: なし（読むだけ）
+request:
+  - name: workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+  - name: id
+    type: str
+    required: true
+    location: argument
+    description: 表示する項目の ID
+    example: D-1
+response:
+  - name: item
+    type: dict
+    description: 項目の全てのキー（YAML にあるとおり）
+  - name: kind
+    type: str
+    description: 種類（`decision` など）
+  - name: body_markdown
+    type: str | None
+    description: '`docs/` の本文。`body` を持たないか、指す Markdown が無いときは `null`'
+  - name: referenced_by[].id
+    type: str
+    description: この項目を参照している項目の ID（種類の順、連番の小さい順）
+  - name: referenced_by[].key
+    type: '"depends_on" | "parent" | "for" | "related" | "sources"'
+    description: 参照しているキー。同じ項目が複数のキーで参照していればキーごとに行を分ける
+exceptions:
+  - name: なし（正常終了）
+    condition: 表示できた
+    notes: 結果を返す
+  - name: WorkspaceNotFoundError
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+  - name: ItemNotFoundError
+    condition: 渡した ID の項目が無い
+    notes: ツールのエラー。エラーの本文に渡した ID
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
+constraints:
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: 参照元にするキー
+    constraint: '`depends_on`・`parent`・`for`・`related`・`sources`（設定の `goal.deliverables[].doc` は含めない）'

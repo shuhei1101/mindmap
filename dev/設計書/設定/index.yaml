@@ -1,2 +1,4 @@
 summary: 設定と環境変数のキー定義
-items: []
+items:
+  - page: サーバー.yaml
+    summary: 起動スクリプトと MCP サーバーが読む環境変数

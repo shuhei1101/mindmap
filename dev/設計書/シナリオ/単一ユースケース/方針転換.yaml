@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `adopt`・`impact`・`update`・`add`・`build` を、決めた引数で順に再生する
+        description: モデルを呼ばない。手順が連ねる `adopt`・`impact`・`update`・`add` を、決めた引数で順に再生する
       - name: 作成済みのワークスペース
         description: 案 A・B を持ち A を採用した決定済みの D-1、D-1 に `depends_on` で依存する決定済みの D-2、D-2 に依存する決定済みの D-3
       - name: 再生する書き込み
@@ -13,17 +13,16 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
         U->>CC: 発言（D-1 を B にしたい）
-        CC->>SCR: adopt D-1 B
-        SCR->>WS: 採用する案を切り替える
-        CC->>SCR: impact D-1
-        SCR-->>CC: 影響を受ける項目（D-2・D-3）
-        CC->>SCR: update（D-2・D-3 を要見直し、D-1 の answer を今の正だけにする）
-        CC->>SCR: add（見直しのタスク T-1・T-2、会話ログ）
-        CC->>SCR: build
+        CC->>SV: adopt D-1 B
+        SV->>WS: 採用する案を切り替える
+        CC->>SV: impact D-1
+        SV-->>CC: 影響を受ける項目（D-2・D-3）
+        CC->>SV: update（D-2・D-3 を要見直し、D-1 の answer を今の正だけにする）
+        CC->>SV: add（見直しのタスク T-1・T-2、会話ログ）
         CC-->>U: 要見直しにした項目とタスクを示す
       ```
     expected:
@@ -34,7 +33,7 @@ scenarios:
   - name: 正常シナリオ（納品物が要らなくなる）
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `update`・`check`・`add`・`build` と `mindmap.yaml` の書き換えを、決めた引数で順に再生する
+        description: モデルを呼ばない。手順が連ねる `update`・`check`・`add` と `mindmap.yaml` の書き換えを、決めた引数で順に再生する
       - name: 作成済みのワークスペース
         description: '`deliverable: true` の資料 A-1 と、`mindmap.yaml` のゴールの `deliverables` に A-1 を持つ'
       - name: 再生する書き込み
@@ -44,15 +43,14 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as mindmap.yaml
 
         U->>CC: 発言（スコープを変える）
-        CC->>SCR: update（A-1 の deliverable を外す）
+        CC->>SV: update（A-1 の deliverable を外す）
         CC->>WS: Edit（ゴールの deliverables から A-1 を外す。利用者に書き込みの確認が出る）
-        CC->>SCR: check
-        CC->>SCR: add（会話ログ）
-        CC->>SCR: build
+        CC->>SV: check
+        CC->>SV: add（会話ログ）
         CC-->>U: 資料へ格下げしたことを示す
       ```
     expected:
@@ -69,7 +67,7 @@ stakeholders:
 trigger: 利用者が決定済みの検討事項の案を変える、またはセットアップで要見直しの検討事項から再開する
 preconditions:
   - ワークスペースが作成済みである
-  - 依存が揃っている
+  - 起動スクリプトで立ち上げ、mindstella の MCP のツールが使える
 success_guarantee: 切り替えた検討事項の本文は今の正だけを書き、`impact` が返した決定済みの検討事項は全て要見直しになり、それぞれに見直しのタスクがある。
 frequency: 話し合いの中で数回
 priority: 高

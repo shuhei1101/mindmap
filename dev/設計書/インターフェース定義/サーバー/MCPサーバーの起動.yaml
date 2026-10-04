@@ -1,0 +1,159 @@
+title: "MCP サーバーの起動"
+entry:
+  kind: operation
+  value: '`{仮想環境の Python} {プラグインのフォルダ}/skills/mindmap/scripts/server.py`（起動スクリプトが書いた MCP の設定で、Claude Code が stdio のサーバーとして立てる。全てのツールに共通の結果とエラーの返し方）'
+flows:
+  - name: 正常系
+    summary: 立てたサーバーがツールの一覧を返す
+    setup:
+      - name: Mock
+        description: なし（テストを動かす Python で MCP サーバーを立て、MCP のクライアントでつなぐ）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as MCP サーバー（mindstella）
+
+        クライアント->>IF: 初期化
+        IF-->>クライアント: サーバーの名前 mindstella
+        クライアント->>IF: ツールの一覧
+        IF-->>クライアント: 18 個のツール
+      ```
+    expected:
+      - サーバーの名前が `mindstella`
+      - ツールの一覧の名前が、レスポンスのツールの 18 個と一致する
+      - どのツールも `workspace` を要る引数に持つ
+    test: test_normal
+  - name: 正常系（ツールのエラー）
+    summary: ワークスペースが無いフォルダを渡すと、ツールのエラーで返してサーバーは動き続ける
+    setup:
+      - name: Mock
+        description: なし（テストを動かす Python で MCP サーバーを立て、MCP のクライアントでつなぐ）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as MCP サーバー（mindstella）
+
+        クライアント->>IF: status（workspace は空のフォルダ）
+        IF-->>クライアント: ツールのエラー
+        クライアント->>IF: ツールの一覧
+        IF-->>クライアント: 18 個のツール
+      ```
+    expected:
+      - '`status` の結果の `isError` が真で、本文が `エラー: ` で始まり、フォルダのパスを含み、トレースバックを含まない'
+      - その後のツールの一覧が返る
+    test: test_normal_when_tool_fails
+  - name: 正常系（引数の誤り）
+    summary: 要る引数が無いと、引数の誤りのツールのエラーで返す
+    setup:
+      - name: Mock
+        description: なし（テストを動かす Python で MCP サーバーを立て、MCP のクライアントでつなぐ）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as MCP サーバー（mindstella）
+
+        クライアント->>IF: status（workspace なし）
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - 結果の `isError` が真
+      - 本文に `workspace` がある
+    test: test_normal_when_argument_missing
+  - name: 正常系（標準入力が閉じる）
+    summary: Claude Code が閉じたら配信を止めて終わる
+    setup:
+      - name: Mock
+        description: なし（テストを動かす Python で MCP サーバーを子プロセスとして立て、MCP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as MCP サーバー（mindstella）
+        participant P as プレビューの配信
+
+        クライアント->>IF: preview_url
+        IF->>P: 立てる
+        IF-->>クライアント: URL
+        クライアント->>IF: 標準入力を閉じる
+        IF->>P: 止める
+        IF-->>クライアント: プロセスが終わる
+      ```
+    expected:
+      - サーバーのプロセスが 5 秒以内に終わる
+      - 返った URL へつなぐと、つながらない
+    test: test_normal_when_stdin_closed
+  - name: 正常系（別のプロセスと同じワークスペースに書く）
+    summary: 2 つのプロセスが同じワークスペースへ同時に書いても、どちらの書き換えも失わず ID も重ならない
+    setup:
+      - name: Mock
+        description: なし（テストを動かす Python で MCP サーバーを 2 つ子プロセスとして立て、それぞれ MCP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 検討事項を持たない作成済みのワークスペース
+        notes: 2 つのプロセスから `add` を 20 回ずつ並べて呼ぶ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant A as MCP サーバー（1 つ目）
+        participant B as MCP サーバー（2 つ目）
+        participant WS as ワークスペース
+
+        par 1 つ目
+          A->>WS: ロックを取って add
+        and 2 つ目
+          B->>WS: ロックを取って add
+        end
+      ```
+    expected:
+      - どちらの `add` もツールのエラーにならない
+      - '`decisions.yaml` に 40 件あり、ID が `D-1`〜`D-40` で重ならない'
+    test: test_normal_when_two_processes_write
+lead: Claude Code が起動スクリプトの MCP の設定から立てる mindstella の MCP サーバー。ワークスペースを読み書きするツールと、プレビューの配信を 1 つのプロセスで持つ。
+idempotent: true
+side_effects: 立てただけでは何も書かない。プレビューの配信は『プレビューの URL』が呼ばれたときに立てる。Claude Code が標準入力を閉じると、配信を止めてプロセスを終える
+response:
+  - name: サーバーの名前
+    type: str
+    description: '`mindstella`。Claude Code の中のツールの名前は `mcp__mindstella__{ツール}` になる'
+  - name: ツール
+    type: list[str]
+    description: '`init`・`add`・`update`・`adopt`・`status`・`next`・`impact`・`find`・`show`・`attrs`・`check`・`goal`・`migrate`・`clear_release`・`export`・`preview_url`・`submissions`・`take_submission` の 18 個'
+  - name: 結果
+    type: CallToolResult
+    description: ツールの結果。構造化の結果（`structuredContent`）に JSON のオブジェクトを 1 個入れ、同じ JSON を文字列の本文（`content` の text）にも入れる
+  - name: エラー
+    type: CallToolResult（`isError` が真）
+    description: '実行時のエラーと引数の誤り。本文に `エラー: {内容}` の行を出し、各ツールのエラーの形の行を続ける。トレースバックを含めない'
+exceptions:
+  - name: なし（正常終了）
+    condition: Claude Code が標準入力を閉じた
+    notes: 立てたプレビューの配信を止めてから終わる
+error_format: 'ツールのエラーは、本文（`content` の text）に `エラー: {内容}` の行を出す。ツールが確かめる引数の誤り（一緒に使わない引数を渡した・値の形が違う）は `エラー: 引数の誤り: {引数の名前}: {理由}` にする。要る引数が無い・型が違うときは、ツールを呼ぶ前に SDK が入力のスキーマで弾き、本文は SDK の文言（`Error executing tool {ツール}:` に続けて引数の名前と理由）になる。サーバーの記録は標準エラーにだけ書く（標準出力は MCP が使う）'
+constraints:
+  - item: 通り道
+    constraint: stdio（標準入力・標準出力の JSON-RPC）。MCP の SDK（`mcp`）の `MCPServer` で作る
+  - item: 立てる Python
+    constraint: 依存の確認が確かめた仮想環境の Python（『依存の確認』の `python_path`）。起動スクリプトが MCP の設定の `command` に書く
+  - item: ツールの引数
+    constraint: 前のスクリプトのコマンドの引数と同じ中身を、引数の名前から `--` を落とした名前で受ける（`--workspace` → `workspace`）。項目の中身は `item`（`add`・`update`）・`settings`（`init`）の JSON のオブジェクトで受ける。Python の予約語と重なる `--from`・`--to` は `from_version`・`to_version` にする
+  - item: ワークスペース
+    constraint: 全てのツールが `workspace`（ワークスペースのフォルダのパス）を受ける。1 つのプロセスが複数のワークスペースを扱える。相対パスはサーバーの作業フォルダ（起動スクリプトが Claude Code を立ち上げたフォルダ）から読む
+  - item: 同時の呼び出し
+    constraint: ワークスペースを書き換えるツールと送信の受け付けは、プロセスの中の 1 本の鍵を取った後に、ワークスペースのロックファイル `.mindstella.lock` に `fcntl.flock` の排他ロックを取ってから読み・書く。同じワークスペースを開く別のプロセスとも排他する。ロックは取れるまで待ち、持つプロセスが落ちると OS が外す。読むだけのツールと配信はロックを取らない（書き換えは一時ファイルから `os.replace` で置き換えるため、書きかけを読まない）
+  - item: 終わり方
+    constraint: Claude Code を閉じると標準入力が閉じ、プレビューの配信を止めてプロセスを終える。プロセスは残らない
+  - item: 結果の組み立て
+    constraint: ツールは、成功もエラーも `CallToolResult` を自分で組み立てて返す（成功は `structured_content` と同じ JSON の本文、エラーは `is_error` を真にした本文）。例外を送って SDK に任せない
+    notes: '`mcp` 2.3.0 で確かめた。例外を送ると本文の頭に `Error executing tool {ツール}: ` が付き（`ToolError` 以外は内容も消える）、`エラー: ` で始まらない'
+refs:
+  - dev/設計書/外部ライブラリ/mcp#
+notes:
+  1 つのプロセスに持つ理由: ツールの書き換えと配信の書き換えの知らせを同じプロセスで持つと、Claude Code を閉じたときに配信も一緒に止まり、残ったプロセスを片付けずに済む（確認ログの「サブシステムの組み替え」）
+callers:
+  - dev/設計書/インターフェース定義/サーバー/起動スクリプト#

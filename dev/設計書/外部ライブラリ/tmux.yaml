@@ -1,0 +1,36 @@
+title: "tmux"
+kind: "CLI"
+version:
+  current: 3.4（確かめた版）
+  checked_on: '2026-10-04'
+  pinning: 版は固定しない。起動スクリプトは `PATH` の `tmux` を使う。下限は非機能要件『tmux の版』
+catalogs:
+  - name: コマンド
+    version: '3.4'
+    entries:
+      - name: tmux has-session -t {セッション}
+        kind: コマンド
+        purpose: 同じ名前のセッションが既にあるかを終了コードで確かめる。`{セッション}` は頭に `=` を付けて完全一致で指す
+      - name: tmux new-session -d -s {セッション} -c {フォルダ} -e {変数}={値} -- {コマンド}
+        kind: コマンド
+        purpose: 作業フォルダと環境変数を渡して、Claude Code を動かすセッションを裏で立てる
+      - name: tmux attach-session -t {セッション}
+        kind: コマンド
+        purpose: 立てたセッションへつなぐ
+lead: 1 つの端末の中に複数のセッションを立て、端末を閉じても動かし続けられる端末多重化の CLI。
+supplier: tmux プロジェクト
+dependency_scope: 必須
+adoption: 採用
+used_in:
+  - plugins/mindstella/bin/mindstella
+upstream: tmux/tmux
+verification:
+  state: 済
+  date: '2026-10-04'
+  detail: 3.4 で、`TMUX` を消し `TMUX_TMPDIR` を `/tmp` 直下の短いフォルダにした別のサーバーで確かめた。`has-session` は無ければ終了コード 1、あれば 0。`new-session -d -s -c -e -- {コマンド}` で作業フォルダと環境変数がコマンドに渡り、`display-message -p '#{session_path}'` が作業フォルダを返す。日本語のセッション名を使え、名前の `.` は tmux が `_` に置き換える
+license: ISC（商用利用可）
+official_url: https://github.com/tmux/tmux/wiki
+docs_url: https://man.openbsd.org/tmux.1
+limitations:
+  - item: 環境変数
+    content: tmux のサーバーが先に立っていると、呼び出し元の環境変数はセッションへ渡らない。要るものは `new-session -e` で渡す

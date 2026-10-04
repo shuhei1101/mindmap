@@ -3,9 +3,9 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる配る書き出しを実際の Python で再生する（描画のライブラリは jsDelivr から取る）。ブラウザは外への通信を全て止めて、書き出した HTML を開く
+        description: モデルを呼ばない。起動スクリプトの代わりに MCP サーバーを立て、手順が連ねる配る書き出しのツールを MCP のクライアントで呼ぶ（描画のライブラリは jsDelivr から取る）。ブラウザは外への通信を全て止めて、書き出した HTML を開く
       - name: make_workspace
-        description: 作成を済ませ、`build` で `preview.html` を書き出したワークスペース
+        description: 作成を済ませたワークスペース
       - name: 記録
         description: 検討事項 D-1 と、D-1 を前提に持つ D-2。資料 A-1（本文の Markdown に表と mermaid の図を 1 つずつ持つ）
       - name: 書き出す先
@@ -15,17 +15,17 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
         participant CDN as jsDelivr
         participant P as 配る書き出し（通信を止めたブラウザ）
 
         U->>CC: 記録を人に渡したい
-        CC->>SCR: 配る書き出し
-        SCR->>WS: 全ての YAML と docs/ を読む
-        SCR->>CDN: 描画のライブラリとライセンスの本文を取る
-        SCR->>SCR: データ・画面・描画のライブラリを 1 枚の HTML にまとめる
-        SCR-->>CC: 書き出したファイルのパス
+        CC->>SV: 配る書き出し
+        SV->>WS: 全ての YAML と docs/ を読む
+        SV->>CDN: 描画のライブラリとライセンスの本文を取る
+        SV->>SV: データ・画面・描画のライブラリを 1 枚の HTML にまとめる
+        SV-->>CC: 書き出したファイルのパス
         CC-->>U: 絶対パスを示す
         U->>P: 書き出したファイルを開く
         P-->>U: 概要
@@ -37,7 +37,7 @@ scenarios:
         P-->>U: 3D のつながり
       ```
     expected:
-      - 配る書き出しが終了コード 0 で終わり、出力に書き出す先のファイルの絶対パスがある
+      - 配る書き出しのツールが成功を返し、出力に書き出す先のファイルの絶対パスがある
       - 書き出した HTML の `script`・`link`・`img` の `src`・`href` に、外のファイルや URL を指すものが無い
       - 開いてから操作を終えるまでに、ブラウザが外へ出した要求が 0 件
       - どの画面にも、読めなかったライブラリの知らせが出ない
@@ -47,14 +47,13 @@ scenarios:
       - 画面に、項目の追加・編集・削除、回答・コメントの送信、設定の保存のボタンが無い
       - 書き出した HTML の中に、marked・DOMPurify・elkjs・mermaid のそれぞれの名前・版・著作権の表示・ライセンスの名前がある
       - 書き出した HTML の中に、elkjs のソースコードの入手先（リポジトリと版のタグの URL）がある
-      - ワークスペースの `preview.html` の中身が、配る書き出しを呼ぶ前と同じ
     test: test_normal
   - name: 異常シナリオ（YAML がスキーマに合わない）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
-        description: 作成を済ませ、`build` で `preview.html` を書き出したワークスペース
+        description: 作成を済ませたワークスペース
       - name: 書き出す先
         description: ワークスペースの外の一時フォルダの中に、一度配る書き出しを書き出したファイル
       - name: 手で崩した YAML
@@ -64,19 +63,18 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: 配る書き出し
-        SCR->>WS: 全ての YAML を読む
-        SCR->>SCR: スキーマと突き合わせて合わない
-        SCR-->>CC: 合わないファイルと箇所を示すエラー
+        CC->>SV: 配る書き出し
+        SV->>WS: 全ての YAML を読む
+        SV->>SV: スキーマと突き合わせて合わない
+        SV-->>CC: 合わないファイルと箇所を示すエラー
       ```
     expected:
-      - 配る書き出しが 0 以外の終了コードで終わる
-      - 標準エラーに、合わないファイル `decisions.yaml` とキー `status` がある
+      - 配る書き出しのツールがエラーを返す
+      - エラーの本文に、合わないファイル `decisions.yaml` とキー `status` がある
       - 書き出す先のファイルの中身が、呼ぶ前と同じである
-      - ワークスペースの `preview.html` の中身が、呼ぶ前と同じである
     test: test_error_when_schema_mismatch
 lead: 利用者が、記録を見るだけの 1 枚の HTML（配る書き出し）に書き出してもらい、ネットにつながらない端末のブラウザで開いて読む単一ユースケース。
 issue: 19
@@ -90,10 +88,10 @@ stakeholders:
 trigger: 利用者が記録を人に渡したいと言う
 preconditions:
   - ワークスペースが作成済みである
-  - 依存が揃っている
+  - 起動スクリプトで立ち上げ、mindstella の MCP のツールが使える
 success_guarantee: 書き出す先に、記録のデータ・画面・描画のライブラリを全て中に持つ 1 枚の HTML があり、ネットにつながらないブラウザで開いて記録を読める。
-minimal_guarantee: YAML がスキーマに合わないときは、書き出す先のファイルを書き換えない。ワークスペースの `preview.html` は書き換えない。
+minimal_guarantee: YAML がスキーマに合わないときは、書き出す先のファイルを書き換えない。
 frequency: 記録を人に渡すときに数回
 priority: 中
 notes:
-  E2E の範囲: タブ・表示形式の切り替え・絞り込み・検索・ライトとダークは、`build` の `preview.html` と同じ画面の JavaScript を差し込むため、それぞれの単一ユースケースの E2E が確かめる。このユースケースは、描画のライブラリを使う画面（本文・図・マップ・つながり）が通信なしで描けることを確かめる
+  E2E の範囲: タブ・表示形式の切り替え・絞り込み・検索・ライトとダークは、サーバーが配るプレビューと同じ画面の JavaScript を差し込むため、それぞれの単一ユースケースの E2E が確かめる。このユースケースは、描画のライブラリを使う画面（本文・図・マップ・つながり）が通信なしで描けることを確かめる

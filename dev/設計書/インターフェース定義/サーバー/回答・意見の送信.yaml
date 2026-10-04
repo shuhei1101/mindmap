@@ -1,0 +1,227 @@
+title: "回答・意見の送信"
+entry:
+  kind: endpoint
+  value: POST /api/submissions
+flows:
+  - name: 正常系
+    summary: 項目の ID と本文を受け、取り込んでいない送信として足す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントで送る）
+      - name: make_workspace
+        description: 検討事項 D-1 を持ち、`submissions.yaml` を持たないワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as POST /api/submissions
+        participant WS as ワークスペース
+
+        クライアント->>IF: POST {target: D-1, body: 案 A にする}
+        IF-->>WS: 項目と送信を読む
+        IF->>WS: submissions.yaml に足す
+        IF-->>クライアント: 201、JSON（id・sent）
+      ```
+    expected:
+      - ステータスが 201、`id` が `S-1`
+      - '`submissions.yaml` に `id: S-1`・`target: D-1`・`body: 案 A にする`・`taken: null` の 1 件があり、`sent` が返った値と同じ'
+      - '`decisions.yaml` の中身が送る前と同じ'
+    test: test_normal
+  - name: 異常系（本文が空・400）
+    summary: 空白だけの本文は足さない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントで送る）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+        notes: '`body` は `"  "`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as POST /api/submissions
+
+        クライアント->>IF: POST {target: D-1, body: 空白}
+        IF-->>クライアント: 400
+      ```
+    expected:
+      - ステータスが 400、`detail` に `body` がある
+      - '`submissions.yaml` が無い'
+    test: test_error_when_body_empty
+  - name: 異常系（送り元が違う・403）
+    summary: 別のサイトのページからの送信は足さない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントで送る）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+        notes: '`Origin: https://attacker.example` を付ける'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as POST /api/submissions
+
+        クライアント->>IF: POST（Origin: attacker.example）
+        IF-->>クライアント: 403
+      ```
+    expected:
+      - ステータスが 403
+      - '`submissions.yaml` が無い'
+    test: test_error_when_origin_mismatch
+  - name: 異常系（項目が無い・404）
+    summary: ワークスペースに無い ID へは足さない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントで送る）
+      - name: make_workspace
+        description: 検討事項 D-1 だけを持つワークスペース
+        notes: '`target` は `D-99`'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as POST /api/submissions
+        participant WS as ワークスペース
+
+        クライアント->>IF: POST {target: D-99}
+        IF-->>WS: 項目を読む（D-99 が無い）
+        IF-->>クライアント: 404
+      ```
+    expected:
+      - ステータスが 404、`detail` に `D-99` がある
+      - '`submissions.yaml` が無い'
+    test: test_error_when_target_not_found
+  - name: 異常系（本文が JSON でない・415）
+    summary: フォームの形の本文は足さない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントで送る）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+        notes: '`Content-Type: application/x-www-form-urlencoded` で `target=D-1&body=x` を送る'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as POST /api/submissions
+
+        クライアント->>IF: POST（application/x-www-form-urlencoded）
+        IF-->>クライアント: 415
+      ```
+    expected:
+      - ステータスが 415
+      - '`submissions.yaml` が無い'
+    test: test_error_when_not_json
+  - name: 異常系（書き込めない・500）
+    summary: 書き込めないワークスペースでは前の送信を残してエラーを返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントで送る）
+      - name: make_workspace
+        description: 送信 S-1 を持ち、ワークスペースのフォルダの書き込みの権限を外したワークスペース
+        notes: root で動かすときは skip する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as POST /api/submissions
+        participant WS as ワークスペース
+
+        クライアント->>IF: POST {target: D-1, body: 案 A にする}
+        IF->>WS: 一時ファイルを書けない
+        IF-->>クライアント: 500
+      ```
+    expected:
+      - ステータスが 500、`detail` が書けなかったパスを含み、トレースバックを含まない
+      - '`submissions.yaml` の中身が送る前と同じ'
+    test: test_error_when_write_fails
+lead: プレビューの詳細パネルから、項目の ID ごとの回答・意見を受け、取り込んでいない送信としてワークスペースの `submissions.yaml` に足す。
+idempotent: false
+side_effects: '`submissions.yaml` に 1 件足す（無ければ作る）。一時ファイルから `os.replace` で置き換える。ほかのファイルは書き換えない'
+callers:
+  - dev/設計書/インターフェース定義/プレビュー/プレビューを開く#
+request:
+  - name: Host
+    type: str
+    required: true
+    location: header
+    description: ブラウザが付ける接続先
+    constraints: '`127.0.0.1:{ポート}` か `localhost:{ポート}`'
+  - name: Content-Type
+    type: str
+    required: true
+    location: header
+    description: 本文の形
+    constraints: '`application/json`'
+  - name: Origin
+    type: str
+    required: false
+    default: なし（確かめない）
+    location: header
+    description: ブラウザが付ける送り元
+    constraints: 付いていれば `http://127.0.0.1:{ポート}` か `http://localhost:{ポート}`
+  - name: target
+    type: str
+    required: true
+    location: body
+    description: 回答・意見を向ける項目の ID
+    constraints: 配信しているワークスペースにある項目の ID
+    example: D-22
+  - name: body
+    type: str
+    required: true
+    location: body
+    description: 回答・意見の本文
+    constraints: 前後の空白を除いて 1 文字以上、10000 文字以下
+    example: 案 A にする
+request_example: |-
+  ```json
+  {
+    "target": "D-22",
+    "body": "案 A にする"
+  }
+  ```
+response:
+  - name: id
+    type: str
+    description: 振った送信の ID（`S-{連番}`）
+    example: S-3
+  - name: sent
+    type: str
+    description: 受けた日時（UTC のタイムゾーン付き ISO 8601）
+status_codes:
+  - code: '201'
+    condition: 足した
+  - code: '400'
+    condition: 本文が JSON のオブジェクトでない・`target`・`body` が無い・`body` が空白だけか 10000 文字を超える
+    notes: 何も書かない
+  - code: '403'
+    condition: '`Origin` が配信の URL と違う'
+    notes: 何も書かない
+  - code: '404'
+    condition: '`target` の項目がワークスペースに無い'
+    notes: 何も書かない
+  - code: '415'
+    condition: '`Content-Type` が `application/json` でない'
+    notes: 何も書かない
+  - code: '500'
+    condition: '`submissions.yaml` を書けない（権限が無い など）'
+    notes: '`detail` に書けなかったパスと理由。`submissions.yaml` は前のまま'
+error_format: 本文は `application/problem+json`（RFC 9457 の `type`・`title`・`status`・`detail`）。`detail` は日本語
+constraints:
+  - item: 本文の上限
+    constraint: '`body` は 10000 文字。リクエストの本文は 64KiB まで読み、超えたら読まずに 400'
+    decided_by: dev/設計書/非機能要件/非機能要件#requirements[送信の本文の長さ]
+  - item: 書く中身
+    constraint: '`id`（`S-{連番}`。連番の最大 + 1）・`target`・`body`（前後の空白を除く）・`sent`・`taken: null`。ER 図『ワークスペース』の `submissions.yaml`'
+  - item: 送り元の確かめ
+    constraint: '`Host` は『プレビューの配信』と同じ。`Content-Type` を `application/json` に限り、`Origin` が付いていれば配信の URL と同じかを確かめる（別のサイトのページからの書き込みを防ぐ）'
+  - item: 同時の送信
+    constraint: 書き換えの鍵とワークスペースのロック（『MCP サーバーの起動』の同時の呼び出し）を取ってから読み・足し・書く。別のプロセスの `take_submission` や送信と重なっても、どちらの書き換えも失わず、送信の ID も重ならない
+  - item: 待ち受け
+    constraint: '`127.0.0.1` だけ'
+    decided_by: dev/設計書/非機能要件/非機能要件#requirements[待ち受けの範囲]
+refs:
+  - dev/設計書/ER図/ワークスペース#
+  - dev/設計書/シナリオ/単一ユースケース/回答・意見を送る#

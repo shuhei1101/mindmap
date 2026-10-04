@@ -18,9 +18,6 @@ overview:
     - id: SKL
       label: スキル
       kind: system
-    - id: SCR
-      label: スクリプト
-      kind: system
     - id: WS
       label: ワークスペース（YAML）
       shape: cylinder
@@ -37,7 +34,25 @@ overview:
     - id: GF
       label: Google Fonts
       kind: external
+    - id: BIN
+      label: 起動スクリプト
+      kind: system
+    - id: SRV
+      label: サーバー（MCP・配信）
+      kind: system
+    - id: TMX
+      label: tmux
+      kind: external
   edges:
+    - from: U
+      to: BIN
+      label: 起動
+    - from: BIN
+      to: TMX
+      label: セッションを立てる
+    - from: TMX
+      to: CC
+      label: MCP の設定を渡して起動
     - from: U
       to: CC
       label: 会話
@@ -54,20 +69,20 @@ overview:
       to: SKL
       label: 手順の読み込み
     - from: CC
-      to: SCR
-      label: コマンド
-    - from: SCR
+      to: SRV
+      label: MCP のツール（stdio）
+    - from: SRV
       to: WS
       label: 読み書き
-    - from: SCR
+    - from: SRV
       to: PRV
-      label: 書き出し
+      label: 配信・配る書き出し
     - from: U
       to: BR
       label: 閲覧
     - from: BR
-      to: PRV
-      label: ファイルを開く
+      to: SRV
+      label: HTTP（127.0.0.1）・SSE・送信
     - from: BR
       to: CDN
       label: HTTPS
@@ -80,14 +95,15 @@ overview:
       nodes:
         - PLG
         - SKL
-        - SCR
+        - BIN
+        - SRV
         - WS
         - PRV
 repository:
   style: モノレポ
   repositories:
     - name: shuhei1101/mindstella
-  layout: '`.claude-plugin/`（マーケットプレイスのマニフェスト）/ `plugins/mindstella/.claude-plugin/`（プラグインのマニフェスト）/ `plugins/mindstella/version.ini`（プラグインの版）/ `plugins/mindstella/skills/setup/`・`plugins/mindstella/skills/session/`・`plugins/mindstella/skills/upgrade/`（スキル。SKILL.md と `steps/`）/ `plugins/mindstella/skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、スクリプトの `schemas/`・`scripts/`・版ごとの移し替えの手順 `migrations/`・プレビューの `preview/`。SKILL.md は持たない）'
+  layout: '`.claude-plugin/`（マーケットプレイスのマニフェスト）/ `plugins/mindstella/.claude-plugin/`（プラグインのマニフェスト）/ `plugins/mindstella/version.ini`（プラグインの版）/ `plugins/mindstella/bin/`（起動スクリプト `mindstella`）/ `plugins/mindstella/skills/setup/`・`plugins/mindstella/skills/session/`・`plugins/mindstella/skills/upgrade/`（スキル。SKILL.md と `steps/`）/ `plugins/mindstella/skills/mindmap/`（スキルが共通で読む `references/`・`playbooks/`・`README.md` と、サーバーの `schemas/`・`scripts/`・版ごとの移し替えの手順 `migrations/`・プレビューの `preview/`。SKILL.md は持たない）'
   notes: マーケットプレイスはリポジトリの直下の `.claude-plugin/` に置き、プラグインを `./plugins/mindstella` で指す。プラグインは `plugins/mindstella/` の下に分け、利用者へ配るのはその中身だけにする。
 subsystems:
   - name: プラグイン
@@ -97,36 +113,36 @@ subsystems:
     runs_on: 利用者の端末の Claude Code
   - name: スキル
     scope: skill
-    role: 会話の進め方の手順（セットアップ `setup`・話し合いの進行 `session`・ワークスペースの移し替え `upgrade` の 3 つ）。ワークスペースへの記録はスクリプトのコマンドで行い、リサーチはサブエージェントに任せる
+    role: 会話の進め方の手順（セットアップ `setup`・話し合いの進行 `session`・ワークスペースの移し替え `upgrade` の 3 つ）。ワークスペースへの記録はサーバーの MCP のツールで行い、リサーチはサブエージェントに任せる
     runtime: Markdown（Claude Code が読む手順）
     runs_on: 利用者の端末の Claude Code
     status: implemented
-  - name: スクリプト
-    scope: scripts
-    role: ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検と、プレビューの HTML の書き出し
-    runtime: Python 3
-    runs_on: 利用者の端末（Claude Code から起動するコマンド）
-    status: implemented
   - name: プレビュー
     scope: preview
-    role: 書き出した 1 枚の HTML で、ワークスペースの記録を読み返す画面
+    role: サーバーが配るワークスペースの記録を読み返し、詳細パネルから項目ごとに回答・意見を送る画面。配る書き出しは記録を中に持つ見るだけの 1 枚の HTML
     runtime: TypeScript 7（tsc が生成した JavaScript をブラウザで動かす）
-    runs_on: 利用者の端末のブラウザ（ファイルとして開く。サーバーは立てない）
+    runs_on: 利用者の端末のブラウザ（サーバーの配信の URL で開く。配る書き出しはファイルとして開く）
     status: implemented
+  - name: サーバー
+    scope: server
+    role: 起動スクリプトで tmux と Claude Code を立ち上げ、1 つのプロセスで MCP のツール（ワークスペースの YAML の読み書き・検索・影響の洗い出し・点検・配る書き出し・送信の取り込み）と、プレビューの配信・送信の受け付けを持つ
+    runtime: Python 3（起動スクリプトは bash）
+    runs_on: 利用者の端末（起動スクリプトで立てた Claude Code が stdio で立てる。配信は `127.0.0.1` の空きポート）
+    status: planned
 external_systems:
   - name: Claude Code
-    purpose: プラグインの読み込み・スキルの手順の実行・スクリプトのコマンドの起動
+    purpose: プラグインの読み込み・スキルの手順の実行・サーバーの MCP のツールの呼び出し
     direction: 双方向
-    protocol: プラグインのマニフェスト（JSON）/ スキル（Markdown）/ コマンドの標準入出力
+    protocol: プラグインのマニフェスト（JSON）/ スキル（Markdown）/ MCP（stdio の JSON-RPC）
     notes:
-      事前確認: 不要。Claude Code がプラグインを読み込み、スクリプトを起動する側のため、呼ばれた時点で到達している。
+      事前確認: 要。起動スクリプトが、`PATH` に `claude` があることと、`claude plugin list --json` に mindstella があることを確かめ、無ければ Claude Code を立てずに止まる。MCP のサーバーは Claude Code が立てる側のため、立った時点で到達している。
     detail: dev/設計書/外部ライブラリ/claude-code#
   - name: jsDelivr
-    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得。`build` の書き出しは開いたブラウザが読み、配る書き出し（`export`）は書き出すときに取って中に持つ
+    purpose: プレビューの描画のライブラリ（marked・DOMPurify・elkjs・mermaid）の取得。サーバーが配るプレビューは開いたブラウザが読み、配る書き出し（`export`）は書き出すときに取って中に持つ
     direction: 受信のみ
     protocol: HTTPS
     notes:
-      事前確認: 要。`build` の書き出しは、プレビューを開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。`export` は、書き出すときに `https://cdn.jsdelivr.net/npm/{package}@{version}/{path}` から配布ファイルとライセンスの本文を取る。1 回の要求で接続と 1 回の読み取りをそれぞれ 30 秒まで待ち、取れなければ何も書かずにエラーで終える。配る書き出しを開くときは通信しない。
+      事前確認: 要。サーバーが配るプレビューは、開いた時点で、描画のライブラリが読み込めたかを確かめる。読み込めなかったときは、読み込めなかったライブラリの名前を画面に出す。`export` は、書き出すときに `https://cdn.jsdelivr.net/npm/{package}@{version}/{path}` から配布ファイルとライセンスの本文を取る。1 回の要求で接続と 1 回の読み取りをそれぞれ 30 秒まで待ち、取れなければ何も書かずにエラーで終える。配る書き出しを開くときは通信しない。
     refs:
       - dev/設計書/外部ライブラリ/marked#
       - dev/設計書/外部ライブラリ/DOMPurify#
@@ -139,10 +155,17 @@ external_systems:
     detail: dev/設計書/外部API/GoogleFonts#
     notes:
       事前確認: 不要。読めないときは端末の文字で描き、画面の操作は変わらない。配る書き出しは文字を読まず、常に端末の文字で描く。
-lead: mindstella のサブシステムと、Claude Code・ブラウザ・CDN との境界。
+  - name: tmux
+    purpose: 起動スクリプトが立てるセッションの中で、MCP サーバーを渡した Claude Code を動かす
+    direction: 送信のみ
+    protocol: tmux のコマンド（`new-session`・`has-session`・`attach-session`）
+    detail: dev/設計書/外部ライブラリ/tmux#
+    notes:
+      事前確認: 要。起動スクリプトが、`PATH` に `tmux` があることを確かめ、無ければ Claude Code を立てずに止まる。
+lead: mindstella のサブシステムと、Claude Code・tmux・ブラウザ・CDN との境界。
 constraints: |-
-  - hooks・MCP サーバーを持たない
+  - hooks を持たない。MCP サーバーはプラグインのマニフェストに書かず、起動スクリプトで立てた Claude Code にだけ渡す
   - 他のスキル・外部の仕組みに依存しない
-  - スキル・スクリプト・プレビューの中で、特定の開発基盤の名前を出さない
-  - 常駐するサーバーを持たない（プレビューはファイルとして開く）
-  - ネットがある前提で、`build` の書き出しは描画のライブラリを CDN から、文字を Google Fonts から読み、配る書き出し（`export`）は書き出すときに取った描画のライブラリを中に持つ
+  - スキル・サーバー・プレビューの中で、特定の開発基盤の名前を出さない
+  - サーバーは Claude Code と一緒に立ち、一緒に止まる。配信は `127.0.0.1` だけで待ち受ける
+  - ネットがある前提で、サーバーが配るプレビューは描画のライブラリを CDN から、文字を Google Fonts から読み、配る書き出し（`export`）は書き出すときに取った描画のライブラリを中に持つ

@@ -1,0 +1,133 @@
+title: "記録の取得"
+entry:
+  kind: endpoint
+  value: GET /api/records
+flows:
+  - name: 正常系
+    summary: 全ての種類と本文と導いた値を返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 7 つの種類を 1 件ずつ持ち、検討事項 D-1 が本文 `docs/D-1.md` を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as GET /api/records
+        participant WS as ワークスペース
+
+        クライアント->>IF: GET /api/records
+        IF-->>WS: 全ての YAML と docs/ を読む
+        IF-->>クライアント: 200、JSON
+      ```
+    expected:
+      - ステータスが 200
+      - '`settings` と 7 つの種類の項目が YAML と同じ'
+      - '`bodies` に `D-1.md` の本文がある'
+      - '`derived.next` が `next` の結果の `candidates` と同じ'
+      - '`derived.goal` が `goal` の結果のキーと `phase_progress` を持つ'
+    test: test_normal
+  - name: 正常系（書き換えた後）
+    summary: ツールで書き換えると、次に読んだ記録に書き換えが入っている
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as GET /api/records
+        participant T as add（MCP のツール）
+
+        クライアント->>IF: GET /api/records
+        IF-->>クライアント: D-1 だけ
+        クライアント->>T: add workspace kind decision（D-2）
+        クライアント->>IF: GET /api/records
+        IF-->>クライアント: D-1・D-2
+      ```
+    expected:
+      - 2 回目の `decisions` に D-2 がある
+      - 2 回目の `built_at` が 1 回目以降の日時
+    test: test_normal_when_rewritten
+  - name: 異常系（YAML がスキーマに合わない・422）
+    summary: 手で崩した YAML があると、合わない箇所を返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL へ HTTP のクライアントでつなぐ）
+      - name: make_workspace
+        description: '`decisions.yaml` の D-1 の `status` を `完了` に直接書き換えたワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as GET /api/records
+        participant WS as ワークスペース
+
+        クライアント->>IF: GET /api/records
+        IF-->>WS: 全ての YAML を読む
+        IF->>IF: スキーマと突き合わせて合わない
+        IF-->>クライアント: 422
+      ```
+    expected:
+      - ステータスが 422、`Content-Type` が `application/problem+json`
+      - '`detail` に `decisions.yaml: items[0].status:` で始まる行がある'
+    test: test_error_when_schema_mismatch
+lead: 配信しているワークスペースの全ての YAML と本文を、その場で読んで 1 つの JSON にまとめて返す。プレビューの画面が開いたときと、書き換えの知らせを受けたときに読む。
+idempotent: true
+side_effects: なし（読むだけ）
+callers:
+  - dev/設計書/インターフェース定義/プレビュー/プレビューを開く#
+request:
+  - name: Host
+    type: str
+    required: true
+    location: header
+    description: ブラウザが付ける接続先
+    constraints: '`127.0.0.1:{ポート}` か `localhost:{ポート}`'
+response:
+  - name: settings
+    type: dict
+    description: '`mindmap.yaml` の中身'
+  - name: decisions / tasks / research / docs / terms / notes / logs
+    type: list[dict]
+    description: 種類ごとの YAML の `items` の中身（キー名はファイル名から `.yaml` を落としたもの）
+  - name: bodies
+    type: dict[str, str]
+    description: '`docs/` のファイル名 → 本文の Markdown（項目の `body` が指すものだけ）'
+  - name: built_at
+    type: str
+    description: 読んだ日時（UTC のタイムゾーン付き ISO 8601）。画面はつながらないときに「{日時} に読んだ記録」と出す
+  - name: derived.next[]
+    type: list[{id, title, phase, weight, followers}]
+    description: 次に検討する項目。『次の候補』（`next`、上限なし）と同じ並びと中身。画面の「着手可否」が「着手可能」になるのはここにある ID
+  - name: derived.goal
+    type: dict
+    description: 『ゴール判定』（`goal`）の結果と同じキーに、判定に入れたフェーズごとの決着した数と全体の数 `phase_progress[]`（`{phase, settled, total}`）を足したもの
+  - name: derived.progress[]
+    type: 'list[{category, cells: list[{phase, settled, total}], settled, total}]'
+    description: カテゴリー別の進捗。`settings.categories` の順、セルは `settings.phases` の順。決着は『次の候補』『ゴール判定』と同じ（検討事項の決定済み・対象外・取り下げ）
+response_notes: |-
+  > [!NOTE]
+  > 配る書き出し（`export`）は、同じ形の JSON を `<script type="application/json" id="mindmap-data">` の中身に埋め込む。画面は埋め込みのデータがあればそれを読み、無ければこの API を読む。送信（`submissions.yaml`）は返さない。
+status_codes:
+  - code: '200'
+    condition: 読めた
+  - code: '422'
+    condition: ワークスペースのどれかの YAML がスキーマに合わないか、YAML として読めない。または `mindmap.yaml` が無くなった
+    notes: '`detail` に合わない箇所ごとの `{ファイル名}: {キーのパス}: {理由}` を改行でつなぐ。画面は前に読んだ記録で描き続ける'
+error_format: 本文は `application/problem+json`（RFC 9457 の `type`・`title`・`status`・`detail`）。`detail` は日本語
+constraints:
+  - item: 読む時
+    constraint: 呼ばれるたびにワークスペースの YAML と本文を読み直す（書き出しのファイルを持たない）
+  - item: 本文の形
+    constraint: '`application/json; charset=utf-8`。日本語はエスケープしない。`Cache-Control: no-store`'
+  - item: 接続先の確かめ
+    constraint: 『プレビューの配信』と同じ（`Host` が合わなければ 403 を返す。確かめは『プレビューの配信』の異常系が持つ）
+  - item: 読みかけ
+    constraint: ツールは YAML を一時ファイルから `os.replace` で置き換えるため、書きかけを読まない
+refs:
+  - dev/設計書/インターフェース定義/サーバー/次の候補#
+  - dev/設計書/インターフェース定義/サーバー/ゴール判定#

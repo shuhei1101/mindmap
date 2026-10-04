@@ -3,13 +3,13 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開く）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 7 種類の項目を 1 件以上ずつ。検討事項 D-3 は前提 D-1・進めるタスク T-2・関連 R-1 とつながる
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -35,13 +35,13 @@ scenarios:
   - name: 正常シナリオ（種類をまとめて切り替える）
     setup:
       - name: Mock
-        description: なし（実際のブラウザで `preview.html` を開く）
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 記録
         description: 7 種類の項目を 1 件以上ずつ
-      - name: 書き出し
-        description: 記録を書き出した `preview.html`
+      - name: 配信
+        description: 記録を配っているサーバー
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -68,5 +68,5 @@ issue: 5
 primary_actor: 利用者
 trigger: 利用者がタブの帯の右端のつながりを押す
 preconditions:
-  - ワークスペースに記録があり、プレビューを書き出してある
+  - ワークスペースに記録があり、サーバーがプレビューを配っている
 test_file: tests/e2e/単一ユースケース/test_graph_trace_view.py

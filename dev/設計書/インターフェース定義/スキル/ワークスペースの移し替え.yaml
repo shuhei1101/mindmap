@@ -25,15 +25,17 @@ flows:
     expected:
       - front matter の `name` が `upgrade`、`allowed-tools` が制約の値と一致する
       - 本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
-      - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
-      - 本文のコマンドの一覧に `migrate --plan`・`migrate`・`migrate --set`・`migrate --record`・`check`・`build` がある
+      - 本文が呼ぶツールが全て `allowed-tools` にあり、サーバーのツールの一覧（『MCP サーバーの起動』）にある
+      - 本文のツールの一覧に `migrate`（`plan`・手順を当てる・`values`・`record`）と `check` がある
+      - 本文が `mindmap.py`・`build`・`check-env` を指さない
+      - 本文に、MCP のツールが無いとき起動スクリプトを案内して止まる分岐がある
       - スキルの Markdown に特定の開発基盤の名前が無い
       - '`claude plugin validate` が終了コード 0'
     test: test_normal
 lead: ワークスペースの版とプラグインの版を比べ、版ごとの手順を当てて今の版へ移し替えるスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/単一ユースケース/ワークスペースの移し替え#
-side_effects: スクリプトの `migrate` で写しを取って手順を当て、値を入れ、版のファイルを書き換える。最後に `build` を流す。スキルが自分でファイルを書くことはない
+side_effects: サーバーの MCP のツール `migrate` で写しを取って手順を当て、値を入れ、版のファイルを書き換える。スキルが自分でファイルを書くことはない
 request:
   - name: $ARGUMENTS
     type: str
@@ -47,22 +49,27 @@ exceptions:
     condition: ファイルの形が制約どおりで、Claude Code がスキルとして読み込める
 constraints:
   - item: ファイルの形
-    constraint: '`skills/upgrade/SKILL.md` だけ。入力・ステップの表・コマンドと引数の一覧を持つ'
+    constraint: '`skills/upgrade/SKILL.md` だけ。入力・ステップの表・ツールと引数の一覧を持つ'
   - item: front matter の name
     constraint: '`upgrade`'
   - item: front matter の description
     constraint: いつ使うか（プラグインを上げた後、ワークスペースの版が古いと案内されたとき）が分かる 1 文
   - item: front matter の allowed-tools
-    constraint: '`Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。これ以外の Bash は許していない'
+    constraint: '`Read, mcp__mindstella__migrate, mcp__mindstella__check`。Bash は許していない'
     notes: 写しの git のコミットとフォルダの複製は `migrate` の中で行うため、git や複製のコマンドを許さない
   - item: ステップ
-    constraint: 上から順に進む。(1) `check-env`。(2) `migrate --plan` で版を比べる。`relation` が `same` なら移し替えるものが無いと示して終える。`newer` ならプラグインの更新を案内して止まる。(3) `steps` を版の順に示す。`destructive` が `true` の手順があるときだけ、当ててよいかを確かめる。(4) `migrate` で写しを取って手順を当てる。終了コード 1 なら、標準エラーの失敗した版・手順・理由を示して止まる。(5) `check` で点検し、`needs_values` のキーだけを利用者に聞いて `migrate --set` で入れる。(6) `migrate --record` で版を書き換える。(7) `build` を流し、移し替えた版と写しの場所を示して `/mindstella:session` を案内する
+    constraint: '上から順に進む。(1) `migrate` を `plan: true` で呼んで版を比べる。`relation` が `same` なら移し替えるものが無いと示して終える。`newer` ならプラグインの更新を案内して止まる。(2) `steps` を版の順に示す。`destructive` が `true` の手順があるときだけ、当ててよいかを確かめる。(3) `migrate` で写しを取って手順を当てる。ツールのエラーなら、本文の失敗した版・手順・理由を示して止まる。(4) `check` で点検し、`needs_values` のキーだけを利用者に聞いて `migrate` の `values` で入れる。(5) `migrate` を `record: true` で呼んで版を書き換える。(6) 移し替えた版と写しの場所を示して `/mindstella:session` を案内する'
   - item: 共通のファイルの参照
     constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
-  - item: スクリプトの起動
-    constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く（この形のまま起動したときだけ `allowed-tools` に当たる）
   - item: スキルの中の名前
     constraint: 特定の開発基盤の名前を出さない（アーキテクチャ図の制約）
+  - item: ツールの呼び出し
+    constraint: ワークスペースの読み書きは全て mindstella の MCP のツール（`mcp__mindstella__{ツール}`）で行い、`workspace` にワークスペースのフォルダを渡す。スクリプトを Bash で起動しない
+    notes: 写しの git のコミットとフォルダの複製は `migrate` の中で行う
+  - item: MCP のツールが使えないとき
+    constraint: 最初に mindstella の MCP のツールがあるかを見て、無ければワークスペースに何も書かず、起動スクリプト（`{プラグインのフォルダ}/bin/mindstella {ワークスペースのフォルダ}`）で立ち上げ直すよう案内して止まる。依存は起動スクリプトが確かめるため、スキルは確かめない
+    notes: インターフェース定義『起動スクリプト』
 refs:
-  - dev/設計書/インターフェース定義/スクリプト/記録の形式の移行#
+  - dev/設計書/インターフェース定義/サーバー/記録の形式の移行#
+  - dev/設計書/インターフェース定義/サーバー/MCPサーバーの起動#
 test_file: tests/integration/skill/test_upgrade.py

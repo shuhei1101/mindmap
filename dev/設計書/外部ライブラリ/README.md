@@ -19,5 +19,7 @@
 | [playwright](./playwright.yaml) | プレビューのテストでブラウザを動かす（pytest-playwright。開発用） |
 | [typescript](./typescript.yaml) | プレビューのスクリプトを型検査し、.ts から .js へ変換する（開発用） |
 | [git](./git.yaml) | 移し替える前の写しを、git のコミットで取る・戻す |
+| [mcp](./mcp.yaml) | MCP のサーバーを立て、スキルが呼ぶツールを載せる（Python の公式の SDK） |
+| [tmux](./tmux.yaml) | 起動スクリプトが、MCP サーバーを渡した Claude Code を動かすセッションを立てる |
 
 <!-- /table -->
