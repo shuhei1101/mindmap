@@ -1001,7 +1001,8 @@
     sending: () => `<span class="spinner" aria-hidden="true"></span><span>送っています</span>`,
     sent: (r) => `${icon("check")}<span>送りました（${timeOf(r.at)}）。次の話し合いの最初に取り込みます。</span>`,
     empty: () => `${icon("alert")}<span>回答・意見を入れてから送ってください。</span>`,
-    failed: () => `${icon("alert")}<span>送れませんでした。サーバーにつながりません。起動スクリプトで立ち上げ直してから送ってください。</span>`,
+    // 送れなかった: 開き直すと入力途中の本文が消える（新しい URL は別のオリジン）ので、本文を写すボタンを添える
+    failed: () => `${icon("alert")}<span class="send-msg-body"><span>送れませんでした。サーバーが止まっています。起動スクリプトで立ち上げ直し、示された新しい URL で開いてから送ってください。</span><button class="btn ghost send-copy" type="button" data-act="sendcopy">${icon("copy")}本文を写す</button></span>`,
   };
   const sendFormOf = (id) => document.querySelector(`.send[data-id="${CSS.escape(id)}"]`);
   // 送った結果を、描き直さずに入力の近くへ出す（読み上げの領域を作り直さない）
@@ -1306,6 +1307,11 @@
       case "vclose": closeFullViewer(); break;
       case "sim": state.sim = el.dataset.sim; layoutCache.clear(); lastScreen = ""; history.replaceState(null, "", hashOf()); render(); break;
       case "dgraw": { const f = el.closest(".diagram"), on = el.getAttribute("aria-pressed") !== "true"; el.setAttribute("aria-pressed", on); f.querySelector(".mermaid").hidden = on; f.querySelector(".dg-raw").hidden = !on; break; }
+      case "sendcopy": {
+        const ta = el.closest(".send").querySelector("textarea");
+        navigator.clipboard?.writeText(ta.value).then(() => { el.innerHTML = `${icon("check")}写しました`; setTimeout(() => (el.innerHTML = `${icon("copy")}本文を写す`), 1400); });
+        break;
+      }
       case "dgcopy": { const f = el.closest(".diagram"); navigator.clipboard?.writeText(f.querySelector(".dg-raw").textContent).then(() => { el.innerHTML = icon("check"); setTimeout(() => (el.innerHTML = icon("copy")), 1400); }); break; }
       case "dgzoom": openViewer(el.closest(".diagram").querySelector(".mermaid svg")); break;
       case "vzoom": viewerZoom(el.dataset.z); break;

@@ -63,3 +63,16 @@ dialog.full:has(.full-viewer) .send { display: none; }
 @media (max-width: 1100px) { .conn .conn-long { display: none; } .conn .conn-short { display: inline; } }
 /* 最も狭い幅（360px 以下）の接続の状態: 印だけを見せてサイト名と重ねない。文言は読み上げにだけ残す */
 @media (max-width: 360px) { .conn .conn-short { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; } .conn svg.icon { width: 18px; height: 18px; } }
+
+/* ===== 送れなかったときの本文を写すボタン ===== */
+
+/* 送れなかった旨と本文を写すボタン: 文言の下にボタンを置く */
+.send-msg-body { display: grid; justify-items: start; gap: 4px; }
+/* 本文を写すボタン: 送るボタンより目立たせず、文言の頭に揃える */
+.send-copy { height: 28px; padding: 0 8px; margin-left: -8px; font-size: var(--fs-small); }
+/* 本文を写すボタンの印: 状態の色を継がず、ボタンの文字の色にする */
+.send-msg .send-copy svg.icon { color: currentColor; }
+/* 送信の入力の幅で結果の置き方を変えるため、入力の幅を問い合わせの基準にする */
+.send { container-type: inline-size; }
+/* 入力の幅が狭いとき（360px 以下）: 送るボタンを右に置いたまま、結果を下の行に幅いっぱいで出す */
+@container (max-width: 360px) { .send-row { flex-wrap: wrap; justify-content: flex-end; } .send-row .send-msg { order: 2; flex-basis: 100%; min-height: 0; padding-top: 0; } .send-row .send-msg:empty { display: none; } }
