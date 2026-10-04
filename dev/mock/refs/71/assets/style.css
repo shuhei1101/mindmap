@@ -38,8 +38,8 @@ dialog.full:has(.full-viewer) .send { display: none; }
 .send-msg.empty svg.icon, .send-msg.failed svg.icon { color: var(--st-review); }
 /* 送るボタン: 結果の文言が長くても幅を保つ */
 .send-row .btn { flex: none; }
-/* 送っている間の送るボタン: 押せないことを薄さで示す */
-.send-row .btn:disabled { opacity: .55; cursor: progress; }
+/* 送っている間の送るボタン: 塗りを外して押せないことを示す（文字は面の上で 4.5:1 以上を保つ） */
+.send-row .btn:disabled { background: var(--surface-2); border-color: var(--border); color: var(--text-2); cursor: progress; }
 /* 送っている間の回る印 */
 .spinner { flex: none; width: 14px; height: 14px; margin-top: 2px; border: 2px solid var(--border); border-top-color: var(--text-2); border-radius: 50%; animation: send-spin .8s linear infinite; }
 /* 回る印の動き */
