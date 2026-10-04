@@ -218,7 +218,7 @@ constraints:
   - item: 送り元の確かめ
     constraint: '`Host` は『プレビューの配信』と同じ。`Content-Type` を `application/json` に限り、`Origin` が付いていれば配信の URL と同じかを確かめる（別のサイトのページからの書き込みを防ぐ）'
   - item: 同時の送信
-    constraint: プロセスの中の書き換えの鍵（『MCP サーバーの起動』）を取ってから読み・足し・書く
+    constraint: 書き換えの鍵とワークスペースのロック（『MCP サーバーの起動』の同時の呼び出し）を取ってから読み・足し・書く。別のプロセスの `take_submission` や送信と重なっても、どちらの書き換えも失わず、送信の ID も重ならない
   - item: 待ち受け
     constraint: '`127.0.0.1` だけ'
     decided_by: dev/設計書/非機能要件/非機能要件#requirements[待ち受けの範囲]

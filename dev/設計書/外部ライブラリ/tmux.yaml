@@ -10,7 +10,7 @@ catalogs:
     entries:
       - name: tmux has-session -t {セッション}
         kind: コマンド
-        purpose: 同じ名前のセッションが既にあるかを終了コードで確かめる
+        purpose: 同じ名前のセッションが既にあるかを終了コードで確かめる。`{セッション}` は頭に `=` を付けて完全一致で指す
       - name: tmux new-session -d -s {セッション} -c {フォルダ} -e {変数}={値} -- {コマンド}
         kind: コマンド
         purpose: 作業フォルダと環境変数を渡して、Claude Code を動かすセッションを裏で立てる
@@ -25,8 +25,9 @@ used_in:
   - plugins/mindstella/bin/mindstella
 upstream: tmux/tmux
 verification:
-  state: 未確認
-  detail: PoC（https://github.com/shuhei1101/mindstella/pull/73）で 3.4 の `new-session -d -s -c -e` と `attach-session` を使い、Claude Code を立ち上げられた。`has-session` と `TMUX_TMPDIR` で分けたサーバーは実装で確かめる
+  state: 済
+  date: '2026-10-04'
+  detail: 3.4 で、`TMUX` を消し `TMUX_TMPDIR` を `/tmp` 直下の短いフォルダにした別のサーバーで確かめた。`has-session` は無ければ終了コード 1、あれば 0。`new-session -d -s -c -e -- {コマンド}` で作業フォルダと環境変数がコマンドに渡り、`display-message -p '#{session_path}'` が作業フォルダを返す。日本語のセッション名を使え、名前の `.` は tmux が `_` に置き換える
 license: ISC（商用利用可）
 official_url: https://github.com/tmux/tmux/wiki
 docs_url: https://man.openbsd.org/tmux.1

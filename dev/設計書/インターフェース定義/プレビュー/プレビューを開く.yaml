@@ -12,6 +12,7 @@ flows:
       - name: make_workspace
         description: 検討事項 D-1・D-3（D-3 は要見直しで、本文に見出しと mermaid の図を持つ）を持つワークスペース
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
@@ -24,6 +25,7 @@ flows:
         SV-->>IF: 記録
         IF-->>SV: GET /api/events につなぐ
         IF-->>ユーザー: 検討事項の表と D-3 の詳細パネル
+      ```
     expected:
       - タブの帯で検討事項が選ばれ、表示形式は表
       - 表に D-1・D-3 の行がある
@@ -38,12 +40,14 @@ flows:
       - name: make_workspace
         description: 検討事項 D-1 を持つワークスペース
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
 
         ユーザー->>IF: ハッシュ無しで開く
         IF-->>ユーザー: 概要
+      ```
     expected:
       - タブの帯で概要が選ばれている
       - 詳細パネルが開いていない
@@ -58,12 +62,14 @@ flows:
         description: 要見直しの D-3・保留の D-4・未決定の D-1 を持つワークスペース
         notes: ハッシュは `tab=decisions&view=table&f.status=要見直し|保留`
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
 
         ユーザー->>IF: f.status=要見直し|保留 のハッシュで開く
         IF-->>ユーザー: 条件のチップ付きの検討事項の表
+      ```
     expected:
       - 状態 = 要見直し・保留の条件のチップがある
       - 表の行が D-3・D-4 だけ
@@ -78,12 +84,14 @@ flows:
         description: 検討事項 D-1 だけを持つワークスペース
         notes: ハッシュは `tab=decisions&id=D-99`
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
 
         ユーザー->>IF: #tab=decisions&id=D-99 で開く
         IF-->>ユーザー: 検討事項のマップ（詳細パネルなし）
+      ```
     expected:
       - タブの帯で検討事項が選ばれ、表示形式はマップ
       - 詳細パネルが開いていない
@@ -123,6 +131,7 @@ flows:
         description: 検討事項 D-3（本文に見出しと mermaid の図を持つ）を持つワークスペース
         notes: ハッシュは `tab=decisions&id=D-3`
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
@@ -131,6 +140,7 @@ flows:
         ユーザー->>IF: #tab=decisions&id=D-3 で開く
         IF-->>CDN: 描画のライブラリを読む（届かない）
         IF-->>ユーザー: 読めなかったライブラリの知らせと本文の原文
+      ```
     expected:
       - 'マップの箇所に、「読み込めなかったライブラリ: elkjs」が `role="alert"` で出る'
       - 詳細パネルの本文の箇所に、marked・DOMPurify・mermaid の名前と本文の原文が出る
@@ -145,6 +155,7 @@ flows:
         description: 検討事項 D-1・D-3 を持つワークスペース
         notes: ハッシュは `tab=decisions&view=table&id=D-3`。詳細パネルの入力欄に「書きかけ」と入れておく
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
@@ -157,6 +168,7 @@ flows:
         IF-->>SV: GET /api/records
         SV-->>IF: D-4 を含む記録
         IF-->>ユーザー: D-4 の行が足された表と D-3 の詳細パネル
+      ```
     expected:
       - 再読み込みの操作をしないまま、表に D-4 の行が出る
       - タブの帯で検討事項が選ばれ、表示形式は表のまま
@@ -171,6 +183,7 @@ flows:
         description: 検討事項 D-1 を持ち、送信を持たないワークスペース
         notes: ハッシュは `tab=decisions&id=D-1`
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
@@ -180,6 +193,7 @@ flows:
         IF-->>SV: POST /api/submissions {target: D-1, body: 案 A にする}
         SV-->>IF: 201
         IF-->>ユーザー: 送った旨と空の入力欄
+      ```
     expected:
       - '`role="status"` の送信の結果に送った旨が出る'
       - 入力欄が空
@@ -194,12 +208,14 @@ flows:
         description: 検討事項 D-1 を持つワークスペース
         notes: ハッシュは `tab=decisions&id=D-1`。入力欄に空白だけを入れる
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
 
         ユーザー->>IF: 空白だけで送る
         IF-->>ユーザー: 本文が空の理由
+      ```
     expected:
       - '`POST /api/submissions` が送られていない'
       - 送信の結果に本文が空である旨が出る
@@ -212,6 +228,7 @@ flows:
         description: 検討事項 D-1・D-3 を持つワークスペース
         notes: ハッシュは `tab=decisions&view=table&id=D-1`
     flow: |-
+      ```mermaid
       sequenceDiagram
         actor ユーザー
         participant IF as プレビューの画面
@@ -226,6 +243,7 @@ flows:
         ユーザー->>IF: 「案 A にする」を送る
         IF-->>SV: POST /api/submissions（届かない）
         IF-->>ユーザー: 送れなかった理由と残した本文
+      ```
     expected:
       - 接続の状態に、つながらない旨と記録を読んだ日時が出る
       - 表に D-1・D-3 の行が残り、詳細パネルに D-1 が開いたまま

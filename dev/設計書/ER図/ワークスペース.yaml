@@ -431,3 +431,16 @@ tables:
         type: string
         not_null: false
         description: 取り込んだ日時（UTC のタイムゾーン付き ISO 8601）。取り込んでいなければ `null`
+  - name: .mindstella.lock
+    title: 書き換えのロック
+    datastore: テキスト
+    summary: 同じワークスペースを書き換えるプロセスどうしの排他に使う空のファイル
+    scale: 1 件
+    deletion: 消さない
+    access: '`fcntl.flock` の排他ロックだけを取り、中身は読み書きしない'
+    description: 書き換えるツールと送信の受け付けが初めてロックを取るときに作る。点検・書き換えの知らせ・移し替えの対象にしない
+    columns:
+      - name: (中身)
+        title: 中身
+        type: string
+        description: 空。ロックの対象としてだけ使う

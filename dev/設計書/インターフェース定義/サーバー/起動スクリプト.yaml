@@ -11,8 +11,8 @@ flows:
       - name: 仮想環境
         description: PyYAML・jsonschema・mcp を見せた仮想環境を `MINDSTELLA_VENV` で渡す
       - name: tmux
-        description: テストごとの一時フォルダを `TMUX_TMPDIR` にした tmux のサーバー
-        notes: 利用者の tmux のセッションに触れない
+        description: テストごとの短い一時フォルダ（`/tmp` の直下）を `TMUX_TMPDIR` にし、`TMUX` を消した環境で動かす tmux のサーバー
+        notes: 利用者の tmux のセッションに触れない。`TMUX` があると tmux は `TMUX_TMPDIR` よりそのソケットを使い、ソケットのパスが長いとつながらない（tmux 3.4 で確かめた）
       - name: 設定のフォルダ
         description: 一時フォルダを `CLAUDE_CONFIG_DIR` で渡す
       - name: ワークスペースのフォルダ
@@ -32,18 +32,18 @@ flows:
         IF->>CC: plugin list --json
         CC-->>IF: installPath
         IF->>IF: MCP の設定を書く
-        IF->>TM: new-session -d -s mindstella-家計簿アプリ -c 家計簿アプリ -e CLAUDE_CONFIG_DIR
+        IF->>TM: new-session -d -s mindstella-家計簿アプリ-{ハッシュ} -c 家計簿アプリ -e CLAUDE_CONFIG_DIR
         TM->>CC: claude --mcp-config {MCP の設定}
         IF-->>クライアント: つなぐコマンド、終了コード 0
       ```
     expected:
       - 終了コードが 0
       - フォルダ `家計簿アプリ` ができている
-      - tmux に `mindstella-家計簿アプリ` のセッションがあり、作業フォルダが `家計簿アプリ`
+      - tmux に `mindstella-家計簿アプリ-{ハッシュ}`（ハッシュは `家計簿アプリ` の絶対パスの SHA-256 の先頭 6 桁）のセッションがあり、作業フォルダが `家計簿アプリ`
       - 偽の `claude` が受け取った `--mcp-config` のファイルの `mcpServers.mindstella` の `command` が仮想環境の Python、`args` が `installPath` の `skills/mindmap/scripts/server.py`
       - 偽の `claude` の環境変数 `CLAUDE_CONFIG_DIR` が渡した設定のフォルダ
       - その MCP の設定どおりにサーバーを立てて MCP のクライアントでつなぐと、ツールの一覧が返る
-      - 標準出力に `tmux attach-session -t mindstella-家計簿アプリ` がある
+      - 標準出力に `tmux attach-session -t =mindstella-家計簿アプリ-{ハッシュ}` がある
     test: test_normal
   - name: 正常系（プラグインを上げた後）
     summary: 古い版のフォルダのスクリプトを叩いても、新しい版のサーバーを指す
@@ -81,7 +81,7 @@ flows:
       - name: 仮想環境
         description: 正常系と同じ
       - name: tmux
-        description: 正常系と同じ。`mindstella-家計簿アプリ` のセッションを先に立てておく
+        description: 正常系と同じ。同じフォルダ `家計簿アプリ` で起動スクリプトを一度叩き、セッションを先に立てておく
     flow: |-
       ```mermaid
       sequenceDiagram
@@ -90,7 +90,7 @@ flows:
         participant TM as tmux
 
         クライアント->>IF: mindstella 家計簿アプリ
-        IF->>TM: has-session mindstella-家計簿アプリ
+        IF->>TM: has-session -t =mindstella-家計簿アプリ-{ハッシュ}
         TM-->>IF: ある
         IF-->>クライアント: つなぐコマンド、終了コード 0
       ```
@@ -220,6 +220,36 @@ flows:
       - 標準エラーに使い方がある
       - 偽の `claude` が起動されていない
     test: test_error_when_folder_missing
+  - name: 正常系（別の場所に同じ名前のフォルダがある）
+    summary: 名前が同じでも場所が違うフォルダは、別のセッションを立てる
+    setup:
+      - name: Mock
+        description: 正常系と同じ偽の `claude`
+      - name: 仮想環境
+        description: 正常系と同じ
+      - name: tmux
+        description: 正常系と同じ。`仕事/家計簿アプリ` で起動スクリプトを一度叩き、セッションを先に立てておく
+      - name: ワークスペースのフォルダ
+        description: まだ無いフォルダ `個人/家計簿アプリ`
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as bin/mindstella
+        participant TM as tmux
+
+        クライアント->>IF: mindstella 個人/家計簿アプリ
+        IF->>TM: has-session -t =mindstella-家計簿アプリ-{個人のハッシュ}
+        TM-->>IF: 無い
+        IF->>TM: new-session -d -s mindstella-家計簿アプリ-{個人のハッシュ} -c 個人/家計簿アプリ
+        IF-->>クライアント: つなぐコマンド、終了コード 0
+      ```
+    expected:
+      - 終了コードが 0
+      - tmux に `仕事/家計簿アプリ` と `個人/家計簿アプリ` の 2 つのセッションがあり、それぞれの作業フォルダがそのフォルダ
+      - 標準出力のつなぐコマンドが `個人/家計簿アプリ` のセッションを指す
+      - 標準エラーに既にセッションがある旨が無い
+    test: test_normal_when_same_folder_name_elsewhere
 lead: 依存を確かめ、tmux のセッションの中で mindstella の MCP サーバーを渡した Claude Code を立ち上げ、そのセッションへつなぐ。
 idempotent: false
 side_effects: この起動だけの MCP の設定（`{一時フォルダ}/mindstella-{ランダム}/mcp.json`）を書き、tmux のセッションを 1 つ立てる。ワークスペースのフォルダが無ければ作る。ワークスペースの中は書かない
@@ -230,7 +260,7 @@ request:
     type: str
     required: true
     location: argument
-    description: 話し合いのワークスペースのフォルダ。Claude Code の作業フォルダになり、tmux のセッションの名前に使う
+    description: 話し合いのワークスペースのフォルダ。Claude Code の作業フォルダになり、フォルダ名と絶対パスを tmux のセッションの名前に使う
     constraints: 作成済みかどうかを問わない。無ければ作る
     example: ~/discussions/家計簿アプリ
   - name: MINDSTELLA_VENV
@@ -250,7 +280,7 @@ request:
 response:
   - name: tmux のセッション
     type: tmux のセッション
-    description: 名前は `mindstella-{フォルダ名}`（フォルダ名の `.`・`:` は `-` に置き換える）。作業フォルダがワークスペースのフォルダで、`claude --mcp-config {MCP の設定}` が動く
+    description: 名前は `mindstella-{フォルダ名}-{ハッシュ}`。フォルダ名の `.`・`:` は `-` に置き換える。ハッシュは、ワークスペースのフォルダのシンボリックリンクを解いた絶対パスの SHA-256 の 16 進の先頭 6 桁。作業フォルダがワークスペースのフォルダで、`claude --mcp-config {MCP の設定}` が動く
   - name: MCP の設定
     type: JSON のファイル
     description: '`{"mcpServers": {"mindstella": {"command": "{仮想環境の Python}", "args": ["{プラグインのフォルダ}/skills/mindmap/scripts/server.py"]}}}`。プラグインのフォルダは `claude plugin list --json` の `mindstella@mindstella` の `installPath`'
@@ -260,7 +290,7 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: セッションを立てた（またはつないだ）
-    notes: 終了コード 0。標準出力が端末なら、そのセッションへつなぐ（`tmux attach-session`）。端末でなければつながずに、つなぐコマンドを標準出力に出して終わる
+    notes: 終了コード 0。標準出力が端末なら、そのセッションへつなぐ（tmux の外からは `tmux attach-session`、tmux の中（`$TMUX` がある）からは `tmux switch-client`）。端末でなければつながずに、つなぐコマンドを標準出力に出して終わる
   - name: 引数の誤り
     condition: ワークスペースのフォルダを渡さない
     notes: 終了コード 2。使い方を標準エラーに出す
@@ -283,7 +313,7 @@ constraints:
   - item: 使う版
     constraint: 叩いたスクリプトの版ではなく、`claude plugin list --json` の `installPath` が指すインストールした今の版のサーバーを立てる
   - item: 同じ名前のセッション
-    constraint: 既にあれば新しく立てず、そのセッションへつなぐ（端末でなければ、つなぐコマンドを出して終わる）。標準エラーに既にあった旨を出す
+    constraint: 同じ名前のセッション（同じフォルダを開いたセッション）が既にあれば新しく立てず、そのセッションへつなぐ（端末でなければ、つなぐコマンドを出して終わる）。標準エラーに既にあった旨を出す。別の場所にある同じ名前のフォルダはハッシュが違うため、別のセッションになる
   - item: MCP の設定を渡す範囲
     constraint: '`--mcp-config` で mindstella のサーバーだけを足す。利用者のほかの MCP の設定は消さない（`--strict-mcp-config` を付けない）。プラグインのマニフェストには MCP サーバーを書かない'
   - item: 書くもの
@@ -292,6 +322,9 @@ constraints:
     constraint: '`bash`（`set -euo pipefail`）。JSON の読み書きは仮想環境の Python で行い、`jq` に頼らない'
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: セッションの指し方
+    constraint: tmux の `-t` には頭に `=` を付けた名前（`-t =mindstella-{フォルダ名}-{ハッシュ}`）を渡し、完全に一致するセッションだけを指す
+    notes: '`=` が無いと tmux は名前の前方一致でも当て、別のワークスペースのセッションを指す（tmux 3.4 で確かめた）'
 refs:
   - dev/設計書/インターフェース定義/サーバー/依存の確認#
   - dev/設計書/インターフェース定義/サーバー/MCPサーバーの起動#

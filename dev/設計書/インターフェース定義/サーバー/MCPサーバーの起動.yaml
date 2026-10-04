@@ -89,6 +89,31 @@ flows:
       - サーバーのプロセスが 5 秒以内に終わる
       - 返った URL へつなぐと、つながらない
     test: test_normal_when_stdin_closed
+  - name: 正常系（別のプロセスと同じワークスペースに書く）
+    summary: 2 つのプロセスが同じワークスペースへ同時に書いても、どちらの書き換えも失わず ID も重ならない
+    setup:
+      - name: Mock
+        description: なし（テストを動かす Python で MCP サーバーを 2 つ子プロセスとして立て、それぞれ MCP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 検討事項を持たない作成済みのワークスペース
+        notes: 2 つのプロセスから `add` を 20 回ずつ並べて呼ぶ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant A as MCP サーバー（1 つ目）
+        participant B as MCP サーバー（2 つ目）
+        participant WS as ワークスペース
+
+        par 1 つ目
+          A->>WS: ロックを取って add
+        and 2 つ目
+          B->>WS: ロックを取って add
+        end
+      ```
+    expected:
+      - どちらの `add` もツールのエラーにならない
+      - '`decisions.yaml` に 40 件あり、ID が `D-1`〜`D-40` で重ならない'
+    test: test_normal_when_two_processes_write
 lead: Claude Code が起動スクリプトの MCP の設定から立てる mindstella の MCP サーバー。ワークスペースを読み書きするツールと、プレビューの配信を 1 つのプロセスで持つ。
 idempotent: true
 side_effects: 立てただけでは何も書かない。プレビューの配信は『プレビューの URL』が呼ばれたときに立てる。Claude Code が標準入力を閉じると、配信を止めてプロセスを終える
@@ -109,7 +134,7 @@ exceptions:
   - name: なし（正常終了）
     condition: Claude Code が標準入力を閉じた
     notes: 立てたプレビューの配信を止めてから終わる
-error_format: 'ツールのエラーは、本文（`content` の text）に `エラー: {内容}` の行を出す。引数の誤り（要る引数が無い・型が違う・一緒に使わない引数を渡した）は `エラー: 引数の誤り: {引数の名前}: {理由}` にする。サーバーの記録は標準エラーにだけ書く（標準出力は MCP が使う）'
+error_format: 'ツールのエラーは、本文（`content` の text）に `エラー: {内容}` の行を出す。ツールが確かめる引数の誤り（一緒に使わない引数を渡した・値の形が違う）は `エラー: 引数の誤り: {引数の名前}: {理由}` にする。要る引数が無い・型が違うときは、ツールを呼ぶ前に SDK が入力のスキーマで弾き、本文は SDK の文言（`Error executing tool {ツール}:` に続けて引数の名前と理由）になる。サーバーの記録は標準エラーにだけ書く（標準出力は MCP が使う）'
 constraints:
   - item: 通り道
     constraint: stdio（標準入力・標準出力の JSON-RPC）。MCP の SDK（`mcp`）の `MCPServer` で作る
@@ -120,9 +145,12 @@ constraints:
   - item: ワークスペース
     constraint: 全てのツールが `workspace`（ワークスペースのフォルダのパス）を受ける。1 つのプロセスが複数のワークスペースを扱える。相対パスはサーバーの作業フォルダ（起動スクリプトが Claude Code を立ち上げたフォルダ）から読む
   - item: 同時の呼び出し
-    constraint: 同じプロセスの中では、ワークスペースを書き換えるツールを 1 つずつ動かす（プロセスの中の 1 本の鍵）。別のプロセスとは排他しない（スキルが 1 つずつ呼ぶ前提）
+    constraint: ワークスペースを書き換えるツールと送信の受け付けは、プロセスの中の 1 本の鍵を取った後に、ワークスペースのロックファイル `.mindstella.lock` に `fcntl.flock` の排他ロックを取ってから読み・書く。同じワークスペースを開く別のプロセスとも排他する。ロックは取れるまで待ち、持つプロセスが落ちると OS が外す。読むだけのツールと配信はロックを取らない（書き換えは一時ファイルから `os.replace` で置き換えるため、書きかけを読まない）
   - item: 終わり方
     constraint: Claude Code を閉じると標準入力が閉じ、プレビューの配信を止めてプロセスを終える。プロセスは残らない
+  - item: 結果の組み立て
+    constraint: ツールは、成功もエラーも `CallToolResult` を自分で組み立てて返す（成功は `structured_content` と同じ JSON の本文、エラーは `is_error` を真にした本文）。例外を送って SDK に任せない
+    notes: '`mcp` 2.3.0 で確かめた。例外を送ると本文の頭に `Error executing tool {ツール}: ` が付き（`ToolError` 以外は内容も消える）、`エラー: ` で始まらない'
 refs:
   - dev/設計書/外部ライブラリ/mcp#
 notes:

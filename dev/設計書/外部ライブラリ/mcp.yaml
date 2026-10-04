@@ -32,8 +32,9 @@ used_in:
   - plugins/mindstella/skills/mindmap/scripts/server.py
 upstream: modelcontextprotocol/python-sdk
 verification:
-  state: 未確認
-  detail: PoC（https://github.com/shuhei1101/mindstella/pull/73）で 2.3.0 の `MCPServer` で stdio のサーバーを立て、Claude Code 2.1.289 からツールを呼べた。本番の作りで使う API（構造化の結果・ツールのエラー）は実装で確かめる
+  state: 済
+  date: '2026-10-04'
+  detail: '2.3.0 を仮想環境に入れ、`MCPServer` の stdio のサーバーへ `ClientSession` でつないで確かめた。`CallToolResult` を自分で返すと `structured_content` と本文がそのまま届き、`is_error` を真にした本文も `エラー: ` で始まったまま届く。例外を送ると本文の頭に `Error executing tool {ツール}: ` が付き、`ToolError` 以外は内容が消える。要る引数が無いと、ツールを呼ぶ前に SDK が引数の名前を含むエラーを返す。結果の属性は `is_error`・`structured_content`・`server_info` のように snake_case'
 license: MIT（商用利用可）
 official_url: https://modelcontextprotocol.io/
 docs_url: https://github.com/modelcontextprotocol/python-sdk
