@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ（ゴールに届いた）
     setup:
       - name: Mock
-        description: モデルを呼ばない。手順が連ねる `goal`・`show`・`clear-release`・`release/` への書き出し・`add`（会話ログ）・`build` を、決めた引数で順に再生する
+        description: モデルを呼ばない。手順が連ねる `goal`・`show`・`clear-release`・`release/` への書き出し・`add`（会話ログ）を、決めた引数で順に再生する
       - name: 作成済みのワークスペース
         description: 'ゴールがインターフェースまでで、目的からインターフェースまでの検討事項が全て決定済みか対象外で、ゴールの `deliverables` の資料 A-1 が `status: 完成`'
         notes: コンテンツのフェーズに未決定の D-9 を置き、ゴールより後ろのフェーズは判定に入らないことを確かめる
@@ -16,20 +16,19 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: goal
-        SCR->>WS: mindmap.yaml のフェーズ・ゴールと全ての YAML を読む
-        SCR-->>CC: 届いた（残り 0 件）
+        CC->>SV: goal
+        SV->>WS: mindmap.yaml のフェーズ・ゴールと全ての YAML を読む
+        SV-->>CC: 届いた（残り 0 件）
         CC-->>U: 決まった検討事項と納品物を示して確定を求める
         U->>CC: 確定する
-        CC->>SCR: show（納品物の本文）
-        CC->>SCR: clear-release
-        SCR->>WS: release/ の中身を消す
+        CC->>SV: show（納品物の本文）
+        CC->>SV: clear-release
+        SV->>WS: release/ の中身を消す
         CC->>WS: release/ にリリースの資料を書き出す
-        CC->>SCR: add（会話ログ）
-        CC->>SCR: build
+        CC->>SV: add（会話ログ）
         CC-->>U: release/ のファイルを示す
       ```
     expected:
@@ -49,10 +48,10 @@ scenarios:
       sequenceDiagram
         actor U as 利用者
         participant CC as Claude Code（session）
-        participant SCR as スクリプト
+        participant SV as サーバー
 
-        CC->>SCR: goal
-        SCR-->>CC: 届いていない（残り D-1・A-1）
+        CC->>SV: goal
+        SV-->>CC: 届いていない（残り D-1・A-1）
         CC-->>U: 残っている D-1・A-1 を示す
       ```
     expected:
@@ -70,11 +69,11 @@ stakeholders:
 trigger: 利用者がゴールに届いたかを尋ねる、または `next` の候補が無くなる
 preconditions:
   - ワークスペースが作成済みである
-  - 依存が揃っている
+  - 起動スクリプトで立ち上げ、mindstella の MCP のツールが使える
 success_guarantee: ゴールに届いたときだけ、利用者の確定の後に `release/` へ書き出す。届いていないときは残りを示し、`release/` には書かない。
 frequency: 話し合いの終わりに 1〜数回
 priority: 高
 notes:
   リリースの形: '`release/` に書き出す資料の形は進め方ガイドの「リリースの形」が決める。書き出しはスキルが Markdown を書く。書き出す前に `clear-release` で `release/` の中身を消し、最新の確定版の一式だけを置く（版はフォルダで切らない）'
-  ゴールに届いたかの判定: 'スクリプトにコマンド `goal` を足して判定させる。ゴールのフェーズまでの検討事項が全て決定済みか対象外・取り下げで、ゴールの `deliverables` の資料が全て `status: 完成` のときに届いたとする。引数と出力の形はインターフェース定義設計で決める'
+  ゴールに届いたかの判定: 'MCP のツール `goal` が判定する。ゴールのフェーズまでの検討事項が全て決定済みか対象外・取り下げで、ゴールの `deliverables` の資料が全て `status: 完成` のときに届いたとする。引数と出力の形はインターフェース定義設計で決める'
 test_file: tests/e2e/単一ユースケース/test_goal_check.py
