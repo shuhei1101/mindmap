@@ -1,0 +1,96 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 案 A・B を持つ未決定の検討事項 D-1
+      - name: 配信
+        description: 記録を配っているサーバー
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant P as プレビュー（ブラウザ）
+        participant SV as サーバー
+        participant WS as ワークスペース
+
+        U->>P: D-1 の詳細パネルを開く
+        P-->>U: 回答・意見の入力
+        U->>P: 「案 A にする」を入れて送る
+        P->>SV: 送信（D-1・本文）
+        SV->>WS: 取り込んでいない送信として書く
+        SV-->>P: 受け付けた
+        P-->>U: 送ったことを出す
+      ```
+    expected:
+      - ワークスペースに、D-1 を指し、本文が「案 A にする」の取り込んでいない送信が 1 件ある
+      - その送信が送った時刻を持つ
+      - 画面に送った旨が出て、入力欄が空になる
+      - 検討事項の YAML の中身が、送る前と同じである
+  - name: 異常シナリオ（本文が空）
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。描画のライブラリは CDN から読む）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 未決定の検討事項 D-1
+      - name: 配信
+        description: 記録を配っているサーバー
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant P as プレビュー（ブラウザ）
+
+        U->>P: D-1 の詳細パネルで、本文を空のまま送ろうとする
+        P-->>U: 送らず、本文が要ることを出す
+      ```
+    expected:
+      - ワークスペースに送信が 1 件もない
+      - 画面に、本文が要る旨が出る
+  - name: 異常シナリオ（サーバーにつながらない）
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、サーバーが配るプレビューを実際のブラウザで開く。開いた後にサーバーを止める）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+      - name: 記録
+        description: 未決定の検討事項 D-1
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant P as プレビュー（ブラウザ）
+        participant SV as サーバー（止まっている）
+
+        U->>P: D-1 の詳細パネルで「案 A にする」を入れて送る
+        P->>SV: 送信
+        SV--xP: つながらない
+        P-->>U: 送れなかったことを出す
+      ```
+    expected:
+      - 画面に、送れなかった旨が出る
+      - 入力欄に「案 A にする」が残っている
+      - ワークスペースに送信が 1 件もない
+lead: 利用者が、サーバーが配るプレビューの詳細パネルから、項目の ID ごとに回答・意見を送る単一ユースケース。
+issue: 67
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: プレビューで読んだその場で、答えや意見をどの項目へのものかを付けて残せる。Claude Code を閉じても送った内容が消えない
+trigger: 利用者がプレビューで項目を読み、答えや意見を伝えたくなる
+preconditions:
+  - ワークスペースに記録があり、サーバーがプレビューを配っている
+success_guarantee: 送った本文が、項目の ID と送った時刻とともに、取り込んでいない送信としてワークスペースに残る。
+minimal_guarantee: 送れなかったときは、入力した本文を消さずに、送れなかったことを画面に出す。ワークスペースは書き換えない。
+frequency: プレビューを読むたびに数回
+priority: 高
+notes:
+  入力の置き場所: 詳細パネルのどこに入力と送るボタンを置くかはモック作成で決め、画面設計に書く
+  配る書き出し: 配る書き出しは送信の入口を持たない（単一ユースケース『プレビューを配る』が確かめる）
+  対応テストファイル: E2E テスト作成でファイルを作ったときに `test_file` と各シナリオの `test` を足す

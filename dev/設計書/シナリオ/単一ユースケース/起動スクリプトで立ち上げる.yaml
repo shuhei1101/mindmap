@@ -1,0 +1,127 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。Claude Code の CLI を、`plugin list --json` に決めた `installPath` を返し、立ち上げられたら受け取った引数と環境変数をファイルに書く偽のコマンドに差し替える
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema・MCP の SDK が入っている
+      - name: インストールしたプラグイン
+        description: 版ごとのフォルダに置いたプラグインと、そのフォルダを `installPath` に返す偽の Claude Code
+      - name: tmux
+        description: テストごとに専用のソケットで立てた tmux のサーバー
+        notes: 利用者の tmux のセッションに触れない
+      - name: 設定のフォルダ
+        description: Claude Code の設定のフォルダを環境変数 `CLAUDE_CONFIG_DIR` で渡す
+      - name: ワークスペースのフォルダ
+        description: 作成済みかどうかを問わないフォルダ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant LS as 起動スクリプト
+        participant TM as tmux
+        participant CC as Claude Code
+        participant SV as サーバー
+
+        U->>LS: 起動スクリプト {フォルダ}
+        LS->>LS: 依存を確かめる
+        LS->>CC: インストールしたプラグインの一覧
+        CC-->>LS: 今の版のフォルダ
+        LS->>LS: この起動だけの MCP の設定を書く
+        LS->>TM: セッションを立てる（設定のフォルダを渡す）
+        TM->>CC: MCP の設定を渡して立ち上げる
+        CC->>SV: MCP サーバーを立てる
+        LS->>TM: セッションへつなぐ
+      ```
+    expected:
+      - tmux に、ワークスペースのフォルダを開いたセッションがある
+      - Claude Code に MCP の設定が渡り、mindstella の起動コマンドが `installPath` の版のフォルダのサーバーを指す
+      - その設定どおりに MCP サーバーを立てると、mindstella のツールの一覧が返る
+      - Claude Code に設定のフォルダの `CLAUDE_CONFIG_DIR` が渡る
+  - name: 正常シナリオ（プラグインを上げた後）
+    setup:
+      - name: Mock
+        description: 正常シナリオと同じ偽の Claude Code。`installPath` は新しい版のフォルダを返す
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema・MCP の SDK が入っている
+      - name: インストールしたプラグイン
+        description: 古い版と新しい版の 2 つのフォルダ
+        notes: 古い版のフォルダの起動スクリプトを叩く
+      - name: tmux
+        description: テストごとに専用のソケットで立てた tmux のサーバー
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant LS as 起動スクリプト（古い版）
+        participant CC as Claude Code
+
+        U->>LS: 起動スクリプト {フォルダ}
+        LS->>CC: インストールしたプラグインの一覧
+        CC-->>LS: 新しい版のフォルダ
+        LS->>LS: 新しい版のサーバーを指す MCP の設定を書く
+      ```
+    expected:
+      - MCP の設定の mindstella の起動コマンドが、新しい版のフォルダのサーバーを指す
+  - name: 異常シナリオ（依存が足りない）
+    setup:
+      - name: Mock
+        description: 正常シナリオと同じ偽の Claude Code
+      - name: 依存が足りない環境
+        description: PyYAML・jsonschema・MCP の SDK を入れていない Python の仮想環境
+      - name: tmux
+        description: テストごとに専用のソケットで立てた tmux のサーバー
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant LS as 起動スクリプト
+
+        U->>LS: 起動スクリプト {フォルダ}
+        LS->>LS: 依存を確かめる
+        LS-->>U: 足りないライブラリと、そろえるコマンドを示して止まる
+      ```
+    expected:
+      - 起動スクリプトが 0 以外の終了コードで終わる
+      - 出力に、足りないライブラリの名前と、そろえるコマンドがある
+      - tmux にセッションが立っていない
+      - Claude Code が立ち上がっていない
+  - name: 異常シナリオ（tmux が無い）
+    setup:
+      - name: Mock
+        description: 正常シナリオと同じ偽の Claude Code
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema・MCP の SDK が入っている
+      - name: tmux の無い PATH
+        description: tmux を含まない PATH で起動スクリプトを叩く
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant LS as 起動スクリプト
+
+        U->>LS: 起動スクリプト {フォルダ}
+        LS->>LS: tmux を探して見つからない
+        LS-->>U: tmux を入れるよう示して止まる
+      ```
+    expected:
+      - 起動スクリプトが 0 以外の終了コードで終わる
+      - 出力に、tmux が無い旨がある
+      - Claude Code が立ち上がっていない
+lead: 利用者が起動スクリプトにワークスペースのフォルダを渡し、依存を確かめてから、tmux のセッションの中で mindstella の MCP サーバーを渡した Claude Code を立ち上げる単一ユースケース。
+issue: 67
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: 話し合いをするときだけ mindstella の MCP のツールが載り、ほかの作業のコンテキストを太らせない。依存が足りなければ何をすればよいかが分かる
+trigger: 利用者が起動スクリプトにワークスペースのフォルダを渡して叩く
+preconditions:
+  - プラグイン mindstella がインストールされている
+success_guarantee: tmux のセッションの中で Claude Code が立ち、mindstella の MCP のツールが使える。MCP サーバーは、インストールしたプラグインの今の版のフォルダから立つ。
+minimal_guarantee: 依存が足りないとき・tmux が無いときは、Claude Code を立ち上げずに、足りないものとそろえるコマンドを示して止まる。
+frequency: 話し合いを始める・再開するたびに 1 回
+priority: 高
+notes:
+  E2E の範囲: 本物の Claude Code は立ち上げず、偽のコマンドが受け取った MCP の設定と環境変数を確かめる。起動スクリプトで立ち上げたときだけツールが載り、スキルの `allowed-tools` で許可が通ることは PoC（#73）で本物の Claude Code で確かめた
+  対応テストファイル: E2E テスト作成でファイルを作ったときに `test_file` と各シナリオの `test` を足す

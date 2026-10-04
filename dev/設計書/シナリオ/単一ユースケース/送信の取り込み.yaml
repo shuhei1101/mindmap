@@ -1,0 +1,72 @@
+title: ""
+scenarios:
+  - name: 正常シナリオ
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。起動スクリプトの代わりに MCP サーバーを立て、準備が連ねる取り込んでいない送信の一覧・`adopt`・`add`（会話ログ）・取り込み済みにするを、決めた引数で順に再生する
+      - name: 依存が揃った環境
+        description: スキル専用の仮想環境に Python 3.12 以上・PyYAML・jsonschema・MCP の SDK が入っている
+      - name: 作成済みのワークスペース
+        description: 案 A・B を持つ未決定の検討事項 D-1 と、D-1 を指し本文が「案 A にする」の取り込んでいない送信を持つ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SV as サーバー
+        participant WS as ワークスペース
+
+        U->>CC: /mindstella:session {フォルダ}
+        CC->>SV: 取り込んでいない送信
+        SV->>WS: 送信を読む
+        SV-->>CC: D-1 への「案 A にする」
+        CC-->>U: 届いていた送信を示す
+        CC->>SV: adopt D-1 A
+        CC->>SV: add（会話ログ）
+        CC->>SV: その送信を取り込み済みにする
+        SV->>WS: 書く
+      ```
+    expected:
+      - D-1 の採用する案が A で、決定済みである
+      - 会話ログに送信の本文がある
+      - その送信が取り込み済みである
+      - 取り込んでいない送信の一覧が 0 件を返す
+  - name: 正常シナリオ（送信が無い）
+    setup:
+      - name: Mock
+        description: モデルを呼ばない。起動スクリプトの代わりに MCP サーバーを立て、準備が連ねる取り込んでいない送信の一覧を再生する
+      - name: 作成済みのワークスペース
+        description: 送信を持たない
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        actor U as 利用者
+        participant CC as Claude Code（session）
+        participant SV as サーバー
+
+        U->>CC: /mindstella:session {フォルダ}
+        CC->>SV: 取り込んでいない送信
+        SV-->>CC: 0 件
+        CC->>CC: 取り込みを飛ばして話し合いを続ける
+      ```
+    expected:
+      - 取り込んでいない送信の一覧が 0 件を返す
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じである
+lead: '`session` が話し合いの最初に、プレビューから送られた取り込んでいない送信を拾い、1 件ずつ記録してから取り込み済みにする単一ユースケース。'
+issue: 67
+primary_actor: 利用者
+stakeholders:
+  - name: 利用者
+    interest: プレビューから送った答えや意見が、話し合いを始めるときに記録へ反映される。同じ送信を 2 度取り込まない
+trigger: 利用者が `/mindstella:session` を呼ぶ（準備のステップ）
+preconditions:
+  - ワークスペースが作成済みである
+  - 起動スクリプトで立ち上げ、mindstella の MCP のツールが使える
+success_guarantee: 取り込んでいない送信が全て取り込み済みになり、それぞれの本文が指す項目への記録と会話ログに残る。
+minimal_guarantee: 取り込みの途中で話し合いを終えても、まだ記録していない送信は取り込んでいないまま残り、次の取り込みで拾われる。
+frequency: 話し合いを始めるたびに 1 回
+priority: 高
+notes:
+  E2E の範囲: モデルを呼ばず、手順が連ねるツールの呼び出しを再生する。送信の本文から何を記録するかというモデルの判断は確かめない
+  取り込み済みにする時点: 送信を記録した後に 1 件ずつ取り込み済みにする。一覧を読んだだけでは取り込み済みにしない
+  対応テストファイル: E2E テスト作成でファイルを作ったときに `test_file` と各シナリオの `test` を足す
