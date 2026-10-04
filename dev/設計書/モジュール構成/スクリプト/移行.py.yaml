@@ -972,7 +972,7 @@ notes:
 
     `scripts/` は使わないので置かない。
   手順の形のスキーマ: '`schemas/migration-steps.schema.json` は `steps` の各要素を `op` で分け（`oneOf`）、インターフェース定義『記録の形式の移行』の制約「操作と引数」の引数だけを許す（`additionalProperties: false`）。`set_default` は `value` か `ask` のどちらか 1 つを持つ。'
-  開発側の点検: '`tests/unit/scripts/test_migration_coverage.py` に置く。`v*` のタグを版の順に並べた先頭（最新のタグ）の `plugins/mindstella/skills/mindmap/schemas/` と今の `schemas/` を比べ（`git show {タグ}:{パス}`。`migration-steps.schema.json` は比べない）、違うのに `list_versions` に「最新のタグより新しく、プラグインの版以下」の版が無ければ落とす（`test_schema_changes_have_migration`）。タグが 1 つも無い clone では skip する。あわせて、プラグインの版が最新のタグより前でないことを確かめる（`test_plugin_version_not_behind_latest_tag`）'
+  開発側の点検: '`tests/unit/scripts/test_migration_coverage.py` に置く。`v*` のタグを版の順に並べた先頭（最新のタグ）の `plugins/mindstella/skills/mindmap/schemas/` と今の `schemas/` を比べ（`git show {タグ}:{パス}`。`migration-steps.schema.json` は比べない）、違うのに `list_versions` に「最新のタグより新しく、プラグインの版以下」の版が無ければ落とす（`test_schema_changes_have_migration`）。タグが 1 つも無い clone では skip する。あわせて、プラグインの版がリポジトリの直下の `version.ini` の版より前でないことを確かめる（`test_plugin_version_not_behind_release_version`）。hotfix のタグは直下の `version.ini` もプラグインの版も動かさないため、最新のタグとは比べない'
 test_files:
   - tests/unit/scripts/test_versions.py
   - tests/unit/scripts/test_migrator.py
