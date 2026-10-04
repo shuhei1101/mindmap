@@ -34,8 +34,6 @@
     .stage.narrowest { width: 320px; }
     /* 狭い幅の見本: 画面幅 900px 以下のときと同じ置き方にする */
     .stage.narrow .send.send-footer, .stage.narrowest .send.send-footer { padding: 10px 16px 12px; }
-    /* 最も狭い幅のトップバー: 画面幅 900px 以下のときと同じ詰め方にする */
-    .stage.narrowest .topbar { gap: 8px; padding: 0 12px; }
     /* 狭い幅の見本の接続の状態: 短い文言を出す */
     .stage .conn.short .conn-long { display: none; }
     .stage .conn.short .conn-short { display: inline; }
@@ -167,12 +165,12 @@ ID の等幅は残す。
     <section class="cat-sec">
       <h2>接続の状態（サーバーにつながらない）</h2>
       <p>トップバーの検索の入口の左に出す。押せない表示。最後に読めた記録で描き続けていることと、その時刻を添える。</p>
-      <div class="stage"><header class="topbar"><span class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M12 16h5M17 16V7h5M17 16v9h5"/><circle cx="25" cy="7" r="2.6"/><circle cx="25" cy="25" r="2.6"/></svg><span class="brand-name">mindmap</span></span><span class="spacer"></span><span class="conn" role="status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M8.5 8.6A4.5 4.5 0 0 0 7 17h10.5M16 10.2A4.5 4.5 0 0 1 20.2 16"/></svg><span class="conn-long">サーバーにつながりません（10/04 11:21 に読んだ記録を出しています）</span><span class="conn-short">つながりません</span></span><button class="top-btn" type="button" aria-label="すべての項目を検索"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></header></div>
+      <div class="stage"><header class="topbar"><span class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M12 16h5M17 16V7h5M17 16v9h5"/><circle cx="25" cy="7" r="2.6"/><circle cx="25" cy="25" r="2.6"/></svg><span class="brand-name">mindmap</span></span><span class="spacer"></span><span class="conn" role="status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M8.5 8.6A4.5 4.5 0 0 0 7 17h10.5M16 10.2A4.5 4.5 0 0 1 20.2 16"/></svg><span class="conn-long">サーバーにつながりません（10/04 11:21 に読んだ記録）</span><span class="conn-short">つながりません</span></span><button class="top-btn" type="button" aria-label="すべての項目を検索"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></header></div>
     </section>
     <section class="cat-sec">
       <h2>接続の状態（狭い幅）</h2>
-      <p>幅 900px 以下では短い文言にする。</p>
-      <div class="stage narrowest"><header class="topbar"><span class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M12 16h5M17 16V7h5M17 16v9h5"/><circle cx="25" cy="7" r="2.6"/><circle cx="25" cy="25" r="2.6"/></svg><span class="brand-name">mindmap</span></span><span class="spacer"></span><span class="conn short" role="status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M8.5 8.6A4.5 4.5 0 0 0 7 17h10.5M16 10.2A4.5 4.5 0 0 1 20.2 16"/></svg><span class="conn-long">サーバーにつながりません（10/04 11:21 に読んだ記録を出しています）</span><span class="conn-short">つながりません</span></span><button class="top-btn" type="button" aria-label="すべての項目を検索"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></header></div>
+      <p>幅 1100px 以下では短い文言にし、読んだ時刻は title に持つ。幅 360px 以下では印だけを見せ、文言は読み上げにだけ残す。</p>
+      <div class="stage narrow"><header class="topbar"><span class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="16" r="4"/><path d="M12 16h5M17 16V7h5M17 16v9h5"/><circle cx="25" cy="7" r="2.6"/><circle cx="25" cy="25" r="2.6"/></svg><span class="brand-name">mindmap</span></span><span class="spacer"></span><span class="conn short" role="status"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M8.5 8.6A4.5 4.5 0 0 0 7 17h10.5M16 10.2A4.5 4.5 0 0 1 20.2 16"/></svg><span class="conn-long">サーバーにつながりません（10/04 11:21 に読んだ記録）</span><span class="conn-short">つながりません</span></span><button class="top-btn" type="button" aria-label="すべての項目を検索"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button></header></div>
     </section>
   </main>
 </body>

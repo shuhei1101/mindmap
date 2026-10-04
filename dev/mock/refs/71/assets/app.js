@@ -1184,7 +1184,8 @@
   const renderConn = () => {
     const el = document.getElementById("conn");
     el.hidden = state.sim !== "offline";
-    el.innerHTML = el.hidden ? "" : `${icon("offline")}<span class="conn-long">サーバーにつながりません（${timeOf(lastRead)} に読んだ記録を出しています）</span><span class="conn-short">つながりません</span>`;
+    el.title = el.hidden ? "" : `${timeOf(lastRead)} に読んだ記録を出しています`;
+    el.innerHTML = el.hidden ? "" : `${icon("offline")}<span class="conn-long">サーバーにつながりません（${timeOf(lastRead)} に読んだ記録）</span><span class="conn-short">つながりません</span>`;
   };
   const renderMockbar = () => {
     const bar = document.getElementById("mock-states");
