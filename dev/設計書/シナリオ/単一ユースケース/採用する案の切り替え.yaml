@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 検討事項 D-1
@@ -23,16 +23,16 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: D-1 の採用する案を B に切り替える
-        SCR->>SCR: 案 A を外し案 B を採用にして、スキーマと突き合わせる
-        SCR->>WS: decisions.yaml に書く
-        SCR-->>CC: 切り替えた案
-        CC->>SCR: D-1 の影響を洗い出す
-        SCR->>WS: 依存をたどる
-        SCR-->>CC: 影響を受ける項目の一覧
+        CC->>SV: D-1 の採用する案を B に切り替える
+        SV->>SV: 案 A を外し案 B を採用にして、スキーマと突き合わせる
+        SV->>WS: decisions.yaml に書く
+        SV-->>CC: 切り替えた案
+        CC->>SV: D-1 の影響を洗い出す
+        SV->>WS: 依存をたどる
+        SV-->>CC: 影響を受ける項目の一覧
       ```
     expected:
       - D-1 の案 B が採用、案 A が採用でない
@@ -43,7 +43,7 @@ scenarios:
   - name: 異常シナリオ（存在しない案を指す）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 検討事項 D-1
@@ -52,16 +52,16 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: D-1 の採用する案を Z に切り替える
-        SCR->>WS: 案 Z を探して見つからない
-        SCR-->>CC: 案が無いエラー
+        CC->>SV: D-1 の採用する案を Z に切り替える
+        SV->>WS: 案 Z を探して見つからない
+        SV-->>CC: 案が無いエラー
       ```
     expected:
-      - 切り替えが 0 以外の終了コードで終わる
-      - 標準エラーに、渡した案のキー `Z` と、D-1 が持つ案のキー `A`・`B` がある
+      - 切り替えのツールがエラーを返す
+      - エラーの本文に、渡した案のキー `Z` と、D-1 が持つ案のキー `A`・`B` がある
       - ワークスペースの全てのファイルの中身が、切り替えを呼ぶ前と同じである
     test: test_error_when_option_not_found
 lead: スキルが、方針転換で検討事項の採用する案を切り替え、依存をたどって影響を受ける項目を洗い出す単一ユースケース。

@@ -3,7 +3,7 @@ scenarios:
   - name: 正常シナリオ（問題が無い）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 整った記録
@@ -13,21 +13,21 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: ワークスペースを点検する
-        SCR->>WS: 全ての YAML と docs/ を読む
-        SCR-->>CC: 問題が無い
+        CC->>SV: ワークスペースを点検する
+        SV->>WS: 全ての YAML と docs/ を読む
+        SV-->>CC: 問題が無い
       ```
     expected:
-      - 点検が終了コード 0 で終わる
+      - 点検のツールが成功を返す
       - 出力に、問題が無い旨がある
     test: test_normal_when_clean
   - name: 正常シナリオ（参照切れとずれがある）
     setup:
       - name: Mock
-        description: なし（実際の Python でスクリプトを起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 作成を済ませたワークスペース
       - name: 参照切れ
@@ -41,15 +41,15 @@ scenarios:
       ```mermaid
       sequenceDiagram
         participant CC as Claude Code（スキル）
-        participant SCR as スクリプト
+        participant SV as サーバー
         participant WS as ワークスペース
 
-        CC->>SCR: ワークスペースを点検する
-        SCR->>WS: 全ての YAML と docs/ を読む
-        SCR-->>CC: 参照切れとずれの一覧
+        CC->>SV: ワークスペースを点検する
+        SV->>WS: 全ての YAML と docs/ を読む
+        SV-->>CC: 参照切れとずれの一覧
       ```
     expected:
-      - 点検が 0 以外の終了コードで終わる
+      - 点検のツールがエラーを返す
       - 出力に、D-1 の `depends_on` が存在しない D-9 を指す旨がある
       - 出力に、R-1 の本文が `docs/` に無い旨がある
       - 出力に、どの項目からも指されていない `docs/` の Markdown のファイル名がある
