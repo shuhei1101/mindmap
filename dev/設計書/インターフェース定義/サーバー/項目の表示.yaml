@@ -1,13 +1,13 @@
 title: "項目の表示"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py show`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`show`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__show`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系
     summary: 項目の中身と本文、参照元をキーごとに返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 次の項目を持つワークスペース
         notes: 'D-1: 本文 `docs/D-1.md` あり／D-2: `depends_on: [D-1]`・`related: [D-1]`／T-1: `for: [D-1]`'
@@ -15,15 +15,15 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py show
+        participant IF as show（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: show D-1 --workspace
+        クライアント->>IF: show workspace id D-1
         IF-->>WS: 全ての YAML と docs/D-1.md を読む
         IF-->>クライアント: JSON（item・body_markdown・referenced_by）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`item` が D-1 の全てのキーを持ち、`kind` が `decision`'
       - '`body_markdown` が `docs/D-1.md` の中身'
       - '`referenced_by` が D-2（`depends_on`）・D-2（`related`）・T-1（`for`）の 3 行'
@@ -32,51 +32,51 @@ flows:
     summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py show
+        participant IF as show（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: show D-1 --workspace
+        クライアント->>IF: show workspace id D-1
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがある
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
     test: test_error_when_workspace_not_found
   - name: 異常系（ID が無い・ItemNotFoundError）
     summary: 存在しない ID はエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 検討事項 D-1 だけを持つワークスペース
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py show
+        participant IF as show（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: show D-9 --workspace
+        クライアント->>IF: show workspace id D-9
         IF-->>WS: D-9 が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーに `D-9` がある
+      - ツールのエラーになる
+      - エラーの本文に `D-9` がある
     test: test_error_when_id_not_found
 lead: ID で指した 1 項目の全てのキーと本文、その項目を参照している項目を返す。
 idempotent: true
 side_effects: なし（読むだけ）
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
@@ -86,7 +86,7 @@ request:
     type: str
     required: true
     location: argument
-    description: 表示する項目の ID（位置引数）
+    description: 表示する項目の ID
     example: D-1
 response:
   - name: item
@@ -107,19 +107,18 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: 表示できた
-    notes: 終了コード 0
+    notes: 結果を返す
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
   - name: ItemNotFoundError
     condition: 渡した ID の項目が無い
-    notes: 終了コード 1。標準エラーに渡した ID
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+    notes: ツールのエラー。エラーの本文に渡した ID
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
   - item: 参照元にするキー
     constraint: '`depends_on`・`parent`・`for`・`related`・`sources`（設定の `goal.deliverables[].doc` は含めない）'
-test_file: tests/integration/scripts/test_show.py

@@ -1,53 +1,54 @@
 title: "ワークスペースの点検"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py check`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`check`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__check`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系（問題が無い）
     summary: 整ったワークスペースで問題 0 件を返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: D-1（本文 `docs/D-1.md` あり）と、D-1 に依存する D-2 を持つワークスペース
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check
+        participant IF as check（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: check --workspace
+        クライアント->>IF: check workspace
         IF-->>WS: 全ての YAML と docs/ を読む
         IF-->>クライアント: JSON（ok: true）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`ok` が真で `problems` が空'
     test: test_normal_when_clean
   - name: 正常系（問題がある）
-    summary: スキーマ違反・参照切れ・本文のずれを全て返し、終了コード 1 で終える
+    summary: スキーマ違反・参照切れ・本文のずれを全て返し、ツールのエラーにせずに終える
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 次の問題を手で仕込んだワークスペース
-        notes: 'D-1: `depends_on: [D-9]`（D-9 は無い）／D-2: `status: 完了`／R-1: `body: R-1.md` だが `docs/R-1.md` が無い／`docs/X-1.md` をどの項目も指さない'
+        notes: 'D-1: `depends_on: [D-9]`（D-9 は無い）／D-2: `status: 完了`／R-1: `body: R-1.md` だが `docs/R-1.md` が無い／`docs/X-1.md` をどの項目も指さない／送信 S-1: `target: D-8`（D-8 は無い）'
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check
+        participant IF as check（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: check --workspace
+        クライアント->>IF: check workspace
         IF-->>WS: 全ての YAML と docs/ を読む
-        IF-->>クライアント: JSON（ok: false・problems）、終了コード 1
+        IF-->>クライアント: JSON（ok: false・problems）
       ```
     expected:
-      - 終了コードが 1
+      - ツールのエラーにならない
       - '`ok` が偽'
       - '`problems` に `broken_ref`（D-1・`depends_on`・`D-9`）がある'
+      - '`problems` に `broken_ref`（`submissions.yaml`・S-1・`target`・`D-8`）がある'
       - '`problems` に `schema`（`decisions.yaml`・`items[1].status`）がある'
       - '`problems` に `missing_body`（R-1）と `orphan_body`（`docs/X-1.md`）がある'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じ
@@ -56,29 +57,29 @@ flows:
     summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check
+        participant IF as check（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: check --workspace
+        クライアント->>IF: check workspace
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがあり、標準出力が空
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
     test: test_error_when_workspace_not_found
 lead: ワークスペースのスキーマに合わない箇所・参照切れ・YAML と `docs/` の Markdown のずれを全て洗い出す。
 idempotent: true
 side_effects: なし（読むだけ。見つけた問題は直さない）
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
@@ -105,24 +106,27 @@ response:
     description: 中身（参照先の ID・スキーマの理由など）。前の版の形式（資料の `done`・`mindmap.yaml` の `summary` が無い）で合わない `schema` は、理由に続けて `/mindstella:upgrade` で今の形式に移せることを書く
 response_notes: |-
   > [!NOTE]
-  > 問題があるときも点検そのものは正常に終えているので、標準出力に同じ形の JSON を出し、終了コードだけを 1 にする。
+  > 問題があるときも点検そのものは正常に終えているので、ツールのエラーにせず、同じ形の結果（`ok: false`）を返す。
 exceptions:
   - name: なし（正常終了）
     condition: 点検できた
-    notes: 問題が無ければ終了コード 0、あれば 1
+    notes: 結果を返す（問題があるときも）
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1。標準出力には何も出さない
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 問題なし / 1 問題あり・実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: 点検するファイル
+    constraint: '`mindmap.yaml`・種類ごとの 7 つの YAML・`submissions.yaml`（無ければ送信 0 件として扱う）・`docs/`'
   - item: 参照切れを確かめるキー
-    constraint: '`depends_on`・`parent`・`for`・`related`・`sources` と設定の `goal.deliverables[].doc`。存在しない ID と、キーが決めた種類でない ID（`parent` が `D-` 以外など）を `broken_ref` にする'
+    constraint: '`depends_on`・`parent`・`for`・`related`・`sources` と設定の `goal.deliverables[].doc`、送信の `target`。存在しない ID と、キーが決めた種類でない ID（`parent` が `D-` 以外など）を `broken_ref` にする'
   - item: 本文のずれ
     constraint: '`body` が指す `docs/` のファイルが無いものを `missing_body`、どの項目の `body` からも指されない `docs/*.md` を `orphan_body` にする'
   - item: 問題の並び
     constraint: ファイル名の順、同じファイルの中は項目の並びの順
-test_file: tests/integration/scripts/test_check.py
+refs:
+  - dev/設計書/ER図/ワークスペース#

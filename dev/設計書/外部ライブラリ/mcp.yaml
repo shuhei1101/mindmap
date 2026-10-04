@@ -1,0 +1,45 @@
+title: "mcp"
+kind: "ライブラリ"
+version:
+  current: 2.3.0 以上（確かめたのは 2.3.0）
+  checked_on: '2026-10-04'
+  pinning: 下限だけを決める。`MCPServer` の書き方を PoC で確かめたのが 2.3.0 のため。依存の確認（`check_env.py`）が下限を確かめる
+catalogs:
+  - name: API
+    version: 2.3.0
+    entries:
+      - name: mcp.server.mcpserver.MCPServer
+        kind: クラス
+        purpose: 名前 `mindstella` の MCP サーバーを作る
+      - name: MCPServer.tool
+        kind: デコレーター
+        purpose: 関数をツールとして登録し、引数の型から入力のスキーマを作る
+      - name: MCPServer.run
+        kind: メソッド
+        purpose: '`stdio` で動かし、標準入力が閉じたら戻る'
+      - name: mcp.ClientSession
+        kind: クラス
+        purpose: テストで MCP サーバーにつなぎ、ツールを呼ぶ
+      - name: mcp.client.stdio.stdio_client
+        kind: 関数
+        purpose: テストで MCP サーバーを子プロセスとして立てる
+lead: Model Context Protocol の公式の Python SDK。MCP のサーバーとクライアントを作る。
+purl: pkg:pypi/mcp
+supplier: Model Context Protocol
+dependency_scope: 必須
+adoption: 採用
+used_in:
+  - plugins/mindstella/skills/mindmap/scripts/server.py
+upstream: modelcontextprotocol/python-sdk
+verification:
+  state: 未確認
+  detail: PoC（https://github.com/shuhei1101/mindstella/pull/73）で 2.3.0 の `MCPServer` で stdio のサーバーを立て、Claude Code 2.1.289 からツールを呼べた。本番の作りで使う API（構造化の結果・ツールのエラー）は実装で確かめる
+license: MIT（商用利用可）
+official_url: https://modelcontextprotocol.io/
+docs_url: https://github.com/modelcontextprotocol/python-sdk
+install: |-
+  ```bash
+  ~/.mindmap/venv/bin/python -m pip install 'mcp>=2.3.0'
+  ```
+
+  スキル専用の仮想環境へ入れる。コマンドは依存の確認の `install` が返す

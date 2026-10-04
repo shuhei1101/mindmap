@@ -1,7 +1,7 @@
 title: "プラグインの読み込み"
 entry:
   kind: operation
-  value: '`plugins/mindstella/` の `.claude-plugin/plugin.json`・`skills/`・`LICENSE`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
+  value: '`plugins/mindstella/` の `.claude-plugin/plugin.json`・`skills/`・`bin/`・`LICENSE`（Claude Code の `claude plugin install` が取り込むプラグインの中身）'
 flows:
   - name: 正常系
     summary: プラグイン mindstella がスキルのフォルダを持ち、hooks を持たずに読み込まれる
@@ -25,9 +25,11 @@ flows:
     expected:
       - '`claude plugin list` で `mindstella@mindstella` が有効である'
       - 取り込まれたプラグインのフォルダに `skills/setup/SKILL.md`・`skills/session/SKILL.md` と、`skills/mindmap/` の `references/`・`playbooks/`・`schemas/`・`scripts/` がある
+      - 取り込まれたプラグインのフォルダに、実行の権限を持つ `bin/mindstella` がある
       - 取り込まれたプラグインのフォルダの直下に `LICENSE` があり、本文がリポジトリの直下の `LICENSE` と一致する
-      - 取り込まれたプラグインのフォルダに `dev/`・`docs/`・`tests/`・`.storybook/`・`package.json` が無い
+      - 取り込まれたプラグインのフォルダに `dev/`・`docs/`・`tests/`・`.storybook/`・`package.json`・`.mcp.json` が無く、`plugin.json` が `mcpServers` を持たない
       - '`claude plugin details` で hooks が 0 件である'
+      - その設定のフォルダで `claude mcp list` に mindstella が無い
     test: test_normal
 lead: Claude Code がプラグイン mindstella をインストールして読み込むときの、プラグインのマニフェストとフォルダの形。
 callers:
@@ -80,6 +82,10 @@ request:
     type: ファイル
     required: true
     description: MIT ライセンスの本文と著作権の表記（`Copyright (c) 2026 shuhei1101`）
+  - name: bin/mindstella
+    type: ファイル
+    required: true
+    description: 起動スクリプト。実行の権限を持つ。形はインターフェース定義『起動スクリプト』
 request_example: |-
   ```json
   {
@@ -93,7 +99,7 @@ request_example: |-
   ```
 constraints:
   - item: 持つ部品
-    constraint: スキルだけ。hooks・MCP サーバー・コマンド・エージェントは持たない
+    constraint: スキルだけ。hooks・MCP サーバー・コマンド・エージェントは持たない。MCP サーバーの実体（`skills/mindmap/scripts/server.py`）は同梱するが、マニフェストにも `.mcp.json` にも書かず、起動スクリプトが `--mcp-config` で渡す
   - item: 版
     constraint: '`version` は持たない'
     notes: 版の正はタグと `version.ini`（規約『バージョニング』）。マニフェストに写すと揃える作業がリリースごとに増える

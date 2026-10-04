@@ -1,13 +1,13 @@
 title: "ゴール判定"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py goal`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`goal`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__goal`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系（届いた）
     summary: ゴールのフェーズまでが決着し納品物が揃っていれば、届いたと返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: '`phases` が 目的 → 要件 → 構成、`goal.phase` が 要件、`goal.deliverables` が A-1 を指すワークスペース'
         notes: 'D-1 `目的`・`決定済み`／D-2 `要件`・`対象外`／D-3 `要件`・`取り下げ`／D-4 `構成`・`未決定`／A-1 `status: 完成`'
@@ -15,16 +15,16 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py goal
+        participant IF as goal（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: goal --workspace
+        クライアント->>IF: goal workspace
         IF-->>WS: mindmap.yaml と全ての YAML を読む
         IF->>IF: ゴールのフェーズまでの検討事項と納品物を確かめる
         IF-->>クライアント: JSON
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`reached` が真、`goal_phase` が `要件`、`phases` が `目的`・`要件`'
       - '`remaining_decisions` と `remaining_deliverables` が空（ゴールより後ろの D-4 を含まない）'
       - ワークスペースの全てのファイルの中身が、呼ぶ前と同じ
@@ -33,7 +33,7 @@ flows:
     summary: 決着していない検討事項と揃っていない納品物を残りとして返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: '`phases` が 目的 → 要件 → 構成、`goal.phase` が 要件、`goal.deliverables` が「要件定義書」（`doc: A-1`）と「用語集」（`doc` なし）のワークスペース'
         notes: 'D-1 `目的`・`未決定`／D-2 `要件`・`要見直し`／D-3 `要件`・`決定済み`／A-1 `status: 確認中`'
@@ -41,16 +41,16 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py goal
+        participant IF as goal（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: goal --workspace
+        クライアント->>IF: goal workspace
         IF-->>WS: mindmap.yaml と全ての YAML を読む
         IF->>IF: 残りを集める
         IF-->>クライアント: JSON
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`reached` が偽'
       - '`remaining_decisions` が D-1・D-2 の順で、それぞれ `phase` と `status` を持つ'
       - '`remaining_deliverables` が「要件定義書」（`doc: A-1`）と「用語集」（`doc: null`）の順'
@@ -59,29 +59,29 @@ flows:
     summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py goal
+        participant IF as goal（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: goal --workspace
+        クライアント->>IF: goal workspace
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがある
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
     test: test_error_when_workspace_not_found
 lead: ゴールのフェーズまでの検討事項が決着し、ゴールの納品物が揃ったかを判定し、届いたかと残りの項目を返す。
 idempotent: true
 side_effects: なし（読むだけ）
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
@@ -106,23 +106,19 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: 判定できた（届いたかどうかによらない）
-    notes: 終了コード 0
+    notes: 結果を返す
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
   - item: 決着
     constraint: 検討事項の `決定済み`・`対象外`・`取り下げ`（再開時の状況と同じ）
   - item: 判定に入れる検討事項
     constraint: '`phase` が `phases` の先頭から `goal.phase` までのどれか。それより後ろのフェーズと、`phases` に無いフェーズの項目は入れない'
   - item: 各一覧の並び
     constraint: '`remaining_decisions` はフェーズの順、同じフェーズの中は連番の小さい順。`remaining_deliverables` は `goal.deliverables` の並び'
-  - item: 起動
-    constraint: 起動した Python に依存が無ければ、スキル専用の仮想環境の Python で起動し直す（『コマンドの起動』）
-notes: {}
-test_file: tests/integration/scripts/test_goal.py

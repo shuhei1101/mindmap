@@ -1,32 +1,32 @@
 title: "項目の追加"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py add`（コマンドの引数・標準入力・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`add`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__add`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系
     summary: 本文つきの検討事項を足す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 検討事項 D-1 を 1 件持つワークスペース
-      - name: 標準入力
+      - name: item
         description: リクエスト例の検討事項
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py add
+        participant IF as add（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: add decision --workspace（標準入力に中身）
+        クライアント->>IF: add workspace kind decision（item に中身）
         IF-->>WS: 全ての YAML を読む
         IF->>IF: ID・日時・body を付けてスキーマと突き合わせる
         IF->>WS: docs/D-2.md と decisions.yaml を書く
         IF-->>クライアント: JSON（id・file・body）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`id` が `D-2`'
       - '`decisions.yaml` の D-2 が渡したキーを持ち、`body` が `D-2.md`、`created` と `updated` が同じ日時'
       - '`docs/D-2.md` の中身が渡した `body_markdown` と同じ'
@@ -36,109 +36,109 @@ flows:
     summary: mindmap.yaml が無いフォルダを指すと、何も書かずに終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py add
+        participant IF as add（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: add decision --workspace
+        クライアント->>IF: add workspace kind decision
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがある
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
       - フォルダが空のまま
     test: test_error_when_workspace_not_found
   - name: 異常系（スキーマに合わない・SchemaMismatchError）
     summary: 状態の値が決めた名前に無い検討事項は足さず、合わない箇所を返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 検討事項 D-1 を 1 件持つワークスペース
-      - name: 標準入力
+      - name: item
         description: リクエスト例の `status` を `完了` にした検討事項
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py add
+        participant IF as add（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: add decision --workspace
+        クライアント->>IF: add workspace kind decision
         IF-->>WS: 全ての YAML を読む
         IF->>IF: スキーマと突き合わせて合わない
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - '標準エラーに `decisions.yaml: items[1].status:` で始まる行があり、`完了` を含む'
+      - ツールのエラーになる
+      - 'エラーの本文に `decisions.yaml: items[1].status:` で始まる行があり、`完了` を含む'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
     test: test_error_when_schema_mismatch
   - name: 異常系（書き込めない・WriteFailedError）
     summary: 書き込めないワークスペースでは何も書き換えず、エラーの行を返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 検討事項 D-1 を持ち、ワークスペースのフォルダと `docs/` の書き込みの権限を外したワークスペース
         notes: root で動かすときは skip する
-      - name: 標準入力
+      - name: item
         description: '`body_markdown` つきの検討事項'
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py add
+        participant IF as add（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: add decision --workspace
+        クライアント->>IF: add workspace kind decision
         IF-->>WS: 全ての YAML を読む
         IF->>WS: 一時ファイルを書けない
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - '標準エラーが `エラー: ` で始まり、トレースバックを含まない'
+      - ツールのエラーになる
+      - 'エラーの本文が `エラー: ` で始まり、トレースバックを含まない'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
     test: test_error_when_write_fails
   - name: 異常系（種類のファイルの形が崩れている・SchemaMismatchError）
     summary: 書き戻すと既存の項目を失うファイルには足さず、そのファイルの問題を返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: '検討事項 D-1・D-2 を持ち、`decisions.yaml` の一番上を配列（`- id: D-1 ...`）に書き換えたワークスペース'
-      - name: 標準入力
+      - name: item
         description: リクエスト例の検討事項
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py add
+        participant IF as add（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: add decision --workspace
+        クライアント->>IF: add workspace kind decision
         IF-->>WS: 全ての YAML を読む
         IF->>IF: decisions.yaml が書き戻すと中身を失う形
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - '標準エラーに `decisions.yaml: ` で始まる行がある'
+      - ツールのエラーになる
+      - 'エラーの本文に `decisions.yaml: ` で始まる行がある'
       - ワークスペースの全てのファイルの中身が呼ぶ前と同じで、`docs/` にファイルが増えていない
     test: test_error_when_file_shape_broken
-lead: 標準入力で渡した中身に ID・作成日時・更新日時を付けて、種類の YAML に 1 項目足す。本文を渡したときは `docs/{ID}.md` に書く。
+lead: '`item` で渡した中身に ID・作成日時・更新日時を付けて、種類の YAML に 1 項目足す。本文を渡したときは `docs/{ID}.md` に書く。'
 idempotent: false
 side_effects: 種類の YAML に 1 項目を足す。`body_markdown` を渡したときは `docs/{ID}.md` を書き、項目の `body` を `{ID}.md` にする。本文と YAML の一時ファイルを両方書き終えてから、本文 → YAML の順に `os.replace` で置き換える
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
@@ -148,39 +148,38 @@ request:
     type: '"decision" | "task" | "research" | "doc" | "term" | "note" | "log"'
     required: true
     location: argument
-    description: 足す項目の種類（位置引数）。書き込むファイルと ID の頭の文字が決まる（decision → decisions.yaml・D / task → tasks.yaml・T / research → research.yaml・R / doc → docs.yaml・A / term → terms.yaml・G / note → notes.yaml・N / log → logs.yaml・L）
-  - name: 標準入力
-    type: JSON のオブジェクト
-    required: false
-    location: body
+    description: 足す項目の種類。書き込むファイルと ID の頭の文字が決まる（decision → decisions.yaml・D / task → tasks.yaml・T / research → research.yaml・R / doc → docs.yaml・A / term → terms.yaml・G / note → notes.yaml・N / log → logs.yaml・L）
+  - name: item
+    type: dict
+    required: true
+    location: argument
     description: 項目の中身。キーと型は ER 図『ワークスペース』のその種類の表と共通のキー
-    constraints: '`id`・`created`・`updated`・`body` は持たない（スクリプトが付ける）'
-  - name: 標準入力.body_markdown
+    constraints: '`id`・`created`・`updated`・`body` は持たない（ツールが付ける）'
+  - name: item.body_markdown
     type: str
     required: false
     default: なし（本文を書かない）
-    location: body
+    location: argument
     description: 本文の Markdown。YAML には残らず、`docs/{ID}.md` に書かれる
     constraints: 調査・資料・検討事項・会話ログだけが持てる（ほかの種類に渡すと SchemaMismatchError）。資料は必須
-  - name: --json
-    type: str
-    required: false
-    default: なし（標準入力を読む）
-    location: argument
-    description: 標準入力と同じ項目の中身の JSON を 1 つの引数で渡す。渡したときは標準入力を読まない
-    constraints: 標準入力と同じ
 request_example: |-
   ```json
   {
-    "title": "YAML のキーをどう分けるか",
-    "target": "mindmap",
-    "category": "データ構造",
-    "phase": "要件",
-    "status": "未決定",
-    "lead": "種類ごとにキーを分けるかを決める。",
-    "weight": "大",
-    "depends_on": ["D-1"],
-    "body_markdown": "## 経緯\n\n..."
+    "workspace": "~/discussions/家計簿アプリ",
+    "kind": "decision",
+    "item": {
+      "title": "YAML のキーをどう分けるか",
+      "target": "mindmap",
+      "category": "データ構造",
+      "phase": "要件",
+      "status": "未決定",
+      "lead": "種類ごとにキーを分けるかを決める。",
+      "weight": "大",
+      "depends_on": [
+        "D-1"
+      ],
+      "body_markdown": "## 経緯\n\n..."
+    }
   }
   ```
 response:
@@ -199,22 +198,22 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: 足せた
-    notes: 終了コード 0
+    notes: 結果を返す
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1。何も書き込まない
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー。何も書き込まない
   - name: SchemaMismatchError
-    condition: 足した後のワークスペースのどれかの YAML がスキーマに合わない（標準入力が JSON として読めないとき・スクリプトが付けるキーを渡したときも含む）
-    notes: 終了コード 1。標準エラーに合わない箇所。何も書き込まない
+    condition: 足した後のワークスペースのどれかの YAML がスキーマに合わない（ツールが付けるキーを渡したときも含む）
+    notes: ツールのエラー。エラーの本文に合わない箇所。何も書き込まない
   - name: WriteFailedError
     condition: 一時ファイルの書き込みか置き換えに失敗した（権限が無い・ほかのプロセスが開いている など）
-    notes: 終了コード 1。標準エラーに書けなかったパスと理由。置き換えた本文は消し、どのファイルも書き換えない
-error_format: '標準エラーに `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける（キーのパスは `items[0].status` の形）。合わない箇所に前の版の形式（資料の `done`・`mindmap.yaml` の `summary` が無い）があるときは、最後に `ヒント: 前の版の形式の記録は /mindstella:upgrade で今の形式に移せます` の 1 行を続ける。'
+    notes: ツールのエラー。エラーの本文に書けなかったパスと理由。置き換えた本文は消し、どのファイルも書き換えない
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける（キーのパスは `items[0].status` の形）。合わない箇所に前の版の形式（資料の `done`・`mindmap.yaml` の `summary` が無い）があるときは、最後に `ヒント: 前の版の形式の記録は /mindstella:upgrade で今の形式に移せます` の 1 行を続ける。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
   - item: 検証の範囲
     constraint: 足した後のワークスペースの全ての YAML をスキーマと突き合わせる。参照先の ID があるかは確かめない（点検が持つ）
   - item: ID の振り方
@@ -224,6 +223,5 @@ constraints:
   - item: YAML の書き方
     constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
   - item: 部分成功
-    constraint: 起こさない。YAML の置き換えに失敗したら、置き換えた本文を消してからエラーで終わる（終了コード 1。残った一時ファイルも消す）
-exclusivity: 同じワークスペースへ同時に呼ばない前提（スキルが 1 つずつ呼ぶ）。ロックは持たない
-test_file: tests/integration/scripts/test_add.py
+    constraint: 起こさない。YAML の置き換えに失敗したら、置き換えた本文を消してからツールのエラーで終わる（残った一時ファイルも消す）
+exclusivity: 同じプロセスの中では、書き換えの鍵（『MCP サーバーの起動』）で書き換えるツールを 1 つずつ動かす。別のプロセスとは排他しない（スキルが 1 つずつ呼ぶ前提）

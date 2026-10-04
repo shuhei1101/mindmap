@@ -1,0 +1,149 @@
+title: "取り込んでいない送信"
+entry:
+  kind: mcp_tool
+  value: '`submissions`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__submissions`）。結果とエラーの返し方は『MCP サーバーの起動』'
+flows:
+  - name: 正常系
+    summary: 取り込んでいない送信だけを送った順に返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: 検討事項 D-1 と、送信 S-1（取り込み済み）・S-2（D-1・「案 A にする」）・S-3（D-1・「理由も残して」）を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as submissions（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: submissions workspace
+        IF-->>WS: submissions.yaml と項目を読む
+        IF-->>クライアント: JSON（items）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`items` が S-2・S-3 の順で、どちらも `target_title` が D-1 のタイトル'
+      - ワークスペースの全てのファイルの中身が、呼ぶ前と同じ
+    test: test_normal
+  - name: 正常系（送信が無い）
+    summary: submissions.yaml が無ければ 0 件を返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: '`submissions.yaml` を持たないワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as submissions（MCP のツール）
+
+        クライアント->>IF: submissions workspace
+        IF-->>クライアント: JSON（items は空）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`items` が空'
+      - '`submissions.yaml` が作られていない'
+    test: test_normal_when_empty
+  - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
+    summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 空のフォルダ
+        description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as submissions（MCP のツール）
+        participant WS as フォルダ
+
+        クライアント->>IF: submissions workspace
+        IF-->>WS: mindmap.yaml が無い
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
+    test: test_error_when_workspace_not_found
+  - name: 異常系（送信の形が崩れている・SchemaMismatchError）
+    summary: 手で崩した submissions.yaml は読まずに合わない箇所を返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: make_workspace
+        description: '`submissions.yaml` の S-1 から `body` を消したワークスペース'
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as submissions（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: submissions workspace
+        IF-->>WS: submissions.yaml を読む
+        IF->>IF: スキーマと突き合わせて合わない
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - 'エラーの本文に `submissions.yaml: items[0]` で始まる行がある'
+    test: test_error_when_schema_mismatch
+lead: プレビューから送られ、まだ取り込んでいない送信を、送った順に返す。読むだけで、取り込み済みにはしない。
+idempotent: true
+side_effects: なし（読むだけ）
+callers:
+  - dev/設計書/インターフェース定義/スキル/話し合いの進行#
+request:
+  - name: workspace
+    type: str
+    required: true
+    location: argument
+    description: ワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` があるフォルダ'
+response:
+  - name: items[].id
+    type: str
+    description: 送信の ID
+    example: S-1
+  - name: items[].target
+    type: str
+    description: 回答・意見を向けた項目の ID
+    example: D-1
+  - name: items[].target_title
+    type: str | None
+    description: その項目のタイトル。項目が消えていれば `null`
+  - name: items[].body
+    type: str
+    description: 本文
+  - name: items[].sent
+    type: str
+    description: 送った日時（UTC のタイムゾーン付き ISO 8601）
+exceptions:
+  - name: なし（正常終了）
+    condition: 一覧を作れた（0 件のときも含む。`submissions.yaml` が無ければ 0 件）
+    notes: 結果を返す
+  - name: WorkspaceNotFoundError
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+  - name: SchemaMismatchError
+    condition: '`submissions.yaml` がスキーマに合わないか、YAML として読めない'
+    notes: ツールのエラー。エラーの本文に合わない箇所
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける。'
+constraints:
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: 返す送信
+    constraint: '`taken` が `null` のものだけ'
+  - item: 並び
+    constraint: 送信の連番の小さい順（送った順）
+  - item: 件数
+    constraint: 制限なし（取り込んでいない送信は、話し合いのたびに取り込んで減る）
+refs:
+  - dev/設計書/ER図/ワークスペース#
+  - dev/設計書/シナリオ/単一ユースケース/送信の取り込み#

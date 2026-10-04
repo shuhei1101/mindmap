@@ -26,8 +26,11 @@ flows:
       - front matter の `name` が `session`、`allowed-tools` が制約の値と一致する
       - '`steps/` に 6 つのステップのファイルがあり、SKILL.md のステップの表がその全てを指す'
       - SKILL.md と `steps/` の本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
-      - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
-      - 本文が `migrate --workspace {フォルダ} --plan` を呼ぶ
+      - SKILL.md と `steps/` の本文が呼ぶツールが全て `allowed-tools` にあり、サーバーのツールの一覧（『MCP サーバーの起動』）にある
+      - SKILL.md と `steps/` の本文が `mindmap.py`・`build`・`preview.html` を指さない
+      - '本文が `migrate` を `plan: true` で呼び、その後に `submissions` を呼ぶ'
+      - 本文に、MCP のツールが無いとき起動スクリプトを案内して止まる分岐がある
+      - '`steps/プレビュー.md` が `preview_url` を呼ぶ'
       - '`skills/mindmap/` に SKILL.md が無く、`references/`・`playbooks/` がある'
       - '`playbooks/` に システム開発・調査・資料作り・壁打ち の 4 つのガイドがあり、どれも制約の 6 つの節をその並びで持ち、`## ゴールの候補` に `（既定）` の行が 1 つだけある'
       - スキルの全ての Markdown に特定の開発基盤の名前が無い
@@ -36,7 +39,7 @@ flows:
 lead: 作成済みのワークスペースで、取り込み・ヒアリング・リサーチ・方針転換・プレビュー・ゴール判定のステップを回すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/複合ユースケース/話し合いをゴールまで進める#
-side_effects: スクリプトの書き込むコマンドでワークスペースの YAML を書き換える。資料の本文（`docs/`）とリリースの資料（`release/`）はスキルが Markdown を書き、そのとき利用者に書き込みの確認が出る。リリースの資料を書く前に `clear-release` で `release/` の中身を消す。リサーチではサブエージェントが Web を調べる。配る書き出しを頼まれたときは `export` で、利用者が示したパスへ HTML を書き出す
+side_effects: サーバーの MCP の書き込むツールでワークスペースの YAML を書き換える。準備で取り込んだ送信を `take_submission` で取り込み済みにする。資料の本文（`docs/`）とリリースの資料（`release/`）はスキルが Markdown を書き、そのとき利用者に書き込みの確認が出る。リリースの資料を書く前に `clear_release` で `release/` の中身を消す。リサーチではサブエージェントが Web を調べる。配る書き出しを頼まれたときは `export` で、利用者が示したパスへ HTML を書き出す
 request:
   - name: $ARGUMENTS
     type: str
@@ -50,7 +53,7 @@ exceptions:
     condition: ファイルの形が制約どおりで、Claude Code がスキルとして読み込める
 constraints:
   - item: ファイルの形
-    constraint: '`skills/session/SKILL.md` と `skills/session/steps/`（`取り込み.md`・`ヒアリング.md`・`リサーチ.md`・`方針転換.md`・`プレビュー.md`・`ゴール判定.md`）。SKILL.md は入力・ステップの表・コマンドと引数の一覧だけを持ち、各ステップは `steps/` を指す'
+    constraint: '`skills/session/SKILL.md` と `skills/session/steps/`（`取り込み.md`・`ヒアリング.md`・`リサーチ.md`・`方針転換.md`・`プレビュー.md`・`ゴール判定.md`）。SKILL.md は入力・ステップの表・ツールと引数の一覧だけを持ち、各ステップは `steps/` を指す'
   - item: 共通の置き場所
     constraint: '`skills/mindmap/`（SKILL.md を持たない）に `references/`（質問の書式・文章の書き方・リサーチの調べ方）・`playbooks/`（システム開発・調査・資料作り・壁打ち）・`scripts/`・`schemas/`・`preview/`・`README.md` を置き、setup と session の両方が読む'
   - item: front matter の name
@@ -58,15 +61,10 @@ constraints:
   - item: front matter の description
     constraint: いつ使うか（セットアップの後に話し合いを進めるとき）が分かる 1 文
   - item: front matter の allowed-tools
-    constraint: '`Read, Agent, WebSearch, WebFetch, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。Write・Edit と、これ以外の Bash は許していない'
+    constraint: '`Read, Agent, WebSearch, WebFetch` と、`init` を除く mindstella の MCP のツール（`mcp__mindstella__add`・`update`・`adopt`・`status`・`next`・`impact`・`find`・`show`・`attrs`・`check`・`goal`・`migrate`・`clear_release`・`export`・`preview_url`・`submissions`・`take_submission`。`mcp__mindstella__` を頭に付けて並べる）。Write・Edit・Bash は許していない'
     notes: Agent・WebSearch・WebFetch はリサーチのサブエージェントに使う。許可がサブエージェントの WebSearch・WebFetch に及ぶことは PoC で確かめた。`docs/` の本文は `add`・`update` の `body_markdown` で書く。`release/` の Markdown の書き出しと、納品物を外すときの `mindmap.yaml` の `goal.deliverables` の書き換えは、数が少ないため利用者の確認に回す（パスで絞れない Write・Edit を話し合いの間ずっと許さない）
   - item: 共通のファイルの参照
     constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
-  - item: スクリプトの起動
-    constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く
-    notes: 項目の JSON は `--json '{JSON}'` の引数で渡し、値の中の `'` は `'\''` と書く。ヒアドキュメント（標準入力）で渡すと `{"` が `allowed-tools` の規則に当たらず確認が出る。JSON の `'` はモデルが書き換えて引数が壊れるため使わない。改行・バッククオート・`$(...)` を含む長い `body_markdown` も、この形で確認 0 件のまま書かれたまま渡る（2.1.287 で実測）
-  - item: 編集の後
-    constraint: ワークスペースを編集したステップは、最後に `build` を流す（hooks は使わない）
   - item: リサーチの確認
     constraint: サブエージェントの起動前に「何を・どの観点で・何体で」を示して確認を取る。利用者が自分から頼んだときだけ省く
   - item: スキルの中の名前
@@ -76,13 +74,27 @@ constraints:
     notes: |-
       資料作り・壁打ちの値は補足の `進め方ガイドの分野`
   - item: 配る書き出し
-    constraint: 利用者が記録を人に渡したいと言ったときだけ、プレビューのステップで書き出す先のパスを利用者に聞き、`export --workspace {フォルダ} --out {パス}` を呼ぶ。書き出す先にワークスペースの `preview.html` と `release/` の中を指さない。書き出したら `path` の絶対パスと、ネットにつながらなくても開けて書き込む操作が無いことを示す。編集の後に流すのは `build` のまま
-    notes: '`release/` は `clear-release` が中身を消す。インターフェース定義『配る書き出し』'
+    constraint: 利用者が記録を人に渡したいと言ったときだけ、プレビューのステップで書き出す先のパスを利用者に聞き、`export` を `workspace`・`out` で呼ぶ。書き出す先にワークスペースの `release/` の中を指さない。書き出したら `path` の絶対パスと、ネットにつながらなくても開けて書き込む操作が無いことを示す
+    notes: '`release/` は `clear_release` が中身を消す。インターフェース定義『配る書き出し』（サーバー）'
   - item: 版の比較
-    constraint: 準備のステップで `mindmap.yaml` を読んだ後に `migrate --workspace {フォルダ} --plan` を呼ぶ。`relation` が `older` なら何も書き込まず `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる
-    notes: インターフェース定義『記録の形式の移行』
+    constraint: '準備のステップで `mindmap.yaml` を読んだ後に `migrate` を `plan: true` で呼ぶ。`relation` が `older` なら何も書き込まず `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる'
+    notes: インターフェース定義『記録の形式の移行』（サーバー）
+  - item: ツールの呼び出し
+    constraint: ワークスペースの読み書きは全て mindstella の MCP のツール（`mcp__mindstella__{ツール}`）で行い、`workspace` にワークスペースのフォルダを渡す。項目の中身は `add`・`update` の `item` に JSON のオブジェクトで渡し、`docs/` の本文はその `body_markdown` で書く。スクリプトを Bash で起動しない。書き換えはサーバーが開いている画面へ知らせるため、書いた後に書き出しを流さない
+    notes: インターフェース定義『MCP サーバーの起動』『書き換えの知らせ』
+  - item: MCP のツールが使えないとき
+    constraint: 準備の最初に mindstella の MCP のツールがあるかを見て、無ければワークスペースに何も書かず、起動スクリプト（`{プラグインのフォルダ}/bin/mindstella {ワークスペースのフォルダ}`）で立ち上げ直すよう案内して止まる
+    notes: インターフェース定義『起動スクリプト』
+  - item: 送信の取り込み
+    constraint: 準備のステップで版の比較の後に `submissions` を呼ぶ。1 件以上あれば、届いていた送信を利用者に示し、送った順に 1 件ずつ取り込みのステップで記録してから `take_submission` で取り込み済みにする。一覧を読んだだけでは取り込み済みにしない。0 件なら取り込みを飛ばす
+    notes: 単一ユースケース『送信の取り込み』
+  - item: プレビュー
+    constraint: プレビューのステップで `preview_url` を呼び、返った `url` を示す。開く画面と項目が決まっていれば URL のハッシュ（インターフェース定義『プレビューを開く』）を付けて示す。ブラウザは開かない
+    notes: インターフェース定義『プレビューの URL』
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
+  - dev/設計書/インターフェース定義/サーバー/MCPサーバーの起動#
+  - dev/設計書/シナリオ/単一ユースケース/送信の取り込み#
 notes:
   確かめないもの: スキルをモデルが読んで動かす振る舞いは、費用が掛かり結果が揺れるためテストしない。サブエージェントの起動と許可が及ぶことは PoC（#22）で確かめた
   進め方ガイドの分野: |-

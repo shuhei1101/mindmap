@@ -1,7 +1,7 @@
 title: "依存の確認"
 entry:
   kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py check-env`（システムの Python で起動する。コマンドの引数・標準出力・終了コード）'
+  value: '`python3 {プラグインのフォルダ}/skills/mindmap/scripts/check_env.py`（起動スクリプトがシステムの Python で起動する。引数・標準出力・終了コード）'
 flows:
   - name: 正常系
     summary: 仮想環境に依存がそろっていて、起動する Python を返す
@@ -9,16 +9,16 @@ flows:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: 仮想環境
-        description: テストごとの一時フォルダに `python -m venv` で作り、PyYAML・jsonschema を入れた仮想環境。`--venv` で渡す
+        description: テストごとの一時フォルダに `python -m venv` で作り、PyYAML・jsonschema・mcp を入れた仮想環境。`--venv` で渡す
         notes: ライブラリはテストを動かす Python に入っているものを `--system-site-packages` で見せてもよい（通信しないため）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check-env
+        participant IF as check_env.py
         participant V as 仮想環境の Python
 
-        クライアント->>IF: check-env --venv
+        クライアント->>IF: check_env.py --venv
         IF->>V: 版とライブラリの版を尋ねる
         V-->>IF: JSON
         IF-->>クライアント: JSON（全て ok、python_path）
@@ -26,7 +26,7 @@ flows:
     expected:
       - 終了コードが 0
       - '`venv_ok`・`python_ok` と全ての `packages[].ok` が真'
-      - '`python_path` が仮想環境の Python で、その Python で `mindmap.py attrs` を起動できる'
+      - '`python_path` が仮想環境の Python で、その Python で `import yaml, jsonschema, mcp` が通る'
       - '`install` が `null`'
     test: test_normal
   - name: 異常系（仮想環境が無い・VenvNotFoundError）
@@ -40,17 +40,17 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check-env
+        participant IF as check_env.py
 
-        クライアント->>IF: check-env --venv
+        クライアント->>IF: check_env.py --venv
         IF->>IF: 仮想環境の Python が無い
         IF-->>クライアント: JSON（install に作って入れるコマンド）、終了コード 1
       ```
     expected:
       - 終了コードが 1
       - '`venv_ok` が偽、`python` が `null`、全ての `packages[].installed` が `null`'
-      - '`install` に `-m venv` とそのフォルダ、`PyYAML>=5.1`・`jsonschema>=4.18.0` がある'
-      - '`install` をそのままシェルで流すと仮想環境ができ、もう一度 `check-env` を起動すると終了コード 0（通信が要るので、通信できないときは skip する）'
+      - '`install` に `-m venv` とそのフォルダ、`PyYAML>=5.1`・`jsonschema>=4.18.0`・`mcp>=2.3.0` がある'
+      - '`install` をそのままシェルで流すと仮想環境ができ、もう一度 `check_env.py` を起動すると終了コード 0（通信が要るので、通信できないときは skip する）'
     test: test_error_when_venv_missing
   - name: 異常系（Python が古い・PythonVersionError）
     summary: '仮想環境の Python が下限より古ければ、構文エラーで落ちずに python_ok: false を返す'
@@ -64,10 +64,10 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check-env
+        participant IF as check_env.py
         participant V as 仮想環境の Python
 
-        クライアント->>IF: check-env --venv
+        クライアント->>IF: check_env.py --venv
         IF->>V: 版とライブラリの版を尋ねる
         V-->>IF: JSON（古い版）
         IF-->>クライアント: JSON（python_ok: false）、終了コード 1
@@ -84,31 +84,31 @@ flows:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: 仮想環境
-        description: PyYAML・jsonschema を入れていない仮想環境（テストごとの一時フォルダに `python -m venv` で作る）。`--venv` で渡す
+        description: PyYAML・jsonschema・mcp を入れていない仮想環境（テストごとの一時フォルダに `python -m venv` で作る）。`--venv` で渡す
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check-env
+        participant IF as check_env.py
         participant V as 仮想環境の Python
 
-        クライアント->>IF: check-env --venv
+        クライアント->>IF: check_env.py --venv
         IF->>V: 版とライブラリの版を尋ねる
         V-->>IF: JSON（ライブラリが無い）
         IF-->>クライアント: JSON（install に入れるコマンド）、終了コード 1
       ```
     expected:
       - 終了コードが 1
-      - '`packages` の PyYAML・jsonschema が `installed: null`・`ok: false`'
-      - '`install` がその仮想環境の Python で `-m pip install` し、`PyYAML>=5.1` と `jsonschema>=4.18.0` を含む（`-m venv` を含まない）'
+      - '`packages` の PyYAML・jsonschema・mcp が `installed: null`・`ok: false`'
+      - '`install` がその仮想環境の Python で `-m pip install` し、`PyYAML>=5.1`・`jsonschema>=4.18.0`・`mcp>=2.3.0` を含む（`-m venv` を含まない）'
     test: test_error_when_dependency_missing
   - name: 異常系（仮想環境を作る Python が古い・VenvNotFoundError）
-    summary: 仮想環境が無く、check-env を動かす Python も下限より古ければ、流しても直らないコマンドを返さない
+    summary: 仮想環境が無く、check_env.py を動かす Python も下限より古ければ、流しても直らないコマンドを返さない
     setup:
       - name: Mock
         description: なし（実際の Python で起動する）
       - name: 仮想環境を作る Python
-        description: 下限より古い Python（3.8〜3.11）で `check-env` を起動する
+        description: 下限より古い Python（3.8〜3.11）で `check_env.py` を起動する
         notes: 手元に古い Python が無ければ skip し、判定は単体テスト（`base_version` を渡す）で確かめる
       - name: 仮想環境の場所
         description: テストごとの一時フォルダの下の、まだ無いフォルダを `--venv` で渡す
@@ -116,9 +116,9 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py check-env
+        participant IF as check_env.py
 
-        クライアント->>IF: check-env --venv（古い Python で起動）
+        クライアント->>IF: check_env.py --venv（古い Python で起動）
         IF->>IF: 仮想環境の Python が無い・自分の版が下限より古い
         IF-->>クライアント: JSON（base_python_ok: false、install: null）、終了コード 1
       ```
@@ -127,9 +127,17 @@ flows:
       - '`venv_ok`・`base_python_ok` が偽で、`base_python_version` に起動した Python の版がある'
       - '`install` が `null`'
     test: test_error_when_base_python_too_old
-lead: スキル専用の仮想環境（既定は `~/.mindmap/venv`）に、下限以上の Python・PyYAML・jsonschema がそろっているかを確かめ、ほかのコマンドを起動する Python と、足りないときにそろえる 1 行のコマンドを返す。
+lead: スキル専用の仮想環境（既定は `~/.mindmap/venv`）に、下限以上の Python・PyYAML・jsonschema・mcp がそろっているかを確かめ、MCP サーバーを動かす Python と、足りないときにそろえる 1 行のコマンドを返す。
 idempotent: true
 side_effects: なし（何も書き込まない）
+request:
+  - name: --venv
+    type: str
+    required: false
+    default: '`~/.mindmap/venv`（Windows は `%USERPROFILE%\\.mindmap\\venv`）'
+    location: argument
+    description: 確かめる仮想環境のフォルダ。起動スクリプトは環境変数 `MINDSTELLA_VENV` があればその値を、無ければ渡さずに既定を使う
+    notes: テストで一時フォルダの仮想環境を指すために使う
 response:
   - name: venv
     type: str
@@ -139,7 +147,7 @@ response:
     description: 仮想環境の Python があるか
   - name: python_path
     type: str
-    description: ほかのコマンドを起動する Python（仮想環境の `bin/python`。Windows は `Scripts\\python.exe`）
+    description: MCP サーバーを動かす Python（仮想環境の `bin/python`。Windows は `Scripts\\python.exe`）
     example: /home/user/.mindmap/venv/bin/python
   - name: python
     type: str | None
@@ -149,7 +157,7 @@ response:
     type: bool
     description: 仮想環境の Python が下限（非機能要件の「Python の版」）以上か
   - name: packages[].name
-    type: '"PyYAML" | "jsonschema"'
+    type: '"PyYAML" | "jsonschema" | "mcp"'
     description: 確かめたライブラリ
   - name: packages[].required
     type: str
@@ -164,11 +172,11 @@ response:
   - name: install
     type: str | None
     description: 仮想環境とライブラリをそろえる 1 行のコマンド。全てそろっていれば `null`。仮想環境を作る・作り直す必要があり、仮想環境を作る Python が下限より古いときも `null`
-    example: '"/usr/bin/python3" -m venv "/home/user/.mindmap/venv" && "/home/user/.mindmap/venv/bin/python" -m pip install "PyYAML>=5.1" "jsonschema>=4.18.0"'
-    notes: 仮想環境が無いときは「作る + 入れる」、あるときは「入れる」だけ、Python が古いときは `--clear` で作り直して入れる。仮想環境を作る Python は `check-env` を動かしている Python（`sys.executable`）
+    example: '"/usr/bin/python3" -m venv "/home/user/.mindmap/venv" && "/home/user/.mindmap/venv/bin/python" -m pip install "PyYAML>=5.1" "jsonschema>=4.18.0" "mcp>=2.3.0"'
+    notes: 仮想環境が無いときは「作る + 入れる」、あるときは「入れる」だけ、Python が古いときは `--clear` で作り直して入れる。仮想環境を作る Python は `check_env.py` を動かしている Python（`sys.executable`）
   - name: base_python
     type: str
-    description: 仮想環境を作る Python（`check-env` を動かしている Python）のパス
+    description: 仮想環境を作る Python（`check_env.py` を動かしている Python）のパス
   - name: base_python_version
     type: str
     description: 仮想環境を作る Python の版
@@ -178,7 +186,7 @@ response:
     description: 仮想環境を作る Python の版が下限（非機能要件の「Python の版」）以上か。偽のとき、仮想環境を作る・作り直す `install` は `null`
 exceptions:
   - name: なし（正常終了）
-    condition: 仮想環境があり、その Python と両方のライブラリが下限以上
+    condition: 仮想環境があり、その Python と 3 つのライブラリが下限以上
     notes: 終了コード 0
   - name: VenvNotFoundError
     condition: 仮想環境の Python が無い
@@ -187,13 +195,13 @@ exceptions:
     condition: 仮想環境の Python の版が下限より古い
     notes: 終了コード 1。標準出力には同じ形の JSON（`install` は作り直して入れる。仮想環境を作る Python も古ければ `null`）
   - name: DependencyMissingError
-    condition: 仮想環境の Python は下限以上で、どちらかのライブラリが無いか下限より古い
+    condition: 仮想環境の Python は下限以上で、どれかのライブラリが無いか下限より古い
     notes: 終了コード 1。標準出力には同じ形の JSON（`install` は入れる）
 constraints:
   - item: 起動する Python
-    constraint: '`check-env` だけはシステムの `python3`（仮想環境の外）で起動する。ほかのコマンドは、このコマンドが返す `python_path` で起動する'
+    constraint: '`check_env.py` はシステムの `python3`（仮想環境の外）で起動する。MCP サーバーは、このスクリプトが返す `python_path` で起動する（『起動スクリプト』）'
   - item: 読み込みの順と書き方
-    constraint: 入口は PyYAML・jsonschema を import する前に `check-env` を処理し、他のコマンドのモジュールは `check-env` のときに読まない。入口と `check-env` のモジュールは Python 3.8 でも読める構文だけで書き（`type` 文・`match` 文・`X | Y` の型注釈を実行時に評価する書き方を使わない）、3.12 の書き方は他のコマンドのモジュールに閉じる
+    constraint: '`check_env.py` は PyYAML・jsonschema・mcp を import せず、Python 3.8 でも読める構文だけで書く（`type` 文・`match` 文・`X | Y` の型注釈を実行時に評価する書き方を使わない）。3.12 の書き方はサーバーのモジュールに閉じる'
   - item: 仮想環境の中の確かめ方
     constraint: 仮想環境の Python を子プロセスで起動し、版とライブラリの版（`importlib.metadata.version`）を JSON で受け取る。子プロセスの引数は配列で渡し、シェルを通さない
   - item: 出力の形
@@ -201,13 +209,6 @@ constraints:
   - item: 終了コード
     constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
   - item: 通信と書き込み
-    constraint: しない（そろえるコマンドを返すだけで、仮想環境を作らずライブラリも入れない。流すかはスキルが利用者に確かめてから決める）
-request:
-  - name: --venv
-    type: str
-    required: false
-    default: '`~/.mindmap/venv`（Windows は `%USERPROFILE%\\.mindmap\\venv`）'
-    location: argument
-    description: 確かめる仮想環境のフォルダ。スキルは渡さずに既定を使う
-    notes: テストで一時フォルダの仮想環境を指すために使う
-test_file: tests/integration/scripts/test_check_env.py
+    constraint: しない（そろえるコマンドを返すだけで、仮想環境を作らずライブラリも入れない。流すかは利用者が決める）
+callers:
+  - dev/設計書/インターフェース定義/サーバー/起動スクリプト#

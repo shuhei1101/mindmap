@@ -1,0 +1,187 @@
+title: "ワークスペースの作成"
+entry:
+  kind: mcp_tool
+  value: '`init`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__init`）。結果とエラーの返し方は『MCP サーバーの起動』'
+flows:
+  - name: 正常系
+    summary: 設定を渡して空のワークスペースを作る
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: ワークスペースの場所
+        description: テストごとの一時フォルダの下の、まだ無いフォルダ
+      - name: 設定
+        description: リクエスト例の設定
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as init（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: init workspace（`settings` に設定）
+        IF->>IF: 設定をスキーマと突き合わせる
+        IF->>WS: mindmap.yaml・種類ごとの YAML・mindstella-version.ini・docs/・release/ を作る
+        IF-->>クライアント: JSON（workspace・files）
+      ```
+    expected:
+      - ツールのエラーにならない
+      - '`mindmap.yaml` を読むと、渡した設定と同じ中身である'
+      - '`decisions.yaml`・`tasks.yaml`・`research.yaml`・`docs.yaml`・`terms.yaml`・`notes.yaml`・`logs.yaml` が `items: []` である'
+      - '`mindstella-version.ini` の 1 行目が `plugins/mindstella/version.ini` の 1 行目と同じ'
+      - '`docs/` と `release/` がある'
+      - '`files` に作った 8 つの YAML、`mindstella-version.ini` と 2 つのフォルダがある'
+    test: test_normal
+  - name: 異常系（既にワークスペースがある・WorkspaceExistsError）
+    summary: mindmap.yaml があるフォルダには作らず、何も書き換えない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 既存のワークスペース
+        description: 作成を 1 回済ませたフォルダ
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as init（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: init workspace
+        IF-->>WS: mindmap.yaml がある
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
+      - フォルダの全てのファイルの中身が呼ぶ前と同じ
+    test: test_error_when_workspace_exists
+  - name: 異常系（設定がスキーマに合わない・SchemaMismatchError）
+    summary: フェーズが無い設定では作らず、フォルダも作らない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 設定
+        description: リクエスト例から `phases` を抜いた設定
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as init（MCP のツール）
+
+        クライアント->>IF: init workspace（phases が無い設定）
+        IF->>IF: スキーマと突き合わせて合わない
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - エラーの本文に `mindmap.yaml` と `phases` がある
+      - '`workspace` のフォルダが作られていない'
+    test: test_error_when_settings_mismatch
+  - name: 異常系（書き込めない・WriteFailedError）
+    summary: 書き込めない場所には作らず、エラーの行を返す
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
+      - name: 書き込めないフォルダ
+        description: 書き込みの権限を外した一時フォルダの下の、まだ無いフォルダを `workspace` に渡す
+        notes: root で動かすときは権限が効かないので skip する
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as init（MCP のツール）
+        participant WS as フォルダ
+
+        クライアント->>IF: init workspace（`settings` に設定）
+        IF->>WS: フォルダを作れない
+        IF-->>クライアント: ツールのエラー
+      ```
+    expected:
+      - ツールのエラーになる
+      - 'エラーの本文が `エラー: ` で始まり、トレースバックを含まない'
+      - '`workspace` のフォルダが無い'
+    test: test_error_when_write_fails
+lead: 指定したフォルダに、`settings` で渡した設定を持つ `mindmap.yaml` と、空の種類ごとの YAML・`docs/`・`release/`・プラグインの版を書いた `mindstella-version.ini` を作る。
+idempotent: false
+side_effects: 'ワークスペースのフォルダ（無ければ作る）に `mindmap.yaml` と 7 つの種類ごとの YAML（`items: []`）と `mindstella-version.ini` を書き、`docs/`・`release/` を作る'
+request:
+  - name: workspace
+    type: str
+    required: true
+    location: argument
+    description: 作るワークスペースのフォルダのパス
+    constraints: '`mindmap.yaml` がまだ無いフォルダ。フォルダが無ければ作る'
+  - name: settings
+    type: dict
+    required: true
+    location: argument
+    description: 設定の中身（`summary`・`field`・`target_label`・`phases`・`targets`・`categories`・`goal`・`links`）。キーと型は ER 図『ワークスペース』の `mindmap.yaml`
+    constraints: 設定のスキーマに合うこと
+request_example: |-
+  ```json
+  {
+    "workspace": "~/discussions/家計簿アプリ",
+    "settings": {
+      "summary": "要件出しのスキル mindmap を設計する",
+      "field": "システム開発",
+      "target_label": "システム",
+      "phases": [
+        "目的",
+        "要件",
+        "構成"
+      ],
+      "targets": [
+        {
+          "name": "mindmap",
+          "summary": "話し合いを記録するスキル"
+        }
+      ],
+      "categories": [
+        {
+          "name": "データ構造",
+          "target": "mindmap",
+          "summary": "YAML の種類とキー"
+        }
+      ],
+      "goal": {
+        "phase": "構成",
+        "summary": "作り始められる",
+        "deliverables": [
+          {
+            "title": "YAML のスキーマ"
+          }
+        ]
+      },
+      "links": []
+    }
+  }
+  ```
+response:
+  - name: workspace
+    type: str
+    description: 作ったワークスペースの絶対パス
+  - name: files
+    type: list[str]
+    description: 作ったファイルとフォルダ（ワークスペースからの相対パス）
+exceptions:
+  - name: なし（正常終了）
+    condition: 作成できた
+    notes: 結果を返す
+  - name: WorkspaceExistsError
+    condition: '`workspace` のフォルダに `mindmap.yaml` が既にある'
+    notes: ツールのエラー。エラーの本文にフォルダのパス。何も書き込まない
+  - name: SchemaMismatchError
+    condition: '`settings` が設定のスキーマに合わない'
+    notes: ツールのエラー。エラーの本文に合わない箇所。何も書き込まない
+  - name: WriteFailedError
+    condition: フォルダ・ファイルを作る途中で書き込めなかった（権限が無い・ほかのプロセスが開いている など）
+    notes: ツールのエラー。エラーの本文に書けなかったパスと理由。作ったものを消し、`mindmap.yaml` は残さない
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。スキーマに合わないときは、合わない箇所ごとに `{ファイル名}: {キーのパス}: {理由}` の行を続ける（キーのパスは `items[0].status` の形）。'
+constraints:
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
+  - item: YAML の書き方
+    constraint: '`safe_dump(allow_unicode=True, sort_keys=False)`。コメントは残らない'
+exclusivity: 同じプロセスの中では、書き換えの鍵（『MCP サーバーの起動』）で書き換えるツールを 1 つずつ動かす。別のプロセスとは排他しない（スキルが 1 つずつ呼ぶ前提）

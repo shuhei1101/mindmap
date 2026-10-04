@@ -1,13 +1,13 @@
 title: "属性名の一覧"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py attrs`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`attrs`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__attrs`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系
     summary: 種類をまたいで属性名と件数を数える
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 次の項目を持つワークスペース
         notes: 'D-1・D-2: 属性 `担当`／T-1: 属性 `期限`・`担当`'
@@ -15,44 +15,44 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py attrs
+        participant IF as attrs（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: attrs --workspace
+        クライアント->>IF: attrs workspace
         IF-->>WS: 全ての YAML を読む
         IF-->>クライアント: JSON（attrs）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`attrs` が `担当`（`count: 3`・`kinds: [decision, task]`）と `期限`（`count: 1`・`kinds: [task]`）の 2 件'
     test: test_normal
   - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
     summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py attrs
+        participant IF as attrs（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: attrs --workspace
+        クライアント->>IF: attrs workspace
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがある
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
     test: test_error_when_workspace_not_found
 lead: ワークスペースの項目が `attrs` で使っている属性名と、使っている件数を返す。
 idempotent: true
 side_effects: なし（読むだけ）
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
@@ -71,16 +71,15 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: 一覧を作れた（属性が 0 件のときも含む）
-    notes: 終了コード 0
+    notes: 結果を返す
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
   - item: 名前の同一視
     constraint: しない（字面が違えば別の属性名として並べ、揺れの判断はスキルが行う）
-test_file: tests/integration/scripts/test_attrs.py

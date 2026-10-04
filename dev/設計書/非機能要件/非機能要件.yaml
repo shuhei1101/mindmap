@@ -26,7 +26,7 @@ requirements:
     value: 3.12 以上
     rationale: コーディング規約が 3.12 の書き方（PEP 695）を前提にし、既存のテスト（`tests/conftest.py`）も 3.12 の構文を使う。ライブラリが求める版より新しい側で揃える
     source: dev/設計書/外部ライブラリ/jsonschema#
-    overflow: '仮想環境の Python が古ければ、`check-env` が `python_ok: false` と作り直すコマンドを終了コード 1 で返す。仮想環境を作るシステムの `python3` も古ければ、`base_python_ok: false` で `install` を `null` にし、利用者が 3.12 以上を入れる。ほかのコマンドは、起動した Python が 3.12 未満か依存が無ければ仮想環境の Python で起動し直し、仮想環境が使えなければ `check-env` を促すエラー（終了コード 1）で終わる（インターフェース定義『コマンドの起動』）。版の判定より前に読まれる `mindmap.py`・`launcher.py`・`check_env.py` は Python 3.8 で読める構文で書き、それより古い `python3` では構文エラーで終わる'
+    overflow: '仮想環境の Python が古ければ、依存の確認（`check_env.py`）が `python_ok: false` と作り直すコマンドを終了コード 1 で返し、起動スクリプトは Claude Code を立てずに止まる。仮想環境を作るシステムの `python3` も古ければ、`base_python_ok: false` で `install` を `null` にし、利用者が 3.12 以上を入れる。版の判定より前に読まれる `check_env.py` は Python 3.8 で読める構文で書き、それより古い `python3` では構文エラーで終わる'
   - name: ブラウザ
     english_name: browser
     category: 動作環境
@@ -56,8 +56,8 @@ requirements:
     category: 動作環境
     external_constraint: 制限なし
     source_kind: 制限なし
-    value: '`build` の書き出しを開くブラウザは jsDelivr（描画のライブラリ）と Google Fonts（文字）へ HTTPS で届くこと。配る書き出しを開くのは通信しない。スクリプトは `export` が書き出すときだけ jsDelivr へ HTTPS で届くこと（1 回の要求で接続と 1 回の読み取りをそれぞれ 30 秒まで待ち、取れなければ何も書かずにエラーで終える）。それ以外のコマンドは通信しない'
-    rationale: スクリプトの仕事はワークスペースのファイルの読み書きだけで、`export` だけが書き出すときに配布ファイルとライセンスの本文を jsDelivr から取る（ユーザーの決定。リポジトリには同梱しない）。`build` の書き出しの描画のライブラリは jsDelivr から、文字は Google Fonts から読むと決めている（アーキテクチャ図の制約）。届かないときは、読めなかったライブラリの名前を画面に出す（インターフェース定義『プレビューを開く』の異常系）。配る書き出しは描画のライブラリを中に持つため、開くときに通信せず、読めなかったライブラリの知らせは出ない（インターフェース定義『配る書き出し』）
+    value: 'サーバーが配るプレビューを開くブラウザは、配信（`127.0.0.1`）と jsDelivr（描画のライブラリ）・Google Fonts（文字）へ HTTPS で届くこと。配る書き出しを開くのは通信しない。サーバーは `export` が書き出すときだけ jsDelivr へ HTTPS で届くこと（1 回の要求で接続と 1 回の読み取りをそれぞれ 30 秒まで待ち、取れなければ何も書かずにエラーで終える）。それ以外のツールと配信は外へ通信しない'
+    rationale: サーバーの仕事はワークスペースのファイルの読み書きと端末の中への配信で、`export` だけが書き出すときに配布ファイルとライセンスの本文を jsDelivr から取る（ユーザーの決定。リポジトリには同梱しない）。サーバーが配るプレビューの描画のライブラリは jsDelivr から、文字は Google Fonts から読むと決めている（アーキテクチャ図の制約）。届かないときは、読めなかったライブラリの名前を画面に出す（インターフェース定義『プレビューを開く』の異常系）。配る書き出しは描画のライブラリを中に持つため、開くときに通信せず、読めなかったライブラリの知らせは出ない（インターフェース定義『配る書き出し』）
   - name: つながりで扱う項目の数
     english_name: graph_item_count
     category: 性能
@@ -108,4 +108,60 @@ requirements:
       - part: アプリの決定値
         value: 2GB
         notes: 合計 1,754MB を切りよく丸める
+  - name: tmux の版
+    english_name: tmux_version
+    category: 動作環境
+    external_constraint: 未確定
+    source_kind: 実行基盤の制限
+    source: dev/設計書/外部ライブラリ/tmux#
+    value: 3.4 以上
+    rationale: PoC（https://github.com/shuhei1101/mindstella/pull/73）で動かして確かめた版。起動スクリプトは `new-session -e` で Claude Code の設定のフォルダを渡すため、これを持たない版では動かない。3.4 より古い版は確かめていない
+    overflow: 起動スクリプトは版を確かめない。`new-session` が引数の誤りで終われば、tmux の標準エラーをそのまま出して終了コード 1 で終わる
+  - name: 待ち受けの範囲
+    english_name: listen_scope
+    category: セキュリティ
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    source: https://github.com/shuhei1101/mindstella/issues/67
+    value: '`127.0.0.1` だけ。ポートは OS が選んだ空きポート'
+    rationale: '#67 の要件で、待ち受けるのは端末の中だけにすると決めている。配信は記録を読ませ、送信でワークスペースへ書くため、端末の外からつながせない。同じ端末の別のサイトからの読み書きは、`Host`・`Origin`・`Content-Type` の確かめで防ぐ（インターフェース定義『プレビューの配信』『回答・意見の送信』）'
+    measurement: 配信を立てた後に、待ち受けのソケットのアドレスが `127.0.0.1` であることと、端末の別のアドレス（LAN の IP）からつながらないことを確かめる
+  - name: 画面への反映の時間
+    english_name: preview_reflect_time
+    category: 性能
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    source: https://github.com/shuhei1101/mindstella/pull/73
+    value: '1'
+    unit: 秒（ワークスペースの YAML を書き換えてから、開いている画面が描き直すまで）
+    rationale: '#67 の要件の「再読み込みの操作なしで反映」を、話し合いの中で書き換えを待っていると感じない 1 秒にする。PoC では 250ms ごとに書き換えの印を見る作りで、同じプロセス・別のプロセスの書き換えとも最大 252ms だった。内訳はほぼ全てが検知の間隔で、1 秒に対して 4 倍の余裕がある'
+    measurement: MCP サーバーを立ててプレビューを実際のブラウザで開き、ツールで項目を足してから画面の表に行が出るまでを、計測の側の単調な時計で 10 回測り、最大を求める
+    test_file: tests/nfr/test_preview_reflect_time.py
+    overflow: 超えても描き直しは遅れて届くだけで、記録は失わない
+    breakdown:
+      - part: 書き換えの検知
+        value: 250ms 以下
+        notes: 書き換えの印を見る間隔（インターフェース定義『書き換えの知らせ』）
+      - part: 記録の読み直しと描き直し
+        value: PoC で数十 ms
+        notes: '`GET /api/records` とブラウザの描画'
+      - part: アプリの決定値
+        value: 1 秒
+        notes: 検知の間隔の 4 倍の余裕を見る
+    tests:
+      - name: test_preview_reflect_time
+        summary: 書き換えから画面の描き直しまでが 1 秒以内
+        condition: 検討事項を 1 件持つワークスペース。`add` で 1 件ずつ 10 回足す
+        measurement: '`add` を呼ぶ直前から、検討事項の表に足した行が出るまでを計測の側の単調な時計で測る'
+        expected: 10 回の最大が 1 秒以下
+  - name: 送信の本文の長さ
+    english_name: submission_body_length
+    category: 性能
+    external_constraint: 制限なし
+    source_kind: 制限なし
+    value: '10000'
+    unit: 文字（前後の空白を除いた回答・意見の本文）
+    rationale: 回答・意見は項目への数行の答えを想定し、長い資料は話し合いの中で渡す。上限が無いと 1 件の送信で `submissions.yaml` と会話ログが際限なく太る。リクエストの本文の上限 64KiB に、1 万文字（UTF-8 で最大 4 バイトとして 40KB）とキーが収まる
+    measurement: 10000 文字と 10001 文字の本文を送り、前者が 201、後者が 400 になることを確かめる
+    overflow: サーバーは 400 を返して何も書かない。画面は送れなかった理由（`detail`）を入力の近くに出し、本文を残す
 lead: mindstella が外部の制約から逆算して決める値。

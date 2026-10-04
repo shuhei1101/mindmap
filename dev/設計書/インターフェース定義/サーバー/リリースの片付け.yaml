@@ -1,29 +1,29 @@
 title: "リリースの片付け"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py clear-release`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`clear_release`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__clear_release`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系
     summary: release/ の中身を消し、消したものを返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: '`release/` に `古い資料.md` と、ファイルを 1 つ持つフォルダ `図/` があるワークスペース'
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py clear-release
+        participant IF as clear_release（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: clear-release --workspace
+        クライアント->>IF: clear_release workspace
         IF-->>WS: mindmap.yaml があるか確かめる
         IF->>WS: release/ の中のファイルとフォルダを消す
         IF-->>クライアント: JSON（removed）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`removed` が `古い資料.md`・`図/` の順'
       - '`release/` があり、中身が空'
       - '`release/` の外のファイルの中身が、呼ぶ前と同じ'
@@ -32,23 +32,23 @@ flows:
     summary: release/ を持たないワークスペースでは空の release/ を作る
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: '`release/` を消し、前の版の `handoff/` に `資料.md` があるワークスペース'
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py clear-release
+        participant IF as clear_release（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: clear-release --workspace
+        クライアント->>IF: clear_release workspace
         IF-->>WS: mindmap.yaml があるか確かめる
         IF->>WS: 空の release/ を作る
         IF-->>クライアント: JSON（removed は空）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`removed` が空'
       - 空の `release/` がある
       - '`handoff/` とその中の `資料.md` が、呼ぶ前と同じ'
@@ -57,30 +57,30 @@ flows:
     summary: mindmap.yaml が無いフォルダを指すと何も消さずにエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無く、`release/` に `資料.md` がある）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py clear-release
+        participant IF as clear_release（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: clear-release --workspace
+        クライアント->>IF: clear_release workspace
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがある
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
       - '`release/` の `資料.md` が残っている'
     test: test_error_when_workspace_not_found
   - name: 異常系（消せない・WriteFailedError）
     summary: 消せないものに当たった時点でエラーで終わり、それまでに消したものは消えたままになる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動し、消せないものはフォルダの権限で作る）
+        description: なし（MCP サーバーを立てて MCP のクライアントでツールを呼び、消せないものはフォルダの権限で作る）
       - name: make_workspace
         description: '`release/` にファイル `一.md` と、中のファイルを消せないフォルダ `二.md/` があるワークスペース'
         notes: '`二.md/` は `lock_dirs` で読み取りだけにする（root・Windows では skip）。名前の順に消すので、`一.md` を消した後に `二.md` で止まる'
@@ -88,19 +88,18 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py clear-release
+        participant IF as clear_release（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: clear-release --workspace
+        クライアント->>IF: clear_release workspace
         IF-->>WS: mindmap.yaml があるか確かめる
         IF->>WS: 一.md を消す
         IF->>WS: 二.md を消せない
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準出力が空
-      - '標準エラーが `エラー: ` で始まり、消せなかった `二.md` のパスを含み、トレースバックを含まない'
+      - ツールのエラーになる
+      - 'エラーの本文が `エラー: ` で始まり、消せなかった `二.md` のパスを含み、トレースバックを含まない'
       - '`release/` に `二.md` が残り、`一.md` は無い'
     test: test_error_when_remove_fails
 lead: ゴール判定でリリースの資料を書き出す前に、`release/` の中身を消して空の `release/` を用意する。
@@ -109,7 +108,7 @@ side_effects: '`release/` の中のファイルとフォルダを消す（`relea
 callers:
   - dev/設計書/インターフェース定義/スキル/話し合いの進行#
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
@@ -122,23 +121,20 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: 消すものが無かったときを含む
-    notes: 終了コード 0
+    notes: 結果を返す
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1。何も消さない
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー。何も消さない
   - name: WriteFailedError
     condition: '`release/` の中のものを消せない、または `release/` を作れない（権限が無い・他のプログラムが開いている）'
-    notes: 終了コード 1。消せなかった時点で止め、それまでに消したものは戻さない。次の `clear-release` で片付く
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+    notes: ツールのエラー。消せなかった時点で止め、それまでに消したものは戻さない。次の `clear_release` で片付く
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
   - item: 消す範囲
     constraint: '`{ワークスペースのフォルダ}/release/` の中だけ。`release/` 自体と、前の版の `handoff/` は消さない'
-  - item: 起動
-    constraint: 起動した Python に依存が無ければ、スキル専用の仮想環境の Python で起動し直す（『コマンドの起動』）
 notes:
-  スクリプトに置く理由: '`session` は Bash を `mindmap.py` の起動だけに絞っており、Write はファイルを消せない。古いファイルを残さず最新の確定版の一式だけを置くため、消す処理をスクリプトのコマンドにする'
-test_file: tests/integration/scripts/test_clear_release.py
+  サーバーに置く理由: '`session` はファイルを消すツールを持たず、Write はファイルを消せない。古いファイルを残さず最新の確定版の一式だけを置くため、消す処理をサーバーのツールにする'

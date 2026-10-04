@@ -1,0 +1,115 @@
+title: "書き換えの知らせ"
+entry:
+  kind: endpoint
+  value: GET /api/events
+flows:
+  - name: 正常系
+    summary: ツールで書き換えると changed を知らせる
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL の `/api/events` へ HTTP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as GET /api/events
+        participant T as add（MCP のツール）
+        participant WS as ワークスペース
+
+        クライアント->>IF: GET /api/events
+        IF-->>クライアント: 200（つないだまま）
+        クライアント->>T: add workspace kind decision（D-2）
+        T->>WS: decisions.yaml を書く
+        IF->>WS: 書き換えの印が変わった
+        IF-->>クライアント: event: changed
+      ```
+    expected:
+      - ステータスが 200、`Content-Type` が `text/event-stream`
+      - '`add` を呼んでから 1 秒以内に `event: changed` が届く'
+    test: test_normal
+  - name: 正常系（別のプロセスが書き換える）
+    summary: 同じワークスペースを別の MCP サーバーのツールで書き換えても知らせる
+    setup:
+      - name: Mock
+        description: なし（同じワークスペースに MCP サーバーを 2 つ立て、1 つ目の配信の `/api/events` へつなぎ、2 つ目のツールで書く）
+      - name: make_workspace
+        description: 検討事項 D-1 を持つワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as GET /api/events（1 つ目）
+        participant T as add（2 つ目の MCP のツール）
+
+        クライアント->>IF: GET /api/events
+        クライアント->>T: add workspace kind decision（D-2）
+        IF-->>クライアント: event: changed
+      ```
+    expected:
+      - '`add` を呼んでから 1 秒以内に `event: changed` が届く'
+    test: test_normal_when_other_process_writes
+  - name: 正常系（書き換えが無い）
+    summary: 書き換えが無ければ changed を送らない
+    setup:
+      - name: Mock
+        description: なし（MCP サーバーを立てて `preview_url` を呼び、返った URL の `/api/events` へ HTTP のクライアントでつなぐ）
+      - name: make_workspace
+        description: 作成を済ませたワークスペース
+    flow: |-
+      ```mermaid
+      sequenceDiagram
+        participant クライアント
+        participant IF as GET /api/events
+
+        クライアント->>IF: GET /api/events
+        IF->>IF: 書き換えの印が変わらない
+      ```
+    expected:
+      - 'つないでから 2 秒の間に `event: changed` が届かない'
+    test: test_normal_when_unchanged
+lead: 配信しているワークスペースのファイルが書き換わったら、開いている画面へ Server-Sent Events で知らせる。画面は知らせを受けて『記録の取得』を読み直す。
+idempotent: true
+side_effects: なし（読むだけ。接続ごとにワークスペースのファイルの更新日時を見続ける）
+callers:
+  - dev/設計書/インターフェース定義/プレビュー/プレビューを開く#
+request:
+  - name: Host
+    type: str
+    required: true
+    location: header
+    description: ブラウザが付ける接続先
+    constraints: '`127.0.0.1:{ポート}` か `localhost:{ポート}`'
+response:
+  - name: Content-Type
+    type: str
+    description: '`text/event-stream`'
+  - name: event changed
+    type: Server-Sent Events のイベント
+    description: '`event: changed` と `data: {書き換えの印}`。書き換えの印は、見ているファイルの名前・更新日時（ナノ秒）・大きさをつないだ文字列で、画面は中身を読まない'
+  - name: 保つための行
+    type: Server-Sent Events のコメント
+    description: '`: keepalive`。15 秒知らせが無ければ送る'
+status_codes:
+  - code: '200'
+    condition: つないだ。接続を閉じるまで知らせを送り続ける
+response_notes: |-
+  > [!NOTE]
+  > つながりが切れたら、ブラウザの EventSource が自分でつなぎ直す。サーバーが止まっている間は画面に「サーバーにつながりません」と出し、前に読んだ記録で描き続ける（『プレビューを開く』）。
+constraints:
+  - item: 見るファイル
+    constraint: '`mindmap.yaml`・種類ごとの 7 つの YAML・`submissions.yaml`・`docs/` の直下の `*.md`'
+  - item: 見る間隔
+    constraint: 250ms ごとに書き換えの印を作り直し、前と違えば知らせる
+    decided_by: dev/設計書/非機能要件/非機能要件#requirements[画面への反映の時間]
+  - item: 保つための行の間隔
+    constraint: 15 秒
+  - item: 書き換えた元
+    constraint: 問わない。このプロセスのツール・別のプロセスのツール・手での書き換え・送信のどれでも知らせる
+  - item: 接続の数
+    constraint: 制限なし（開いている画面ごとに 1 本。端末の中だけで使う）
+  - item: 接続先の確かめ
+    constraint: 『プレビューの配信』と同じ（`Host` が合わなければ 403 を返す。確かめは『プレビューの配信』の異常系が持つ）
+refs:
+  - dev/設計書/インターフェース定義/サーバー/記録の取得#

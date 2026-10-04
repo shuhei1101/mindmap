@@ -1,0 +1,78 @@
+summary: "起動スクリプトと、スキルが呼ぶ MCP のツール・プレビューが読む配信（引数・結果・エラー）"
+docs_index: true
+items:
+  - page: 起動スクリプト.yaml
+    summary: 'bin/mindstella: 依存を確かめ、tmux のセッションで MCP サーバーを渡した Claude Code を立ち上げる'
+    group: 起動
+  - page: 依存の確認.yaml
+    summary: 'check_env.py: スキル専用の仮想環境の Python と PyYAML・jsonschema・mcp の版を確かめる'
+    group: 起動
+  - page: MCPサーバーの起動.yaml
+    summary: MCP サーバー mindstella を stdio で立てる。全てのツールに共通の結果とエラーの返し方
+    group: 起動
+  - page: ワークスペースの作成.yaml
+    summary: 'init: 設定を受け取って空のワークスペースを作る'
+    group: 作る
+  - page: 項目の追加.yaml
+    summary: 'add: 1 項目を足す'
+    group: 書く
+  - page: 項目の更新.yaml
+    summary: 'update: 1 項目のキーを置き換える'
+    group: 書く
+  - page: 採用する案の切り替え.yaml
+    summary: 'adopt: 検討事項の採用する案を 1 つに切り替える'
+    group: 書く
+  - page: 再開時の状況.yaml
+    summary: 'status: 要見直し・進行中・再開可能・決定待ち・次の候補をまとめて返す'
+    group: 読む
+  - page: 次の候補.yaml
+    summary: 'next: 前提が揃った未決定をフェーズ → 影響度 → 後続の件数の順に返す'
+    group: 読む
+  - page: 影響の洗い出し.yaml
+    summary: 'impact: 参照を逆向きにたどって影響を受ける項目を返す'
+    group: 読む
+  - page: 項目の検索.yaml
+    summary: 'find: 条件に合う項目を返す'
+    group: 読む
+  - page: 項目の表示.yaml
+    summary: 'show: 1 項目の中身・本文・参照元を返す'
+    group: 読む
+  - page: 属性名の一覧.yaml
+    summary: 'attrs: 使っている属性名と件数を返す'
+    group: 読む
+  - page: ゴール判定.yaml
+    summary: 'goal: ゴールのフェーズまでが決着し納品物が揃ったかと、残りの項目を返す'
+    group: 読む
+  - page: ワークスペースの点検.yaml
+    summary: 'check: スキーマ違反・参照切れ・本文のずれを洗い出す'
+    group: 点検と書き出し
+  - page: 記録の形式の移行.yaml
+    summary: 'migrate: ワークスペースの版とプラグインの版を比べ、版ごとの手順を並べる・当てる・版を書き換える'
+    group: 点検と書き出し
+  - page: リリースの片付け.yaml
+    summary: 'clear_release: リリースの資料を書き出す前に release/ の中身を消す'
+    group: 点検と書き出し
+  - page: 配る書き出し.yaml
+    summary: 'export: 描画のライブラリまで中に持つ見るだけの 1 枚の HTML を書き出す'
+    group: 点検と書き出し
+  - page: プレビューのURL.yaml
+    summary: 'preview_url: ワークスペースを 127.0.0.1 の空きポートで配り、URL を返す'
+    group: プレビューの配信
+  - page: プレビューの配信.yaml
+    summary: 'GET /: プレビューの画面を返す'
+    group: プレビューの配信
+  - page: 記録の取得.yaml
+    summary: 'GET /api/records: ワークスペースの記録をその場で読んで返す'
+    group: プレビューの配信
+  - page: 書き換えの知らせ.yaml
+    summary: 'GET /api/events: 書き換えを Server-Sent Events で知らせる'
+    group: プレビューの配信
+  - page: 回答・意見の送信.yaml
+    summary: 'POST /api/submissions: 項目の ID ごとの回答・意見を取り込んでいない送信として足す'
+    group: 送信
+  - page: 取り込んでいない送信.yaml
+    summary: 'submissions: 取り込んでいない送信を送った順に返す'
+    group: 送信
+  - page: 送信を取り込み済みにする.yaml
+    summary: 'take_submission: 取り込んだ送信 1 件を取り込み済みにする'
+    group: 送信

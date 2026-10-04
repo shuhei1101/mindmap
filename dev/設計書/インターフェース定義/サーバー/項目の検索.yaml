@@ -1,13 +1,13 @@
 title: "項目の検索"
 entry:
-  kind: operation
-  value: '`python3 {スキルのフォルダ}/scripts/mindmap.py find`（コマンドの引数・標準出力・終了コード）。起動の仕方は『コマンドの起動』'
+  kind: mcp_tool
+  value: '`find`（MCP サーバー `mindstella` のツール。Claude Code からは `mcp__mindstella__find`）。結果とエラーの返し方は『MCP サーバーの起動』'
 flows:
   - name: 正常系
     summary: 文字と属性で探し、両方に合う項目だけを返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 次の項目を持つワークスペース
         notes: 'D-1: タイトルに `スキーマ`・属性 `担当: 自分`／D-2: 案の `content` にだけ `スキーマ`・属性なし／T-1: どの欄にも `スキーマ` を含まず属性 `担当: 自分`'
@@ -15,128 +15,128 @@ flows:
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py find
+        participant IF as find（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: find --workspace --text スキーマ --attr 担当=自分
+        クライアント->>IF: find workspace text スキーマ attr [担当=自分]
         IF-->>WS: 全ての YAML を読む
         IF-->>クライアント: JSON（items）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`items` が D-1 の 1 件だけ'
     test: test_normal
   - name: 正常系（入れ子の文字に当たる）
     summary: 文字だけで探すと、案の中身に含む項目も返す
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: make_workspace
         description: 正常系と同じワークスペース
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py find
+        participant IF as find（MCP のツール）
         participant WS as ワークスペース
 
-        クライアント->>IF: find --workspace --text スキーマ
+        クライアント->>IF: find workspace text スキーマ
         IF-->>WS: 全ての YAML を読む
         IF-->>クライアント: JSON（items）
       ```
     expected:
-      - 終了コードが 0
+      - ツールのエラーにならない
       - '`items` が D-1・D-2 の順で、T-1 が無い'
     test: test_normal_when_nested_text
   - name: 異常系（ワークスペースが無い・WorkspaceNotFoundError）
     summary: mindmap.yaml が無いフォルダを指すとエラーで終わる
     setup:
       - name: Mock
-        description: なし（実際の Python で起動する）
+        description: なし（MCP サーバーを立て、MCP のクライアントでツールを呼ぶ）
       - name: 空のフォルダ
         description: テストごとの一時フォルダ（`mindmap.yaml` が無い）
     flow: |-
       ```mermaid
       sequenceDiagram
         participant クライアント
-        participant IF as mindmap.py find
+        participant IF as find（MCP のツール）
         participant WS as フォルダ
 
-        クライアント->>IF: find --workspace
+        クライアント->>IF: find workspace
         IF-->>WS: mindmap.yaml が無い
-        IF-->>クライアント: エラー、終了コード 1
+        IF-->>クライアント: ツールのエラー
       ```
     expected:
-      - 終了コードが 1
-      - 標準エラーにフォルダのパスがある
+      - ツールのエラーになる
+      - エラーの本文にフォルダのパスがある
     test: test_error_when_workspace_not_found
 lead: 文字・種類・状態・タグ・対象・カテゴリー・フェーズ・属性の条件に合う項目を返す。
 idempotent: true
 side_effects: なし（読むだけ）
 request:
-  - name: --workspace
+  - name: workspace
     type: str
     required: true
     location: argument
     description: ワークスペースのフォルダのパス
     constraints: '`mindmap.yaml` があるフォルダ'
-  - name: --text
+  - name: text
     type: str
     required: false
     default: なし（文字で絞らない）
     location: argument
     description: 項目の文字の欄（入れ子の `options[]` なども含む、YAML の全ての文字列の値）のどれかに含まれる文字。英字の大小を区別しない
     notes: '`docs/` の本文は探さない'
-  - name: --kind
+  - name: kind
     type: '"decision" | "task" | "research" | "doc" | "term" | "note" | "log"'
     required: false
     default: なし（全ての種類）
     location: argument
     description: 種類
-  - name: --status
+  - name: status
     type: str
     required: false
     default: なし
     location: argument
     description: 状態が一致する項目
-  - name: --tag
+  - name: tag
     type: str
     required: false
     default: なし
     location: argument
     description: タグに持つ項目
-  - name: --target
+  - name: target
     type: str
     required: false
     default: なし
     location: argument
     description: 対象が一致する項目
-  - name: --category
+  - name: category
     type: str
     required: false
     default: なし
     location: argument
     description: カテゴリーが一致する項目
-  - name: --phase
+  - name: phase
     type: str
     required: false
     default: なし
     location: argument
     description: フェーズが一致する項目
-  - name: --attr
-    type: str
+  - name: attr
+    type: list[str]
     required: false
     default: なし
     location: argument
-    description: '`名前=値` の形で、属性が一致する項目。繰り返し渡せる（全てに合うもの）。`名前` だけならその属性を持つ項目'
-    example: 担当=自分
+    description: '`名前=値` の形で、属性が一致する項目。複数渡したときは全てに合うもの。`名前` だけならその属性を持つ項目'
+    example: '["担当=自分"]'
 response:
   - name: items[].id
     type: str
     description: 合った項目の ID（種類の順 D・T・R・A・G・N・L、連番の小さい順）
   - name: items[].kind
     type: str
-    description: 種類（`--kind` と同じ値）
+    description: 種類（`kind` と同じ値）
   - name: items[].title
     type: str
     description: タイトル
@@ -146,18 +146,17 @@ response:
 exceptions:
   - name: なし（正常終了）
     condition: 探せた（合う項目が 0 件のときも含む）
-    notes: 終了コード 0
+    notes: 結果を返す
   - name: WorkspaceNotFoundError
-    condition: '`--workspace` のフォルダに `mindmap.yaml` が無い'
-    notes: 終了コード 1
-error_format: '標準エラーに `エラー: {内容}` の行を出す。'
+    condition: '`workspace` のフォルダに `mindmap.yaml` が無い'
+    notes: ツールのエラー
+error_format: 'ツールのエラーの本文に `エラー: {内容}` の行を出す。'
 constraints:
-  - item: 出力の形
-    constraint: 標準出力に JSON を 1 個（UTF-8、日本語はエスケープしない）
-  - item: 終了コード
-    constraint: 0 正常 / 1 実行時のエラー / 2 引数の誤り
+  - item: 結果の形
+    constraint: ツールの結果に JSON のオブジェクトを 1 個（構造化の結果と、同じ JSON の文字列の本文。日本語はエスケープしない）
+  - item: エラーの返し方
+    constraint: 実行時のエラーと引数の誤りは、ツールのエラー（`isError`）で返し、本文にエラーの行を書く（『MCP サーバーの起動』）
   - item: 条件の組み合わせ
     constraint: 渡した条件の全てに合う項目。条件を 1 つも渡さなければ全ての項目
   - item: 件数
     constraint: 制限なし
-test_file: tests/integration/scripts/test_find.py

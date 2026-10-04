@@ -22,3 +22,7 @@ items:
     summary: プレビューのスクリプトを型検査し、.ts から .js へ変換する（開発用）
   - page: git.yaml
     summary: 移し替える前の写しを、git のコミットで取る・戻す
+  - page: mcp.yaml
+    summary: MCP のサーバーを立て、スキルが呼ぶツールを載せる（Python の公式の SDK）
+  - page: tmux.yaml
+    summary: 起動スクリプトが、MCP サーバーを渡した Claude Code を動かすセッションを立てる

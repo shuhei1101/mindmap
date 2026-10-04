@@ -26,14 +26,16 @@ flows:
       - front matter の `name` が `setup`、`allowed-tools` が制約の値と一致する
       - 本文の `${CLAUDE_PLUGIN_ROOT}/` で始まるパスが全てリポジトリの中にある
       - 本文が指す `steps/` のファイルが全てある
-      - 本文のスクリプトの起動が全て `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py` で始まる
-      - 本文が `migrate --workspace {フォルダ} --plan` を呼ぶ
+      - 本文が呼ぶツールが全て `allowed-tools` にあり、サーバーのツールの一覧（『MCP サーバーの起動』）にある
+      - 本文が `mindmap.py`・`build`・`check-env` を指さない
+      - '本文が `migrate` を `plan: true` で呼ぶ'
+      - 本文に、MCP のツールが無いとき起動スクリプトを案内して止まる分岐がある
       - '`claude plugin validate` が終了コード 0'
     test: test_normal
-lead: 依存を確かめ、新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindstella:session` へ渡すスキルの入口と、そのファイルの形。
+lead: 新しいワークスペースを作るか既存のワークスペースの状況を示して、`/mindstella:session` へ渡すスキルの入口と、そのファイルの形。
 callers:
   - dev/設計書/シナリオ/単一ユースケース/話し合いのセットアップ#
-side_effects: スクリプトの `init`・`build` でワークスペースを作る（新しいワークスペースのときだけ）。スキルが自分でファイルを書くことはない
+side_effects: サーバーの MCP のツール `init` でワークスペースを作る（新しいワークスペースのときだけ）。スキルが自分でファイルを書くことはない
 request:
   - name: $ARGUMENTS
     type: str
@@ -53,22 +55,24 @@ constraints:
   - item: front matter の description
     constraint: いつ使うか（話し合いを始める・再開するとき）が分かる 1 文
   - item: front matter の allowed-tools
-    constraint: '`Read, Bash(python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py:*)`。これ以外の Bash は許していない'
-    notes: PoC で、この規則で利用者の既定のモードでも確認が 0 件になることを確かめた
+    constraint: '`Read, mcp__mindstella__init, mcp__mindstella__status, mcp__mindstella__migrate`。Bash は許していない'
+    notes: PoC（#73）で、権限のモード `default` でもスキルから呼んだ MCP のツールに確認が出ないことを確かめた
   - item: 共通のファイルの参照
     constraint: 本文では `${CLAUDE_PLUGIN_ROOT}/skills/mindmap/...` と書く。本文が指すパスは全てプラグインの中に実体がある
-  - item: スクリプトの起動
-    constraint: 全てのコマンドを `python3 ${CLAUDE_PLUGIN_ROOT}/skills/mindmap/scripts/mindmap.py {コマンド}` の形で書く（この形のまま起動したときだけ `allowed-tools` に当たる）
-    notes: 設定の JSON は `--json '{JSON}'` の引数で渡し、値の中の `'` は `'\''` と書く。ヒアドキュメント（標準入力）で渡すと `{"` が `allowed-tools` の規則に当たらず確認が出る。JSON の `'` はモデルが書き換えて引数が壊れるため使わない（2.1.287 で実測）
-  - item: 編集の後
-    constraint: ワークスペースを作ったら最後に `build` を流す（hooks は使わない）
   - item: 引き継ぎ
     constraint: 最後に `/mindstella:session {ワークスペースのフォルダ}` で続けるよう案内する
   - item: 版の比較
-    constraint: 既存のワークスペースでは `status` の前に `migrate --workspace {フォルダ} --plan` を呼ぶ。`relation` が `older` なら `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる。`same` のときだけ `status` へ進む
-    notes: インターフェース定義『記録の形式の移行』
+    constraint: '既存のワークスペースでは `status` の前に `migrate` を `plan: true` で呼ぶ。`relation` が `older` なら `/mindstella:upgrade {フォルダ}` を案内して止まり、`newer` ならプラグインの更新を案内して止まる。`same` のときだけ `status` へ進む'
+    notes: インターフェース定義『記録の形式の移行』（サーバー）
+  - item: ツールの呼び出し
+    constraint: ワークスペースの読み書きは全て mindstella の MCP のツール（`mcp__mindstella__{ツール}`）で行い、`workspace` にワークスペースのフォルダを渡す。設定は `init` の `settings` に JSON のオブジェクトで渡す。スクリプトを Bash で起動しない
+    notes: インターフェース定義『MCP サーバーの起動』
+  - item: MCP のツールが使えないとき
+    constraint: 最初に mindstella の MCP のツールがあるかを見て、無ければワークスペースに何も書かず、起動スクリプト（`{プラグインのフォルダ}/bin/mindstella {ワークスペースのフォルダ}`）で立ち上げ直すよう案内して止まる
+    notes: インターフェース定義『起動スクリプト』
 refs:
   - dev/設計書/外部ライブラリ/claude-code#
+  - dev/設計書/インターフェース定義/サーバー/MCPサーバーの起動#
 notes:
-  確かめないもの: スキルをモデルが読んで動かす振る舞い（たたき台・案内）は、費用が掛かり結果が揺れるためテストしない。読み込まれてスラッシュコマンドになることと許可の規則が当たることは PoC（#22）で確かめた
+  確かめないもの: スキルをモデルが読んで動かす振る舞い（たたき台・案内）は、費用が掛かり結果が揺れるためテストしない。読み込まれてスラッシュコマンドになることは PoC（#22）で、MCP のツールの許可の規則が当たることは PoC（#73）で確かめた
 test_file: tests/integration/skill/test_setup.py
